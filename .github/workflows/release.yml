@@ -95,10 +95,34 @@ jobs:
           # Copy README.md to gh-pages for reference
           cp README.md gh-pages-deploy/
 
+      # 6.1. Build Gutenberg blocks
+      - name: Build Gutenberg blocks
+        run: |
+          npm ci
+          npm run build
+
       # 7. Create plugin ZIP
       - name: Create plugin ZIP
         run: |
-          zip -r "${{ env.ZIP_FILE }}" . -x '*.git*' -x '.gitignore' -x '*.github*' -x '*.DS_Store*' -x '*.py' -x 'CLAUDE.md' -x '.claude/*' -x 'gh-pages-*/*' -x 'docs/*' -x 'phpdoc/*' -x 'phpdoc.xml' -x 'phpDocumentor.phar'
+          zip -r "${{ env.ZIP_FILE }}" . \
+            -x '*.git*' \
+            -x '.gitignore' \
+            -x '*.github*' \
+            -x '*.DS_Store*' \
+            -x '*.py' \
+            -x 'CLAUDE.md' \
+            -x '.claude/*' \
+            -x 'gh-pages-*/*' \
+            -x 'docs/*' \
+            -x 'phpdoc/*' \
+            -x 'phpdoc.xml' \
+            -x 'phpDocumentor.phar' \
+            -x 'node_modules/*' \
+            -x 'package.json' \
+            -x 'package-lock.json' \
+            -x 'webpack.config.js' \
+            -x 'composer.json' \
+            -x 'composer.lock'
 
       # 7.1. Generate SHA256 checksum for security verification
       - name: Generate SHA256 checksum
@@ -146,8 +170,8 @@ jobs:
                       "avatar": f"https://wordpress.org/grav-redirect.php?user={username}&s=36"
                   }
 
-          tags_raw = os.environ.get("TAGS", '["ACF","Fields","CPT","CTT","Taxonomy","Images"]')
-          tags = json.loads(tags_raw) if tags_raw.strip() else ["ACF","Fields","CPT","CTT","Taxonomy","Images"]
+          tags_raw = os.environ.get("TAGS", '["filter","taxonomy","faceted search","custom post type","AJAX"]')
+          tags = json.loads(tags_raw) if tags_raw.strip() else ["filter","taxonomy","faceted search","custom post type","AJAX"]
 
           def clean_meta_value(value):
               if isinstance(value, str):
@@ -161,7 +185,7 @@ jobs:
               "version": clean_meta_value(meta.get("Version", os.environ.get("TAG_NAME"))),
               "download_url": os.environ.get("DOWNLOAD_URL"),
               "checksum_sha256": os.environ.get("SHA256_HASH", ""),
-              "requires": clean_meta_value(meta.get("Requiresatleast", "6.8")),
+              "requires": clean_meta_value(meta.get("Requiresatleast", "6.9")),
               "tested": clean_meta_value(meta.get("Testedupto", "6.9")),
               "requires_php": clean_meta_value(meta.get("RequiresPHP", "8.3")),
               "author": clean_meta_value(meta.get("Author", "")),
@@ -172,7 +196,7 @@ jobs:
               "license_uri": clean_meta_value(meta.get("LicenseURI", "http://www.gnu.org/licenses/gpl-2.0.txt")),
               "text_domain": clean_meta_value(meta.get("TextDomain", "")),
               "domain_path": clean_meta_value(meta.get("DomainPath", "/languages")),
-              "network": str(meta.get("Network", "true")).lower() == "true",
+              "network": str(meta.get("Network", "false")).lower() == "true",
               "requires_plugins": [clean_meta_value(p.strip()) for p in meta.get("RequiresPlugins", "").split(",") if p.strip()],
               "homepage": clean_meta_value(meta.get("PluginURI", f"https://github.com/JPKCom/{os.environ.get('PLUGIN_SLUG')}")),
               "last_updated": os.environ.get("DATE"),

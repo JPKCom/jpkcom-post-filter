@@ -1,20 +1,20 @@
 # JPKCom Post Filter
 
-**Plugin Name:** JPKCom Post Filter
-**Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter
-**Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.
-**Version:** 1.0.0
-**Author:** Jean Pierre Kolb <jpk@jpkc.com>
-**Author URI:** https://www.jpkc.com/
-**Contributors:** JPKCom
-**Tags:** filter, taxonomy, faceted search, custom post type, AJAX
-**Requires at least:** 6.9
-**Tested up to:** 6.9
-**Requires PHP:** 8.3
-**Stable tag:** 1.0.0
-**License:** GPL-2.0-or-later
-**License URI:** https://www.gnu.org/licenses/gpl-2.0.html
-**Text Domain:** jpkcom-post-filter
+**Plugin Name:** JPKCom Post Filter  
+**Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
+**Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
+**Version:** 1.1.0  
+**Author:** Jean Pierre Kolb <jpk@jpkc.com>  
+**Author URI:** https://www.jpkc.com/  
+**Contributors:** JPKCom  
+**Tags:** filter, taxonomy, faceted search, custom post type, AJAX  
+**Requires at least:** 6.9  
+**Tested up to:** 6.9  
+**Requires PHP:** 8.3  
+**Stable tag:** 1.1.0  
+**License:** GPL-2.0-or-later  
+**License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
+**Text Domain:** jpkcom-post-filter  
 **Domain Path:** /languages
 
 Filter any post type by taxonomy terms — SEO-friendly URLs, AJAX, and shortcodes included.
