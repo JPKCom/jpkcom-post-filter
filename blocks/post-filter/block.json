@@ -1,0 +1,41 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "jpkcom/post-filter",
+	"version": "1.0.0",
+	"title": "Post Filter",
+	"category": "widgets",
+	"icon": "filter",
+	"description": "Displays a filter bar for posts, pages, or custom post types.",
+	"keywords": [ "filter", "facet", "taxonomy", "navigation" ],
+	"textdomain": "jpkcom-post-filter",
+	"attributes": {
+		"postType": {
+			"type": "string",
+			"default": "post"
+		},
+		"layout": {
+			"type": "string",
+			"default": ""
+		},
+		"groups": {
+			"type": "string",
+			"default": ""
+		},
+		"reset": {
+			"type": "string",
+			"default": "true"
+		},
+		"className": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ],
+		"className": true
+	},
+	"editorScript": "file:../build/post-filter.js",
+	"editorStyle": "file:../../assets/css/editor.css"
+}

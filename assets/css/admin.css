@@ -1,0 +1,384 @@
+/**
+ * JPKCom Post Filter – Admin Stylesheet
+ *
+ * @package   JPKCom_Post_Filter
+ * @since     1.0.0
+ */
+
+/* ==========================================================================
+   Shortcode Generator
+   ========================================================================== */
+
+.jpkcom-shortcode-generator {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    margin-block-end: 20px;
+    max-width: 800px;
+}
+
+.jpkcom-shortcode-generator h2 {
+    margin-top: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+#sg_output {
+    font-family: Consolas, Monaco, monospace;
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    resize: vertical;
+}
+
+/* ==========================================================================
+   Filter Groups
+   ========================================================================== */
+
+.jpkcom-filter-group {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-left: 4px solid #0073aa;
+}
+
+.jpkcom-filter-group:hover {
+    border-left-color: #005d8c;
+}
+
+/* ==========================================================================
+   Cache Stats Table
+   ========================================================================== */
+
+.widefat th {
+    font-weight: 600;
+    width: 200px;
+}
+
+/* ==========================================================================
+   Admin Notices
+   ========================================================================== */
+
+.jpkpf-notice-warning {
+    border-left-color: #dba617;
+}
+
+.jpkpf-notice-info {
+    border-left-color: #72aee6;
+}
+
+/* ==========================================================================
+   Layout Page – Tab Navigation
+   ========================================================================== */
+
+.jpkpf-tab-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    border-bottom: 1px solid #c3c4c7;
+    margin-block-end: 24px;
+}
+
+.jpkpf-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 3px 3px 0 0;
+    font-size: 13px;
+    font-weight: 400;
+    color: #3c434a;
+    cursor: pointer;
+    position: relative;
+    bottom: -1px;
+    text-decoration: none;
+    transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+.jpkpf-tab-btn:hover {
+    background: #f6f7f7;
+    color: #1d2327;
+}
+
+.jpkpf-tab-btn.is-active {
+    background: #fff;
+    border-color: #c3c4c7;
+    border-bottom-color: #fff;
+    color: #1d2327;
+    font-weight: 600;
+}
+
+.jpkpf-tab-panel {
+    display: block;
+}
+
+.jpkpf-tab-panel.is-hidden {
+    display: none;
+}
+
+/* ==========================================================================
+   Layout Page – Section Fieldsets
+   ========================================================================== */
+
+.jpkpf-settings-section {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-block-end: 20px;
+}
+
+.jpkpf-settings-section legend,
+.jpkpf-settings-section h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d2327;
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f1;
+    width: 100%;
+}
+
+.jpkpf-settings-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 10px 16px;
+    align-items: center;
+}
+
+.jpkpf-settings-grid label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #3c434a;
+}
+
+.jpkpf-settings-grid .description {
+    grid-column: 2;
+    margin: 0;
+    font-size: 12px;
+    color: #646970;
+}
+
+/* ==========================================================================
+   Layout Page – Color Field (dual-input)
+   ========================================================================== */
+
+.jpkpf-color-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.jpkpf-color-swatch {
+    width: 32px;
+    height: 32px;
+    padding: 2px;
+    border: 1px solid #8c8f94;
+    border-radius: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+    background: #fff;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.jpkpf-color-swatch::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.jpkpf-color-swatch::-webkit-color-swatch {
+    border: none;
+    border-radius: 2px;
+}
+
+.jpkpf-color-text {
+    width: 110px !important;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px !important;
+}
+
+.jpkpf-color-reset {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: transparent;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #646970;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    flex-shrink: 0;
+    transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+.jpkpf-color-reset:hover {
+    background: #f6f7f7;
+    color: #1d2327;
+    border-color: #8c8f94;
+}
+
+/* Disabled state when color text is not a valid hex */
+.jpkpf-color-swatch:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Layout Page – Color Scheme Cards
+   ========================================================================== */
+
+.jpkpf-scheme-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    max-width: 720px;
+}
+
+.jpkpf-scheme-card {
+    position: relative;
+}
+
+.jpkpf-scheme-card input[type="radio"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+    z-index: 1;
+}
+
+.jpkpf-scheme-card-inner {
+    border: 2px solid #c3c4c7;
+    border-radius: 6px;
+    padding: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    user-select: none;
+}
+
+.jpkpf-scheme-card input[type="radio"]:checked + .jpkpf-scheme-card-inner {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 1px #0073aa;
+}
+
+.jpkpf-scheme-card-inner:hover {
+    border-color: #8c8f94;
+}
+
+.jpkpf-scheme-card input[type="radio"]:checked + .jpkpf-scheme-card-inner:hover {
+    border-color: #0073aa;
+}
+
+.jpkpf-scheme-preview {
+    display: flex;
+    gap: 3px;
+    margin-block-end: 8px;
+    height: 28px;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.jpkpf-scheme-preview span {
+    flex: 1;
+    border-radius: 2px;
+}
+
+.jpkpf-scheme-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d2327;
+    display: block;
+    text-align: center;
+}
+
+/* Schema preview color blocks */
+.jpkpf-scheme-preview--default span:nth-child(1) { background: #0073aa; }
+.jpkpf-scheme-preview--default span:nth-child(2) { background: #f0f0f1; }
+.jpkpf-scheme-preview--default span:nth-child(3) { background: #dcdcde; }
+.jpkpf-scheme-preview--default span:nth-child(4) { background: #ffffff; border: 1px solid #dcdcde; }
+
+.jpkpf-scheme-preview--dark span:nth-child(1) { background: #4da6d2; }
+.jpkpf-scheme-preview--dark span:nth-child(2) { background: #2c3338; }
+.jpkpf-scheme-preview--dark span:nth-child(3) { background: #3c4349; }
+.jpkpf-scheme-preview--dark span:nth-child(4) { background: #1d2327; }
+
+.jpkpf-scheme-preview--contrast span:nth-child(1) { background: #0073aa; }
+.jpkpf-scheme-preview--contrast span:nth-child(2) { background: #d63638; }
+.jpkpf-scheme-preview--contrast span:nth-child(3) { background: #f0f0f1; }
+.jpkpf-scheme-preview--contrast span:nth-child(4) { background: #ffffff; border: 1px solid #dcdcde; }
+
+.jpkpf-scheme-preview--mono span:nth-child(1) { background: #1d2327; }
+.jpkpf-scheme-preview--mono span:nth-child(2) { background: #e6e6e6; }
+.jpkpf-scheme-preview--mono span:nth-child(3) { background: #c0c0c0; }
+.jpkpf-scheme-preview--mono span:nth-child(4) { background: #ffffff; border: 1px solid #1d2327; }
+
+/* ==========================================================================
+   Layout Page – Tab Reset Row
+   ========================================================================== */
+
+.jpkpf-tab-reset-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0 20px;
+    border-bottom: 1px solid #f0f0f1;
+    margin-bottom: 8px;
+}
+
+.jpkpf-tab-reset-hint {
+    font-size: 12px;
+    color: #646970;
+}
+
+/* ==========================================================================
+   Filter Groups – Segment header
+   ========================================================================== */
+
+.jpkcom-group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.jpkcom-segment-badge {
+    display: inline-flex;
+    align-items: center;
+    background: #0073aa;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 3px 9px;
+    border-radius: 3px;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    user-select: none;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 782px) {
+    .jpkpf-scheme-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .jpkpf-settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .jpkpf-tab-reset-row {
+        flex-wrap: wrap;
+    }
+}

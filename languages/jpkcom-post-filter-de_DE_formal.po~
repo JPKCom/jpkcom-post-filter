@@ -1,0 +1,1476 @@
+# Copyright (C) 2026 JPK
+# This file is distributed under the same license as the JPKCom Post Filter package.
+# jpk@jpkc.com, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: JPKCom Post Filter 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/jpkcom-post-"
+"filter\n"
+"POT-Creation-Date: 2026-03-04T15:18:16+01:00\n"
+"PO-Revision-Date: 2026-03-03 12:00+0100\n"
+"Last-Translator: jpk@jpkc.com\n"
+"Language-Team: Deutsch\n"
+"Language: de_DE_formal\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Domain: jpkcom-post-filter\n"
+
+#. Plugin Name of the plugin
+#: jpkcom-post-filter.php
+msgid "JPKCom Post Filter"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: jpkcom-post-filter.php
+msgid "https://github.com/JPKCom/jpkcom-post-filter"
+msgstr ""
+
+#. Description of the plugin
+#: jpkcom-post-filter.php
+msgid ""
+"Faceted navigation and filtering for Posts, Pages and Custom Post Types via "
+"WordPress taxonomies. Supports SEO-friendly URLs, AJAX filtering with "
+"history.pushState, and No-JS fallback."
+msgstr ""
+"Facettierte Navigation und Filterung für Beiträge, Seiten und "
+"benutzerdefinierte Beitragstypen via WordPress-Taxonomien. Unterstützt SEO-"
+"freundliche URLs, AJAX-Filterung mit history.pushState und No-JS-Fallback."
+
+#. Author of the plugin
+#: jpkcom-post-filter.php
+msgid "Jean Pierre Kolb <jpk@jpkc.com>"
+msgstr ""
+
+#. Author URI of the plugin
+#: jpkcom-post-filter.php
+msgid "https://www.jpkc.com/"
+msgstr ""
+
+#: assets/js/admin-pages.php:37 assets/js/admin-pages.php:38
+#: includes/admin-pages.php:37 includes/admin-pages.php:38
+msgid "Post Filter"
+msgstr "Post-Filter"
+
+#: assets/js/admin-pages.php:49 includes/admin-pages.php:49
+msgid "General Settings"
+msgstr "Allgemeine Einstellungen"
+
+#: assets/js/admin-pages.php:50 includes/admin-pages.php:50
+msgid "General"
+msgstr "Allgemein"
+
+#: assets/js/admin-pages.php:59 assets/js/admin-pages.php:60
+#: assets/js/admin-pages.php:1885 includes/admin-pages.php:59
+#: includes/admin-pages.php:60 includes/admin-pages.php:1916
+msgid "Filter Groups"
+msgstr "Filtergruppen"
+
+#: assets/js/admin-pages.php:69 assets/js/admin-pages.php:70
+#: includes/admin-pages.php:69 includes/admin-pages.php:70
+msgid "Layout & Design"
+msgstr "Layout & Design"
+
+#: assets/js/admin-pages.php:79 includes/admin-pages.php:79
+msgid "Shortcode Configurator"
+msgstr "Shortcode-Konfigurator"
+
+#: assets/js/admin-pages.php:80 includes/admin-pages.php:80
+msgid "Shortcodes"
+msgstr "Shortcodes"
+
+#: assets/js/admin-pages.php:89 includes/admin-pages.php:89
+msgid "Cache & Performance"
+msgstr "Cache & Performance"
+
+#: assets/js/admin-pages.php:90 includes/admin-pages.php:90
+msgid "Cache"
+msgstr "Cache"
+
+#: assets/js/admin-pages.php:99 assets/js/admin-pages.php:100
+#: includes/admin-pages.php:99 includes/admin-pages.php:100
+msgid "Import / Export"
+msgstr "Import / Export"
+
+#: assets/js/admin-pages.php:118 assets/js/admin-pages.php:1460
+#: assets/js/admin-pages.php:1644 includes/admin-pages.php:118
+#: includes/admin-pages.php:1476 includes/admin-pages.php:1675
+msgid "Post Types"
+msgstr "Beitragstypen"
+
+#: assets/js/admin-pages.php:120 includes/admin-pages.php:120
+msgid "Select which post types the filter plugin should be active for."
+msgstr ""
+"Wählen Sie, für welche Beitragstypen das Filter-Plugin aktiv sein soll."
+
+#: assets/js/admin-pages.php:127 assets/js/admin-pages.php:253
+#: includes/admin-pages.php:127 includes/admin-pages.php:253
+msgid "Enabled Post Types"
+msgstr "Aktivierte Beitragstypen"
+
+#: assets/js/admin-pages.php:135 includes/admin-pages.php:135
+msgid "Auto-Inject Filter"
+msgstr "Filter automatisch einbinden"
+
+#: assets/js/admin-pages.php:143 assets/js/admin-pages.php:1769
+#: includes/admin-pages.php:143 includes/admin-pages.php:1800
+msgid "Advanced"
+msgstr "Erweitert"
+
+#: assets/js/admin-pages.php:145 includes/admin-pages.php:145
+msgid "Advanced configuration options."
+msgstr "Erweiterte Konfigurationsoptionen."
+
+#: assets/js/admin-pages.php:152 includes/admin-pages.php:152
+msgid "Max Filter Combinations"
+msgstr "Max. Filterkombinationen"
+
+#: assets/js/admin-pages.php:160 includes/admin-pages.php:160
+msgid "Max. Filters per Group"
+msgstr "Max. Filter pro Gruppe"
+
+#: assets/js/admin-pages.php:168 includes/admin-pages.php:168
+msgid "URL Endpoint"
+msgstr "URL-Endpunkt"
+
+#: assets/js/admin-pages.php:176 includes/admin-pages.php:176
+msgid "Bare Endpoint Behaviour"
+msgstr "Verhalten bei leerem Endpunkt"
+
+#: assets/js/admin-pages.php:184 includes/admin-pages.php:184
+msgid "Debug Mode"
+msgstr "Debug-Modus"
+
+#: assets/js/admin-pages.php:196 includes/admin-pages.php:196
+msgid "Cache Layers"
+msgstr "Cache-Schichten"
+
+#: assets/js/admin-pages.php:198 includes/admin-pages.php:198
+msgid "Enable or disable individual cache layers."
+msgstr "Einzelne Cache-Schichten aktivieren oder deaktivieren."
+
+#: assets/js/admin-pages.php:205 includes/admin-pages.php:205
+msgid "Object Cache"
+msgstr "Objekt-Cache"
+
+#: assets/js/admin-pages.php:213 includes/admin-pages.php:213
+msgid "Transient Cache"
+msgstr "Transient-Cache"
+
+#: assets/js/admin-pages.php:221 includes/admin-pages.php:221
+msgid "Settings File Cache"
+msgstr "Einstellungs-Datei-Cache"
+
+#: assets/js/admin-pages.php:229 includes/admin-pages.php:229
+msgid "Cache TTL (seconds)"
+msgstr "Cache-Lebensdauer (Sekunden)"
+
+#: assets/js/admin-pages.php:282 includes/admin-pages.php:282
+msgid "Auto-inject filter into archive pages"
+msgstr "Filter automatisch in Archivseiten einbinden"
+
+#: assets/js/admin-pages.php:295 includes/admin-pages.php:295
+msgid ""
+"Automatically inject the filter bar into archive/blog pages for selected "
+"post types (no shortcode needed)."
+msgstr ""
+"Filterleiste automatisch in Archiv-/Blog-Seiten für ausgewählte "
+"Beitragstypen einbinden (kein Shortcode erforderlich)."
+
+#: assets/js/admin-pages.php:318 includes/admin-pages.php:318
+msgid ""
+"Maximum number of active filter groups at once. Higher values increase URL "
+"complexity."
+msgstr ""
+"Maximale Anzahl gleichzeitig aktiver Filtergruppen. Höhere Werte erhöhen die "
+"URL-Komplexität."
+
+#: assets/js/admin-pages.php:341 includes/admin-pages.php:341
+msgid ""
+"Maximum number of terms that can be selected within a single filter group. "
+"When the limit is reached, all other terms in that group are visually "
+"disabled until a selection is removed. Set to 0 for no limit."
+msgstr ""
+"Maximale Anzahl wählbarer Begriffe pro Filtergruppe. Ist das Limit erreicht, "
+"werden alle anderen Begriffe dieser Gruppe visuell deaktiviert, bis eine "
+"Auswahl entfernt wird. 0 = kein Limit."
+
+#. translators: 1: example filter URL
+#: assets/js/admin-pages.php:367 includes/admin-pages.php:367
+#, php-format
+msgid ""
+"The URL segment used for filter URLs (default: \"filter\"). Example: /blog/"
+"%s/category/tag/"
+msgstr ""
+"Das URL-Segment für Filter-URLs (Standard: \"filter\"). Beispiel: /blog/%s/"
+"kategorie/tag/"
+
+#: assets/js/admin-pages.php:371 includes/admin-pages.php:371
+msgid ""
+"After changing this value, visit Settings → Permalinks to flush rewrite "
+"rules."
+msgstr ""
+"Nach dem Ändern dieses Wertes: Einstellungen → Permalinks aufrufen, um "
+"Rewrite-Regeln zu leeren."
+
+#: assets/js/admin-pages.php:387 includes/admin-pages.php:387
+msgid "Error 404"
+msgstr "Fehler 404"
+
+#: assets/js/admin-pages.php:388 includes/admin-pages.php:388
+msgid "Redirect to blog homepage"
+msgstr "Zur Blog-Startseite weiterleiten"
+
+#: assets/js/admin-pages.php:389 includes/admin-pages.php:389
+msgid "Custom destination"
+msgstr "Benutzerdefiniertes Ziel"
+
+#: assets/js/admin-pages.php:413 includes/admin-pages.php:413
+msgid "Full URL or absolute path for the 307 redirect."
+msgstr "Vollständige URL oder absoluter Pfad für die 307-Weiterleitung."
+
+#. translators: %s: example bare endpoint URL
+#: assets/js/admin-pages.php:420 includes/admin-pages.php:420
+#, php-format
+msgid ""
+"Determines what happens when the filter endpoint is accessed without a "
+"filter path (e.g. %s)."
+msgstr ""
+"Legt fest, was passiert, wenn der Filter-Endpunkt ohne Filterpfad aufgerufen "
+"wird (z. B. %s)."
+
+#: assets/js/admin-pages.php:445 includes/admin-pages.php:445
+msgid "Enable debug logging (independent of WP_DEBUG)"
+msgstr "Debug-Logging aktivieren (unabhängig von WP_DEBUG)"
+
+#: assets/js/admin-pages.php:447 includes/admin-pages.php:447
+msgid ""
+"When enabled, detailed logs are written to the PHP error log and debug-"
+"templates/ are used instead of templates/."
+msgstr ""
+"Bei Aktivierung werden detaillierte Logs ins PHP-Fehlerprotokoll geschrieben "
+"und debug-templates/ statt templates/ verwendet."
+
+#: assets/js/admin-pages.php:484 includes/admin-pages.php:484
+msgid "Reset to default"
+msgstr "Auf Standard zurücksetzen"
+
+#: assets/js/admin-pages.php:565 includes/admin-pages.php:565
+msgid ""
+"Reset all CSS variable overrides in this tab to their defaults? This cannot "
+"be undone until you first save the current values."
+msgstr ""
+"Alle CSS-Variablen-Überschreibungen in diesem Tab auf die Standardwerte "
+"zurücksetzen? Dies kann nicht rückgängig gemacht werden, sofern die "
+"aktuellen Werte nicht zuerst gespeichert wurden."
+
+#: assets/js/admin-pages.php:566 includes/admin-pages.php:566
+msgid "Reset Tab to Defaults"
+msgstr "Tab auf Standardwerte zurücksetzen"
+
+#: assets/js/admin-pages.php:567 includes/admin-pages.php:567
+msgid "Clears all overrides in this tab. Click \"Save Settings\" to apply."
+msgstr ""
+"Löscht alle Überschreibungen in diesem Tab. Auf \"Einstellungen speichern\" "
+"klicken, um die Änderungen zu übernehmen."
+
+#: assets/js/admin-pages.php:599 includes/admin-pages.php:599
+msgid "Primary Colors"
+msgstr "Primärfarben"
+
+#: assets/js/admin-pages.php:603 includes/admin-pages.php:603
+msgid "Primary Color"
+msgstr "Primärfarbe"
+
+#: assets/js/admin-pages.php:607 includes/admin-pages.php:607
+msgid "Primary Hover"
+msgstr "Primär-Hover"
+
+#: assets/js/admin-pages.php:611 includes/admin-pages.php:611
+msgid "Typography"
+msgstr "Typografie"
+
+#: assets/js/admin-pages.php:615 includes/admin-pages.php:615
+msgid "Base Font Size"
+msgstr "Basis-Schriftgröße"
+
+#: assets/js/admin-pages.php:619 includes/admin-pages.php:619
+msgid "Small Font Size"
+msgstr "Kleine Schriftgröße"
+
+#: assets/js/admin-pages.php:623 assets/js/admin-pages.php:667
+#: includes/admin-pages.php:623 includes/admin-pages.php:667
+msgid "Inherit"
+msgstr "Vererbt"
+
+#: assets/js/admin-pages.php:629 includes/admin-pages.php:629
+msgid "Medium Font Weight"
+msgstr "Mittlere Schriftstärke"
+
+#: assets/js/admin-pages.php:633 includes/admin-pages.php:633
+msgid "Spacing & Animation"
+msgstr "Abstände & Animation"
+
+#: assets/js/admin-pages.php:637 includes/admin-pages.php:637
+msgid "Gap (small)"
+msgstr "Abstand (klein)"
+
+#: assets/js/admin-pages.php:641 includes/admin-pages.php:641
+msgid "Gap (large)"
+msgstr "Abstand (groß)"
+
+#: assets/js/admin-pages.php:645 includes/admin-pages.php:645
+msgid "Section Gap"
+msgstr "Abschnittsabstand"
+
+#: assets/js/admin-pages.php:649 includes/admin-pages.php:649
+msgid "Transition"
+msgstr "Übergang"
+
+#: assets/js/admin-pages.php:674 includes/admin-pages.php:674
+msgid "Filter Buttons"
+msgstr "Filter-Schaltflächen"
+
+#: assets/js/admin-pages.php:678 assets/js/admin-pages.php:738
+#: assets/js/admin-pages.php:766 assets/js/admin-pages.php:891
+#: includes/admin-pages.php:678 includes/admin-pages.php:738
+#: includes/admin-pages.php:766 includes/admin-pages.php:891
+msgid "Background"
+msgstr "Hintergrund"
+
+#: assets/js/admin-pages.php:682 assets/js/admin-pages.php:742
+#: assets/js/admin-pages.php:895 includes/admin-pages.php:682
+#: includes/admin-pages.php:742 includes/admin-pages.php:895
+msgid "Text Color"
+msgstr "Textfarbe"
+
+#: assets/js/admin-pages.php:686 assets/js/admin-pages.php:754
+#: assets/js/admin-pages.php:899 includes/admin-pages.php:686
+#: includes/admin-pages.php:754 includes/admin-pages.php:899
+msgid "Hover Background"
+msgstr "Hover-Hintergrund"
+
+#: assets/js/admin-pages.php:690 assets/js/admin-pages.php:758
+#: assets/js/admin-pages.php:903 includes/admin-pages.php:690
+#: includes/admin-pages.php:758 includes/admin-pages.php:903
+msgid "Hover Text Color"
+msgstr "Hover-Textfarbe"
+
+#: assets/js/admin-pages.php:694 assets/js/admin-pages.php:907
+#: includes/admin-pages.php:694 includes/admin-pages.php:907
+msgid "Active Background"
+msgstr "Aktiver Hintergrund"
+
+#: assets/js/admin-pages.php:698 assets/js/admin-pages.php:911
+#: includes/admin-pages.php:698 includes/admin-pages.php:911
+msgid "Active Text Color"
+msgstr "Aktive Textfarbe"
+
+#: assets/js/admin-pages.php:702 assets/js/admin-pages.php:750
+#: assets/js/admin-pages.php:778 assets/js/admin-pages.php:915
+#: includes/admin-pages.php:702 includes/admin-pages.php:750
+#: includes/admin-pages.php:778 includes/admin-pages.php:915
+msgid "Border Radius"
+msgstr "Eckenradius"
+
+#: assets/js/admin-pages.php:706 includes/admin-pages.php:706
+msgid "Padding"
+msgstr "Innenabstand"
+
+#: assets/js/admin-pages.php:710 includes/admin-pages.php:710
+msgid "Button Font Size"
+msgstr "Schaltflächen-Schriftgröße"
+
+#: assets/js/admin-pages.php:714 includes/admin-pages.php:714
+msgid "Button Font Weight"
+msgstr "Schaltflächen-Schriftstärke"
+
+#: assets/js/admin-pages.php:718 includes/admin-pages.php:718
+msgid "Filter Group Labels"
+msgstr "Filtergruppen-Beschriftungen"
+
+#: assets/js/admin-pages.php:722 includes/admin-pages.php:722
+msgid "Label Color"
+msgstr "Beschriftungsfarbe"
+
+#: assets/js/admin-pages.php:726 includes/admin-pages.php:726
+msgid "Label Font Weight"
+msgstr "Beschriftungs-Schriftstärke"
+
+#: assets/js/admin-pages.php:730 includes/admin-pages.php:730
+msgid "Label Font Size"
+msgstr "Beschriftungs-Schriftgröße"
+
+#: assets/js/admin-pages.php:734 assets/js/admin-pages.php:1069
+#: includes/admin-pages.php:734 includes/admin-pages.php:1069
+msgid "Reset Button"
+msgstr "Zurücksetzen-Schaltfläche"
+
+#: assets/js/admin-pages.php:746 assets/js/admin-pages.php:770
+#: includes/admin-pages.php:746 includes/admin-pages.php:770
+msgid "Border Color"
+msgstr "Rahmenfarbe"
+
+#: assets/js/admin-pages.php:762 includes/admin-pages.php:762
+msgid "Dropdown Panel"
+msgstr "Dropdown-Bereich"
+
+#: assets/js/admin-pages.php:774 includes/admin-pages.php:774
+msgid "Box Shadow"
+msgstr "Box-Schatten"
+
+#: assets/js/admin-pages.php:795 includes/admin-pages.php:795
+msgid "Card Layout"
+msgstr "Karten-Layout"
+
+#: assets/js/admin-pages.php:799 includes/admin-pages.php:799
+msgid "Card Background"
+msgstr "Karten-Hintergrund"
+
+#: assets/js/admin-pages.php:803 includes/admin-pages.php:803
+msgid "Card Border"
+msgstr "Karten-Rahmen"
+
+#: assets/js/admin-pages.php:807 includes/admin-pages.php:807
+msgid "Card Shadow"
+msgstr "Karten-Schatten"
+
+#: assets/js/admin-pages.php:811 includes/admin-pages.php:811
+msgid "Card Hover Shadow"
+msgstr "Karten-Hover-Schatten"
+
+#: assets/js/admin-pages.php:815 includes/admin-pages.php:815
+msgid "Card Radius"
+msgstr "Karten-Eckenradius"
+
+#: assets/js/admin-pages.php:819 includes/admin-pages.php:819
+msgid "Card Padding"
+msgstr "Karten-Innenabstand"
+
+#: assets/js/admin-pages.php:826 includes/admin-pages.php:826
+msgid "Grid Columns (desktop)"
+msgstr "Rasterspalten (Desktop)"
+
+#: assets/js/admin-pages.php:833 includes/admin-pages.php:833
+msgid "Grid Columns (tablet)"
+msgstr "Rasterspalten (Tablet)"
+
+#: assets/js/admin-pages.php:834 includes/admin-pages.php:834
+msgid "Applies below 900px."
+msgstr "Gilt unterhalb von 900 px."
+
+#: assets/js/admin-pages.php:841 includes/admin-pages.php:841
+msgid "Grid Columns (mobile)"
+msgstr "Rasterspalten (Mobil)"
+
+#: assets/js/admin-pages.php:842 includes/admin-pages.php:842
+msgid "Applies below 600px."
+msgstr "Gilt unterhalb von 600 px."
+
+#: assets/js/admin-pages.php:846 includes/admin-pages.php:846
+msgid "Typography & Links"
+msgstr "Typografie & Links"
+
+#: assets/js/admin-pages.php:850 includes/admin-pages.php:850
+msgid "Primary Text"
+msgstr "Primärer Text"
+
+#: assets/js/admin-pages.php:854 includes/admin-pages.php:854
+msgid "Secondary Text"
+msgstr "Sekundärer Text"
+
+#: assets/js/admin-pages.php:858 includes/admin-pages.php:858
+msgid "Link Color"
+msgstr "Linkfarbe"
+
+#: assets/js/admin-pages.php:862 includes/admin-pages.php:862
+msgid "Link Hover"
+msgstr "Link-Hover"
+
+#: assets/js/admin-pages.php:866 includes/admin-pages.php:866
+msgid "No Results Text"
+msgstr "Text bei keinen Ergebnissen"
+
+#: assets/js/admin-pages.php:883 includes/admin-pages.php:883
+msgid "Pagination Buttons"
+msgstr "Seitennavigation-Schaltflächen"
+
+#: assets/js/admin-pages.php:886 includes/admin-pages.php:886
+msgid "Leave empty to inherit from Filter Button colors."
+msgstr "Leer lassen, um die Farben der Filter-Schaltflächen zu übernehmen."
+
+#: assets/js/admin-pages.php:919 includes/admin-pages.php:919
+msgid "Font Size"
+msgstr "Schriftgröße"
+
+#: assets/js/admin-pages.php:938 includes/admin-pages.php:938
+msgid "Default"
+msgstr "Standard"
+
+#: assets/js/admin-pages.php:939 includes/admin-pages.php:939
+msgid "WordPress blue accent, light backgrounds."
+msgstr "WordPress-Blau als Akzent, helle Hintergründe."
+
+#: assets/js/admin-pages.php:943 includes/admin-pages.php:943
+msgid "Dark"
+msgstr "Dunkel"
+
+#: assets/js/admin-pages.php:944 includes/admin-pages.php:944
+msgid "Dark backgrounds, light texts, blue accent."
+msgstr "Dunkle Hintergründe, helle Texte, blauer Akzent."
+
+#: assets/js/admin-pages.php:948 includes/admin-pages.php:948
+msgid "Contrast"
+msgstr "Kontrast"
+
+#: assets/js/admin-pages.php:949 includes/admin-pages.php:949
+msgid "Red reset button for stronger visual differentiation."
+msgstr "Rote Zurücksetzen-Schaltfläche für stärkere visuelle Differenzierung."
+
+#: assets/js/admin-pages.php:953 includes/admin-pages.php:953
+msgid "Monochrome"
+msgstr "Monochrom"
+
+#: assets/js/admin-pages.php:954 includes/admin-pages.php:954
+msgid "Black, white and grey only – no color accent."
+msgstr "Nur Schwarz, Weiß und Grau – kein Farbakzent."
+
+#: assets/js/admin-pages.php:959 includes/admin-pages.php:959
+msgid ""
+"Choose a predefined color scheme. Your custom CSS variable overrides (other "
+"tabs) are applied on top of the selected scheme."
+msgstr ""
+"Ein vordefiniertes Farbschema auswählen. Eigene CSS-Variablen-"
+"Überschreibungen (andere Tabs) werden zusätzlich angewendet."
+
+#: assets/js/admin-pages.php:1001 includes/admin-pages.php:1001
+msgid "Full stylesheet"
+msgstr "Vollständiges Stylesheet"
+
+#: assets/js/admin-pages.php:1002 includes/admin-pages.php:1002
+msgid "Loads the complete plugin CSS (layout + variables)."
+msgstr "Lädt das komplette Plugin-CSS (Layout + Variablen)."
+
+#: assets/js/admin-pages.php:1005 includes/admin-pages.php:1005
+msgid "Variables only"
+msgstr "Nur Variablen"
+
+#: assets/js/admin-pages.php:1006 includes/admin-pages.php:1006
+msgid ""
+"Outputs only the :root CSS variable block as inline style. Your theme "
+"handles all layout CSS."
+msgstr ""
+"Gibt nur den :root-CSS-Variablenblock als Inline-Style aus. Das Theme "
+"übernimmt das gesamte Layout-CSS."
+
+#: assets/js/admin-pages.php:1009 includes/admin-pages.php:1009
+msgid "Disabled"
+msgstr "Deaktiviert"
+
+#: assets/js/admin-pages.php:1010 includes/admin-pages.php:1010
+msgid "No CSS is loaded at all. Fully self-managed styling."
+msgstr "Es wird kein CSS geladen. Vollständig selbstverwaltetes Styling."
+
+#: assets/js/admin-pages.php:1016 includes/admin-pages.php:1016
+msgid "Always visible"
+msgstr "Immer sichtbar"
+
+#: assets/js/admin-pages.php:1017 includes/admin-pages.php:1017
+msgid "The reset button is always shown, even when no filters are active."
+msgstr ""
+"Die Schaltfläche wird immer angezeigt, auch wenn keine Filter aktiv sind."
+
+#: assets/js/admin-pages.php:1020 includes/admin-pages.php:1020
+msgid "On selection"
+msgstr "Bei Auswahl"
+
+#: assets/js/admin-pages.php:1021 includes/admin-pages.php:1021
+msgid "The reset button appears only when at least one filter is active."
+msgstr "Die Schaltfläche erscheint nur, wenn mindestens ein Filter aktiv ist."
+
+#: assets/js/admin-pages.php:1024 includes/admin-pages.php:1024
+msgid "Never"
+msgstr "Nie"
+
+#: assets/js/admin-pages.php:1025 includes/admin-pages.php:1025
+msgid "The reset button is never shown."
+msgstr "Die Schaltfläche wird nie angezeigt."
+
+#: assets/js/admin-pages.php:1031 includes/admin-pages.php:1031
+msgid "Below posts"
+msgstr "Unterhalb der Beiträge"
+
+#: assets/js/admin-pages.php:1032 includes/admin-pages.php:1032
+msgid "Pagination appears after the post list (default)."
+msgstr "Die Seitennavigation erscheint nach der Beiragsliste (Standard)."
+
+#: assets/js/admin-pages.php:1035 includes/admin-pages.php:1035
+msgid "Above posts"
+msgstr "Oberhalb der Beiträge"
+
+#: assets/js/admin-pages.php:1036 includes/admin-pages.php:1036
+msgid "Pagination appears before the post list."
+msgstr "Die Seitennavigation erscheint vor der Beitragsliste."
+
+#: assets/js/admin-pages.php:1039 includes/admin-pages.php:1039
+msgid "Above and below posts"
+msgstr "Ober- und unterhalb der Beiträge"
+
+#: assets/js/admin-pages.php:1040 includes/admin-pages.php:1040
+msgid "Pagination appears both before and after the post list."
+msgstr ""
+"Die Seitennavigation erscheint sowohl vor als auch nach der Beitragsliste."
+
+#: assets/js/admin-pages.php:1046 assets/js/admin-pages.php:1048
+#: includes/admin-pages.php:1046 includes/admin-pages.php:1048
+msgid "Stylesheet Mode"
+msgstr "Stylesheet-Modus"
+
+#: assets/js/admin-pages.php:1065 includes/admin-pages.php:1065
+msgid "Filter Interaction"
+msgstr "Filterinteraktion"
+
+#: assets/js/admin-pages.php:1067 includes/admin-pages.php:1067
+msgid "Reset Button Visibility"
+msgstr "Sichtbarkeit der Zurücksetzen-Schaltfläche"
+
+#: assets/js/admin-pages.php:1093 includes/admin-pages.php:1093
+msgid "Plus/Minus Mode"
+msgstr "Plus/Minus-Modus"
+
+#: assets/js/admin-pages.php:1096 includes/admin-pages.php:1096
+msgid ""
+"Adds a +/– icon to each filter button. Clicking the label selects a filter "
+"exclusively; clicking + adds it to the selection."
+msgstr ""
+"Fügt jedem Filter-Button ein +/–-Symbol hinzu. Klick auf die Beschriftung "
+"wählt den Filter exklusiv; Klick auf + fügt ihn zur aktuellen Auswahl hinzu."
+
+#: assets/js/admin-pages.php:1106 includes/admin-pages.php:1106
+msgid "Show More Button (…)"
+msgstr "Mehr-anzeigen-Schaltfläche (…)"
+
+#: assets/js/admin-pages.php:1109 includes/admin-pages.php:1109
+msgid "Show button when group has more than"
+msgstr "Schaltfläche anzeigen, wenn die Gruppe mehr als"
+
+#: assets/js/admin-pages.php:1118 includes/admin-pages.php:1118
+msgid "filters"
+msgstr "Filter enthält"
+
+#: assets/js/admin-pages.php:1121 includes/admin-pages.php:1121
+msgid "Not available in Dropdown layout."
+msgstr "Im Dropdown-Layout nicht verfügbar."
+
+#: assets/js/admin-pages.php:1126 assets/js/admin-pages.php:1128
+#: includes/admin-pages.php:1126 includes/admin-pages.php:1128
+msgid "Pagination Position"
+msgstr "Seitennavigation Position"
+
+#: assets/js/admin-pages.php:1142 includes/admin-pages.php:1142
+msgid ""
+"Applies to auto-injection only. Shortcode pagination is placed manually."
+msgstr ""
+"Gilt nur für die automatische Einbindung. Shortcode-Paginierung wird manuell "
+"platziert."
+
+#: assets/js/admin-pages.php:1146 includes/admin-pages.php:1146
+msgid "Custom CSS"
+msgstr "Eigenes CSS"
+
+#: assets/js/admin-pages.php:1154 includes/admin-pages.php:1154
+msgid ""
+"Additional CSS rules appended after the plugin's stylesheet. Avoid using !"
+"important."
+msgstr ""
+"Zusätzliche CSS-Regeln, die nach dem Plugin-Stylesheet angehängt werden. !"
+"important vermeiden."
+
+#: assets/js/admin-pages.php:1181 includes/admin-pages.php:1181
+msgid "Enable WordPress Object Cache for query results"
+msgstr "WordPress-Objekt-Cache für Abfrageergebnisse aktivieren"
+
+#: assets/js/admin-pages.php:1202 includes/admin-pages.php:1202
+msgid "Enable transient caching for taxonomy term lists"
+msgstr "Transient-Caching für Taxonomie-Termlisten aktivieren"
+
+#: assets/js/admin-pages.php:1223 includes/admin-pages.php:1223
+msgid "Enable PHP file cache for settings (fastest option)"
+msgstr "PHP-Datei-Cache für Einstellungen aktivieren (schnellste Option)"
+
+#. translators: %s: settings cache directory path
+#: assets/js/admin-pages.php:1229 includes/admin-pages.php:1229
+#, php-format
+msgid "Cache files are stored in: %s"
+msgstr "Cache-Dateien werden gespeichert in: %s"
+
+#. translators: 1: seconds value, 2: human readable
+#: assets/js/admin-pages.php:1259 includes/admin-pages.php:1259
+#, php-format
+msgid "Transient cache TTL in seconds. Current: %1$d seconds (%2$s)"
+msgstr "Transient-Cache-Lebensdauer in Sekunden. Aktuell: %1$d Sekunden (%2$s)"
+
+#: assets/js/admin-pages.php:1287 includes/admin-pages.php:1287
+msgid "Rewrite rules flushed."
+msgstr "Rewrite-Regeln geleert."
+
+#: assets/js/admin-pages.php:1291 includes/admin-pages.php:1291
+msgid "Settings saved."
+msgstr "Einstellungen gespeichert."
+
+#: assets/js/admin-pages.php:1308 includes/admin-pages.php:1308
+msgid "Rewrite Rules"
+msgstr "Rewrite-Regeln"
+
+#: assets/js/admin-pages.php:1309 includes/admin-pages.php:1309
+msgid "After changing the URL endpoint, flush the rewrite rules."
+msgstr "Nach dem Ändern des URL-Endpunkts die Rewrite-Regeln leeren."
+
+#: includes/admin-pages.php:2139
+msgid "After changing the URL endpoint or filter group configuration, flush the rewrite rules."
+msgstr "Nach dem Ändern des URL-Endpunkts oder der Filtergruppen-Konfiguration leeren Sie die Rewrite-Regeln."
+
+#: assets/js/admin-pages.php:1313 includes/admin-pages.php:1313
+msgid "Flush Rewrite Rules"
+msgstr "Rewrite-Regeln leeren"
+
+#: assets/js/admin-pages.php:1330 includes/admin-pages.php:1330
+msgid "Filter groups saved."
+msgstr "Filtergruppen gespeichert."
+
+#: assets/js/admin-pages.php:1343 includes/admin-pages.php:1343
+msgid ""
+"Configure which taxonomies are used as filter groups. The order here "
+"determines the URL segment order."
+msgstr ""
+"Konfigurieren Sie, welche Taxonomien als Filtergruppen verwendet werden. Die "
+"Reihenfolge hier bestimmt die URL-Segment-Reihenfolge."
+
+#: assets/js/admin-pages.php:1351 includes/admin-pages.php:1351
+msgid "No filter groups configured yet. Click \"Add Filter Group\" below."
+msgstr ""
+"Noch keine Filtergruppen konfiguriert. Unten auf \"+ Filtergruppe "
+"hinzufügen\" klicken."
+
+#: assets/js/admin-pages.php:1358 assets/js/admin-pages.php:1551
+#: includes/admin-pages.php:1358 includes/admin-pages.php:1567
+msgid "Custom Taxonomy"
+msgstr "Eigene Taxonomie"
+
+#: assets/js/admin-pages.php:1369 assets/js/admin-pages.php:1561
+#: includes/admin-pages.php:1369 includes/admin-pages.php:1577
+msgid "Register as new WordPress taxonomy"
+msgstr "Als neue WordPress-Taxonomie registrieren"
+
+#: assets/js/admin-pages.php:1371 assets/js/admin-pages.php:1563
+#: includes/admin-pages.php:1371 includes/admin-pages.php:1579
+msgid "Enable only if this taxonomy does not yet exist in WordPress."
+msgstr "Nur aktivieren, wenn diese Taxonomie noch nicht in WordPress existiert."
+
+#: assets/js/admin-pages.php:1375 assets/js/admin-pages.php:1567
+#: includes/admin-pages.php:1375 includes/admin-pages.php:1583
+msgid "Taxonomy Slug"
+msgstr "Taxonomie-Slug"
+
+#: assets/js/admin-pages.php:1375 assets/js/admin-pages.php:1567
+#: includes/admin-pages.php:1375 includes/admin-pages.php:1583
+msgid "Required"
+msgstr "Pflichtfeld"
+
+#: assets/js/admin-pages.php:1383 assets/js/admin-pages.php:1572
+#: includes/admin-pages.php:1383 includes/admin-pages.php:1588
+msgid ""
+"Required. Unique slug for the new taxonomy, lowercase letters and hyphens "
+"only (e.g. \"meine-themen\")."
+msgstr ""
+"Pflichtfeld. Eindeutiger Slug für die neue Taxonomie, nur Kleinbuchstaben "
+"und Bindestriche (z. B. \"meine-themen\")."
+
+#: assets/js/admin-pages.php:1387 assets/js/admin-pages.php:1576
+#: includes/admin-pages.php:1387 includes/admin-pages.php:1592
+msgid "Taxonomy"
+msgstr "Taxonomie"
+
+#: assets/js/admin-pages.php:1398 assets/js/admin-pages.php:1586
+#: includes/admin-pages.php:1398 includes/admin-pages.php:1602
+msgid "Select the existing WordPress taxonomy to use as filter."
+msgstr "Wählen Sie die bestehende WordPress-Taxonomie für diesen Filter aus."
+
+#: assets/js/admin-pages.php:1402 assets/js/admin-pages.php:1590
+#: includes/admin-pages.php:1402 includes/admin-pages.php:1606
+msgid "Rewrite Slug"
+msgstr "Rewrite-Slug"
+
+#: assets/js/admin-pages.php:1408 assets/js/admin-pages.php:1595
+#: includes/admin-pages.php:1408 includes/admin-pages.php:1611
+msgid ""
+"URL rewrite slug for this custom taxonomy (e.g. \"my-topics\"). Defaults to "
+"the taxonomy name if left empty."
+msgstr ""
+"URL-Rewrite-Slug für diese Taxonomie (z. B. \"meine-themen\"). Standard: "
+"der Taxonomie-Name, wenn leer gelassen."
+
+#: assets/js/admin-pages.php:1412 assets/js/admin-pages.php:1599
+#: includes/admin-pages.php:1412 includes/admin-pages.php:1615
+msgid "Type"
+msgstr "Typ"
+
+#: assets/js/admin-pages.php:1422 assets/js/admin-pages.php:1608
+#: includes/admin-pages.php:1422 includes/admin-pages.php:1624
+msgid "Hierarchical (like categories, with parent/child terms)"
+msgstr "Hierarchisch (wie Kategorien, mit übergeordneten und untergeordneten Einträgen)"
+
+#: assets/js/admin-pages.php:1424 assets/js/admin-pages.php:1610
+#: includes/admin-pages.php:1424 includes/admin-pages.php:1626
+msgid "Uncheck for tag-like behaviour (flat list, no parent/child)."
+msgstr "Deaktivieren für tag-ähnliches Verhalten (flache Liste, keine Hierarchie)."
+
+#: assets/js/admin-pages.php:1428 assets/js/admin-pages.php:1614
+#: includes/admin-pages.php:1428 includes/admin-pages.php:1630
+msgid "Public"
+msgstr "Öffentlich"
+
+#: assets/js/admin-pages.php:1438 assets/js/admin-pages.php:1623
+msgid "Create archive page (public = true)"
+msgstr "Archivseite erstellen (public = true)"
+
+#: assets/js/admin-pages.php:1440 assets/js/admin-pages.php:1625
+msgid ""
+"Enable to give this taxonomy its own archive page on the frontend. Disable "
+"for purely internal taxonomies."
+msgstr ""
+"Aktiviert eine Archivseite für diese Taxonomie im Frontend. Für rein "
+"interne Taxonomien deaktivieren."
+
+#: assets/js/admin-pages.php:1444 assets/js/admin-pages.php:1629
+#: includes/admin-pages.php:1460 includes/admin-pages.php:1660
+msgid "REST API"
+msgstr "REST-API"
+
+#: assets/js/admin-pages.php:1454 assets/js/admin-pages.php:1638
+#: includes/admin-pages.php:1470 includes/admin-pages.php:1669
+msgid "Expose in REST API (show_in_rest = true)"
+msgstr "In der REST-API verfügbar machen (show_in_rest = true)"
+
+#: assets/js/admin-pages.php:1456 assets/js/admin-pages.php:1640
+#: includes/admin-pages.php:1472 includes/admin-pages.php:1671
+msgid ""
+"Required for the Block Editor (Gutenberg). Disable only for purely server-"
+"side workflows."
+msgstr ""
+"Erforderlich für den Block-Editor (Gutenberg). Nur für rein serverseitige "
+"Workflows deaktivieren."
+
+#: assets/js/admin-pages.php:1477 assets/js/admin-pages.php:1656
+#: includes/admin-pages.php:1493 includes/admin-pages.php:1687
+msgid "Select which post types this taxonomy is attached to."
+msgstr "Wählen Sie, welchen Beitragstypen diese Taxonomie zugewiesen wird."
+
+#: includes/admin-pages.php
+msgid "On which archive pages should this filter group appear? Leave empty = all enabled post types. For new (custom) taxonomies this also determines for which post types the taxonomy is registered in WordPress."
+msgstr "Auf welchen Archiv-Seiten soll diese Filtergruppe angezeigt werden? Leer = alle aktivierten Beitragstypen. Für neue (eigene) Taxonomien bestimmt dies außerdem, für welche Beitragstypen die Taxonomie in WordPress registriert wird."
+
+#: includes/admin-pages.php
+msgid "URL-Filter-Segment"
+msgstr "URL-Filter-Segment"
+
+#: assets/js/admin-pages.php:1481 assets/js/admin-pages.php:1660
+#: includes/admin-pages.php:1497 includes/admin-pages.php:1691
+msgid "Label"
+msgstr "Bezeichnung"
+
+#: assets/js/admin-pages.php:1487 assets/js/admin-pages.php:1665
+#: includes/admin-pages.php:1503 includes/admin-pages.php:1696
+msgid ""
+"Shown in the filter bar and (for custom taxonomies) in the WordPress backend."
+msgstr "Wird in der Filterleiste und (bei eigenen Taxonomien) im WordPress-Backend angezeigt."
+
+#: assets/js/admin-pages.php:1491 assets/js/admin-pages.php:1669
+#: includes/admin-pages.php:1507 includes/admin-pages.php:1700
+msgid "Order"
+msgstr "Reihenfolge"
+
+#: assets/js/admin-pages.php:1500 assets/js/admin-pages.php:1677
+#: includes/admin-pages.php:1516 includes/admin-pages.php:1708
+msgid "Enabled"
+msgstr "Aktiviert"
+
+#: assets/js/admin-pages.php:1520 assets/js/admin-pages.php:1697
+#: includes/admin-pages.php:1536 includes/admin-pages.php:1728
+msgid "Remove Group"
+msgstr "Gruppe entfernen"
+
+#: assets/js/admin-pages.php:1523 assets/js/admin-pages.php:1700
+#: includes/admin-pages.php:1539 includes/admin-pages.php:1731
+msgid ""
+"Warning: Removing this group will unregister the custom taxonomy — all term "
+"assignments on posts will be permanently lost and cannot be recovered."
+msgstr ""
+"Warnung: Das Entfernen dieser Gruppe hebt die Registrierung der eigenen "
+"Taxonomie auf – alle Term-Zuweisungen an Beiträgen gehen dauerhaft verloren "
+"und können nicht wiederhergestellt werden."
+
+#: assets/js/admin-pages.php:1533 includes/admin-pages.php:1549
+msgid "+ Add Filter Group"
+msgstr "+ Filtergruppe hinzufügen"
+
+#: assets/js/admin-pages.php:1537 includes/admin-pages.php:1553
+msgid "Save Filter Groups"
+msgstr "Filtergruppen speichern"
+
+#: assets/js/admin-pages.php:1708 includes/admin-pages.php:1739
+msgid "Are you sure you want to remove this filter group?"
+msgstr "Sind Sie sicher, dass Sie diese Filtergruppe entfernen möchten?"
+
+#: assets/js/admin-pages.php:1709 includes/admin-pages.php:1740
+msgid ""
+"Warning: This group uses a Custom Taxonomy registered by this plugin.\n"
+"\n"
+"Removing it will unregister the taxonomy \\u2014 all term assignments on "
+"posts will be permanently lost and cannot be recovered.\n"
+"\n"
+"Are you sure you want to remove this group?"
+msgstr ""
+"Warnung: Diese Gruppe verwendet eine eigene Taxonomie, die von diesem Plugin "
+"registriert wurde.\n"
+"\n"
+"Das Entfernen hebt die Registrierung auf – alle Term-Zuweisungen an "
+"Beiträgen gehen dauerhaft verloren und können nicht wiederhergestellt werden.\n"
+"\n"
+"Sind Sie sicher, dass Sie diese Gruppe entfernen möchten?"
+
+#: assets/js/admin-pages.php:1751 includes/admin-pages.php:1782
+msgid "Layout settings saved."
+msgstr "Layout-Einstellungen gespeichert."
+
+#: assets/js/admin-pages.php:1764 includes/admin-pages.php:1795
+msgid "Global"
+msgstr "Global"
+
+#: assets/js/admin-pages.php:1765 includes/admin-pages.php:1796
+msgid "Filter"
+msgstr "Filter"
+
+#: assets/js/admin-pages.php:1766 includes/admin-pages.php:1797
+msgid "Posts"
+msgstr "Beiträge"
+
+#: assets/js/admin-pages.php:1767 includes/admin-pages.php:1798
+msgid "Pagination"
+msgstr "Seitennavigation"
+
+#: assets/js/admin-pages.php:1768 includes/admin-pages.php:1799
+msgid "Color Schemes"
+msgstr "Farbschemata"
+
+#: assets/js/admin-pages.php:1808 includes/admin-pages.php:1839
+msgid "Default Layouts"
+msgstr "Standard-Layouts"
+
+#: assets/js/admin-pages.php:1810 assets/js/admin-pages.php:1874
+#: includes/admin-pages.php:1841 includes/admin-pages.php:1905
+msgid "Filter Layout"
+msgstr "Filter-Layout"
+
+#: assets/js/admin-pages.php:1813 assets/js/admin-pages.php:1877
+#: includes/admin-pages.php:1844 includes/admin-pages.php:1908
+msgid "Horizontal Bar"
+msgstr "Horizontale Leiste"
+
+#: assets/js/admin-pages.php:1814 assets/js/admin-pages.php:1878
+#: includes/admin-pages.php:1845 includes/admin-pages.php:1909
+msgid "Sidebar"
+msgstr "Seitenleiste"
+
+#: assets/js/admin-pages.php:1815 assets/js/admin-pages.php:1879
+#: includes/admin-pages.php:1846 includes/admin-pages.php:1910
+msgid "Dropdown"
+msgstr "Dropdown"
+
+#: assets/js/admin-pages.php:1816 assets/js/admin-pages.php:1880
+#: includes/admin-pages.php:1847 includes/admin-pages.php:1911
+msgid "Column View"
+msgstr "Spaltenansicht"
+
+#: assets/js/admin-pages.php:1822 includes/admin-pages.php:1853
+msgid "Post List Layout"
+msgstr "Beitragslisten-Layout"
+
+#: assets/js/admin-pages.php:1825 includes/admin-pages.php:1856
+msgid "Cards (grid)"
+msgstr "Karten (Raster)"
+
+#: assets/js/admin-pages.php:1826 includes/admin-pages.php:1857
+msgid "Rows (list)"
+msgstr "Zeilen (Liste)"
+
+#: assets/js/admin-pages.php:1827 assets/js/admin-pages.php:1907
+#: includes/admin-pages.php:1858 includes/admin-pages.php:1938
+msgid "Minimal"
+msgstr "Minimal"
+
+#: assets/js/admin-pages.php:1832 includes/admin-pages.php:1863
+msgid ""
+"Applies only to [jpkcom_postfilter_list] shortcode. Auto-injection uses your "
+"theme's native loop template."
+msgstr ""
+"Gilt nur für den [jpkcom_postfilter_list]-Shortcode. Die automatische "
+"Einbindung verwendet das native Loop-Template des Themes."
+
+#: assets/js/admin-pages.php:1859 includes/admin-pages.php:1890
+msgid "Shortcode Builder"
+msgstr "Shortcode-Builder"
+
+#: assets/js/admin-pages.php:1860 includes/admin-pages.php:1891
+msgid "Configure options below. The preview updates automatically."
+msgstr ""
+"Konfigurieren Sie die Optionen unten. Die Vorschau aktualisiert sich "
+"automatisch."
+
+#: assets/js/admin-pages.php:1864 includes/admin-pages.php:1895
+msgid "Post Type"
+msgstr "Beitragstyp"
+
+#: assets/js/admin-pages.php:1888 includes/admin-pages.php:1919
+msgid "group-slug-1, group-slug-2"
+msgstr "gruppen-slug-1, gruppen-slug-2"
+
+#: assets/js/admin-pages.php:1889 includes/admin-pages.php:1920
+msgid "Comma-separated group slugs to display. Leave empty to show all."
+msgstr "Kommagetrennte Gruppen-Slugs. Leer lassen, um alle anzuzeigen."
+
+#: assets/js/admin-pages.php:1893 includes/admin-pages.php:1924
+msgid "Show Reset Button"
+msgstr "Zurücksetzen-Schaltfläche anzeigen"
+
+#: assets/js/admin-pages.php:1897 includes/admin-pages.php:1928
+msgid "Display a \"Reset filters\" link"
+msgstr "Einen \"Filter zurücksetzen\"-Link anzeigen"
+
+#: assets/js/admin-pages.php:1902 includes/admin-pages.php:1933
+msgid "List Layout"
+msgstr "Listenlayout"
+
+#: assets/js/admin-pages.php:1905 includes/admin-pages.php:1936
+msgid "Cards"
+msgstr "Karten"
+
+#: assets/js/admin-pages.php:1906 includes/admin-pages.php:1937
+msgid "Rows"
+msgstr "Zeilen"
+
+#: assets/js/admin-pages.php:1912 includes/admin-pages.php:1943
+msgid "Posts per Page"
+msgstr "Beiträge pro Seite"
+
+#: assets/js/admin-pages.php:1915 includes/admin-pages.php:1946
+msgid "-1 = all posts"
+msgstr "-1 = alle Beiträge"
+
+#: assets/js/admin-pages.php:1919 includes/admin-pages.php:1950
+msgid "Order By"
+msgstr "Sortieren nach"
+
+#: assets/js/admin-pages.php:1922 includes/admin-pages.php:1953
+msgid "Date"
+msgstr "Datum"
+
+#: assets/js/admin-pages.php:1923 includes/admin-pages.php:1954
+msgid "Title"
+msgstr "Titel"
+
+#: assets/js/admin-pages.php:1924 includes/admin-pages.php:1955
+msgid "Menu Order"
+msgstr "Menü-Reihenfolge"
+
+#: assets/js/admin-pages.php:1927 includes/admin-pages.php:1958
+msgid "Descending"
+msgstr "Absteigend"
+
+#: assets/js/admin-pages.php:1928 includes/admin-pages.php:1959
+msgid "Ascending"
+msgstr "Aufsteigend"
+
+#: assets/js/admin-pages.php:1936 includes/admin-pages.php:1967
+msgid "Generate Shortcodes"
+msgstr "Shortcodes generieren"
+
+#: assets/js/admin-pages.php:1941 includes/admin-pages.php:1972
+msgid "Generated Shortcodes"
+msgstr "Generierte Shortcodes"
+
+#: assets/js/admin-pages.php:1946 includes/admin-pages.php:1977
+msgid "Copy to Clipboard"
+msgstr "In Zwischenablage kopieren"
+
+#: assets/js/admin-pages.php:1949 includes/admin-pages.php:1980
+msgid "Copied!"
+msgstr "Kopiert!"
+
+#: assets/js/admin-pages.php:1958 includes/admin-pages.php:1989
+msgid "Available Shortcodes"
+msgstr "Verfügbare Shortcodes"
+
+#: assets/js/admin-pages.php:1961 includes/admin-pages.php:1992
+msgid "Displays the filter/facets bar."
+msgstr "Zeigt die Filter-/Facettenleiste an."
+
+#: assets/js/admin-pages.php:1963 includes/admin-pages.php:1994
+msgid "Target post type (default: post)"
+msgstr "Ziel-Beitragstyp (Standard: post)"
+
+#: assets/js/admin-pages.php:1965 includes/admin-pages.php:1996
+msgid "CSV of group slugs (empty = all)"
+msgstr "Kommagetrennte Gruppen-Slugs (leer = alle)"
+
+#: assets/js/admin-pages.php:1967 assets/js/admin-pages.php:1978
+#: includes/admin-pages.php:1998 includes/admin-pages.php:2009
+msgid "Extra CSS classes"
+msgstr "Zusätzliche CSS-Klassen"
+
+#: assets/js/admin-pages.php:1971 includes/admin-pages.php:2002
+msgid "Displays the post list."
+msgstr "Zeigt die Beitragsliste an."
+
+#: assets/js/admin-pages.php:1973 includes/admin-pages.php:2004
+msgid "Post type (default: post)"
+msgstr "Beitragstyp (Standard: post)"
+
+#: assets/js/admin-pages.php:1975 includes/admin-pages.php:2006
+msgid "Number of posts (-1 = all)"
+msgstr "Anzahl der Beiträge (-1 = alle)"
+
+#: assets/js/admin-pages.php:1982 includes/admin-pages.php:2013
+msgid "Displays pagination for the filtered list."
+msgstr "Zeigt die Seitennummerierung für die gefilterte Liste an."
+
+#: assets/js/admin-pages.php:1984 includes/admin-pages.php:2015
+msgid "Example combination:"
+msgstr "Beispielkombination:"
+
+#: assets/js/admin-pages.php:2016 includes/admin-pages.php:2047
+msgid "All caches cleared."
+msgstr "Alle Caches geleert."
+
+#: assets/js/admin-pages.php:2021 includes/admin-pages.php:2052
+msgid "Object cache cleared."
+msgstr "Objekt-Cache geleert."
+
+#: assets/js/admin-pages.php:2026 includes/admin-pages.php:2057
+msgid "Settings file cache cleared."
+msgstr "Einstellungs-Datei-Cache geleert."
+
+#: assets/js/admin-pages.php:2033 includes/admin-pages.php:2064
+msgid "Transient cache cleared."
+msgstr "Transient-Cache geleert."
+
+#: assets/js/admin-pages.php:2039 includes/admin-pages.php:2070
+msgid "Cache settings saved."
+msgstr "Cache-Einstellungen gespeichert."
+
+#: assets/js/admin-pages.php:2058 includes/admin-pages.php:2089
+msgid "Cache Statistics"
+msgstr "Cache-Statistiken"
+
+#: assets/js/admin-pages.php:2063 includes/admin-pages.php:2094
+msgid "APCu Available"
+msgstr "APCu verfügbar"
+
+#: assets/js/admin-pages.php:2064 includes/admin-pages.php:2095
+msgid "Yes"
+msgstr "Ja"
+
+#: assets/js/admin-pages.php:2064 includes/admin-pages.php:2095
+msgid "No"
+msgstr "Nein"
+
+#: assets/js/admin-pages.php:2067 includes/admin-pages.php:2098
+msgid "External Object Cache"
+msgstr "Externer Objekt-Cache"
+
+#: assets/js/admin-pages.php:2068 includes/admin-pages.php:2099
+msgid "Yes (Redis/Memcached/other)"
+msgstr "Ja (Redis/Memcached/other)"
+
+#: assets/js/admin-pages.php:2068 includes/admin-pages.php:2099
+msgid "No (WordPress default)"
+msgstr "Nein (WordPress-Standard)"
+
+#: assets/js/admin-pages.php:2072 includes/admin-pages.php:2103
+msgid "APCu Memory Used"
+msgstr "APCu-Speichernutzung"
+
+#: assets/js/admin-pages.php:2077 includes/admin-pages.php:2108
+msgid "Settings Cache Dir"
+msgstr "Einstellungs-Cache-Verzeichnis"
+
+#: assets/js/admin-pages.php:2081 includes/admin-pages.php:2112
+msgid "Exists"
+msgstr "Vorhanden"
+
+#: assets/js/admin-pages.php:2083 includes/admin-pages.php:2114
+msgid "(not created yet)"
+msgstr "(noch nicht erstellt)"
+
+#: assets/js/admin-pages.php:2091 includes/admin-pages.php:2122
+msgid "Clear Caches"
+msgstr "Caches leeren"
+
+#: assets/js/admin-pages.php:2097 includes/admin-pages.php:2128
+msgid "Clear All Caches"
+msgstr "Alle Caches leeren"
+
+#: assets/js/admin-pages.php:2101 includes/admin-pages.php:2132
+msgid "Clear Object Cache"
+msgstr "Objekt-Cache leeren"
+
+#: assets/js/admin-pages.php:2105 includes/admin-pages.php:2136
+msgid "Clear Settings File Cache"
+msgstr "Einstellungs-Datei-Cache leeren"
+
+#: assets/js/admin-pages.php:2109 includes/admin-pages.php:2140
+msgid "Clear Transient Cache"
+msgstr "Transient-Cache leeren"
+
+#. translators: %d: number of imported settings groups
+#: assets/js/admin-pages.php:2171 includes/admin-pages.php:2202
+#, php-format
+msgid "Successfully imported %d settings groups."
+msgstr "%d Einstellungsgruppen erfolgreich importiert."
+
+#: assets/js/admin-pages.php:2176 includes/admin-pages.php:2207
+msgid "Invalid JSON file. Import aborted."
+msgstr "Ungültige JSON-Datei. Import abgebrochen."
+
+#: assets/js/admin-pages.php:2179 includes/admin-pages.php:2210
+msgid "File upload failed."
+msgstr "Dateiupload fehlgeschlagen."
+
+#: assets/js/admin-pages.php:2188 includes/admin-pages.php:2219
+msgid "Export Settings"
+msgstr "Einstellungen exportieren"
+
+#: assets/js/admin-pages.php:2189 includes/admin-pages.php:2220
+msgid "Download all plugin settings as a JSON file."
+msgstr "Alle Plugin-Einstellungen als JSON-Datei herunterladen."
+
+#: assets/js/admin-pages.php:2194 includes/admin-pages.php:2225
+msgid "Export Settings as JSON"
+msgstr "Einstellungen als JSON exportieren"
+
+#: assets/js/admin-pages.php:2198 assets/js/admin-pages.php:2219
+#: includes/admin-pages.php:2229 includes/admin-pages.php:2250
+msgid "Import Settings"
+msgstr "Einstellungen importieren"
+
+#: assets/js/admin-pages.php:2199 includes/admin-pages.php:2230
+msgid ""
+"Import settings from a previously exported JSON file. Existing settings will "
+"be overwritten."
+msgstr ""
+"Einstellungen aus einer zuvor exportierten JSON-Datei importieren. "
+"Vorhandene Einstellungen werden überschrieben."
+
+#: assets/js/admin-pages.php:2206 includes/admin-pages.php:2237
+msgid "JSON File"
+msgstr "JSON-Datei"
+
+#: assets/js/admin-pages.php:2215 includes/admin-pages.php:2246
+msgid "Select a .json file exported from this plugin."
+msgstr "Eine aus diesem Plugin exportierte .json-Datei auswählen."
+
+#: debug-templates/partials/filter/filter-bar.php:28
+#: debug-templates/partials/filter/filter-columns.php:36
+#: debug-templates/partials/filter/filter-dropdown.php:28
+#: debug-templates/partials/filter/filter-sidebar.php:28
+#: templates/partials/filter/filter-bar.php:28
+#: templates/partials/filter/filter-columns.php:36
+#: templates/partials/filter/filter-dropdown.php:28
+#: templates/partials/filter/filter-sidebar.php:28
+msgid "Content filter"
+msgstr "Inhaltsfilter"
+
+#: debug-templates/partials/filter/filter-bar.php:68
+#: debug-templates/partials/filter/filter-columns.php:78
+#: debug-templates/partials/filter/filter-dropdown.php:99
+#: debug-templates/partials/filter/filter-sidebar.php:70
+#: templates/partials/filter/filter-bar.php:68
+#: templates/partials/filter/filter-columns.php:78
+#: templates/partials/filter/filter-dropdown.php:99
+#: templates/partials/filter/filter-sidebar.php:70
+msgid "Reset filters"
+msgstr "Filter zurücksetzen"
+
+#. translators: %d: number of active filters
+#: debug-templates/partials/filter/filter-dropdown.php:54
+#: templates/partials/filter/filter-dropdown.php:54
+#, php-format
+msgid "%d active filter"
+msgid_plural "%d active filters"
+msgstr[0] "%d aktiver Filter"
+msgstr[1] "%d aktive Filter"
+
+#: debug-templates/partials/list/list-cards.php:59
+#: debug-templates/partials/list/list-minimal.php:43
+#: debug-templates/partials/list/list-rows.php:62
+#: includes/assets-enqueue.php:108 includes/filter-injection.php:399
+#: templates/partials/list/list-cards.php:59
+#: templates/partials/list/list-minimal.php:43
+#: templates/partials/list/list-rows.php:62
+msgid "No posts found."
+msgstr "Keine Beiträge gefunden."
+
+#: debug-templates/partials/pagination/pagination.php:36
+#: templates/partials/pagination/pagination.php:36
+msgid "Page navigation"
+msgstr "Seitennavigation"
+
+#: debug-templates/partials/pagination/pagination.php:44
+#: templates/partials/pagination/pagination.php:44
+msgid "Previous"
+msgstr "Zurück"
+
+#: debug-templates/partials/pagination/pagination.php:45
+#: templates/partials/pagination/pagination.php:45
+msgid "Next"
+msgstr "Weiter"
+
+#: includes/admin-pages.php:1438 includes/admin-pages.php:1639
+msgid "Enable term archive pages (public = true)"
+msgstr "Term-Archivseiten aktivieren (public = true)"
+
+#: includes/admin-pages.php:1440 includes/admin-pages.php:1641
+msgid ""
+"Enables frontend URLs for individual terms (e.g. /my-taxonomy/my-term/). "
+"Note: WordPress does not create a taxonomy index page — only per-term "
+"archives are generated. Disable for purely internal taxonomies."
+msgstr ""
+"Aktiviert Frontend-URLs für einzelne Terms (z. B. /meine-taxonomie/mein-term/). "
+"Hinweis: WordPress erstellt keine Taxonomie-Indexseite – es werden nur "
+"Term-Archive generiert. Für rein interne Taxonomien deaktivieren."
+
+#: includes/admin-pages.php:1444 includes/admin-pages.php:1645
+msgid "Admin Column"
+msgstr "Admin-Spalte"
+
+#: includes/admin-pages.php:1454 includes/admin-pages.php:1654
+msgid "Show as column in post list (show_admin_column = true)"
+msgstr "Als Spalte in der Beitragsliste anzeigen (show_admin_column = true)"
+
+#: includes/admin-pages.php:1456 includes/admin-pages.php:1656
+msgid ""
+"Adds a column for this taxonomy to the post list table in the WordPress "
+"admin."
+msgstr "Fügt der Beitragslisten-Tabelle im WordPress-Admin eine Spalte für diese Taxonomie hinzu."
+
+#: includes/assets-enqueue.php:107
+msgid "Loading…"
+msgstr "Wird geladen …"
+
+#: includes/assets-enqueue.php:109
+msgid "Filter active"
+msgstr "Filter aktiv"
+
+#: includes/assets-enqueue.php:110
+msgid "Reset all filters"
+msgstr "Alle Filter zurücksetzen"
+
+#: includes/assets-enqueue.php:111
+msgid "…"
+msgstr "…"
+
+#: includes/assets-enqueue.php:112
+msgid "«"
+msgstr "«"
+
+#: includes/class-plugin-updater.php:409
+#, php-format
+msgid "Download failed: %s"
+msgstr "Download fehlgeschlagen: %s"
+
+#: includes/class-plugin-updater.php:425
+#, php-format
+msgid ""
+"Security verification failed: Plugin checksum mismatch. Expected: %s, Got: %s"
+msgstr ""
+"Sicherheitsüberprüfung fehlgeschlagen: Plugin-Prüfsummen-Mismatch. Erwartet: "
+"%s, Erhalten: %s"
+
+#~ msgid "Slug"
+#~ msgstr "Slug"
+
+#~ msgid "Unique identifier used in filter URLs (e.g. \"category\")."
+#~ msgstr "Eindeutiger Bezeichner für Filter-URLs (z. B. \"category\")."
+
+#~ msgid "Frontend Label"
+#~ msgstr "Frontend-Beschriftung"
+
+#~ msgid "Set the default layout for filter and post list displays."
+#~ msgstr ""
+#~ "Legen Sie das Standardlayout für Filter- und Beitragslistendarstellungen "
+#~ "fest."
+
+#~ msgid "Custom Styling"
+#~ msgstr "Eigene Gestaltung"
+
+#~ msgid "Override CSS variables or add custom CSS rules."
+#~ msgstr "CSS-Variablen überschreiben oder eigene CSS-Regeln hinzufügen."
+
+#~ msgid "CSS Variables"
+#~ msgstr "CSS-Variablen"
+
+#~ msgid "CSS Variable"
+#~ msgstr "CSS-Variable"
+
+#~ msgid "Value"
+#~ msgstr "Wert"
+
+#~ msgid "Leave empty to use the default value. Accepts any valid CSS value."
+#~ msgstr ""
+#~ "Leer lassen für den Standardwert. Akzeptiert jeden gültigen CSS-Wert."
+
+#~ msgid "No filter groups configured yet. Add your first group below."
+#~ msgstr ""
+#~ "Noch keine Filtergruppen konfiguriert. Fügen Sie unten Ihre erste Gruppe "
+#~ "hinzu."
+
+#~ msgid "Configure advanced filter interaction behaviour."
+#~ msgstr "Erweiterte Filterinteraktion konfigurieren."
+
+#~ msgid "Enable Plus/Minus Mode"
+#~ msgstr "Plus/Minus-Modus aktivieren"
+
+#~ msgid ""
+#~ "Adds a +/– icon to each filter button. Clicking the label selects a "
+#~ "filter exclusively (resets all others); clicking the + icon adds it to "
+#~ "the current selection. Clicking an active button or its – icon removes "
+#~ "just that filter."
+#~ msgstr ""
+#~ "Fügt jedem Filter-Button ein +/– Symbol hinzu. Klick auf die Beschriftung "
+#~ "wählt den Filter exklusiv (setzt alle anderen zurück); Klick auf das + "
+#~ "fügt ihn zur aktuellen Auswahl hinzu. Klick auf einen aktiven Button oder "
+#~ "sein – entfernt diesen Filter."
+
+#~ msgid "Show More Button"
+#~ msgstr "Mehr-anzeigen-Schaltfläche"
+
+#~ msgid "Enable \"…\" Show More button"
+#~ msgstr "\"…\"-Schaltfläche aktivieren"
+
+#~ msgid ""
+#~ "Hides filters beyond the threshold behind a \"…\" toggle button. Not "
+#~ "available in Dropdown layout. The list does not auto-close when a filter "
+#~ "is selected."
+#~ msgstr ""
+#~ "Versteckt Filter jenseits des Schwellenwerts hinter einer \"…\"-"
+#~ "Schaltfläche. Nicht im Dropdown-Layout verfügbar. Die Liste schließt sich "
+#~ "nicht automatisch, wenn ein Filter gewählt wird."
+
+#~ msgid ""
+#~ "Applies only to the [jpkcom_postfilter_list] shortcode. Auto-injection "
+#~ "uses your theme's native loop template."
+#~ msgstr ""
+#~ "Gilt nur für den [jpkcom_postfilter_list]-Shortcode. Die automatische "
+#~ "Einbindung verwendet das native Loop-Template des Themes."
