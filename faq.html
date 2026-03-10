@@ -1,0 +1,51 @@
+<p><strong>Does this plugin work with custom post types?</strong> Yes.
+Any post type registered in WordPress can be enabled in <strong>Post
+Filter → General</strong>.</p>
+<p><strong>Does it work with custom taxonomies?</strong> Yes. All
+registered taxonomies (including custom ones) appear in the Filter
+Groups configuration. You can also create new taxonomies directly from
+the Filter Groups page without writing any code.</p>
+<p><strong>Does filtering work without JavaScript?</strong> Yes. Each
+filter term is a regular <code>&lt;a&gt;</code> link. Without JS the
+page reloads with the new filter URL. With JS, only the results zone is
+updated via AJAX.</p>
+<p><strong>Will the filter URLs be indexed by search engines?</strong>
+Each filter combination has a unique, crawlable URL. The plugin
+registers WordPress rewrite rules and sets canonical URLs to avoid
+duplicate content.</p>
+<p><strong>Can I place shortcodes on any page?</strong> No — shortcodes
+must be placed on the archive page for the configured post type (via a
+page builder/FSE template, or by using a WordPress page as the “Posts
+Page”). On an arbitrary custom page the filter links will navigate away
+to the archive URL. See the <strong>Shortcodes</strong> section above
+for details. The same applies to Gutenberg blocks, Elementor widgets,
+and Oxygen elements.</p>
+<p><strong>Can I use multiple filter instances for different post types
+on the same page?</strong> Yes. Each shortcode/block/widget set is
+paired by <code>post_type</code> attribute. The JS matches
+<code>[data-jpkpf-filter-bar][data-jpkpf-post-type="X"]</code> with
+<code>[data-jpkpf-results][data-jpkpf-post-type="X"]</code>.</p>
+<p><strong>Do the Gutenberg blocks work in the Full Site Editor
+(FSE)?</strong> Yes. All three blocks work in FSE templates. The
+pagination block can be placed above and/or below the list block — the
+plugin pre-scans the template block tree to ensure correct query
+availability regardless of block order.</p>
+<p><strong>Does the plugin require Elementor or Oxygen Builder?</strong>
+No. Page builder support is optional. Elementor widgets are only loaded
+when Elementor is active, and Oxygen elements are only loaded when
+Oxygen Builder is active. The plugin works independently with
+auto-inject mode, shortcodes, or Gutenberg blocks.</p>
+<p><strong>How do I clear the plugin cache?</strong> Go to <strong>Post
+Filter → Cache</strong> and click one of the Clear Cache buttons. Caches
+are also invalidated automatically when posts or terms are saved or
+deleted.</p>
+<p><strong>How do I change the URL segment from “filter” to something
+else?</strong> Change the <strong>URL Endpoint</strong> in <strong>Post
+Filter → General</strong>, then click <strong>Flush Rewrite
+Rules</strong> (or visit <strong>Settings → Permalinks</strong> and
+save).</p>
+<p><strong>How do I disable the plugin’s CSS entirely?</strong> Set
+<strong>Stylesheet Mode</strong> to “Disabled” in <strong>Post Filter →
+Layout &amp; Design → Advanced</strong>. You are then fully responsible
+for all styling.</p>
+<hr />

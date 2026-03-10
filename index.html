@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>JPKCom Plugin Docs</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/simpledotcss/2.3.7/simple.min.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Plugin Documentation</h1>
+</header>
+<h1 id="jpkcom-post-filter">JPKCom Post Filter</h1>
+<p><strong>Plugin Name:</strong> JPKCom Post Filter<br />
+<strong>Plugin URI:</strong>
+https://github.com/JPKCom/jpkcom-post-filter<br />
+<strong>Description:</strong> Faceted navigation and filtering of Posts,
+Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly
+URLs, AJAX updates, and full screen reader support.<br />
+<strong>Version:</strong> 1.1.1<br />
+<strong>Author:</strong> Jean Pierre Kolb <a href="mailto:jpk@jpkc.com"
+class="email">jpk@jpkc.com</a><br />
+<strong>Author URI:</strong> https://www.jpkc.com/<br />
+<strong>Contributors:</strong> JPKCom<br />
+<strong>Tags:</strong> filter, taxonomy, faceted search, custom post
+type, AJAX<br />
+<strong>Requires at least:</strong> 6.9<br />
+<strong>Tested up to:</strong> 6.9<br />
+<strong>Requires PHP:</strong> 8.3<br />
+<strong>Stable tag:</strong> 1.1.1<br />
+<strong>License:</strong> GPL-2.0-or-later<br />
+<strong>License URI:</strong>
+https://www.gnu.org/licenses/gpl-2.0.html<br />
+<strong>Text Domain:</strong> jpkcom-post-filter<br />
+<strong>Domain Path:</strong> /languages</p>
+<p>Filter any post type by taxonomy terms — SEO-friendly URLs, AJAX, and
+shortcodes included.</p>
+<hr />
+<h2 id="description">Description</h2>
+<p><strong>JPKCom Post Filter</strong> adds faceted taxonomy filtering
+to any WordPress archive page or via shortcodes. Visitors can narrow
+down posts, pages, or custom post types by one or more taxonomy terms,
+with every filter state reflected in the URL for bookmarking and
+sharing.</p>
+<h3 id="key-features">Key Features</h3>
+<ul>
+<li><strong>SEO-friendly URL schema</strong> — Filter state encoded in
+the URL path: <code>/blog/filter/category1+category2/tag1/</code></li>
+<li><strong>Four filter layouts</strong> — Horizontal bar, columns,
+sidebar, or dropdown with active-count badge</li>
+<li><strong>Three list layouts</strong> — Cards (grid), rows (list), or
+minimal (compact)</li>
+<li><strong>Hybrid rendering</strong> — Server-side on first load; AJAX
++ <code>history.pushState</code> when JS is available; full page reload
+fallback when JS is disabled</li>
+<li><strong>Auto-inject mode</strong> — Automatically wraps theme
+archive loops with filter UI (no shortcode needed)</li>
+<li><strong>Shortcode mode</strong> — Place filter, list, and pagination
+on archive pages via shortcodes</li>
+<li><strong>Gutenberg Blocks</strong> — Three native blocks (Post
+Filter, Post List, Post Pagination) with live editor preview and full
+InspectorControls panel</li>
+<li><strong>Elementor Widgets</strong> — Three widgets (Post Filter,
+Post List, Post Pagination) in a dedicated widget category, loaded only
+when Elementor is active</li>
+<li><strong>Oxygen Builder Elements</strong> — Three elements (Post
+Filter, Post List, Post Pagination) in a custom toolbar section, loaded
+only when Oxygen Builder Classic is active</li>
+<li><strong>Custom taxonomy creation</strong> — Register new WordPress
+taxonomies directly from the Filter Groups admin page</li>
+<li><strong>Plus/Minus interaction mode</strong> — Additive
+(<code>+</code> icon) or exclusive (label click) filter selection</li>
+<li><strong>Show More button</strong> — Collapse long filter lists
+behind a configurable threshold</li>
+<li><strong>Four color schemes</strong> — Default, Dark, Contrast,
+Monochrome (all overridable)</li>
+<li><strong>Three stylesheet modes</strong> — Full plugin CSS, CSS
+variables only, or fully disabled</li>
+<li><strong>Four-layer caching</strong> — Object cache, transients,
+APCu, and PHP file cache for settings</li>
+<li><strong>Full accessibility</strong> — <code>aria-live</code>
+regions, <code>aria-pressed</code> toggle buttons, screen-reader-only
+counts</li>
+<li><strong>Multi-language</strong> — Ships with EN, de_DE, and
+de_DE_formal translations</li>
+<li><strong>No dependencies</strong> — No ACF, no Bootstrap, no jQuery
+required</li>
+</ul>
+<hr />
+<h2 id="installation">Installation</h2>
+<ol type="1">
+<li>Upload the <code>jpkcom-post-filter</code> directory to
+<code>/wp-content/plugins/</code>.</li>
+<li>Activate the plugin via <strong>Plugins → Installed
+Plugins</strong>.</li>
+<li>Go to <strong>Post Filter → General</strong> and select the post
+types to filter.</li>
+<li>Go to <strong>Post Filter → Filter Groups</strong> and add the
+taxonomies you want as filter dimensions.</li>
+<li>Go to <strong>Settings → Permalinks</strong> and click <strong>Save
+Changes</strong> to flush rewrite rules.</li>
+</ol>
+<hr />
+<h2 id="configuration">Configuration</h2>
+<h3 id="general-settings">General Settings</h3>
+<table>
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 61%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Enabled Post Types</td>
+<td>Which post types to activate filtering for</td>
+</tr>
+<tr class="even">
+<td>Auto-Inject Filter</td>
+<td>Automatically add filter UI to archive/blog pages per post type</td>
+</tr>
+<tr class="odd">
+<td>URL Endpoint</td>
+<td>URL path segment for filter URLs (default: <code>filter</code>)</td>
+</tr>
+<tr class="even">
+<td>Bare Endpoint Behaviour</td>
+<td>What happens when <code>/filter/</code> is accessed without filter
+terms: 404, redirect to blog homepage, or custom URL</td>
+</tr>
+<tr class="odd">
+<td>Max Filter Combinations</td>
+<td>Maximum simultaneous active filter groups (affects URL and JS)</td>
+</tr>
+<tr class="even">
+<td>Max. Filters per Group</td>
+<td>Maximum terms selectable within one filter group (0 =
+unlimited)</td>
+</tr>
+<tr class="odd">
+<td>Debug Mode</td>
+<td>Use <code>debug-templates/</code> and write detailed logs to PHP
+error log</td>
+</tr>
+</tbody>
+</table>
+<p>After changing the URL endpoint go to <strong>Settings →
+Permalinks</strong> and click Save, or use the <strong>Flush Rewrite
+Rules</strong> button on the General page.</p>
+<h3 id="filter-groups">Filter Groups</h3>
+<p>Each filter group maps a taxonomy to a URL position. Groups are
+applied in the configured order:</p>
+<pre><code>/archive-base/filter/{group-1-slugs}/{group-2-slugs}/
+/blog/filter/web-design+marketing/wordpress/</code></pre>
+<p>Configure groups at <strong>Post Filter → Filter Groups</strong>.
+Each group has:</p>
+<table>
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 65%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Taxonomy</td>
+<td>Select an existing WP taxonomy, or enable “Register as new taxonomy”
+to create one</td>
+</tr>
+<tr class="even">
+<td>Label</td>
+<td>Displayed in the filter bar (and as admin label for new
+taxonomies)</td>
+</tr>
+<tr class="odd">
+<td>Post Types</td>
+<td>Which archive pages this group appears on (empty = all enabled post
+types)</td>
+</tr>
+<tr class="even">
+<td>Order</td>
+<td>Numeric sort position — determines URL segment order</td>
+</tr>
+<tr class="odd">
+<td>Enabled</td>
+<td>Toggle group on/off without deleting it</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Creating new taxonomies</strong> — When “Register as new
+WordPress taxonomy” is checked, additional fields appear:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Taxonomy Slug</td>
+<td>Unique identifier, lowercase letters and hyphens</td>
+</tr>
+<tr class="even">
+<td>Rewrite Slug</td>
+<td>URL prefix for term archive pages</td>
+</tr>
+<tr class="odd">
+<td>Hierarchical</td>
+<td>Category-like (parent/child) or tag-like (flat)</td>
+</tr>
+<tr class="even">
+<td>Public</td>
+<td>Enable frontend term archive pages</td>
+</tr>
+<tr class="odd">
+<td>Admin Column</td>
+<td>Show taxonomy as column in post list table</td>
+</tr>
+<tr class="even">
+<td>REST API</td>
+<td>Expose in REST API (required for Gutenberg)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Warning:</strong> Removing a filter group that registered a
+custom taxonomy will unregister that taxonomy and all term assignments
+on posts will be permanently lost.</p>
+</blockquote>
+<h3 id="layout-design">Layout &amp; Design</h3>
+<p><strong>Post Filter → Layout &amp; Design</strong> contains six
+tabs:</p>
+<p><strong>Tab: Global</strong> — Default filter layout (bar / columns /
+sidebar / dropdown), default list layout (cards / rows / minimal), and
+global spacing/typography variables.</p>
+<p><strong>Tab: Filter</strong> — Colors and dimensions for filter
+buttons (default, hover, active state), the reset button, and dropdown
+panel styling.</p>
+<p><strong>Tab: Posts</strong> — Card background, border, shadow,
+radius, padding; grid column counts for desktop, tablet, and mobile;
+typography and link colors.</p>
+<p><strong>Tab: Pagination</strong> — Colors for pagination buttons
+(default, hover, active), border radius, and font size.</p>
+<p><strong>Tab: Color Schemes</strong> — Choose a preset color scheme.
+Custom variable overrides from the other tabs are applied on top.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Scheme</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Default</td>
+<td>WordPress blue accent, light backgrounds</td>
+</tr>
+<tr class="even">
+<td>Dark</td>
+<td>Dark backgrounds, light text, blue accent</td>
+</tr>
+<tr class="odd">
+<td>Contrast</td>
+<td>Red reset button for stronger visual differentiation</td>
+</tr>
+<tr class="even">
+<td>Monochrome</td>
+<td>Black, white, and grey only — no color accent</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tab: Advanced</strong> — Stylesheet mode, filter interaction,
+pagination position, and custom CSS.</p>
+<table>
+<colgroup>
+<col style="width: 29%" />
+<col style="width: 29%" />
+<col style="width: 41%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Setting</th>
+<th>Options</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Stylesheet Mode</td>
+<td>Full / Variables only / Disabled</td>
+<td>Full loads the complete plugin CSS; Variables only outputs only the
+<code>:root</code> block as inline style; Disabled loads nothing</td>
+</tr>
+<tr class="even">
+<td>Reset Button Visibility</td>
+<td>Always / On selection / Never</td>
+<td>Controls when the “Reset filters” link is shown</td>
+</tr>
+<tr class="odd">
+<td>Plus/Minus Mode</td>
+<td>on/off</td>
+<td>Adds +/– icons; clicking the label selects a filter exclusively,
+clicking <code>+</code> adds it to the current selection</td>
+</tr>
+<tr class="even">
+<td>Show More Button</td>
+<td>on/off + threshold</td>
+<td>Hides filters beyond the threshold behind a <code>…</code> toggle
+(not available in Dropdown layout)</td>
+</tr>
+<tr class="odd">
+<td>Pagination Position</td>
+<td>Below / Above / Both</td>
+<td>Auto-inject only; shortcode pagination is placed manually</td>
+</tr>
+<tr class="even">
+<td>Custom CSS</td>
+<td>textarea</td>
+<td>Additional rules appended after the plugin stylesheet</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cache-performance">Cache &amp; Performance</h3>
+<p>Enable or disable individual cache layers, set the transient TTL, and
+clear caches from <strong>Post Filter → Cache</strong>.</p>
+<table>
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 65%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Object Cache</td>
+<td><code>wp_cache_*</code> for query results; invalidated on
+<code>save_post</code> / <code>deleted_post</code></td>
+</tr>
+<tr class="even">
+<td>Transient Cache</td>
+<td><code>get/set_transient</code> for taxonomy term lists; invalidated
+on term changes</td>
+</tr>
+<tr class="odd">
+<td>Settings File Cache</td>
+<td>PHP <code>include</code> cache in
+<code>.ht.jpkcom-post-filter-settings/</code>; fastest for settings
+reads</td>
+</tr>
+</tbody>
+</table>
+<p>Cache TTL applies to transients. Object cache respects the TTL of the
+active object cache backend.</p>
+<h3 id="import-export">Import / Export</h3>
+<p>All plugin settings (general, layout, cache, filter_groups) can be
+exported as a JSON file and re-imported at <strong>Post Filter → Import
+/ Export</strong>. Useful for migrating settings between
+environments.</p>
+<hr />
+<h2 id="shortcodes">Shortcodes</h2>
+<h3 id="important-where-shortcodes-work">Important: Where shortcodes
+work</h3>
+<p>Shortcodes always connect to the WordPress archive of the configured
+post type. When a filter is activated the browser navigates to a URL
+like <code>/news/filter/slug/</code> — the base URL is always the post
+type archive, not the page the shortcode is placed on.</p>
+<p><strong>Supported placements:</strong></p>
+<ol type="1">
+<li><strong>Archive template</strong> — Embed shortcodes inside an
+archive template via a page builder or the Gutenberg Full Site Editor.
+The page IS the archive, so archive URL = current URL.</li>
+<li><strong>Posts Page (post type only)</strong> — Assign a WordPress
+page as the “Posts Page” under <strong>Settings → Reading</strong>.
+WordPress treats that page as the blog archive, so <code>/blog/</code>
+and the shortcode page are the same URL.</li>
+<li><strong>Auto-inject instead</strong> — Enable <strong>General →
+Auto-Inject Filter</strong> to have the plugin inject the filter UI into
+archive pages automatically, without any shortcode.</li>
+</ol>
+<p><strong>What does not work:</strong> Placing shortcodes on an
+arbitrary custom page (e.g. <code>/test/</code>) whose URL has nothing
+to do with the post type archive. Filter clicks, AJAX results, and
+pagination will all redirect to the archive URL, leaving the custom page
+behind.</p>
+<hr />
+<h3
+id="jpkcom_postfilter_filter"><code>[jpkcom_postfilter_filter]</code></h3>
+<p>Renders the filter bar.</p>
+<table>
+<colgroup>
+<col style="width: 39%" />
+<col style="width: 28%" />
+<col style="width: 32%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>post_type</code></td>
+<td>any registered post type</td>
+<td><code>post</code></td>
+</tr>
+<tr class="even">
+<td><code>layout</code></td>
+<td><code>bar</code> / <code>columns</code> / <code>sidebar</code> /
+<code>dropdown</code></td>
+<td>backend setting</td>
+</tr>
+<tr class="odd">
+<td><code>groups</code></td>
+<td>comma-separated group slugs</td>
+<td>all groups</td>
+</tr>
+<tr class="even">
+<td><code>reset</code></td>
+<td><code>true</code> / <code>false</code> / <code>always</code></td>
+<td>backend setting</td>
+</tr>
+<tr class="odd">
+<td><code>class</code></td>
+<td>string</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>reset</code> attribute overrides the global Reset Button
+Visibility setting: <code>false</code> forces “never”,
+<code>always</code> forces “always”, <code>true</code> uses the backend
+setting.</p>
+<h3
+id="jpkcom_postfilter_list"><code>[jpkcom_postfilter_list]</code></h3>
+<p>Renders the filtered post list.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>post_type</code></td>
+<td>any registered post type</td>
+<td><code>post</code></td>
+</tr>
+<tr class="even">
+<td><code>layout</code></td>
+<td><code>cards</code> / <code>rows</code> / <code>minimal</code></td>
+<td>backend setting</td>
+</tr>
+<tr class="odd">
+<td><code>limit</code></td>
+<td>integer</td>
+<td><code>-1</code> (all)</td>
+</tr>
+<tr class="even">
+<td><code>orderby</code></td>
+<td><code>date</code> / <code>title</code> /
+<code>menu_order</code></td>
+<td><code>date</code></td>
+</tr>
+<tr class="odd">
+<td><code>order</code></td>
+<td><code>ASC</code> / <code>DESC</code></td>
+<td><code>DESC</code></td>
+</tr>
+<tr class="even">
+<td><code>class</code></td>
+<td>string</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="jpkcom_postfilter_pagination"><code>[jpkcom_postfilter_pagination]</code></h3>
+<p>Renders pagination for the filtered list. Must be placed after
+<code>[jpkcom_postfilter_list]</code>. Returns empty output when there
+is only one page.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>post_type</code></td>
+<td>any registered post type</td>
+<td><code>post</code></td>
+</tr>
+<tr class="even">
+<td><code>class</code></td>
+<td>string</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="example">Example</h3>
+<pre><code>[jpkcom_postfilter_filter post_type=&quot;portfolio&quot; layout=&quot;dropdown&quot;]
+[jpkcom_postfilter_list post_type=&quot;portfolio&quot; layout=&quot;cards&quot; limit=&quot;12&quot;]
+[jpkcom_postfilter_pagination post_type=&quot;portfolio&quot;]</code></pre>
+<p>Use the interactive shortcode builder at <strong>Post Filter →
+Shortcodes</strong> to generate snippets without writing code.</p>
+<hr />
+<h2 id="gutenberg-blocks">Gutenberg Blocks</h2>
+<p>Three native Gutenberg blocks are available under the <strong>JPKCom
+Post Filter</strong> block category. They work in the classic Block
+Editor and in the Full Site Editor (FSE).</p>
+<h3 id="post-filter">Post Filter</h3>
+<p>Renders the filter/facets UI.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Setting</th>
+<th>Options</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Post Type</td>
+<td>any registered post type</td>
+<td><code>post</code></td>
+</tr>
+<tr class="even">
+<td>Layout</td>
+<td>Bar / Sidebar / Dropdown / Columns</td>
+<td>backend setting</td>
+</tr>
+<tr class="odd">
+<td>Filter Groups</td>
+<td>comma-separated slugs</td>
+<td>all groups</td>
+</tr>
+<tr class="even">
+<td>Reset Button</td>
+<td>Default / Always / Never</td>
+<td>backend setting</td>
+</tr>
+</tbody>
+</table>
+<h3 id="post-list">Post List</h3>
+<p>Renders the filtered post listing.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Setting</th>
+<th>Options</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Post Type</td>
+<td>any registered post type</td>
+<td><code>post</code></td>
+</tr>
+<tr class="even">
+<td>Layout</td>
+<td>Cards / Rows / Minimal / Theme</td>
+<td>backend setting</td>
+</tr>
+<tr class="odd">
+<td>Posts per Page</td>
+<td>-1 to 100</td>
+<td><code>5</code></td>
+</tr>
+<tr class="even">
+<td>Order By</td>
+<td>Date / Title / Menu Order</td>
+<td><code>date</code></td>
+</tr>
+<tr class="odd">
+<td>Order</td>
+<td>ASC / DESC</td>
+<td><code>DESC</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="post-pagination">Post Pagination</h3>
+<p>Renders pagination for the post listing. Can be placed both
+<strong>above and below</strong> the Post List block — the plugin
+pre-scans the block tree before rendering to ensure pagination works at
+any position. Shows a static preview with example pages in the
+editor.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Setting</th>
+<th>Options</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Post Type</td>
+<td>any registered post type</td>
+<td><code>post</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="block-placement-notes">Block placement notes</h3>
+<ul>
+<li>All three blocks must use the same <strong>Post Type</strong>
+setting to be paired correctly.</li>
+<li>The filter bar and results zone are paired via
+<code>data-jpkpf-post-type</code> attributes — AJAX filtering works
+across blocks on the same page.</li>
+<li>Pagination blocks placed above the Post List block work correctly:
+the plugin pre-runs the list query before any block renders.</li>
+<li>In the editor, blocks show a live server-side preview. JS-driven
+features (Show More, Plus/Minus) are replicated server-side for accurate
+previews.</li>
+</ul>
+<h3 id="building-from-source">Building from source</h3>
+<p>Block editor scripts require a build step:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run build</span></code></pre></div>
+<p>Built files are output to <code>blocks/build/</code>. The plugin
+skips block registration when the build directory is missing.</p>
+<hr />
+<h2 id="elementor-widgets">Elementor Widgets</h2>
+<p>Three Elementor widgets are available under the <strong>JPKCom Post
+Filter</strong> widget category. They are only loaded when Elementor is
+active.</p>
+<h3 id="post-filter-1">Post Filter</h3>
+<table>
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 25%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Control</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Post Type</td>
+<td>Select</td>
+<td><code>post</code></td>
+</tr>
+<tr class="even">
+<td>Layout</td>
+<td>Select (Default / Bar / Sidebar / Dropdown / Columns)</td>
+<td>backend setting</td>
+</tr>
+<tr class="odd">
+<td>Filter Groups</td>
+<td>Text (comma-separated slugs)</td>
+<td>all groups</td>
+</tr>
+<tr class="even">
+<td>Reset Button</td>
+<td>Select (Default / Always / Never)</td>
+<td>backend setting</td>
+</tr>
+<tr class="odd">
+<td>CSS Class</td>
+<td>Text</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="post-list-1">Post List</h3>
+<table>
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 25%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Control</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Post Type</td>
+<td>Select</td>
+<td><code>post</code></td>
+</tr>
+<tr class="even">
+<td>Layout</td>
+<td>Select (Default / Cards / Rows / Minimal / Theme)</td>
+<td>backend setting</td>
+</tr>
+<tr class="odd">
+<td>Posts per Page</td>
+<td>Number (-1 to 100)</td>
+<td><code>5</code></td>
+</tr>
+<tr class="even">
+<td>Order By</td>
+<td>Select (Date / Title / Menu Order / Modified / Random)</td>
+<td><code>date</code></td>
+</tr>
+<tr class="odd">
+<td>Order</td>
+<td>Select (DESC / ASC)</td>
+<td><code>DESC</code></td>
+</tr>
+<tr class="even">
+<td>CSS Class</td>
+<td>Text</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="post-pagination-1">Post Pagination</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Control</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Post Type</td>
+<td>Select</td>
+<td><code>post</code></td>
+</tr>
+<tr class="even">
+<td>CSS Class</td>
+<td>Text</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="widget-placement-notes">Widget placement notes</h3>
+<ul>
+<li>All three widgets must use the same <strong>Post Type</strong> to
+work together.</li>
+<li>Widgets call the same shortcode functions as the Gutenberg blocks —
+AJAX filtering, SEO-friendly URLs, and pagination work identically.</li>
+<li>The Pagination widget can be placed both above and below the Post
+List widget.</li>
+<li>Elementor templates for archive pages are the recommended
+placement.</li>
+</ul>
+<hr />
+<h2 id="oxygen-builder-elements">Oxygen Builder Elements</h2>
+<p>Three Oxygen Builder Classic (v3.x+) elements are available under the
+<strong>Post Filter</strong> section in the Oxygen Add Elements panel.
+They are only loaded when Oxygen Builder is active.</p>
+<h3 id="post-filter-2">Post Filter</h3>
+<table>
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 25%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Control</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Post Type</td>
+<td>Dropdown</td>
+<td><code>post</code></td>
+</tr>
+<tr class="even">
+<td>Layout</td>
+<td>Dropdown (Default / Bar / Sidebar / Dropdown / Columns)</td>
+<td>backend setting</td>
+</tr>
+<tr class="odd">
+<td>Filter Groups</td>
+<td>Text (comma-separated slugs)</td>
+<td>all groups</td>
+</tr>
+<tr class="even">
+<td>Reset Button</td>
+<td>Dropdown (Default / Always / Never)</td>
+<td>backend setting</td>
+</tr>
+</tbody>
+</table>
+<h3 id="post-list-2">Post List</h3>
+<table>
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 25%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Control</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Post Type</td>
+<td>Dropdown</td>
+<td><code>post</code></td>
+</tr>
+<tr class="even">
+<td>Layout</td>
+<td>Dropdown (Default / Cards / Rows / Minimal / Theme)</td>
+<td>backend setting</td>
+</tr>
+<tr class="odd">
+<td>Posts per Page</td>
+<td>Text (-1 = all)</td>
+<td><code>5</code></td>
+</tr>
+<tr class="even">
+<td>Order By</td>
+<td>Dropdown (Date / Title / Menu Order / Modified / Random)</td>
+<td><code>date</code></td>
+</tr>
+<tr class="odd">
+<td>Order</td>
+<td>Dropdown (Descending / Ascending)</td>
+<td><code>DESC</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="post-pagination-2">Post Pagination</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Control</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Post Type</td>
+<td>Dropdown</td>
+<td><code>post</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="element-placement-notes">Element placement notes</h3>
+<ul>
+<li>All three elements must use the same <strong>Post Type</strong> to
+work together.</li>
+<li>Elements call the same shortcode functions as the Gutenberg blocks
+and Elementor widgets — AJAX filtering, SEO-friendly URLs, and
+pagination work identically.</li>
+<li>The Pagination element can be placed both above and below the Post
+List element.</li>
+<li>Oxygen archive templates are the recommended placement. Auto-inject
+mode does not work with Oxygen since it bypasses the standard WordPress
+template system.</li>
+<li>Elements use the OxyEl API and appear in Oxygen’s “Type to search
+components” field when searching for “post”, “filter”, “pagination”, or
+“jpkcom”.</li>
+</ul>
+<hr />
+<h2 id="auto-inject-mode">Auto-Inject Mode</h2>
+<p>When <strong>Auto-Inject Filter</strong> is enabled for a post type
+in General Settings, the plugin automatically wraps the theme archive
+loop with the filter UI — no shortcode or template modification
+required. The filter bar is inserted before the loop and the results
+zone wraps the loop output.</p>
+<p>The pagination position for auto-inject mode is configurable (Below /
+Above / Both) in <strong>Layout &amp; Design → Advanced</strong>.</p>
+<p>Auto-inject works by hooking into <code>loop_start</code> and
+<code>loop_end</code> on archive/blog pages. It does not run on singular
+posts, search results, or pages.</p>
+<hr />
+<h2 id="template-overrides">Template Overrides</h2>
+<p>Templates can be overridden per theme without editing plugin files.
+The loader checks these locations in order:</p>
+<ol type="1">
+<li><code>themes/{child-theme}/jpkcom-post-filter/{template}</code></li>
+<li><code>themes/{parent-theme}/jpkcom-post-filter/{template}</code></li>
+<li><code>mu-plugins/jpkcom-post-filter-overrides/templates/{template}</code></li>
+<li>Plugin <code>templates/</code> (or <code>debug-templates/</code>
+when debug mode is on)</li>
+</ol>
+<p><strong>Example:</strong> To override the cards list template, copy
+<code>plugins/jpkcom-post-filter/templates/partials/list/list-cards.php</code>
+to
+<code>themes/your-theme/jpkcom-post-filter/partials/list/list-cards.php</code>.</p>
+<h3 id="available-templates">Available templates</h3>
+<pre><code>partials/filter/filter-bar.php       ← Horizontal bar layout
+partials/filter/filter-columns.php   ← Columns layout
+partials/filter/filter-sidebar.php   ← Sidebar layout
+partials/filter/filter-dropdown.php  ← Dropdown layout
+partials/list/list-cards.php         ← Cards (grid) layout
+partials/list/list-rows.php          ← Rows layout
+partials/list/list-minimal.php       ← Minimal (ul/li) layout
+partials/pagination/pagination.php   ← Pagination
+shortcodes/filter.php                ← Shortcode wrapper → delegates to partials/filter/
+shortcodes/posts-list.php            ← Shortcode wrapper → delegates to partials/list/
+shortcodes/pagination.php            ← Shortcode wrapper → delegates to partials/pagination/</code></pre>
+<h3 id="template-action-hooks">Template action hooks</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode php"><code class="sourceCode php"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Fires before and after every template part</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>add_action( <span class="st">&#39;jpkcom_postfilter_before_template_part&#39;</span><span class="ot">,</span> <span class="kw">function</span>( <span class="va">$path</span><span class="ot">,</span> <span class="va">$slug</span><span class="ot">,</span> <span class="va">$name</span><span class="ot">,</span> <span class="va">$args</span> ) { ... }<span class="ot">,</span> <span class="dv">10</span><span class="ot">,</span> <span class="dv">4</span> )<span class="ot">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>add_action( <span class="st">&#39;jpkcom_postfilter_after_template_part&#39;</span><span class="ot">,</span>  <span class="kw">function</span>( <span class="va">$path</span><span class="ot">,</span> <span class="va">$slug</span><span class="ot">,</span> <span class="va">$name</span><span class="ot">,</span> <span class="va">$args</span> ) { ... }<span class="ot">,</span> <span class="dv">10</span><span class="ot">,</span> <span class="dv">4</span> )<span class="ot">;</span></span></code></pre></div>
+<hr />
+<h2 id="css-customisation">CSS Customisation</h2>
+<p>All styles use CSS custom properties prefixed <code>--jpkpf-</code>.
+Override them in your theme stylesheet, via the CSS Variables fields in
+<strong>Layout &amp; Design</strong>, or via the Custom CSS field:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="in">:root</span> {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-primary</span>:             <span class="cn">#0073aa</span><span class="op">;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-primary-hover</span>:       <span class="cn">#005d8c</span><span class="op">;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-filter-bg</span>:           <span class="cn">#f0f0f1</span><span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-filter-active-bg</span>:    <span class="cn">#0073aa</span><span class="op">;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-filter-active-color</span>: <span class="cn">#ffffff</span><span class="op">;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-filter-radius</span>:       <span class="dv">3</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-gap</span>:                 <span class="dv">0.5</span><span class="dt">rem</span><span class="op">;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-card-radius</span>:         <span class="dv">4</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-transition</span>:          <span class="dv">0.2</span><span class="dt">s</span> <span class="dv">ease</span><span class="op">;</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<hr />
+<h2 id="developer-reference">Developer Reference</h2>
+<p>See <code>CLAUDE.md</code> in the plugin root for the full developer
+reference including architecture decisions, constant definitions, cache
+layer documentation, template action hooks, and implementation
+notes.</p>
+<h3 id="constants-wp-config.php-overridable">Constants (wp-config.php
+overridable)</h3>
+<table>
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 32%" />
+<col style="width: 32%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Constant</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>JPKCOM_POSTFILTER_VERSION</code></td>
+<td><code>'1.0.0'</code></td>
+<td>Plugin version</td>
+</tr>
+<tr class="even">
+<td><code>JPKCOM_POSTFILTER_DEBUG</code></td>
+<td><code>WP_DEBUG</code></td>
+<td>Enables debug mode and debug templates</td>
+</tr>
+<tr class="odd">
+<td><code>JPKCOM_POSTFILTER_CACHE_ENABLED</code></td>
+<td><code>true</code></td>
+<td>Master cache toggle</td>
+</tr>
+<tr class="even">
+<td><code>JPKCOM_POSTFILTER_URL_ENDPOINT</code></td>
+<td><code>'filter'</code></td>
+<td>URL path segment</td>
+</tr>
+<tr class="odd">
+<td><code>JPKCOM_POSTFILTER_SETTINGS_DIR</code></td>
+<td><code>WP_CONTENT_DIR . '/.ht.jpkcom-post-filter-settings'</code></td>
+<td>Settings file cache location</td>
+</tr>
+<tr class="even">
+<td><code>JPKCOM_POSTFILTER_MAX_FILTER_COMBOS</code></td>
+<td><code>3</code></td>
+<td>Default max filter group combinations</td>
+</tr>
+</tbody>
+</table>
+<h3 id="javascript-data-attributes">JavaScript data attributes</h3>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- Auto-inject mode: plugin adds data-jpkpf-wrapper automatically --&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span> <span class="er">data-jpkpf-wrapper</span> <span class="er">data-jpkpf-base-url</span><span class="ot">=</span><span class="st">&quot;/blog/&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">nav</span> <span class="er">data-jpkpf-filter-bar</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;post&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">div</span> <span class="er">data-jpkpf-results</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;post&quot;</span> <span class="er">aria-live</span><span class="ot">=</span><span class="st">&quot;polite&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- Shortcode / Block / Elementor / Oxygen mode: paired by data-jpkpf-post-type --&gt;</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">nav</span> <span class="er">data-jpkpf-filter-bar</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;portfolio&quot;</span> <span class="er">data-jpkpf-base-url</span><span class="ot">=</span><span class="st">&quot;/portfolio/&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span> <span class="er">data-jpkpf-results</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;portfolio&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">nav</span> <span class="er">data-jpkpf-pagination</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;portfolio&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>The <code>data-jpkpf-pagination</code> attribute on standalone
+pagination elements (blocks/shortcodes/Elementor) enables the JS to swap
+pagination content during AJAX filter requests, keeping pagination links
+filter-aware.</p>
+<h3 id="key-php-functions">Key PHP functions</h3>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode php"><code class="sourceCode php"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Settings</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_settings_get( <span class="st">&#39;general&#39;</span><span class="ot">,</span> <span class="st">&#39;url_endpoint&#39;</span><span class="ot">,</span> <span class="st">&#39;filter&#39;</span> )</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_settings_get_group( <span class="st">&#39;layout&#39;</span> )</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_settings_save( <span class="st">&#39;general&#39;</span><span class="ot">,</span> <span class="va">$data</span> )</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_settings_delete_cache( <span class="st">&#39;*&#39;</span> )  <span class="co">// flush all</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Cache</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_cache_get( <span class="va">$key</span><span class="ot">,</span> <span class="va">$found</span> )</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_cache_set( <span class="va">$key</span><span class="ot">,</span> <span class="va">$value</span><span class="ot">,</span> <span class="va">$ttl</span> )</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_cache_flush_group()</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_transient_get( <span class="st">&#39;terms_category&#39;</span> )</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_transient_set( <span class="st">&#39;terms_category&#39;</span><span class="ot">,</span> <span class="va">$data</span> )</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Templates</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_locate_template( <span class="st">&#39;partials/filter/filter-bar.php&#39;</span> )</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_template_part( <span class="st">&#39;partials/filter/filter-bar&#39;</span><span class="ot">,</span> <span class="st">&#39;&#39;</span><span class="ot">,</span> <span class="va">$args</span> )</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_template_html( <span class="st">&#39;partials/list/list-cards&#39;</span><span class="ot">,</span> <span class="st">&#39;&#39;</span><span class="ot">,</span> <span class="va">$args</span> )</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="co">// URL helpers</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_filter_url( <span class="va">$base_url</span><span class="ot">,</span> <span class="va">$active_filters</span> )</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_archive_base_url( <span class="va">$post_type</span> )</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_active_filters()</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_build_filter_url( <span class="va">$base</span><span class="ot">,</span> <span class="va">$filters</span> )</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_is_filter_request()</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="co">// Filter groups</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_filter_groups_enabled()</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_terms_for_group( <span class="va">$group</span><span class="ot">,</span> <span class="va">$active_filters</span> )</span></code></pre></div>
+<hr />
+<h2 id="faq">FAQ</h2>
+<p><strong>Does this plugin work with custom post types?</strong> Yes.
+Any post type registered in WordPress can be enabled in <strong>Post
+Filter → General</strong>.</p>
+<p><strong>Does it work with custom taxonomies?</strong> Yes. All
+registered taxonomies (including custom ones) appear in the Filter
+Groups configuration. You can also create new taxonomies directly from
+the Filter Groups page without writing any code.</p>
+<p><strong>Does filtering work without JavaScript?</strong> Yes. Each
+filter term is a regular <code>&lt;a&gt;</code> link. Without JS the
+page reloads with the new filter URL. With JS, only the results zone is
+updated via AJAX.</p>
+<p><strong>Will the filter URLs be indexed by search engines?</strong>
+Each filter combination has a unique, crawlable URL. The plugin
+registers WordPress rewrite rules and sets canonical URLs to avoid
+duplicate content.</p>
+<p><strong>Can I place shortcodes on any page?</strong> No — shortcodes
+must be placed on the archive page for the configured post type (via a
+page builder/FSE template, or by using a WordPress page as the “Posts
+Page”). On an arbitrary custom page the filter links will navigate away
+to the archive URL. See the <strong>Shortcodes</strong> section above
+for details. The same applies to Gutenberg blocks, Elementor widgets,
+and Oxygen elements.</p>
+<p><strong>Can I use multiple filter instances for different post types
+on the same page?</strong> Yes. Each shortcode/block/widget set is
+paired by <code>post_type</code> attribute. The JS matches
+<code>[data-jpkpf-filter-bar][data-jpkpf-post-type="X"]</code> with
+<code>[data-jpkpf-results][data-jpkpf-post-type="X"]</code>.</p>
+<p><strong>Do the Gutenberg blocks work in the Full Site Editor
+(FSE)?</strong> Yes. All three blocks work in FSE templates. The
+pagination block can be placed above and/or below the list block — the
+plugin pre-scans the template block tree to ensure correct query
+availability regardless of block order.</p>
+<p><strong>Does the plugin require Elementor or Oxygen Builder?</strong>
+No. Page builder support is optional. Elementor widgets are only loaded
+when Elementor is active, and Oxygen elements are only loaded when
+Oxygen Builder is active. The plugin works independently with
+auto-inject mode, shortcodes, or Gutenberg blocks.</p>
+<p><strong>How do I clear the plugin cache?</strong> Go to <strong>Post
+Filter → Cache</strong> and click one of the Clear Cache buttons. Caches
+are also invalidated automatically when posts or terms are saved or
+deleted.</p>
+<p><strong>How do I change the URL segment from “filter” to something
+else?</strong> Change the <strong>URL Endpoint</strong> in <strong>Post
+Filter → General</strong>, then click <strong>Flush Rewrite
+Rules</strong> (or visit <strong>Settings → Permalinks</strong> and
+save).</p>
+<p><strong>How do I disable the plugin’s CSS entirely?</strong> Set
+<strong>Stylesheet Mode</strong> to “Disabled” in <strong>Post Filter →
+Layout &amp; Design → Advanced</strong>. You are then fully responsible
+for all styling.</p>
+<hr />
+<h2 id="changelog">Changelog</h2>
+<h3 id="section">1.1.1</h3>
+<ul>
+<li><strong>.github/workflows/release.yml</strong> — “Build Gutenberg
+blocks” npm ci bugfix</li>
+</ul>
+<h3 id="section-1">1.1.0</h3>
+<ul>
+<li><strong>Gutenberg Blocks</strong> — Three native blocks (Post
+Filter, Post List, Post Pagination) with live server-side preview,
+InspectorControls, and Full Site Editor support</li>
+<li><strong>Elementor Widgets</strong> — Three widgets (Post Filter,
+Post List, Post Pagination) in a dedicated category, loaded only when
+Elementor is active</li>
+<li><strong>Oxygen Builder Elements</strong> — Three elements (Post
+Filter, Post List, Post Pagination) using the OxyEl API, loaded only
+when Oxygen Builder Classic is active</li>
+<li><strong>Block pre-scan</strong> — Pagination blocks can be placed
+above or below the list block; the plugin pre-scans the block tree (FSE
+templates and post content) before rendering to ensure correct query
+availability</li>
+<li><strong>AJAX pagination swap</strong> — Standalone pagination
+elements (blocks/shortcodes/Elementor) are updated during AJAX filter
+requests via <code>data-jpkpf-pagination</code> attribute, keeping
+pagination links filter-aware</li>
+<li><strong>Pagination placeholder</strong> — When filter selection
+reduces results to a single page, pagination is hidden but preserved as
+a DOM placeholder; it automatically reappears when filters change back
+to multiple pages</li>
+<li><strong>Auto-inject guard</strong> — Prevents duplicate pagination
+insertion in auto-inject mode during AJAX swaps</li>
+</ul>
+<h3 id="section-2">1.0.0</h3>
+<ul>
+<li>Initial release</li>
+<li>Faceted filtering for any post type and taxonomy</li>
+<li>Four filter layouts: bar, columns, sidebar, dropdown</li>
+<li>Three list layouts: cards, rows, minimal</li>
+<li>SEO-friendly URL schema with WordPress rewrite rules</li>
+<li>AJAX filtering with <code>history.pushState</code></li>
+<li>Auto-inject mode for archive/blog pages with configurable pagination
+position</li>
+<li>Shortcodes: <code>[jpkcom_postfilter_filter]</code>,
+<code>[jpkcom_postfilter_list]</code>,
+<code>[jpkcom_postfilter_pagination]</code></li>
+<li>Interactive shortcode builder in admin</li>
+<li>Custom taxonomy registration from Filter Groups admin page</li>
+<li>Plus/Minus interaction mode for filter buttons</li>
+<li>Show More button with configurable threshold</li>
+<li>Four predefined color schemes (Default, Dark, Contrast,
+Monochrome)</li>
+<li>Three stylesheet modes (Full, Variables only, Disabled)</li>
+<li>Reset button visibility modes (Always, On selection, Never)</li>
+<li>Bare Endpoint Behaviour (404, redirect to home, custom URL)</li>
+<li>Max. Filters per Group limit (URL + JS enforcement)</li>
+<li>Four-layer caching (object cache, transients, APCu, file cache)</li>
+<li>Settings import/export (JSON)</li>
+<li>Translations: de_DE, de_DE_formal</li>
+</ul>
+</body>
+</html>

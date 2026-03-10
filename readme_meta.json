@@ -1,0 +1,22 @@
+{
+  "Author": "Jean Pierre Kolb <jpk@jpkc.com>",
+  "TextDomain": "jpkcom-post-filter",
+  "Version": "1.1.1",
+  "Description": "Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.",
+  "Example": "To override the cards list template, copy",
+  "PluginURI": "https://github.com/JPKCom/jpkcom-post-filter",
+  "DomainPath": "/languages",
+  "Whatdoesnotwork": "Placing shortcodes on an arbitrary custom page (e.g. `/test/`) whose URL has nothing to do with the post type archive. Filter clicks, AJAX results, and pagination will all redirect to the archive URL, leaving the custom page behind.",
+  "PluginName": "JPKCom Post Filter",
+  "Contributors": "JPKCom",
+  "Requiresatleast": "6.9",
+  "Testedupto": "6.9",
+  "Stabletag": "1.1.1",
+  "Supportedplacements": "",
+  "RequiresPHP": "8.3",
+  "License": "GPL-2.0-or-later",
+  "LicenseURI": "https://www.gnu.org/licenses/gpl-2.0.html",
+  "Tags": "filter, taxonomy, faceted search, custom post type, AJAX",
+  "AuthorURI": "https://www.jpkc.com/",
+  "_generated": true
+}

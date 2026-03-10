@@ -1,0 +1,58 @@
+<h3 id="section">1.1.1</h3>
+<ul>
+<li><strong>.github/workflows/release.yml</strong> — “Build Gutenberg
+blocks” npm ci bugfix</li>
+</ul>
+<h3 id="section-1">1.1.0</h3>
+<ul>
+<li><strong>Gutenberg Blocks</strong> — Three native blocks (Post
+Filter, Post List, Post Pagination) with live server-side preview,
+InspectorControls, and Full Site Editor support</li>
+<li><strong>Elementor Widgets</strong> — Three widgets (Post Filter,
+Post List, Post Pagination) in a dedicated category, loaded only when
+Elementor is active</li>
+<li><strong>Oxygen Builder Elements</strong> — Three elements (Post
+Filter, Post List, Post Pagination) using the OxyEl API, loaded only
+when Oxygen Builder Classic is active</li>
+<li><strong>Block pre-scan</strong> — Pagination blocks can be placed
+above or below the list block; the plugin pre-scans the block tree (FSE
+templates and post content) before rendering to ensure correct query
+availability</li>
+<li><strong>AJAX pagination swap</strong> — Standalone pagination
+elements (blocks/shortcodes/Elementor) are updated during AJAX filter
+requests via <code>data-jpkpf-pagination</code> attribute, keeping
+pagination links filter-aware</li>
+<li><strong>Pagination placeholder</strong> — When filter selection
+reduces results to a single page, pagination is hidden but preserved as
+a DOM placeholder; it automatically reappears when filters change back
+to multiple pages</li>
+<li><strong>Auto-inject guard</strong> — Prevents duplicate pagination
+insertion in auto-inject mode during AJAX swaps</li>
+</ul>
+<h3 id="section-2">1.0.0</h3>
+<ul>
+<li>Initial release</li>
+<li>Faceted filtering for any post type and taxonomy</li>
+<li>Four filter layouts: bar, columns, sidebar, dropdown</li>
+<li>Three list layouts: cards, rows, minimal</li>
+<li>SEO-friendly URL schema with WordPress rewrite rules</li>
+<li>AJAX filtering with <code>history.pushState</code></li>
+<li>Auto-inject mode for archive/blog pages with configurable pagination
+position</li>
+<li>Shortcodes: <code>[jpkcom_postfilter_filter]</code>,
+<code>[jpkcom_postfilter_list]</code>,
+<code>[jpkcom_postfilter_pagination]</code></li>
+<li>Interactive shortcode builder in admin</li>
+<li>Custom taxonomy registration from Filter Groups admin page</li>
+<li>Plus/Minus interaction mode for filter buttons</li>
+<li>Show More button with configurable threshold</li>
+<li>Four predefined color schemes (Default, Dark, Contrast,
+Monochrome)</li>
+<li>Three stylesheet modes (Full, Variables only, Disabled)</li>
+<li>Reset button visibility modes (Always, On selection, Never)</li>
+<li>Bare Endpoint Behaviour (404, redirect to home, custom URL)</li>
+<li>Max. Filters per Group limit (URL + JS enforcement)</li>
+<li>Four-layer caching (object cache, transients, APCu, file cache)</li>
+<li>Settings import/export (JSON)</li>
+<li>Translations: de_DE, de_DE_formal</li>
+</ul>
