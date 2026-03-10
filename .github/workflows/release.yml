@@ -95,7 +95,14 @@ jobs:
           # Copy README.md to gh-pages for reference
           cp README.md gh-pages-deploy/
 
-      # 6.1. Build Gutenberg blocks
+      # 6.1. Setup Node.js for Gutenberg blocks
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      # 6.2. Build Gutenberg blocks
       - name: Build Gutenberg blocks
         run: |
           npm ci
