@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.1.1  
+**Version:** 1.1.2  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 6.9  
 **Tested up to:** 6.9  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.1.1  
+**Stable tag:** 1.1.2  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -530,6 +530,10 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.1.2
+- **Plugin Updater** — Fixed manual ZIP upload failing with "invalid URL" error by adding `wp_http_validate_url()` check in `verify_download_checksum()`
+- **Release Workflow** — Fixed ZIP packaging without top-level directory; WordPress now correctly recognises the update by using a staging directory with the plugin slug
 
 ### 1.1.1
 - **.github/workflows/release.yml** — "Build Gutenberg blocks" npm ci bugfix

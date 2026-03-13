@@ -387,7 +387,7 @@ final class JPKComGitPluginUpdater {
      */
     public function verify_download_checksum( $reply, string $package, \WP_Upgrader $upgrader ) {
         // Only verify downloads for this plugin
-        if ( strpos( $package, $this->plugin_slug ) === false ) {
+        if ( strpos( $package, $this->plugin_slug ) === false || ! wp_http_validate_url( $package ) ) {
             return $reply;
         }
 
