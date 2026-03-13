@@ -1,7 +1,7 @@
 {
   "Author": "Jean Pierre Kolb <jpk@jpkc.com>",
   "TextDomain": "jpkcom-post-filter",
-  "Version": "1.1.1",
+  "Version": "1.1.2",
   "Description": "Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.",
   "Example": "To override the cards list template, copy",
   "PluginURI": "https://github.com/JPKCom/jpkcom-post-filter",
@@ -11,7 +11,7 @@
   "Contributors": "JPKCom",
   "Requiresatleast": "6.9",
   "Testedupto": "6.9",
-  "Stabletag": "1.1.1",
+  "Stabletag": "1.1.2",
   "Supportedplacements": "",
   "RequiresPHP": "8.3",
   "License": "GPL-2.0-or-later",

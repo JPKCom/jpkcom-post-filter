@@ -5,7 +5,7 @@ https://github.com/JPKCom/jpkcom-post-filter<br />
 <strong>Description:</strong> Faceted navigation and filtering of Posts,
 Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly
 URLs, AJAX updates, and full screen reader support.<br />
-<strong>Version:</strong> 1.1.1<br />
+<strong>Version:</strong> 1.1.2<br />
 <strong>Author:</strong> Jean Pierre Kolb <a href="mailto:jpk@jpkc.com"
 class="email">jpk@jpkc.com</a><br />
 <strong>Author URI:</strong> https://www.jpkc.com/<br />
@@ -15,7 +15,7 @@ type, AJAX<br />
 <strong>Requires at least:</strong> 6.9<br />
 <strong>Tested up to:</strong> 6.9<br />
 <strong>Requires PHP:</strong> 8.3<br />
-<strong>Stable tag:</strong> 1.1.1<br />
+<strong>Stable tag:</strong> 1.1.2<br />
 <strong>License:</strong> GPL-2.0-or-later<br />
 <strong>License URI:</strong>
 https://www.gnu.org/licenses/gpl-2.0.html<br />
@@ -1087,12 +1087,21 @@ Layout &amp; Design → Advanced</strong>. You are then fully responsible
 for all styling.</p>
 <hr />
 <h2 id="changelog">Changelog</h2>
-<h3 id="section">1.1.1</h3>
+<h3 id="section">1.1.2</h3>
+<ul>
+<li><strong>Plugin Updater</strong> — Fixed manual ZIP upload failing
+with “invalid URL” error by adding <code>wp_http_validate_url()</code>
+check in <code>verify_download_checksum()</code></li>
+<li><strong>Release Workflow</strong> — Fixed ZIP packaging without
+top-level directory; WordPress now correctly recognises the update by
+using a staging directory with the plugin slug</li>
+</ul>
+<h3 id="section-1">1.1.1</h3>
 <ul>
 <li><strong>.github/workflows/release.yml</strong> — “Build Gutenberg
 blocks” npm ci bugfix</li>
 </ul>
-<h3 id="section-1">1.1.0</h3>
+<h3 id="section-2">1.1.0</h3>
 <ul>
 <li><strong>Gutenberg Blocks</strong> — Three native blocks (Post
 Filter, Post List, Post Pagination) with live server-side preview,
@@ -1118,7 +1127,7 @@ to multiple pages</li>
 <li><strong>Auto-inject guard</strong> — Prevents duplicate pagination
 insertion in auto-inject mode during AJAX swaps</li>
 </ul>
-<h3 id="section-2">1.0.0</h3>
+<h3 id="section-3">1.0.0</h3>
 <ul>
 <li>Initial release</li>
 <li>Faceted filtering for any post type and taxonomy</li>
