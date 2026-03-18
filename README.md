@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.1.2  
+**Version:** 1.1.3  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 6.9  
 **Tested up to:** 6.9  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.1.2  
+**Stable tag:** 1.1.3  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -530,6 +530,12 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.1.3
+- **Plus/Minus Icon styling** — New CSS variables (`--jpkpf-pm-color`, `--jpkpf-pm-font-size`, `--jpkpf-pm-font-weight`) for independent styling of the +/– icons in filter buttons
+- **Layout & Design → Filter tab** — New "Plus/Minus Icon" section with Color, Font Size, and Font Weight fields
+- **Force no underline** — New checkbox in Layout & Design → Advanced that applies `text-decoration: none !important` to all filter buttons and icons, fixing themes that force underlines on links
+- **Translations** — Updated de\_DE and de\_DE\_formal translations for all new strings
 
 ### 1.1.2
 - **Plugin Updater** — Fixed manual ZIP upload failing with "invalid URL" error by adding `wp_http_validate_url()` check in `verify_download_checksum()`

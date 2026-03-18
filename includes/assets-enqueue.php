@@ -66,6 +66,10 @@ add_action( 'wp_enqueue_scripts', static function (): void {
         $inline_css .= "}\n";
     }
 
+    if ( ! empty( $layout_settings['force_no_underline'] ) ) {
+        $inline_css .= "\n" . '.jpkpf-filter-btn, .jpkpf-filter-btn:hover, .jpkpf-filter-btn:focus, .jpkpf-filter-btn:focus-visible, .jpkpf-filter-btn:active, .jpkpf-filter-btn:visited, .jpkpf-pm-icon { text-decoration: none !important; }';
+    }
+
     if ( ! empty( $custom_css ) ) {
         $inline_css .= "\n" . wp_strip_all_tags( $custom_css );
     }

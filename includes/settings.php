@@ -401,6 +401,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_default_settings' ) ) {
                 'list_layout'         => 'cards',
                 'reset_button_mode'   => 'on_selection',
                 'plus_minus_mode'     => false,
+                'force_no_underline'  => false,
                 'show_more_enabled'   => false,
                 'show_more_threshold' => 10,
                 'pagination_position' => 'below',
@@ -591,6 +592,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_sanitize_layout_settings' )
 
             'plus_minus_mode' => ! empty( $input['plus_minus_mode'] ),
 
+            'force_no_underline' => ! empty( $input['force_no_underline'] ),
+
             'show_more_enabled' => ! empty( $input['show_more_enabled'] ),
 
             'show_more_threshold' => max( 1, (int) ( $input['show_more_threshold'] ?? $defaults['show_more_threshold'] ) ),
@@ -764,6 +767,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_css_var_defaults' ) ) {
             'grid-cols-sm'              => '1',
             'filter-btn-font-size'      => 'inherit',
             'filter-btn-font-weight'    => 'inherit',
+            'pm-color'                  => 'currentColor',
+            'pm-font-size'              => '0.9em',
+            'pm-font-weight'            => 'inherit',
             'filter-label-color'        => '#646970',
             'filter-label-font-weight'  => '600',
             'filter-label-font-size'    => '0.75rem',

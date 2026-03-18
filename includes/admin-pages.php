@@ -796,6 +796,22 @@ function jpkcom_postfilter_layout_tab_filter( array $settings, array $vars, arra
 
     jpkcom_postfilter_layout_section_close();
 
+    jpkcom_postfilter_layout_section_open( __( 'Plus/Minus Icon', 'jpkcom-post-filter' ) );
+
+    ob_start();
+    jpkcom_postfilter_render_color_field( 'pm-color', $vars['pm-color'] ?? '', $defs['pm-color'] );
+    jpkcom_postfilter_layout_row( __( 'Color', 'jpkcom-post-filter' ), ob_get_clean() );
+
+    ob_start();
+    jpkcom_postfilter_render_text_var_field( 'pm-font-size', $vars['pm-font-size'] ?? '', $defs['pm-font-size'] );
+    jpkcom_postfilter_layout_row( __( 'Font Size', 'jpkcom-post-filter' ), ob_get_clean() );
+
+    ob_start();
+    jpkcom_postfilter_render_select_var_field( 'pm-font-weight', $vars['pm-font-weight'] ?? '', $weight_options, $defs['pm-font-weight'] );
+    jpkcom_postfilter_layout_row( __( 'Font Weight', 'jpkcom-post-filter' ), ob_get_clean() );
+
+    jpkcom_postfilter_layout_section_close();
+
     jpkcom_postfilter_layout_section_open( __( 'Dropdown Panel', 'jpkcom-post-filter' ) );
 
     ob_start();
@@ -1029,6 +1045,7 @@ function jpkcom_postfilter_layout_tab_advanced( array $settings ): void {
     $reset_mode      = $settings['reset_button_mode'] ?? 'on_selection';
     $pagination_pos  = $settings['pagination_position'] ?? 'below';
     $plus_minus      = ! empty( $settings['plus_minus_mode'] );
+    $no_underline    = ! empty( $settings['force_no_underline'] );
     $show_more       = ! empty( $settings['show_more_enabled'] );
     $show_threshold  = (int) ( $settings['show_more_threshold'] ?? 10 );
     $custom_css      = $settings['custom_css'] ?? '';
@@ -1131,6 +1148,19 @@ function jpkcom_postfilter_layout_tab_advanced( array $settings ): void {
         </label>
         <p class="description" style="margin-bottom:16px;">
             <?php esc_html_e( 'Adds a +/– icon to each filter button. Clicking the label selects a filter exclusively; clicking + adds it to the selection.', 'jpkcom-post-filter' ); ?>
+        </p>
+
+        <label style="display:block;margin-bottom:8px;">
+            <input
+                type="checkbox"
+                name="jpkcom_postfilter_layout[force_no_underline]"
+                value="1"
+                <?php checked( $no_underline ); ?>
+            >
+            <strong><?php esc_html_e( 'Force no underline', 'jpkcom-post-filter' ); ?></strong>
+        </label>
+        <p class="description" style="margin-bottom:16px;">
+            <?php esc_html_e( 'Adds text-decoration: none !important to all filter buttons and icons. Use this when your theme forces underlines on links.', 'jpkcom-post-filter' ); ?>
         </p>
 
         <label style="display:block;margin-bottom:8px;">

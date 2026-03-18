@@ -68,6 +68,11 @@
     --jpkpf-filter-btn-font-size:       inherit;
     --jpkpf-filter-btn-font-weight:     inherit;
 
+    /* Plus/Minus icon */
+    --jpkpf-pm-color:                   currentColor;
+    --jpkpf-pm-font-size:               0.9em;
+    --jpkpf-pm-font-weight:             inherit;
+
     /* Filter group label */
     --jpkpf-filter-label-color:         #646970;
     --jpkpf-filter-label-font-weight:   600;
@@ -391,8 +396,11 @@
     margin-inline-start: 0.5rem;
     border-inline-start: 1px solid currentColor;
     opacity: 0.65;
-    font-size: 0.9em;
+    color: var(--jpkpf-pm-color);
+    font-size: var(--jpkpf-pm-font-size);
+    font-weight: var(--jpkpf-pm-font-weight);
     line-height: 1;
+    text-decoration: none;
     pointer-events: auto;
     transition: opacity var(--jpkpf-transition);
 }
