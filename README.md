@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.1.3  
+**Version:** 1.1.4  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 6.9  
 **Tested up to:** 6.9  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.1.3  
+**Stable tag:** 1.1.4  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -530,6 +530,13 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.1.4
+* Security: updater prefers an exact match against the manifest `download_url` over the slug heuristic, so a tampered manifest can no longer bypass the checksum gate
+* Security: timing-safe checksum comparison (`hash_equals()`) with an `is_string()` guard against `hash_file()` failures
+* Security: manifest fetch via `wp_safe_remote_get()` (SSRF defense-in-depth)
+* Fixed PHP warning and missing contributor names in the plugin detail popup (`display_name` now provided)
+* Fixed PHP warning/deprecation on `wp plugin list` by completing the `no_update` transient entry (`new_version`, `package`, `tested`, `requires_php`)
 
 ### 1.1.3
 - **Plus/Minus Icon styling** — New CSS variables (`--jpkpf-pm-color`, `--jpkpf-pm-font-size`, `--jpkpf-pm-font-weight`) for independent styling of the +/– icons in filter buttons

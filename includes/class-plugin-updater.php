@@ -126,7 +126,7 @@ final class JPKComGitPluginUpdater {
             // Acquire lock for 30 seconds
             set_transient( $lock_key, true, 30 );
 
-            $response = wp_remote_get( $this->manifest_url, [
+            $response = wp_safe_remote_get( $this->manifest_url, [
                 'timeout' => 15,
                 'headers' => ['Accept' => 'application/json'],
             ] );
@@ -224,14 +224,17 @@ final class JPKComGitPluginUpdater {
         foreach ( $contributors as $key => $value ) {
             if ( is_string( value: $value ) ) {
                 $wp_contributors[$value] = [
-                    'profile' => sprintf( format: 'https://profiles.wordpress.org/%s', values: $value ),
-                    'avatar'  => sprintf( format: 'https://wordpress.org/grav-redirect.php?user=%s&s=36', values: $value ),
+                    'display_name' => sanitize_text_field( $value ),
+                    'profile'      => sprintf( format: 'https://profiles.wordpress.org/%s', values: $value ),
+                    'avatar'       => sprintf( format: 'https://wordpress.org/grav-redirect.php?user=%s&s=36', values: $value ),
                 ];
             } elseif ( is_array( value: $value ) || is_object( value: $value ) ) {
                 $value = (array) $value;
                 $wp_contributors[$key] = [
-                    'profile' => $value['profile'] ?? sprintf( format: 'https://profiles.wordpress.org/%s', values: $key ),
-                    'avatar'  => $value['avatar']  ?? sprintf( format: 'https://wordpress.org/grav-redirect.php?user=%s&s=36', values: $key ),
+                    // `??` only catches null/missing; an empty-string display_name falls through to WP core's own username fallback.
+                    'display_name' => sanitize_text_field( $value['display_name'] ?? $key ),
+                    'profile'      => $value['profile'] ?? sprintf( format: 'https://profiles.wordpress.org/%s', values: $key ),
+                    'avatar'       => $value['avatar']  ?? sprintf( format: 'https://wordpress.org/grav-redirect.php?user=%s&s=36', values: $key ),
                 ];
             }
         }
@@ -347,9 +350,13 @@ final class JPKComGitPluginUpdater {
             $icon_url = $remote->icons->default ?? $remote->icon ?? "https://s.w.org/plugins/geopattern-icon/{$this->plugin_slug}.svg";
 
             $transient->no_update[ $plugin_basename ] = (object) [
-                'slug'   => $this->plugin_slug,
-                'plugin' => $plugin_basename,
-                'icons'  => [
+                'slug'         => $this->plugin_slug,
+                'plugin'       => $plugin_basename,
+                'new_version'  => sanitize_text_field( $remote->version ?? $this->current_version ),
+                'package'      => '',
+                'tested'       => sanitize_text_field( $remote->tested ?? '' ),
+                'requires_php' => sanitize_text_field( $remote->requires_php ?? '' ),
+                'icons'        => [
                     'default' => esc_url_raw( $icon_url )
                 ]
             ];
@@ -386,14 +393,31 @@ final class JPKComGitPluginUpdater {
      * @return bool|\WP_Error True to proceed, WP_Error if verification fails.
      */
     public function verify_download_checksum( $reply, string $package, \WP_Upgrader $upgrader ) {
-        // Only verify downloads for this plugin
-        if ( strpos( $package, $this->plugin_slug ) === false || ! wp_http_validate_url( $package ) ) {
+        if ( ! wp_http_validate_url( $package ) ) {
             return $reply;
         }
 
-        $remote = $this->get_remote_manifest();
+        // Determine whether this download belongs to our plugin. We prefer
+        // an exact match against the manifest's download_url over the slug
+        // heuristic: a manifest with a download_url that does not contain
+        // the slug should still go through the checksum gate, not bypass it.
+        $remote         = $this->get_remote_manifest();
+        $is_our_package = false;
+        if ( $remote && ! empty( $remote->download_url ) ) {
+            $manifest_url = esc_url_raw( (string) $remote->download_url );
+            if ( '' !== $manifest_url && $package === $manifest_url ) {
+                $is_our_package = true;
+            }
+        }
+        if ( ! $is_our_package && strpos( $package, $this->plugin_slug ) !== false ) {
+            $is_our_package = true;
+        }
+        if ( ! $is_our_package ) {
+            return $reply;
+        }
+
         if ( ! $remote || empty( $remote->checksum_sha256 ) ) {
-            // No checksum in manifest, allow download (backward compatibility)
+            // No checksum in manifest, allow download (backward compatibility).
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 error_log( 'JPKCom Plugin Updater: No checksum found in manifest, skipping verification' );
             }
@@ -418,13 +442,14 @@ final class JPKComGitPluginUpdater {
         // Clean up temp file
         @unlink( $temp_file );
 
-        // Verify checksum
+        // Verify checksum (timing-safe).
         $expected_hash = strtolower( trim( $remote->checksum_sha256 ) );
-        if ( $calculated_hash !== $expected_hash ) {
+        if ( ! is_string( $calculated_hash ) || ! hash_equals( $expected_hash, $calculated_hash ) ) {
             $error_msg = sprintf(
-                __( 'Security verification failed: Plugin checksum mismatch. Expected: %s, Got: %s', 'jpkcom-post-filter' ),
+                /* translators: 1: expected SHA-256 hash, 2: calculated SHA-256 hash */
+                __( 'Security verification failed: Plugin checksum mismatch. Expected: %1$s, Got: %2$s', 'jpkcom-post-filter' ),
                 $expected_hash,
-                $calculated_hash
+                is_string( $calculated_hash ) ? $calculated_hash : '(hash failed)'
             );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
