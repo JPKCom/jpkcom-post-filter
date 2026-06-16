@@ -5,7 +5,7 @@ https://github.com/JPKCom/jpkcom-post-filter<br />
 <strong>Description:</strong> Faceted navigation and filtering of Posts,
 Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly
 URLs, AJAX updates, and full screen reader support.<br />
-<strong>Version:</strong> 1.1.3<br />
+<strong>Version:</strong> 1.1.4<br />
 <strong>Author:</strong> Jean Pierre Kolb <a href="mailto:jpk@jpkc.com"
 class="email">jpk@jpkc.com</a><br />
 <strong>Author URI:</strong> https://www.jpkc.com/<br />
@@ -15,7 +15,7 @@ type, AJAX<br />
 <strong>Requires at least:</strong> 6.9<br />
 <strong>Tested up to:</strong> 6.9<br />
 <strong>Requires PHP:</strong> 8.3<br />
-<strong>Stable tag:</strong> 1.1.3<br />
+<strong>Stable tag:</strong> 1.1.4<br />
 <strong>License:</strong> GPL-2.0-or-later<br />
 <strong>License URI:</strong>
 https://www.gnu.org/licenses/gpl-2.0.html<br />
@@ -1087,7 +1087,24 @@ Layout &amp; Design → Advanced</strong>. You are then fully responsible
 for all styling.</p>
 <hr />
 <h2 id="changelog">Changelog</h2>
-<h3 id="section">1.1.3</h3>
+<h3 id="section">1.1.4</h3>
+<ul>
+<li>Security: updater prefers an exact match against the manifest
+<code>download_url</code> over the slug heuristic, so a tampered
+manifest can no longer bypass the checksum gate</li>
+<li>Security: timing-safe checksum comparison
+(<code>hash_equals()</code>) with an <code>is_string()</code> guard
+against <code>hash_file()</code> failures</li>
+<li>Security: manifest fetch via <code>wp_safe_remote_get()</code> (SSRF
+defense-in-depth)</li>
+<li>Fixed PHP warning and missing contributor names in the plugin detail
+popup (<code>display_name</code> now provided)</li>
+<li>Fixed PHP warning/deprecation on <code>wp plugin list</code> by
+completing the <code>no_update</code> transient entry
+(<code>new_version</code>, <code>package</code>, <code>tested</code>,
+<code>requires_php</code>)</li>
+</ul>
+<h3 id="section-1">1.1.3</h3>
 <ul>
 <li><strong>Plus/Minus Icon styling</strong> — New CSS variables
 (<code>--jpkpf-pm-color</code>, <code>--jpkpf-pm-font-size</code>,
@@ -1102,7 +1119,7 @@ icons, fixing themes that force underlines on links</li>
 <li><strong>Translations</strong> — Updated de_DE and de_DE_formal
 translations for all new strings</li>
 </ul>
-<h3 id="section-1">1.1.2</h3>
+<h3 id="section-2">1.1.2</h3>
 <ul>
 <li><strong>Plugin Updater</strong> — Fixed manual ZIP upload failing
 with “invalid URL” error by adding <code>wp_http_validate_url()</code>
@@ -1111,12 +1128,12 @@ check in <code>verify_download_checksum()</code></li>
 top-level directory; WordPress now correctly recognises the update by
 using a staging directory with the plugin slug</li>
 </ul>
-<h3 id="section-2">1.1.1</h3>
+<h3 id="section-3">1.1.1</h3>
 <ul>
 <li><strong>.github/workflows/release.yml</strong> — “Build Gutenberg
 blocks” npm ci bugfix</li>
 </ul>
-<h3 id="section-3">1.1.0</h3>
+<h3 id="section-4">1.1.0</h3>
 <ul>
 <li><strong>Gutenberg Blocks</strong> — Three native blocks (Post
 Filter, Post List, Post Pagination) with live server-side preview,
@@ -1142,7 +1159,7 @@ to multiple pages</li>
 <li><strong>Auto-inject guard</strong> — Prevents duplicate pagination
 insertion in auto-inject mode during AJAX swaps</li>
 </ul>
-<h3 id="section-4">1.0.0</h3>
+<h3 id="section-5">1.0.0</h3>
 <ul>
 <li>Initial release</li>
 <li>Faceted filtering for any post type and taxonomy</li>
