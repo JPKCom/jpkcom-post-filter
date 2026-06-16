@@ -1,8 +1,12 @@
 name: Build WordPress Plugin ZIP, Generate Plugin Manifest & Deploy
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
   build-and-deploy:
@@ -149,6 +153,8 @@ jobs:
       - name: Upload ZIP and checksum to GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
           files: |
             ${{ env.ZIP_FILE }}
             ${{ env.ZIP_FILE }}.sha256
