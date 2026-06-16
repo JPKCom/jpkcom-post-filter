@@ -3,15 +3,15 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.1.4  
+**Version:** 1.1.5  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
 **Tags:** filter, taxonomy, faceted search, custom post type, AJAX  
 **Requires at least:** 6.9  
-**Tested up to:** 6.9  
+**Tested up to:** 7.0  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.1.4  
+**Stable tag:** 1.1.5  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -530,6 +530,10 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.1.5
+* Raised "Tested up to" to WordPress 7.0
+* Normalized license fallback defaults (updater and release workflow) to `GPL-2.0-or-later` with the HTTPS license URI
 
 ### 1.1.4
 * Security: updater prefers an exact match against the manifest `download_url` over the slug heuristic, so a tampered manifest can no longer bypass the checksum gate
