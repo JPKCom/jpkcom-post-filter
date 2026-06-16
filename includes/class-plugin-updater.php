@@ -248,8 +248,8 @@ final class JPKComGitPluginUpdater {
         $info->requires         = sanitize_text_field( $remote->requires ?? '6.8' );
         $info->tested           = sanitize_text_field( $remote->tested ?? '6.9' );
         $info->requires_php     = sanitize_text_field( $remote->requires_php ?? '8.3' );
-        $info->license          = sanitize_text_field( $remote->license ?? 'GPL-2.0+' );
-        $info->license_uri      = esc_url_raw( $remote->license_uri ?? 'http://www.gnu.org/licenses/gpl-2.0.txt' );
+        $info->license          = sanitize_text_field( $remote->license ?? 'GPL-2.0-or-later' );
+        $info->license_uri      = esc_url_raw( $remote->license_uri ?? 'https://www.gnu.org/licenses/gpl-2.0.html' );
 
         $tags = $remote->tags ?? [];
         if ( ! is_array( value: $tags ) ) {
