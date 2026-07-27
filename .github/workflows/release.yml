@@ -118,6 +118,7 @@ jobs:
           STAGING_DIR="${{ env.PLUGIN_SLUG }}"
           mkdir -p "$STAGING_DIR"
           rsync -a \
+            --exclude="/$STAGING_DIR" \
             --exclude='.git' \
             --exclude='.gitignore' \
             --exclude='.github' \
