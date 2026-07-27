@@ -99,7 +99,7 @@ https://github.com/JPKCom/jpkcom-post-filter<br />
 <strong>Description:</strong> Faceted navigation and filtering of Posts,
 Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly
 URLs, AJAX updates, and full screen reader support.<br />
-<strong>Version:</strong> 1.1.5<br />
+<strong>Version:</strong> 1.1.6<br />
 <strong>Author:</strong> Jean Pierre Kolb <a href="mailto:jpk@jpkc.com"
 class="email">jpk@jpkc.com</a><br />
 <strong>Author URI:</strong> https://www.jpkc.com/<br />
@@ -109,7 +109,7 @@ type, AJAX<br />
 <strong>Requires at least:</strong> 6.9<br />
 <strong>Tested up to:</strong> 7.0<br />
 <strong>Requires PHP:</strong> 8.3<br />
-<strong>Stable tag:</strong> 1.1.5<br />
+<strong>Stable tag:</strong> 1.1.6<br />
 <strong>License:</strong> GPL-2.0-or-later<br />
 <strong>License URI:</strong>
 https://www.gnu.org/licenses/gpl-2.0.html<br />
@@ -1181,13 +1181,40 @@ Layout &amp; Design → Advanced</strong>. You are then fully responsible
 for all styling.</p>
 <hr />
 <h2 id="changelog">Changelog</h2>
-<h3 id="section">1.1.5</h3>
+<h3 id="section">1.1.6</h3>
+<ul>
+<li>Security: update packages are now verified <em>before</em>
+installation — the verified file is handed to WordPress instead of being
+downloaded a second time, so the bytes that were checked are the bytes
+that get installed</li>
+<li>Security: a missing or unfetchable SHA-256 checksum now aborts the
+update instead of installing unverified code (previously it silently
+skipped verification)</li>
+<li>Security: pinned every GitHub Action to a full commit SHA and added
+Dependabot with a 7-day cooldown, so a moved tag can no longer change
+the release build</li>
+<li>Security: tightened which download the updater claims, so sibling
+plugins cannot match each other’s package</li>
+<li>Fixed: <code>sprintf()</code> calls in the updater bound named
+arguments to a variadic parameter, which raises
+<code>ArgumentCountError</code> on PHP 8.3</li>
+<li>Fixed: the “View Details” modal could fail with a
+<code>TypeError</code> when the manifest omitted
+<code>requires_plugins</code></li>
+<li>Performance: a failed manifest fetch is now cached for an hour
+instead of being retried on every admin request</li>
+<li>Added: CI workflow on every pull request (PHP lint, named-argument
+check, YAML validation, action-pinning guard)</li>
+<li>Housekeeping: removed stray editor backups and an unused
+<code>messages.mo</code> from the release package</li>
+</ul>
+<h3 id="section-1">1.1.5</h3>
 <ul>
 <li>Raised “Tested up to” to WordPress 7.0</li>
 <li>Normalized license fallback defaults (updater and release workflow)
 to <code>GPL-2.0-or-later</code> with the HTTPS license URI</li>
 </ul>
-<h3 id="section-1">1.1.4</h3>
+<h3 id="section-2">1.1.4</h3>
 <ul>
 <li>Security: updater prefers an exact match against the manifest
 <code>download_url</code> over the slug heuristic, so a tampered
@@ -1204,7 +1231,7 @@ completing the <code>no_update</code> transient entry
 (<code>new_version</code>, <code>package</code>, <code>tested</code>,
 <code>requires_php</code>)</li>
 </ul>
-<h3 id="section-2">1.1.3</h3>
+<h3 id="section-3">1.1.3</h3>
 <ul>
 <li><strong>Plus/Minus Icon styling</strong> — New CSS variables
 (<code>--jpkpf-pm-color</code>, <code>--jpkpf-pm-font-size</code>,
@@ -1219,7 +1246,7 @@ icons, fixing themes that force underlines on links</li>
 <li><strong>Translations</strong> — Updated de_DE and de_DE_formal
 translations for all new strings</li>
 </ul>
-<h3 id="section-3">1.1.2</h3>
+<h3 id="section-4">1.1.2</h3>
 <ul>
 <li><strong>Plugin Updater</strong> — Fixed manual ZIP upload failing
 with “invalid URL” error by adding <code>wp_http_validate_url()</code>
@@ -1228,12 +1255,12 @@ check in <code>verify_download_checksum()</code></li>
 top-level directory; WordPress now correctly recognises the update by
 using a staging directory with the plugin slug</li>
 </ul>
-<h3 id="section-4">1.1.1</h3>
+<h3 id="section-5">1.1.1</h3>
 <ul>
 <li><strong>.github/workflows/release.yml</strong> — “Build Gutenberg
 blocks” npm ci bugfix</li>
 </ul>
-<h3 id="section-5">1.1.0</h3>
+<h3 id="section-6">1.1.0</h3>
 <ul>
 <li><strong>Gutenberg Blocks</strong> — Three native blocks (Post
 Filter, Post List, Post Pagination) with live server-side preview,
@@ -1259,7 +1286,7 @@ to multiple pages</li>
 <li><strong>Auto-inject guard</strong> — Prevents duplicate pagination
 insertion in auto-inject mode during AJAX swaps</li>
 </ul>
-<h3 id="section-6">1.0.0</h3>
+<h3 id="section-7">1.0.0</h3>
 <ul>
 <li>Initial release</li>
 <li>Faceted filtering for any post type and taxonomy</li>
