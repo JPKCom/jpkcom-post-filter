@@ -696,6 +696,11 @@ Search.appendIndex(
             "summary": "Execute\u0020a\u0020WP_Query\u0020with\u0020object\u002Dcache\u0020caching",
             "url": "namespaces/default.html#function_jpkcom_postfilter_run_query"
         },                {
+            "fqsen": "\\jpkcom_postfilter_path_is_inside\u0028\u0029",
+            "name": "jpkcom_postfilter_path_is_inside",
+            "summary": "Check\u0020whether\u0020a\u0020path\u0020resolves\u0020inside\u0020a\u0020base\u0020directory",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_path_is_inside"
+        },                {
             "fqsen": "\\jpkcom_postfilter_ensure_settings_dir\u0028\u0029",
             "name": "jpkcom_postfilter_ensure_settings_dir",
             "summary": "Create\u0020the\u0020settings\u0020cache\u0020directory\u0020and\u0020write\u0020a\u0020protective\u0020.htaccess",
@@ -865,6 +870,11 @@ Search.appendIndex(
             "name": "jpkcom_postfilter_archive_query_string",
             "summary": "Get\u0020the\u0020WP\u0020query\u0020string\u0020fragment\u0020that\u0020establishes\u0020the\u0020correct\u0020archive\u0020context",
             "url": "namespaces/default.html#function_jpkcom_postfilter_archive_query_string"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_has_unknown_terms\u0028\u0029",
+            "name": "jpkcom_postfilter_has_unknown_terms",
+            "summary": "Whether\u0020the\u0020active\u0020filters\u0020reference\u0020term\u0020slugs\u0020that\u0020do\u0020not\u0020exist",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_has_unknown_terms"
         },                {
             "fqsen": "\\JPKCOM_POSTFILTER_VERSION",
             "name": "JPKCOM_POSTFILTER_VERSION",

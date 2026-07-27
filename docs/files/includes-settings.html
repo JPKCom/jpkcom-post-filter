@@ -182,6 +182,13 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
 </h4>
 <dl class="phpdocumentor-table-of-contents">
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_path_is_inside">jpkcom_postfilter_path_is_inside()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Check whether a path resolves inside a base directory</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ensure_settings_dir">jpkcom_postfilter_ensure_settings_dir()</a>
     <span>
                                 &nbsp;: bool    </span>
@@ -312,6 +319,81 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
 
         </h3>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_path_is_inside">
+        jpkcom_postfilter_path_is_inside()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_path_is_inside" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">50</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Check whether a path resolves inside a base directory</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_path_is_inside</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$path</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$base</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p><code class="prettyprint">realpath()</code> returns false for a path that does not exist yet, which is
+the normal case when the cache directory is about to be created. So the
+deepest ancestor that <em>does</em> exist is resolved instead — that is enough
+to catch a symlink or <code class="prettyprint">..</code> pointing out of the base, while still allowing
+the directory itself to be missing.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$path</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Path to test (need not exist).</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$base</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Base directory it must live inside.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_path_is_inside_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_path_is_inside_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.1.7</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True if $path resolves inside $base.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ensure_settings_dir">
         jpkcom_postfilter_ensure_settings_dir()
         <a href="namespaces/default.html#function_jpkcom_postfilter_ensure_settings_dir" class="headerlink"><i class="fas fa-link"></i></a>
@@ -320,7 +402,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">41</span>
+    <span class="phpdocumentor-element-found-in__line">90</span>
 
     </aside>
 
@@ -368,7 +450,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">105</span>
+    <span class="phpdocumentor-element-found-in__line">161</span>
 
     </aside>
 
@@ -428,7 +510,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">125</span>
+    <span class="phpdocumentor-element-found-in__line">181</span>
 
     </aside>
 
@@ -488,7 +570,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">175</span>
+    <span class="phpdocumentor-element-found-in__line">231</span>
 
     </aside>
 
@@ -557,7 +639,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">238</span>
+    <span class="phpdocumentor-element-found-in__line">294</span>
 
     </aside>
 
@@ -617,7 +699,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">269</span>
+    <span class="phpdocumentor-element-found-in__line">325</span>
 
     </aside>
 
@@ -695,7 +777,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">285</span>
+    <span class="phpdocumentor-element-found-in__line">341</span>
 
     </aside>
 
@@ -755,7 +837,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">316</span>
+    <span class="phpdocumentor-element-found-in__line">372</span>
 
     </aside>
 
@@ -824,7 +906,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">350</span>
+    <span class="phpdocumentor-element-found-in__line">406</span>
 
     </aside>
 
@@ -876,7 +958,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">383</span>
+    <span class="phpdocumentor-element-found-in__line">439</span>
 
     </aside>
 
@@ -924,7 +1006,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">490</span>
+    <span class="phpdocumentor-element-found-in__line">546</span>
 
     </aside>
 
@@ -984,7 +1066,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">566</span>
+    <span class="phpdocumentor-element-found-in__line">622</span>
 
     </aside>
 
@@ -1044,7 +1126,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">644</span>
+    <span class="phpdocumentor-element-found-in__line">700</span>
 
     </aside>
 
@@ -1104,7 +1186,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">671</span>
+    <span class="phpdocumentor-element-found-in__line">727</span>
 
     </aside>
 
@@ -1164,7 +1246,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">728</span>
+    <span class="phpdocumentor-element-found-in__line">784</span>
 
     </aside>
 
@@ -1212,7 +1294,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">802</span>
+    <span class="phpdocumentor-element-found-in__line">858</span>
 
     </aside>
 
@@ -1272,7 +1354,7 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">876</span>
+    <span class="phpdocumentor-element-found-in__line">932</span>
 
     </aside>
 
@@ -1354,6 +1436,7 @@ For 'vars_only' mode, all defaults are included.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_color_scheme_vars">jpkcom_postfilter_get_color_scheme_vars()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_css_var_defaults">jpkcom_postfilter_get_css_var_defaults()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_merged_css_vars">jpkcom_postfilter_get_merged_css_vars()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_path_is_inside">jpkcom_postfilter_path_is_inside()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_cache_settings">jpkcom_postfilter_sanitize_cache_settings()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_filter_groups_settings">jpkcom_postfilter_sanitize_filter_groups_settings()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_general_settings">jpkcom_postfilter_sanitize_general_settings()</a></li>

@@ -617,6 +617,13 @@
 <dd>Execute a WP_Query with object-cache caching</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_path_is_inside">jpkcom_postfilter_path_is_inside()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Check whether a path resolves inside a base directory</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ensure_settings_dir">jpkcom_postfilter_ensure_settings_dir()</a>
     <span>
                                 &nbsp;: bool    </span>
@@ -853,6 +860,13 @@
                                 &nbsp;: string    </span>
 </dt>
 <dd>Get the WP query string fragment that establishes the correct archive context</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_has_unknown_terms">jpkcom_postfilter_has_unknown_terms()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether the active filters reference term slugs that do not exist</dd>
 
     </dl>
 
@@ -4419,7 +4433,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/query-handler.php"><a href="files/includes-query-handler.html"><abbr title="includes/query-handler.php">query-handler.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">171</span>
+    <span class="phpdocumentor-element-found-in__line">214</span>
 
     </aside>
 
@@ -4483,6 +4497,81 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_path_is_inside">
+        jpkcom_postfilter_path_is_inside()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_path_is_inside" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">50</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Check whether a path resolves inside a base directory</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_path_is_inside</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$path</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$base</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p><code class="prettyprint">realpath()</code> returns false for a path that does not exist yet, which is
+the normal case when the cache directory is about to be created. So the
+deepest ancestor that <em>does</em> exist is resolved instead — that is enough
+to catch a symlink or <code class="prettyprint">..</code> pointing out of the base, while still allowing
+the directory itself to be missing.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$path</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Path to test (need not exist).</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$base</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Base directory it must live inside.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_path_is_inside_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_path_is_inside_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.1.7</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True if $path resolves inside $base.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ensure_settings_dir">
         jpkcom_postfilter_ensure_settings_dir()
         <a href="namespaces/default.html#function_jpkcom_postfilter_ensure_settings_dir" class="headerlink"><i class="fas fa-link"></i></a>
@@ -4491,7 +4580,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">41</span>
+    <span class="phpdocumentor-element-found-in__line">90</span>
 
     </aside>
 
@@ -4539,7 +4628,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">105</span>
+    <span class="phpdocumentor-element-found-in__line">161</span>
 
     </aside>
 
@@ -4599,7 +4688,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">125</span>
+    <span class="phpdocumentor-element-found-in__line">181</span>
 
     </aside>
 
@@ -4659,7 +4748,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">175</span>
+    <span class="phpdocumentor-element-found-in__line">231</span>
 
     </aside>
 
@@ -4728,7 +4817,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">238</span>
+    <span class="phpdocumentor-element-found-in__line">294</span>
 
     </aside>
 
@@ -4788,7 +4877,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">269</span>
+    <span class="phpdocumentor-element-found-in__line">325</span>
 
     </aside>
 
@@ -4866,7 +4955,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">285</span>
+    <span class="phpdocumentor-element-found-in__line">341</span>
 
     </aside>
 
@@ -4926,7 +5015,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">316</span>
+    <span class="phpdocumentor-element-found-in__line">372</span>
 
     </aside>
 
@@ -4995,7 +5084,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">350</span>
+    <span class="phpdocumentor-element-found-in__line">406</span>
 
     </aside>
 
@@ -5047,7 +5136,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">383</span>
+    <span class="phpdocumentor-element-found-in__line">439</span>
 
     </aside>
 
@@ -5095,7 +5184,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">490</span>
+    <span class="phpdocumentor-element-found-in__line">546</span>
 
     </aside>
 
@@ -5155,7 +5244,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">566</span>
+    <span class="phpdocumentor-element-found-in__line">622</span>
 
     </aside>
 
@@ -5215,7 +5304,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">644</span>
+    <span class="phpdocumentor-element-found-in__line">700</span>
 
     </aside>
 
@@ -5275,7 +5364,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">671</span>
+    <span class="phpdocumentor-element-found-in__line">727</span>
 
     </aside>
 
@@ -5335,7 +5424,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">728</span>
+    <span class="phpdocumentor-element-found-in__line">784</span>
 
     </aside>
 
@@ -5383,7 +5472,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">802</span>
+    <span class="phpdocumentor-element-found-in__line">858</span>
 
     </aside>
 
@@ -5443,7 +5532,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">876</span>
+    <span class="phpdocumentor-element-found-in__line">932</span>
 
     </aside>
 
@@ -6631,6 +6720,65 @@ post type has no archive.</p>
             </section>
 
 </article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_has_unknown_terms">
+        jpkcom_postfilter_has_unknown_terms()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_has_unknown_terms" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/url-routing.php"><a href="files/includes-url-routing.html"><abbr title="includes/url-routing.php">url-routing.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">408</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether the active filters reference term slugs that do not exist</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_has_unknown_terms</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>Term slugs from the URL are sanitised but never checked for existence, so
+<code class="prettyprint">/blog/filter/does-not-exist/</code> renders a perfectly valid page with zero
+results. Left alone, every made-up slug is therefore an indexable,
+self-canonicalising thin-content URL that anyone can generate and link.</p>
+<p>Such requests keep returning 200 — turning them into 404s would break
+legitimate old links whose terms were later renamed — but they are marked
+<code class="prettyprint">noindex</code> so they stay out of the index.</p>
+<p>Validation reuses the transient-cached per-taxonomy term list, so this
+costs no extra query on a warm cache and cannot itself be used to flood
+the cache: the cache key is the taxonomy, never the requested slugs.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_has_unknown_terms_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_has_unknown_terms_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.1.7</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True if at least one requested slug is unknown.</p>
+</section>
+
+            </section>
+
+</article>
             </section>
 
         
@@ -6711,6 +6859,7 @@ post type has no archive.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_template_part">jpkcom_postfilter_get_template_part()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_terms_for_group">jpkcom_postfilter_get_terms_for_group()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_terms_for_taxonomy">jpkcom_postfilter_get_terms_for_taxonomy()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_has_unknown_terms">jpkcom_postfilter_has_unknown_terms()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_is_block_editor_request">jpkcom_postfilter_is_block_editor_request()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_is_filter_request">jpkcom_postfilter_is_filter_request()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_layout_row">jpkcom_postfilter_layout_row()</a></li>
@@ -6732,6 +6881,7 @@ post type has no archive.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_page_layout">jpkcom_postfilter_page_layout()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_page_shortcodes">jpkcom_postfilter_page_shortcodes()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_parse_filter_path">jpkcom_postfilter_parse_filter_path()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_path_is_inside">jpkcom_postfilter_path_is_inside()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_prerun_list_blocks">jpkcom_postfilter_prerun_list_blocks()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_query_cache_key">jpkcom_postfilter_query_cache_key()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_render_color_field">jpkcom_postfilter_render_color_field()</a></li>
