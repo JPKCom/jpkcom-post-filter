@@ -31,6 +31,55 @@ if ( ! defined( constant_name: 'ABSPATH' ) ) {
 // Settings directory & .htaccess setup
 // ---------------------------------------------------------------------------
 
+if ( ! function_exists( function: 'jpkcom_postfilter_path_is_inside' ) ) {
+    /**
+     * Check whether a path resolves inside a base directory
+     *
+     * `realpath()` returns false for a path that does not exist yet, which is
+     * the normal case when the cache directory is about to be created. So the
+     * deepest ancestor that *does* exist is resolved instead — that is enough
+     * to catch a symlink or `..` pointing out of the base, while still allowing
+     * the directory itself to be missing.
+     *
+     * @since 1.1.7
+     *
+     * @param string $path Path to test (need not exist).
+     * @param string $base Base directory it must live inside.
+     * @return bool True if $path resolves inside $base.
+     */
+    function jpkcom_postfilter_path_is_inside( string $path, string $base ): bool {
+        $real_base = realpath( $base );
+
+        if ( $real_base === false || $path === '' ) {
+            return false;
+        }
+
+        // Walk up to the deepest existing ancestor.
+        $probe = $path;
+        while ( ! file_exists( $probe ) ) {
+            $parent = dirname( $probe );
+
+            if ( $parent === $probe ) {
+                return false; // Reached the root without finding anything.
+            }
+
+            $probe = $parent;
+        }
+
+        $real_probe = realpath( $probe );
+
+        if ( $real_probe === false ) {
+            return false;
+        }
+
+        $real_base  = rtrim( $real_base, '/\\' ) . DIRECTORY_SEPARATOR;
+        $real_probe = rtrim( $real_probe, '/\\' ) . DIRECTORY_SEPARATOR;
+
+        return str_starts_with( $real_probe, $real_base );
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_ensure_settings_dir' ) ) {
     /**
      * Create the settings cache directory and write a protective .htaccess
@@ -41,9 +90,16 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ensure_settings_dir' ) ) {
     function jpkcom_postfilter_ensure_settings_dir(): bool {
         $dir = JPKCOM_POSTFILTER_SETTINGS_DIR;
 
-        // Security: validate path – must be inside WP_CONTENT_DIR
-        if ( ! str_starts_with( realpath( WP_CONTENT_DIR ) ?: WP_CONTENT_DIR, realpath( WP_CONTENT_DIR ) ) ) {
-            jpkcom_postfilter_debug_log( 'Settings dir path traversal detected', [ 'dir' => $dir ] );
+        // Security: the target must resolve inside WP_CONTENT_DIR.
+        //
+        // This matters because the directory is overridable from wp-config.php
+        // and is where this plugin writes PHP files that are later include()d.
+        //
+        // The previous form compared realpath( WP_CONTENT_DIR ) against itself
+        // and never mentioned $dir at all, so the condition was structurally
+        // always false and the guard never fired.
+        if ( ! jpkcom_postfilter_path_is_inside( $dir, WP_CONTENT_DIR ) ) {
+            jpkcom_postfilter_debug_log( 'Settings dir outside WP_CONTENT_DIR – refusing to create', [ 'dir' => $dir ] );
             return false;
         }
 

@@ -40,7 +40,7 @@ All builders call the same shortcode render functions (`jpkcom_postfilter_shortc
 
 | Constant | Default | Purpose |
 |----------|---------|---------|
-| `JPKCOM_POSTFILTER_VERSION` | `'1.1.6'` | Plugin version |
+| `JPKCOM_POSTFILTER_VERSION` | `'1.1.7'` | Plugin version |
 | `JPKCOM_POSTFILTER_BASENAME` | `plugin_basename(__FILE__)` | Plugin basename |
 | `JPKCOM_POSTFILTER_PLUGIN_PATH` | `plugin_dir_path(__FILE__)` | Absolute path |
 | `JPKCOM_POSTFILTER_PLUGIN_URL` | `plugin_dir_url(__FILE__)` | URL |
@@ -282,8 +282,17 @@ File: `assets/js/post-filter.js`
 - All AJAX: `check_ajax_referer()` + `current_user_can()`
 - `declare(strict_types=1)` in every PHP file
 - Typed function signatures throughout
-- Settings path validated against `WP_CONTENT_DIR`
+- Settings path validated against `WP_CONTENT_DIR` via `jpkcom_postfilter_path_is_inside()`. This matters because `JPKCOM_POSTFILTER_SETTINGS_DIR` is overridable from `wp-config.php` and is where the plugin writes PHP files it later `include`s. Up to 1.1.6 the check compared `realpath( WP_CONTENT_DIR )` with itself and never mentioned the directory being validated, so it was structurally always false and never fired — do not reintroduce that shape. The helper resolves the deepest *existing* ancestor, because the directory legitimately does not exist yet on first run.
 - Settings cache dir protected by `.htaccess`
+- `jpkcom_postfilter_build_query_args()` accepts extra WP_Query args only in a coerced form (`s` sanitised, `author` → list of positive ints, `year`/`monthnum` → `absint`, `meta_value` only alongside a `meta_key`). **`meta_query` is deliberately not forwarded** — it is a nested structure that cannot be validated in passing. Callers needing it use the `jpkcom_postfilter_query_args` filter, which runs with knowledge of its own input.
+
+### Filter URLs with unknown term slugs
+
+Term slugs from the URL are sanitised but never checked for existence, so `/blog/filter/does-not-exist/` renders a valid page with zero results. These requests **keep returning 200** — turning them into 404s would break legitimate old links whose terms were later renamed — but `jpkcom_postfilter_has_unknown_terms()` marks them `noindex, follow` via the `wp_robots` filter.
+
+Without that, every made-up slug was an indexable, self-canonicalising thin-content URL that anyone could generate and link, and each one also produced its own query-cache entry (APCu included).
+
+Validation reuses the transient-cached per-taxonomy term list, keyed by **taxonomy — never by the requested slugs** — so it costs no extra query on a warm cache and cannot itself be used to flood the cache. `hide_empty = false`: a term with no posts is still a real term and a legitimate URL.
 - Updater: SHA256 checksum verification is **mandatory** (fail closed) and the verified temp file is returned from `upgrader_pre_download`, so WordPress installs exactly the bytes that were hashed
 
 **This plugin holds the upstream copy of `includes/class-plugin-updater.php`.** The other 17 JPKCom plugins carry byte-identical downstream copies that differ only in namespace and text domain. Fix bugs here, then re-generate the copies — never patch a downstream copy in isolation.

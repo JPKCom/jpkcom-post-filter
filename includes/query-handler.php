@@ -123,11 +123,54 @@ if ( ! function_exists( function: 'jpkcom_postfilter_build_query_args' ) ) {
             'no_found_rows'       => ( $limit === -1 ), // Skip COUNT(*) when not paginating
         ];
 
-        // Pass through allowed extra WP_Query args from caller
-        $passthrough = [ 'meta_key', 'meta_value', 'meta_query', 's', 'author', 'year', 'monthnum' ];
-        foreach ( $passthrough as $key ) {
-            if ( isset( $atts[ $key ] ) ) {
-                $args[ $key ] = $atts[ $key ];
+        // Pass through a small set of extra WP_Query args, each coerced into a
+        // shape it is safe to hand to WP_Query.
+        //
+        // These used to be copied verbatim. No current caller forwards user
+        // input — both shortcodes go through shortcode_atts() and the block
+        // callback passes four fixed keys — but this is a documented helper,
+        // and an unvalidated `meta_query` reaching WP_Query is exactly the kind
+        // of thing that becomes a problem the moment somebody wires request
+        // data into it.
+        //
+        // `meta_query` is deliberately not accepted: it is a nested structure
+        // that cannot be meaningfully validated in passing. Callers that need
+        // it can use the `jpkcom_postfilter_query_args` filter below, which
+        // runs with full knowledge of its own input.
+        if ( isset( $atts['s'] ) ) {
+            $args['s'] = sanitize_text_field( (string) $atts['s'] );
+        }
+
+        if ( isset( $atts['meta_key'] ) && is_scalar( $atts['meta_key'] ) ) {
+            $meta_key = sanitize_text_field( (string) $atts['meta_key'] );
+
+            if ( $meta_key !== '' ) {
+                $args['meta_key'] = $meta_key;
+
+                // meta_value without meta_key is meaningless to WP_Query.
+                if ( isset( $atts['meta_value'] ) && is_scalar( $atts['meta_value'] ) ) {
+                    $args['meta_value'] = sanitize_text_field( (string) $atts['meta_value'] );
+                }
+            }
+        }
+
+        if ( isset( $atts['author'] ) ) {
+            $authors = array_values( array_filter(
+                array_map( 'absint', is_array( $atts['author'] ) ? $atts['author'] : explode( ',', (string) $atts['author'] ) )
+            ) );
+
+            if ( ! empty( $authors ) ) {
+                $args['author__in'] = $authors;
+            }
+        }
+
+        foreach ( [ 'year', 'monthnum' ] as $date_key ) {
+            if ( isset( $atts[ $date_key ] ) ) {
+                $value = absint( $atts[ $date_key ] );
+
+                if ( $value > 0 ) {
+                    $args[ $date_key ] = $value;
+                }
             }
         }
 

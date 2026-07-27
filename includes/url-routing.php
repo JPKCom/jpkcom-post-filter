@@ -384,6 +384,82 @@ add_action( 'parse_query', static function ( \WP_Query $query ): void {
  *
  * @since 1.0.0
  */
+if ( ! function_exists( function: 'jpkcom_postfilter_has_unknown_terms' ) ) {
+    /**
+     * Whether the active filters reference term slugs that do not exist
+     *
+     * Term slugs from the URL are sanitised but never checked for existence, so
+     * `/blog/filter/does-not-exist/` renders a perfectly valid page with zero
+     * results. Left alone, every made-up slug is therefore an indexable,
+     * self-canonicalising thin-content URL that anyone can generate and link.
+     *
+     * Such requests keep returning 200 — turning them into 404s would break
+     * legitimate old links whose terms were later renamed — but they are marked
+     * `noindex` so they stay out of the index.
+     *
+     * Validation reuses the transient-cached per-taxonomy term list, so this
+     * costs no extra query on a warm cache and cannot itself be used to flood
+     * the cache: the cache key is the taxonomy, never the requested slugs.
+     *
+     * @since 1.1.7
+     *
+     * @return bool True if at least one requested slug is unknown.
+     */
+    function jpkcom_postfilter_has_unknown_terms(): bool {
+        $filters = jpkcom_postfilter_get_active_filters();
+
+        if ( empty( $filters ) ) {
+            return false;
+        }
+
+        foreach ( $filters as $taxonomy => $slugs ) {
+            if ( ! taxonomy_exists( $taxonomy ) ) {
+                return true;
+            }
+
+            // hide_empty = false: a term with no posts is still a real term and
+            // a legitimate URL, it just happens to have nothing to show.
+            $known = array_map(
+                static fn( \WP_Term $t ): string => $t->slug,
+                jpkcom_postfilter_get_terms_for_taxonomy( $taxonomy, false )
+            );
+
+            if ( ! empty( array_diff( $slugs, $known ) ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+
+/**
+ * Mark filter URLs with unknown term slugs as noindex
+ *
+ * @since 1.1.7
+ */
+add_filter( 'wp_robots', static function ( array $robots ): array {
+
+    if ( ! jpkcom_postfilter_is_filter_request() ) {
+        return $robots;
+    }
+
+    if ( ! jpkcom_postfilter_has_unknown_terms() ) {
+        return $robots;
+    }
+
+    unset( $robots['index'] );
+
+    $robots['noindex'] = true;
+    $robots['follow']  = true; // Still crawl onward links; only this URL is worthless.
+
+    jpkcom_postfilter_debug_log( 'noindex applied: filter URL references unknown term slugs' );
+
+    return $robots;
+} );
+
+
 add_action( 'wp', static function (): void {
 
     if ( ! jpkcom_postfilter_is_filter_request() ) {

@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.1.6  
+**Version:** 1.1.7  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 6.9  
 **Tested up to:** 7.0  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.1.6  
+**Stable tag:** 1.1.7  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -530,6 +530,12 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.1.7
+* **Fixed:** the settings-directory containment check was a tautology — it compared `realpath( WP_CONTENT_DIR )` with itself and never referenced the directory being validated, so it never fired. Since `JPKCOM_POSTFILTER_SETTINGS_DIR` is overridable from `wp-config.php` and holds PHP files that are later `include`d, the path is now genuinely verified to resolve inside `wp-content`
+* **Hardened:** `jpkcom_postfilter_build_query_args()` no longer copies `meta_key`, `meta_value`, `meta_query`, `s`, `author`, `year` and `monthnum` verbatim into `WP_Query`. Each is now coerced to a safe shape and `meta_query` is not forwarded at all; callers that need it use the `jpkcom_postfilter_query_args` filter. No current caller passed user input, so this closes a latent path rather than an exploited one
+* **SEO:** filter URLs referencing term slugs that do not exist are now marked `noindex, follow`. They still return 200 with zero results, so existing links keep working, but they no longer generate unlimited indexable, self-canonicalising thin-content URLs. The check reuses the cached per-taxonomy term list and is keyed by taxonomy, never by the requested slugs
+* **Added:** `tests/test-security.php` — regression tests for all of the above, each written to fail against the previous implementation. Run in CI on every pull request
 
 ### 1.1.6
 * Security: update packages are now verified *before* installation — the verified file is handed to WordPress instead of being downloaded a second time, so the bytes that were checked are the bytes that get installed
