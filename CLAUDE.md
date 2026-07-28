@@ -40,7 +40,7 @@ All builders call the same shortcode render functions (`jpkcom_postfilter_shortc
 
 | Constant | Default | Purpose |
 |----------|---------|---------|
-| `JPKCOM_POSTFILTER_VERSION` | `'1.1.7'` | Plugin version |
+| `JPKCOM_POSTFILTER_VERSION` | `'1.2.0'` | Plugin version |
 | `JPKCOM_POSTFILTER_BASENAME` | `plugin_basename(__FILE__)` | Plugin basename |
 | `JPKCOM_POSTFILTER_PLUGIN_PATH` | `plugin_dir_path(__FILE__)` | Absolute path |
 | `JPKCOM_POSTFILTER_PLUGIN_URL` | `plugin_dir_url(__FILE__)` | URL |
