@@ -71,6 +71,16 @@ function is_same( string $label, mixed $got, mixed $expected, string $why = '' )
 }
 
 /**
+ * json_encode without WordPress loaded.
+ *
+ * @param mixed $value Value to encode.
+ * @return string
+ */
+function wp_json_encode_fallback( $value ): string {
+	return (string) json_encode( $value );
+}
+
+/**
  * Report a boolean check.
  *
  * @param string $label Check name.
@@ -338,25 +348,55 @@ check(
 
 echo "\nZero-results output lands before the footer\n";
 
+// The hook list, in order. Order is the whole point: the first entry decides
+// where the output actually lands.
+preg_match(
+	'/jpkcom_postfilter_zero_results_hooks\'\s*,\s*\[(.*?)\]/s',
+	$injection,
+	$hook_block
+);
+
+preg_match_all( "/'([a-z_]+)'/", $hook_block[1] ?? '', $hook_names );
+$hooks = $hook_names[1] ?? [];
+
 check(
-	'the fallback is attached to get_footer',
-	str_contains( $injection, "add_action( 'get_footer', 'jpkcom_postfilter_render_zero_results_fallback'" ),
-	'wp_footer fires *inside* the footer template. On a filter URL with an unknown term '
-	. 'slug the message and the entire filter bar were rendered below the footer — '
-	. 'measured: footer closed at byte 39713, filter bar started at 40153.'
+	'a pre-loop theme hook comes first',
+	( $hooks[0] ?? '' ) === 'bootscore_before_loop',
+	'With posts, the filter bar is injected at loop_start — inside the theme\'s content '
+	. 'column. With zero posts the loop never starts and no core hook reaches that '
+	. 'position. wp_footer put the message below the footer; get_footer put it above the '
+	. 'footer but still at the very end of the content area, nowhere near where the '
+	. 'listing sits. Only a hook firing before `if ( have_posts() )` lands in the right '
+	. 'place. Got: ' . wp_json_encode_fallback( $hooks )
 );
 
 check(
-	'wp_footer is kept as a fallback',
-	str_contains( $injection, "add_action( 'wp_footer', 'jpkcom_postfilter_render_zero_results_fallback'" ),
-	'Block themes and some FSE setups never call get_footer(). A message in the wrong '
-	. 'place still beats a page with no way to change the selection.'
+	'both footer hooks remain as fallbacks, in that order',
+	array_slice( $hooks, 1 ) === [ 'get_footer', 'wp_footer' ],
+	'A theme without the pre-loop hook must still get the filter bar somewhere; block '
+	. 'themes may reach only wp_footer. Got: ' . wp_json_encode_fallback( $hooks )
 );
 
 check(
-	'and it cannot render twice',
-	str_contains( $injection, "_jpkpf_zero_results_rendered" ),
-	'Both hooks fire on most themes. Without a guard the filter bar appears twice.'
+	'the list is filterable',
+	str_contains( $injection, "apply_filters(\n    'jpkcom_postfilter_zero_results_hooks'" )
+		|| str_contains( $injection, "'jpkcom_postfilter_zero_results_hooks'" ),
+	'Other themes need to supply their own pre-loop hook without editing the plugin.'
+);
+
+check(
+	'it cannot render twice',
+	str_contains( $injection, '_jpkpf_zero_results_rendered' ),
+	'Several of these hooks fire on the same page. Without a guard the filter bar '
+	. 'appears more than once.'
+);
+
+check(
+	'it bails out when the loop will run',
+	(bool) preg_match( '/\$wp_query->post_count\s*>\s*0/', $injection ),
+	'The first hook fires *before* the loop condition, so on a page that does have '
+	. 'posts it would render the filter bar once here and again from loop_start. The '
+	. 'post_count check is what makes attaching to a pre-loop hook safe at all.'
 );
 
 printf( "\n  %d passed, %d failed\n", $pass, $fail );

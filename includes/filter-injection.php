@@ -353,19 +353,27 @@ function jpkcom_postfilter_render_zero_results_fallback(): void {
         return;
     }
 
-    // Guard against running twice: this is attached to both `get_footer` and
-    // `wp_footer`, and on most themes both fire.
+    // Attached to several hooks, and on most themes more than one of them fires.
     if ( $GLOBALS['_jpkpf_zero_results_rendered'] ?? false ) {
         return;
     }
-
-    $GLOBALS['_jpkpf_zero_results_rendered'] = true;
 
     global $wp_query;
 
     if ( ! jpkcom_postfilter_should_auto_inject( $wp_query ) ) {
         return;
     }
+
+    // Only when the loop will not run at all. This check is what makes it safe
+    // to attach to a hook that fires *before* the loop — such as a theme's
+    // "before loop" action, which is the only position where this output
+    // actually belongs. Without it, a page that does have posts would render
+    // the filter bar twice: once here and once from loop_start.
+    if ( (int) $wp_query->post_count > 0 ) {
+        return;
+    }
+
+    $GLOBALS['_jpkpf_zero_results_rendered'] = true;
 
     $post_type      = jpkcom_postfilter_get_injected_post_type( $wp_query );
     $base_url       = jpkcom_postfilter_get_archive_base_url( $post_type );
@@ -434,19 +442,52 @@ function jpkcom_postfilter_render_zero_results_fallback(): void {
 
 }
 
-// `get_footer` fires immediately before the footer template is loaded, so the
-// output lands at the end of the content area — where a "no posts found"
-// message and its filter bar belong.
-//
-// `wp_footer` was the only hook here until 1.2.0, and it fires *inside* the
-// footer template: on a filter URL with an unknown term slug the message and
-// the whole filter bar were rendered visually below the footer. Measured on the
-// verification site — footer closed at byte 39713, the filter bar started at
-// 40153.
-//
-// wp_footer stays attached as a last resort: block themes and some FSE setups
-// never call get_footer(), and a message in the wrong place still beats a page
-// with no way to change the selection. The guard inside the function keeps it
-// from rendering twice when both fire.
-add_action( 'get_footer', 'jpkcom_postfilter_render_zero_results_fallback', 1 );
-add_action( 'wp_footer', 'jpkcom_postfilter_render_zero_results_fallback', 1 );
+/**
+ * Hooks the zero-results fallback is attached to, best position first
+ *
+ * WHY THIS IS A LIST
+ * ------------------
+ * With posts, the filter bar and results zone are injected at `loop_start` —
+ * inside the theme's content column, exactly where the listing belongs. With
+ * zero posts the loop never starts, `loop_start` never fires, and that position
+ * is simply not reachable through any core hook: `have_posts()` returns false
+ * before either loop action runs.
+ *
+ * Until 1.2.0 the fallback ran on `wp_footer` alone, which fires *inside* the
+ * footer template — the message and the whole filter bar were rendered below
+ * the footer. Moving it to `get_footer` got it above the footer but still at
+ * the very end of the content area, nowhere near where the listing sits when
+ * there are results.
+ *
+ * So the first entry is a theme hook that fires *before* the loop condition.
+ * bootscore's `bootscore_before_loop` runs immediately before
+ * `if ( have_posts() )` in index.php/archive.php, which is precisely the right
+ * spot — and this plugin stack is built around bootscore. Other themes add
+ * their own via the filter; the two footer hooks stay as last resorts so no
+ * theme is left without a way to change the selection.
+ *
+ * The function itself returns early unless the main query really has zero
+ * posts, which is what makes attaching to a pre-loop hook safe.
+ *
+ * @since 1.2.0
+ *
+ * @param string[] $hooks Action hook names.
+ */
+$jpkcom_postfilter_zero_hooks = apply_filters(
+    'jpkcom_postfilter_zero_results_hooks',
+    [
+        'bootscore_before_loop', // fires before `if ( have_posts() )` — correct position
+        'get_footer',            // end of the content area
+        'wp_footer',             // inside the footer; block themes may reach only this
+    ]
+);
+
+foreach ( (array) $jpkcom_postfilter_zero_hooks as $jpkcom_postfilter_zero_hook ) {
+
+    if ( is_string( $jpkcom_postfilter_zero_hook ) && $jpkcom_postfilter_zero_hook !== '' ) {
+        add_action( $jpkcom_postfilter_zero_hook, 'jpkcom_postfilter_render_zero_results_fallback', 1 );
+    }
+
+}
+
+unset( $jpkcom_postfilter_zero_hooks, $jpkcom_postfilter_zero_hook );

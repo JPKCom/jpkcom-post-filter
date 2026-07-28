@@ -461,13 +461,39 @@ Term slugs from the URL are sanitised but never checked for existence, so `/blog
 > hooks `rank_math/frontend/robots` and `wpseo_robots_array`, all three sharing
 > `jpkcom_postfilter_should_noindex()`. Guarded by `tests/test-fragment.php`.
 
-> **Where the zero-results output appears.** Until 1.2.0 the fallback was
-> attached only to `wp_footer`, which fires *inside* the footer template — so on
-> exactly these URLs the "no posts found" message and the entire filter bar were
-> rendered visually below the footer. Measured: footer closed at byte 39713, the
-> filter bar started at 40153. It now runs on `get_footer` (end of the content
-> area) with `wp_footer` kept as a last resort for block themes that never call
-> `get_footer()`, and a guard so it cannot render twice.
+> **Where the zero-results output appears.** With posts, the filter bar and
+> results zone are injected at `loop_start` — inside the theme's content column,
+> where the listing belongs. With zero posts the loop never starts, `loop_start`
+> never fires, and **no core hook reaches that position**: `have_posts()` returns
+> false before either loop action runs.
+>
+> Until 1.2.0 the fallback ran on `wp_footer` alone, which fires *inside* the
+> footer template — the message and the entire filter bar appeared below the
+> footer. Moving it to `get_footer` got it above the footer but still at the very
+> end of the content area, nowhere near the listing. Both were measured on the
+> verification site; the second one was only caught because someone looked at the
+> rendered page rather than at the markup in isolation.
+>
+> It now runs on the first hook in `jpkcom_postfilter_zero_results_hooks` that
+> fires: `bootscore_before_loop` (immediately before `if ( have_posts() )` in the
+> theme's index.php/archive.php — the correct position, and this stack is built
+> around bootscore), then `get_footer`, then `wp_footer` for block themes that
+> reach neither. Other themes add their own pre-loop hook through the filter.
+>
+> Attaching to a *pre-loop* hook is only safe because the function returns early
+> unless `$wp_query->post_count` is 0 — otherwise a page with posts would render
+> the filter bar twice, once there and once from `loop_start`. A second guard
+> keeps it to one render when several hooks fire. Both are covered by
+> `tests/test-fragment.php`, including the ordering.
+>
+> Verified positions on the same theme: with results, the wrapper opens at byte
+> 32080 right after the content column at 32030; with zero results it opens at
+> 32193 right after the content column at 32035. Before the fix it started at
+> 40153 with the footer already closed at 39713.
+
+**Note the deliberate asymmetry:** an empty result from *existing* terms
+(`/blog/filter/web-design/wordpress/`) stays `index` — it is a legitimate URL
+that simply has no matches today. Only *unknown* slugs get `noindex`.
 
 Without that, every made-up slug was an indexable, self-canonicalising thin-content URL that anyone could generate and link, and each one also produced its own query-cache entry (APCu included).
 

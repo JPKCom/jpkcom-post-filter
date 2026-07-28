@@ -312,9 +312,9 @@ add_action( 'template_redirect', static function (): void {
     // zero-result filter click return a fragment with no swappable zone at all,
     // leaving the previous results on screen.
     //
-    // Re-attached to both hooks it normally uses; its internal guard keeps it
-    // to a single render.
-    add_action( 'get_footer', 'jpkcom_postfilter_render_zero_results_fallback', 1 );
+    // Only wp_footer was cleared, so re-attaching that one is enough — the
+    // theme hook and get_footer are untouched. Its internal guard keeps the
+    // render to one regardless of how many of them fire.
     add_action( 'wp_footer', 'jpkcom_postfilter_render_zero_results_fallback', 1 );
 
     add_filter( 'show_admin_bar', '__return_false', PHP_INT_MAX );
