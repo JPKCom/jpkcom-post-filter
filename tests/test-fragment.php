@@ -311,6 +311,54 @@ check(
 	. 'question silently.'
 );
 
+echo "\nnoindex reaches the page an SEO plugin actually renders\n";
+
+$routing = (string) file_get_contents( dirname( __DIR__ ) . '/includes/url-routing.php' );
+
+check(
+	'the rule is hooked into Rank Math as well as wp_robots',
+	str_contains( $routing, "add_filter( 'rank_math/frontend/robots'" ),
+	'Rank Math calls remove_all_filters( \'wp_robots\' ) before emitting its own tag, so '
+	. 'every callback on that hook is discarded. From 1.1.7 until 1.2.0 the noindex on '
+	. 'bogus filter URLs therefore never happened on a Rank Math site — and this stack '
+	. 'ships jpkcom-rank-math-options, so that is the normal configuration, not an edge case.'
+);
+
+check(
+	'and into Yoast',
+	str_contains( $routing, "add_filter( 'wpseo_robots_array'" ),
+	'Yoast likewise emits its own tag rather than going through wp_robots.'
+);
+
+check(
+	'all three share one condition',
+	substr_count( $routing, 'jpkcom_postfilter_should_noindex()' ) >= 3,
+	'Three hooks with three copies of the condition drift apart. One helper, three callers.'
+);
+
+echo "\nZero-results output lands before the footer\n";
+
+check(
+	'the fallback is attached to get_footer',
+	str_contains( $injection, "add_action( 'get_footer', 'jpkcom_postfilter_render_zero_results_fallback'" ),
+	'wp_footer fires *inside* the footer template. On a filter URL with an unknown term '
+	. 'slug the message and the entire filter bar were rendered below the footer — '
+	. 'measured: footer closed at byte 39713, filter bar started at 40153.'
+);
+
+check(
+	'wp_footer is kept as a fallback',
+	str_contains( $injection, "add_action( 'wp_footer', 'jpkcom_postfilter_render_zero_results_fallback'" ),
+	'Block themes and some FSE setups never call get_footer(). A message in the wrong '
+	. 'place still beats a page with no way to change the selection.'
+);
+
+check(
+	'and it cannot render twice',
+	str_contains( $injection, "_jpkpf_zero_results_rendered" ),
+	'Both hooks fire on most themes. Without a guard the filter bar appears twice.'
+);
+
 printf( "\n  %d passed, %d failed\n", $pass, $fail );
 
 exit( $fail > 0 ? 1 : 0 );

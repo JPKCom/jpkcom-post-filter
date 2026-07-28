@@ -478,17 +478,33 @@ if ( ! function_exists( function: 'jpkcom_postfilter_has_unknown_terms' ) ) {
 
 
 /**
+ * Whether the current request is a filter URL referencing unknown term slugs
+ *
+ * @since 1.2.0
+ *
+ * @return bool
+ */
+if ( ! function_exists( function: 'jpkcom_postfilter_should_noindex' ) ) {
+
+    function jpkcom_postfilter_should_noindex(): bool {
+
+        return jpkcom_postfilter_is_filter_request() && jpkcom_postfilter_has_unknown_terms();
+
+    }
+
+}
+
+/**
  * Mark filter URLs with unknown term slugs as noindex
+ *
+ * WordPress's own robots output. Present for completeness, but on most of the
+ * sites this plugin runs on it never fires — see below.
  *
  * @since 1.1.7
  */
 add_filter( 'wp_robots', static function ( array $robots ): array {
 
-    if ( ! jpkcom_postfilter_is_filter_request() ) {
-        return $robots;
-    }
-
-    if ( ! jpkcom_postfilter_has_unknown_terms() ) {
+    if ( ! jpkcom_postfilter_should_noindex() ) {
         return $robots;
     }
 
@@ -497,7 +513,65 @@ add_filter( 'wp_robots', static function ( array $robots ): array {
     $robots['noindex'] = true;
     $robots['follow']  = true; // Still crawl onward links; only this URL is worthless.
 
-    jpkcom_postfilter_debug_log( 'noindex applied: filter URL references unknown term slugs' );
+    jpkcom_postfilter_debug_log( 'noindex applied via wp_robots' );
+
+    return $robots;
+} );
+
+/**
+ * Same rule, for SEO plugins that take the robots output away from WordPress
+ *
+ * WHY THIS EXISTS
+ * ---------------
+ * Rank Math calls `remove_all_filters( 'wp_robots' )` before emitting its own
+ * tag (`includes/frontend/class-head.php`). Every callback on that hook — this
+ * plugin's included — is discarded, so from 1.1.7 until now the noindex simply
+ * never happened on a Rank Math site. Measured: a filter URL with a made-up
+ * slug rendered `<meta name="robots" content="follow, index">`, and inspecting
+ * the hook registry mid-request showed `wp_robots` with **zero** callbacks
+ * while the filter itself had already run.
+ *
+ * That is not an edge case here: the JPKCom stack ships `jpkcom-rank-math-options`,
+ * so Rank Math is the normal configuration. Yoast is handled too, on the same
+ * reasoning — it also emits its own tag rather than going through `wp_robots`.
+ *
+ * @since 1.2.0
+ */
+add_filter( 'rank_math/frontend/robots', static function ( $robots ) {
+
+    if ( ! jpkcom_postfilter_should_noindex() ) {
+        return $robots;
+    }
+
+    $robots = is_array( $robots ) ? $robots : [];
+
+    unset( $robots['index'] );
+
+    $robots['noindex'] = 'noindex';
+    $robots['follow']  = 'follow';
+
+    jpkcom_postfilter_debug_log( 'noindex applied via rank_math/frontend/robots' );
+
+    return $robots;
+} );
+
+/**
+ * Same rule for Yoast SEO
+ *
+ * @since 1.2.0
+ */
+add_filter( 'wpseo_robots_array', static function ( $robots ) {
+
+    if ( ! jpkcom_postfilter_should_noindex() ) {
+        return $robots;
+    }
+
+    $robots = is_array( $robots ) ? $robots : [];
+
+    $robots['index']  = 'noindex';
+    $robots['follow'] = 'follow';
+
+    jpkcom_postfilter_debug_log( 'noindex applied via wpseo_robots_array' );
 
     return $robots;
 } );

@@ -306,11 +306,15 @@ add_action( 'template_redirect', static function (): void {
     remove_all_actions( 'wp_head' );
     remove_all_actions( 'wp_footer' );
 
-    // One wp_footer callback must survive. When auto-injection applies but the
-    // main loop never runs — a filter combination with zero results — the
-    // results zone is emitted from wp_footer and nowhere else. Dropping it here
-    // would make a zero-result filter click return a fragment containing no
-    // swappable zone at all, and the previous results would stay on screen.
+    // The zero-results fallback must survive. When auto-injection applies but
+    // the main loop never runs — a filter combination with zero results — it is
+    // the only thing that emits a results zone. Dropping it would make a
+    // zero-result filter click return a fragment with no swappable zone at all,
+    // leaving the previous results on screen.
+    //
+    // Re-attached to both hooks it normally uses; its internal guard keeps it
+    // to a single render.
+    add_action( 'get_footer', 'jpkcom_postfilter_render_zero_results_fallback', 1 );
     add_action( 'wp_footer', 'jpkcom_postfilter_render_zero_results_fallback', 1 );
 
     add_filter( 'show_admin_bar', '__return_false', PHP_INT_MAX );

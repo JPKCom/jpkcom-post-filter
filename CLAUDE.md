@@ -447,7 +447,27 @@ curl -s https://example.com/blog/filter/web-design/ | grep -c '<head'
 
 ### Filter URLs with unknown term slugs
 
-Term slugs from the URL are sanitised but never checked for existence, so `/blog/filter/does-not-exist/` renders a valid page with zero results. These requests **keep returning 200** — turning them into 404s would break legitimate old links whose terms were later renamed — but `jpkcom_postfilter_has_unknown_terms()` marks them `noindex, follow` via the `wp_robots` filter.
+Term slugs from the URL are sanitised but never checked for existence, so `/blog/filter/does-not-exist/` renders a valid page with zero results. These requests **keep returning 200** — turning them into 404s would break legitimate old links whose terms were later renamed — but `jpkcom_postfilter_has_unknown_terms()` marks them `noindex, follow`.
+
+> **`wp_robots` alone is not enough, and was not enough between 1.1.7 and 1.2.0.**
+> Rank Math calls `remove_all_filters( 'wp_robots' )` before emitting its own tag
+> (`seo-by-rank-math/includes/frontend/class-head.php`). Every callback on that
+> hook is discarded, so the noindex never happened. Measured on a live install: a
+> bogus filter URL rendered `<meta name="robots" content="follow, index">`, and
+> reading the hook registry mid-request showed `wp_robots` with **zero**
+> callbacks while the filter had already run once. This stack ships
+> `jpkcom-rank-math-options`, so Rank Math is the normal configuration — the
+> protection was inert on the sites it was written for. The same rule now also
+> hooks `rank_math/frontend/robots` and `wpseo_robots_array`, all three sharing
+> `jpkcom_postfilter_should_noindex()`. Guarded by `tests/test-fragment.php`.
+
+> **Where the zero-results output appears.** Until 1.2.0 the fallback was
+> attached only to `wp_footer`, which fires *inside* the footer template — so on
+> exactly these URLs the "no posts found" message and the entire filter bar were
+> rendered visually below the footer. Measured: footer closed at byte 39713, the
+> filter bar started at 40153. It now runs on `get_footer` (end of the content
+> area) with `wp_footer` kept as a last resort for block themes that never call
+> `get_footer()`, and a guard so it cannot render twice.
 
 Without that, every made-up slug was an indexable, self-canonicalising thin-content URL that anyone could generate and link, and each one also produced its own query-cache entry (APCu included).
 

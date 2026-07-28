@@ -353,6 +353,14 @@ function jpkcom_postfilter_render_zero_results_fallback(): void {
         return;
     }
 
+    // Guard against running twice: this is attached to both `get_footer` and
+    // `wp_footer`, and on most themes both fire.
+    if ( $GLOBALS['_jpkpf_zero_results_rendered'] ?? false ) {
+        return;
+    }
+
+    $GLOBALS['_jpkpf_zero_results_rendered'] = true;
+
     global $wp_query;
 
     if ( ! jpkcom_postfilter_should_auto_inject( $wp_query ) ) {
@@ -426,4 +434,19 @@ function jpkcom_postfilter_render_zero_results_fallback(): void {
 
 }
 
+// `get_footer` fires immediately before the footer template is loaded, so the
+// output lands at the end of the content area — where a "no posts found"
+// message and its filter bar belong.
+//
+// `wp_footer` was the only hook here until 1.2.0, and it fires *inside* the
+// footer template: on a filter URL with an unknown term slug the message and
+// the whole filter bar were rendered visually below the footer. Measured on the
+// verification site — footer closed at byte 39713, the filter bar started at
+// 40153.
+//
+// wp_footer stays attached as a last resort: block themes and some FSE setups
+// never call get_footer(), and a message in the wrong place still beats a page
+// with no way to change the selection. The guard inside the function keeps it
+// from rendering twice when both fire.
+add_action( 'get_footer', 'jpkcom_postfilter_render_zero_results_fallback', 1 );
 add_action( 'wp_footer', 'jpkcom_postfilter_render_zero_results_fallback', 1 );
