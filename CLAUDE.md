@@ -368,15 +368,25 @@ absent on normal pages, which are byte-for-byte unaffected.
 `wp_head` or `wp_footer` would lose it in a fragment; nothing inside
 `[data-jpkpf-results]` is affected.
 
-**Not covered:** the browser-side DOM swap and event handling were not driven in
-a real browser (no Chrome in the verification environment). What *was* checked
-end-to-end is the chain up to that point — the `href`s rendered into the filter
-bar were passed through the actual `fragmentUrl()` from `post-filter.js` via
-node, and every resulting URL returned a valid, chrome-free fragment with the
-expected post count, including the `_` placeholder form and two-group
-combinations.
+The browser side was driven too, with `tests/browser-check.mjs` (headless
+Chromium, puppeteer). Confirmed on a real click: a fragment request is issued,
+no document request follows, the results zone is swapped while the filter bar
+survives as the same DOM node, `history.pushState` updates the visible URL
+without the fragment segment, no zone markers leak into the DOM, history back
+restores the unfiltered list and releases the buttons, and a zero-result
+combination renders "Keine Beiträge gefunden." inside a live results zone. No
+JavaScript errors.
 
-### Two bugs this verification exposed
+```bash
+node tests/browser-check.mjs https://your-site.test/
+```
+
+It is not part of the CI suite — CI has no server. `puppeteer-core` arrives
+transitively via `@wordpress/scripts`; a missing module or missing Chromium
+exits 0 with SKIP rather than a failure that says nothing about the plugin. On
+WSL2 with snap Chromium the launch flags in the file are required.
+
+### Three bugs this verification exposed
 
 Neither was findable from source, and both are guarded by
 `tests/test-fragment.php` now.
@@ -397,6 +407,16 @@ web-SAPI setting. Not cosmetic here: with `display_errors` on, the warning is
 printed into the response body, and in a fragment it lands inside the swapped
 markup. Replaced with `apcu_enabled()`, which answers the same question without
 a diagnostic. This bug predates 1.2.0 and affects the normal page render too.
+
+**Browser back left stale results.** The `popstate` handler only re-fetched when
+`e.state.jpkpf` was set — but the history entry created by the *initial page
+load* carries no state at all. Going back to it did nothing: the address bar
+returned to the unfiltered archive while the results zone kept showing the
+filtered list and the filter buttons stayed pressed. Now it falls back to
+`location.href` and re-syncs the buttons from the URL via `syncButtonsToUrl()`.
+This bug also predates 1.2.0 — the handler is byte-identical in 1.1.7 — and is
+unrelated to fragment responses; it was simply never exercised until someone
+clicked back in a browser.
 
 ### Re-running the checks elsewhere
 

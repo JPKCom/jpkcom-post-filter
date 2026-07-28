@@ -279,6 +279,25 @@ check(
 	. 'silently stopped using AJAX.'
 );
 
+$js = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/post-filter.js' );
+
+check(
+	'popstate falls back to location.href when the entry carries no state',
+	str_contains( $js, "( e.state && e.state.jpkpf ) ? e.state.url : location.href" ),
+	'The history entry created by the initial page load has no state at all. '
+	. 'Guarding solely on e.state.jpkpf made going back a no-op: the address bar '
+	. 'returned to the unfiltered archive while the results zone kept showing the '
+	. 'filtered list and the buttons stayed pressed.'
+);
+
+check(
+	'popstate re-syncs the filter buttons to the URL',
+	str_contains( $js, 'function syncButtonsToUrl(' )
+		&& str_contains( $js, 'syncButtonsToUrl( filterBar, baseUrl );' ),
+	'Re-fetching the results without resetting the buttons leaves the bar claiming '
+	. 'a selection the list no longer shows.'
+);
+
 $cache = (string) file_get_contents( dirname( __DIR__ ) . '/includes/cache-manager.php' );
 
 check(
