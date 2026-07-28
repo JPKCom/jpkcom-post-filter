@@ -214,12 +214,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_shortcode_list' ) ) {
         // Make query available to [jpkcom_postfilter_pagination] on the same page
         $GLOBALS['jpkpf_shortcode_queries'][ $post_type ] = $query;
 
-        return jpkcom_postfilter_get_template_html( 'shortcodes/posts-list', '', [
-            'query'       => $query,
-            'post_type'   => $post_type,
-            'layout'      => $layout,
-            'extra_class' => $extra_class,
-        ] );
+        return jpkcom_postfilter_wrap_zone(
+            jpkcom_postfilter_get_template_html( 'shortcodes/posts-list', '', [
+                'query'       => $query,
+                'post_type'   => $post_type,
+                'layout'      => $layout,
+                'extra_class' => $extra_class,
+            ] )
+        );
     }
 }
 
@@ -282,20 +284,26 @@ if ( ! function_exists( function: 'jpkcom_postfilter_shortcode_pagination' ) ) {
 
         if ( (int) $query->max_num_pages <= 1 ) {
             // Render a hidden placeholder so the JS AJAX swap can restore
-            // pagination when filter changes bring back multiple pages.
-            return '<nav class="jpkpf-pagination' . ( $extra_class !== '' ? ' ' . esc_attr( $extra_class ) : '' ) . '"'
+            // pagination when filter changes bring back multiple pages. It is
+            // marked as a zone too — otherwise a filter change that goes from
+            // several pages down to one would leave the old pagination standing.
+            return jpkcom_postfilter_wrap_zone(
+                '<nav class="jpkpf-pagination' . ( $extra_class !== '' ? ' ' . esc_attr( $extra_class ) : '' ) . '"'
                 . ' data-jpkpf-pagination'
                 . ' data-jpkpf-post-type="' . esc_attr( $post_type ) . '"'
                 . ' aria-label="' . esc_attr__( 'Page navigation', 'jpkcom-post-filter' ) . '"'
-                . ' hidden></nav>';
+                . ' hidden></nav>'
+            );
         }
 
-        return jpkcom_postfilter_get_template_html( 'shortcodes/pagination', '', [
-            'query'          => $query,
-            'base_url'       => $base_url,
-            'active_filters' => $active_filters,
-            'post_type'      => $post_type,
-            'extra_class'    => $extra_class,
-        ] );
+        return jpkcom_postfilter_wrap_zone(
+            jpkcom_postfilter_get_template_html( 'shortcodes/pagination', '', [
+                'query'          => $query,
+                'base_url'       => $base_url,
+                'active_filters' => $active_filters,
+                'post_type'      => $post_type,
+                'extra_class'    => $extra_class,
+            ] )
+        );
     }
 }

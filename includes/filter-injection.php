@@ -199,7 +199,11 @@ add_action( 'loop_start', static function ( \WP_Query $query ): void {
     $pagination_pos = jpkcom_postfilter_settings_get( 'layout', 'pagination_position', 'below' );
     $pagination_pos = in_array( $pagination_pos, [ 'above', 'below', 'both' ], true ) ? $pagination_pos : 'below';
 
-    // Open the results region (AJAX swaps the contents of this element)
+    // Open the results region (AJAX swaps the contents of this element).
+    // The zone marker sits outside the div so the div itself travels with the
+    // fragment — the script looks the element up by selector in the response.
+    jpkcom_postfilter_zone_open();
+
     echo '<div data-jpkpf-results aria-live="polite" aria-atomic="false">';
 
     // Render above-pagination inside the results div so it gets refreshed on AJAX
@@ -261,6 +265,10 @@ add_action( 'loop_end', static function ( \WP_Query $query ): void {
 
     // Close <div data-jpkpf-results>
     echo '</div>';
+
+    // Close the zone here, not after the wrapper: the wrapper also contains the
+    // filter bar, which the script does not swap and must not receive twice.
+    jpkcom_postfilter_zone_close();
 
     // Close outer <div data-jpkpf-wrapper>
     echo '</div>';
@@ -329,9 +337,16 @@ add_filter( 'previous_posts_link_attributes', static function ( string $attr ): 
  *
  * Runs at priority 1 (early in wp_footer) so it appears before theme scripts.
  *
+ * A named function rather than a closure so that fragment-response.php can
+ * re-attach it after clearing wp_footer. A closure could be removed but never
+ * put back, and losing it would silently break exactly the case this exists
+ * for: a filter click with zero results would return an empty fragment with no
+ * results zone at all.
+ *
  * @since 1.0.0
+ * @return void
  */
-add_action( 'wp_footer', static function (): void {
+function jpkcom_postfilter_render_zero_results_fallback(): void {
 
     // Already injected via loop_start — nothing to do.
     if ( $GLOBALS['_jpkpf_auto_injected'] ?? false ) {
@@ -397,10 +412,18 @@ add_action( 'wp_footer', static function (): void {
         ]
     );
 
+    // Mark only the results zone, not the surrounding wrapper: the wrapper also
+    // holds the filter bar, which the script must not swap.
+    jpkcom_postfilter_zone_open();
+
     echo '<div data-jpkpf-results aria-live="polite" aria-atomic="false">';
     echo '<p class="jpkpf-no-results">' . esc_html__( 'No posts found.', 'jpkcom-post-filter' ) . '</p>';
     echo '</div>';
 
+    jpkcom_postfilter_zone_close();
+
     echo '</div>';
 
-}, 1 );
+}
+
+add_action( 'wp_footer', 'jpkcom_postfilter_render_zero_results_fallback', 1 );

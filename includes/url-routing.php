@@ -285,6 +285,48 @@ add_action( 'init', static function (): void {
         $extra  = ( $qs !== '' ? $qs . '&' : '' )
                 . 'jpkcom_filter_post_type=' . rawurlencode( $post_type );
 
+        // ---------------------------------------------------------------
+        // Fragment rules — MUST be registered before the page rules below.
+        //
+        // add_rewrite_rule( …, 'top' ) collects into $wp_rewrite's
+        // extra_rules_top in insertion order, and WordPress takes the first
+        // match. The page rule's path group is `(.+?)` followed by `/?$`, which
+        // happily swallows a trailing `/jpkpf-fragment` as part of the filter
+        // path — so if these came second they would never be reached, and the
+        // segment would silently be treated as a term slug.
+        // ---------------------------------------------------------------
+        $fragment = jpkcom_postfilter_fragment_segment();
+
+        // Filtered, paginated
+        add_rewrite_rule(
+            '^' . $prefix . $endpoint . '/(.+?)/page/?([0-9]{1,})/' . $fragment . '/?$',
+            'index.php?' . $extra . '&jpkcom_filter_path=$matches[1]&paged=$matches[2]&jpkcom_filter_fragment=1',
+            'top'
+        );
+
+        // Filtered
+        add_rewrite_rule(
+            '^' . $prefix . $endpoint . '/(.+?)/' . $fragment . '/?$',
+            'index.php?' . $extra . '&jpkcom_filter_path=$matches[1]&jpkcom_filter_fragment=1',
+            'top'
+        );
+
+        // Unfiltered, paginated. Resetting all filters returns to the bare
+        // archive URL — which carries no /{endpoint}/ segment at all — and the
+        // script fetches that too, so it needs its own fragment route.
+        add_rewrite_rule(
+            '^' . $prefix . 'page/?([0-9]{1,})/' . $fragment . '/?$',
+            'index.php?' . $extra . '&paged=$matches[1]&jpkcom_filter_fragment=1',
+            'top'
+        );
+
+        // Unfiltered
+        add_rewrite_rule(
+            '^' . $prefix . $fragment . '/?$',
+            'index.php?' . $extra . '&jpkcom_filter_fragment=1',
+            'top'
+        );
+
         // With pagination
         add_rewrite_rule(
             '^' . $prefix . $endpoint . '/(.+?)/page/?([0-9]{1,})/?$',
@@ -320,6 +362,7 @@ add_action( 'init', static function (): void {
 add_filter( 'query_vars', static function ( array $vars ): array {
     $vars[] = 'jpkcom_filter_path';
     $vars[] = 'jpkcom_filter_post_type';
+    $vars[] = 'jpkcom_filter_fragment';
     return $vars;
 } );
 

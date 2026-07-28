@@ -361,7 +361,7 @@
 			liveRegion.textContent = cfg.i18n.loading || 'Loading…';
 		}
 
-		const requestUrl = addQueryParam( url, 'jpkpf_ajax', '1' );
+		const requestUrl = fragmentUrl( url );
 
 		fetch( requestUrl, {
 			method: 'GET',
@@ -780,6 +780,42 @@
 	function addQueryParam( url, key, value ) {
 		const separator = url.includes( '?' ) ? '&' : '?';
 		return url + separator + encodeURIComponent( key ) + '=' + encodeURIComponent( value );
+	}
+
+	/**
+	 * Turn a filter URL into its fragment URL.
+	 *
+	 * The segment goes into the path, not the query string: a full-page cache
+	 * keys on the URL and several common setups drop query parameters they do
+	 * not recognise. A dropped parameter would collapse this onto the real page
+	 * URL and let the cache hand a bare, theme-less fragment to a normal
+	 * visitor. A path segment cannot collapse that way.
+	 *
+	 * Mirrors jpkcom_postfilter_fragment_url() in includes/fragment-response.php.
+	 *
+	 * @param {string} url Filter URL, possibly with query string and/or hash.
+	 * @return {string} URL with the fragment segment appended to the path.
+	 */
+	function fragmentUrl( url ) {
+		const segment = cfg.fragmentSegment || 'jpkpf-fragment';
+
+		let hash = '';
+		const hashAt = url.indexOf( '#' );
+
+		if ( hashAt !== -1 ) {
+			hash = url.slice( hashAt );
+			url  = url.slice( 0, hashAt );
+		}
+
+		let query = '';
+		const queryAt = url.indexOf( '?' );
+
+		if ( queryAt !== -1 ) {
+			query = url.slice( queryAt );
+			url   = url.slice( 0, queryAt );
+		}
+
+		return url.replace( /\/+$/, '' ) + '/' + segment + '/' + query + hash;
 	}
 
 	// Initialize when DOM is ready

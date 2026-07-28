@@ -1,0 +1,14 @@
+[
+  "/blog/",
+  "/blog",
+  "/blog/filter/web-design/",
+  "/blog/filter/web-design+marketing/seo/",
+  "/blog/filter/web-design/page/2/",
+  "/",
+  "https://example.com/blog/filter/a/",
+  "https://example.com/blog/filter/a/?utm_source=x&y=2",
+  "/blog/filter/a/#results",
+  "/blog/filter/a/?p=1#results",
+  "/de/aktuelles/filter/thema/",
+  "/blog//"
+]

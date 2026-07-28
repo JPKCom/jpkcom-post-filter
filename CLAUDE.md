@@ -268,10 +268,103 @@ File: `assets/js/post-filter.js`
 ```
 
 ### AJAX behaviour
-- Request adds `?jpkpf_ajax=1`
+- Request appends the `/jpkpf-fragment/` URL segment (see **Fragment responses** below)
 - JS extracts `[data-jpkpf-results]` from response and swaps into DOM
 - `swapPagination()` updates standalone `[data-jpkpf-pagination]` elements outside the results zone
 - Auto-inject mode (`[data-jpkpf-wrapper]`) skips standalone pagination insertion to prevent duplicates
+
+---
+
+## Fragment responses (since 1.2.0)
+
+Up to 1.1.7 the script sent `?jpkpf_ajax=1` — a parameter that appeared in **no
+PHP file at all**. Every filter click rendered a complete page (theme header, nav
+menus, sidebar widgets, footer, the whole asset pipeline) and the browser threw
+all of it away except `[data-jpkpf-results]`.
+
+`includes/fragment-response.php` answers those requests with just the swappable
+zones. Four things about it are load-bearing.
+
+**1. It is a URL segment, not a query parameter.** A full-page cache keys on the
+URL, and several common configurations strip parameters they do not recognise.
+A stripped parameter collapses the fragment URL onto the real page URL, and the
+cache then serves a bare, theme-less fragment to an ordinary visitor. A path
+segment cannot collapse that way. The segment is `jpkpf-fragment`, not
+`fragment`, because it sits in the same path position as term slugs and a site
+with a term called `fragment` would produce ambiguous URLs. Filterable via
+`jpkcom_postfilter_fragment_segment` — changing it needs a rewrite flush.
+
+**2. The fragment rewrite rules must be registered before the page rules.**
+`add_rewrite_rule( …, 'top' )` keeps insertion order and WordPress takes the
+first match; the page rule's `(.+?)` happily swallows a trailing
+`/jpkpf-fragment` as part of the filter path. Registered in the wrong order the
+fragment rules are unreachable and every AJAX request quietly renders a normal
+page for a non-existent term. Guarded by `tests/test-fragment.php`.
+
+**3. The theme's loop still runs, and has to.** In auto-inject mode the markup
+inside `[data-jpkpf-results]` is produced by the *theme* between `loop_start`
+and `loop_end` — this plugin never renders those posts. So the saving is the nav
+menu and widget queries, the enqueue/print pipeline, and the transferred bytes.
+**Not** the query and **not** the loop. Anyone expecting "renders only the list"
+will be disappointed by a profile.
+
+**4. Zones are cut by markers, not by parsing.** `jpkcom_postfilter_zone_open()`
+/ `_close()` write HTML comments around each swappable zone, and only on a
+fragment request, so normal page output is byte-identical to before. Extraction
+is then substring work against markers this plugin wrote itself. Searching for
+`[data-jpkpf-results]` and its closing tag would be guesswork — the zone holds
+arbitrary theme markup with nested elements. An unterminated marker yields
+nothing rather than the rest of the document; the full-page dump is the exact
+failure this feature exists to remove.
+
+### The one wp_footer callback that must survive
+
+`template_redirect` clears `wp_head` and `wp_footer`, then **re-attaches**
+`jpkcom_postfilter_render_zero_results_fallback()`. When auto-injection applies
+but the main loop never runs — a filter combination with zero results — that
+callback is the only thing that emits a results zone. Without it a zero-result
+click returns a fragment with no swappable zone and the previous results stay on
+screen. That is why it is a named function and not a closure: a closure can be
+removed but never put back. Guarded by `tests/test-fragment.php`.
+
+### PHP and JS build the same URL
+
+`jpkcom_postfilter_fragment_url()` and `fragmentUrl()` in
+`assets/js/post-filter.js` are two implementations of one rule. Nothing in a
+normal test run would notice them drifting — the PHP side would keep passing its
+own tests while every AJAX request 404s. `tests/test-fragment.php` therefore
+runs the JS function through node over a shared case list
+(`tests/fragment-url-cases.json`) and compares. Without node it reports SKIP,
+never PASS.
+
+### Rewrite flush on update
+
+`register_activation_hook` does **not** fire on a plugin update, so a release
+that changes rewrite rules would ship rules that never reach the database.
+`jpkcom_postfilter_maybe_flush_rewrites()` compares
+`jpkcom_postfilter_rewrite_version` against the plugin version on `init`
+(priority 99) and flushes once.
+
+### Not verified without a live installation
+
+That emptying `wp_head` actually suppresses what it should, and how much time
+that saves, cannot be established from source. Verify on a real site before
+trusting the numbers:
+
+```bash
+# Fragment must contain no document chrome
+curl -s https://example.com/blog/filter/web-design/jpkpf-fragment/ | head -c 400
+# Must not be cacheable and must not be indexable
+curl -sI https://example.com/blog/filter/web-design/jpkpf-fragment/ \
+  | grep -iE 'cache-control|x-robots-tag'
+# The normal page must be unchanged
+curl -s https://example.com/blog/filter/web-design/ | grep -c '<head'
+```
+
+Theme compatibility is the open risk: a theme that renders content from
+`wp_head` or `wp_footer` loses it in a fragment. Nothing inside
+`[data-jpkpf-results]` is affected, but a theme doing something unusual should
+be checked once.
 
 ---
 
