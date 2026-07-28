@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.1.7  
+**Version:** 1.2.0  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 6.9  
 **Tested up to:** 7.0  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.1.7  
+**Stable tag:** 1.2.0  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -530,6 +530,16 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.2.0
+* Added: filter requests are answered with just the swappable zones instead of a complete page. The theme header, nav menus, sidebar widgets and the entire asset pipeline are skipped; the theme's loop still runs, because in auto-inject mode it produces the result markup. Measured on a test install: 60–72 % less transferred, 5–19 % less server time. The request goes through a `/jpkpf-fragment/` URL segment rather than a query parameter, so a page cache that strips unknown parameters cannot serve a bare fragment to an ordinary visitor
+* Fixed: the `noindex` for filter URLs with unknown term slugs never took effect on a Rank Math site. Rank Math discards every `wp_robots` callback before writing its own tag, so the protection added in 1.1.7 was inert on exactly the sites it was written for. The rule now also hooks Rank Math and Yoast
+* Fixed: on a filter URL with no results the "no posts found" message and the whole filter bar were rendered below the footer. They now appear where the listing sits when there are results
+* Fixed: using the browser's back button after filtering left the previous results on screen and the filter buttons pressed — the history entry created by the initial page load carries no state, and the handler ignored it
+* Fixed: paginating a filtered list quietly stopped using AJAX. WordPress's canonical redirect did not recognise the fragment segment and appended the page it thought was missing, so the request 404'd and fell back to a full reload
+* Fixed: `apcu_cache_info()` raised a PHP warning wherever APCu is loaded but inactive for the running SAPI — `apc.enable_cli` defaults to 0, so every WP-CLI call produced one. With `display_errors` on it was printed into the response body
+* Added: rewrite rules are flushed once after a version change. `register_activation_hook` does not fire on an update, so new rules would otherwise never reach the database
+* Added: `tests/browser-check.mjs` drives a real filter click in headless Chromium
 
 ### 1.1.7
 * **Fixed:** the settings-directory containment check was a tautology — it compared `realpath( WP_CONTENT_DIR )` with itself and never referenced the directory being validated, so it never fired. Since `JPKCOM_POSTFILTER_SETTINGS_DIR` is overridable from `wp-config.php` and holds PHP files that are later `include`d, the path is now genuinely verified to resolve inside `wp-content`

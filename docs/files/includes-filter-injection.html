@@ -193,6 +193,16 @@ AJAX-enhanced filtering. The No-JS fallback works via plain link navigation.</p>
 </dt>
 <dd>Resolve the post type for an auto-injection context</dd>
 
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_render_zero_results_fallback">jpkcom_postfilter_render_zero_results_fallback()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>When auto-injection should happen but the main loop never started (0 posts),
+output an empty [data-jpkpf-results] container so the AJAX response always
+contains a swappable results zone — and also render the filter bar so the
+user can change their selection on a zero-results page reload.</dd>
+
     </dl>
 
 
@@ -332,6 +342,56 @@ AJAX-enhanced filtering. The No-JS fallback works via plain link navigation.</p>
             </section>
 
 </article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_render_zero_results_fallback">
+        jpkcom_postfilter_render_zero_results_fallback()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_render_zero_results_fallback" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/filter-injection.php"><a href="files/includes-filter-injection.html"><abbr title="includes/filter-injection.php">filter-injection.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">349</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">When auto-injection should happen but the main loop never started (0 posts),
+output an empty [data-jpkpf-results] container so the AJAX response always
+contains a swappable results zone — and also render the filter bar so the
+user can change their selection on a zero-results page reload.</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_render_zero_results_fallback</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+        <section class="phpdocumentor-description"><p>Runs at priority 1 (early in wp_footer) so it appears before theme scripts.</p>
+<p>A named function rather than a closure so that fragment-response.php can
+re-attach it after clearing wp_footer. A closure could be removed but never
+put back, and losing it would silently break exactly the case this exists
+for: a filter click with zero results would return an empty fragment with no
+results zone at all.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_render_zero_results_fallback_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_render_zero_results_fallback_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.0.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
             </section>
 
         
@@ -355,6 +415,7 @@ AJAX-enhanced filtering. The No-JS fallback works via plain link navigation.</p>
                 <li>
                     <ul class="phpdocumentor-list -clean">
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_injected_post_type">jpkcom_postfilter_get_injected_post_type()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_render_zero_results_fallback">jpkcom_postfilter_render_zero_results_fallback()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_should_auto_inject">jpkcom_postfilter_should_auto_inject()</a></li>
                                             </ul>
                 </li>

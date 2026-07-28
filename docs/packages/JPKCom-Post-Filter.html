@@ -164,6 +164,20 @@
 </dt>
 <dd>Default TTL for transient-based caches (seconds).</dd>
 
+            <dt class="phpdocumentor-table-of-contents__entry -constant -public">
+    <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ZONE_END">JPKCOM_POSTFILTER_ZONE_END</a>
+    <span>
+        &nbsp;: string&nbsp;= &#039;&lt;!--jpkpf:zone:end--&gt;&#039;                            </span>
+</dt>
+<dd>Marker written immediately after a swappable zone</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -constant -public">
+    <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ZONE_START">JPKCOM_POSTFILTER_ZONE_START</a>
+    <span>
+        &nbsp;: string&nbsp;= &#039;&lt;!--jpkpf:zone:start--&gt;&#039;                            </span>
+</dt>
+<dd>Marker written immediately before a swappable zone</dd>
+
     </dl>
 
 
@@ -526,6 +540,72 @@
 <dd>Resolve the post type for an auto-injection context</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_render_zero_results_fallback">jpkcom_postfilter_render_zero_results_fallback()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>When auto-injection should happen but the main loop never started (0 posts),
+output an empty [data-jpkpf-results] container so the AJAX response always
+contains a swappable results zone — and also render the filter bar so the
+user can change their selection on a zero-results page reload.</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_fragment_segment">jpkcom_postfilter_fragment_segment()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>URL segment that marks a request as a fragment request</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_is_fragment_request">jpkcom_postfilter_is_fragment_request()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether the current request should be answered with a fragment</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_zone_open">jpkcom_postfilter_zone_open()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>Emit the opening zone marker, but only on a fragment request</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_zone_close">jpkcom_postfilter_zone_close()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>Emit the closing zone marker, but only on a fragment request</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_wrap_zone">jpkcom_postfilter_wrap_zone()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Wrap an already-rendered HTML string in zone markers</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_extract_zones">jpkcom_postfilter_extract_zones()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Cut the marked zones out of a rendered page</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_fragment_url">jpkcom_postfilter_fragment_url()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Append the fragment segment to a filter URL</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_fragment_ob_callback">jpkcom_postfilter_fragment_ob_callback()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Reduce the captured page to its marked zones</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_locate_file">jpkcom_postfilter_locate_file()</a>
     <span>
                                 &nbsp;: string|null    </span>
@@ -868,6 +948,12 @@
 </dt>
 <dd>Whether the active filters reference term slugs that do not exist</dd>
 
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_should_noindex">jpkcom_postfilter_should_noindex()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+
     </dl>
 
         
@@ -936,6 +1022,96 @@
     
     
     
+
+        
+    </article>
+                    <article class="phpdocumentor-element -constant -public ">
+    <h4 class="phpdocumentor-element__name" id="constant_JPKCOM_POSTFILTER_ZONE_END">
+        JPKCOM_POSTFILTER_ZONE_END
+        <a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ZONE_END" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/fragment-response.php"><a href="files/includes-fragment-response.html"><abbr title="includes/fragment-response.php">fragment-response.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">52</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Marker written immediately after a swappable zone</p>
+
+    
+    <code class="phpdocumentor-signature phpdocumentor-code ">
+    <span class="phpdocumentor-signature__visibility">public</span>
+        <span class="phpdocumentor-signature__type">string</span>
+    <span class="phpdocumentor-signature__name">JPKCOM_POSTFILTER_ZONE_END</span>
+    = <span class="phpdocumentor-signature__default-value">&#039;&lt;!--jpkpf:zone:end--&gt;&#039;</span>
+</code>
+
+
+    
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="constant_JPKCOM_POSTFILTER_ZONE_END_tags">
+        Tags
+        <a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ZONE_END_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.2.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+        
+    </article>
+                    <article class="phpdocumentor-element -constant -public ">
+    <h4 class="phpdocumentor-element__name" id="constant_JPKCOM_POSTFILTER_ZONE_START">
+        JPKCOM_POSTFILTER_ZONE_START
+        <a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ZONE_START" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/fragment-response.php"><a href="files/includes-fragment-response.html"><abbr title="includes/fragment-response.php">fragment-response.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">44</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Marker written immediately before a swappable zone</p>
+
+    
+    <code class="phpdocumentor-signature phpdocumentor-code ">
+    <span class="phpdocumentor-signature__visibility">public</span>
+        <span class="phpdocumentor-signature__type">string</span>
+    <span class="phpdocumentor-signature__name">JPKCOM_POSTFILTER_ZONE_START</span>
+    = <span class="phpdocumentor-signature__default-value">&#039;&lt;!--jpkpf:zone:start--&gt;&#039;</span>
+</code>
+
+
+    
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="constant_JPKCOM_POSTFILTER_ZONE_START_tags">
+        Tags
+        <a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ZONE_START_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.2.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
 
         
     </article>
@@ -3432,7 +3608,7 @@ JS plus/minus feature for the editor preview.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">266</span>
+    <span class="phpdocumentor-element-found-in__line">279</span>
 
     </aside>
 
@@ -3501,7 +3677,7 @@ JS plus/minus feature for the editor preview.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">348</span>
+    <span class="phpdocumentor-element-found-in__line">361</span>
 
     </aside>
 
@@ -3663,6 +3839,500 @@ JS plus/minus feature for the editor preview.</p>
         <span class="phpdocumentor-signature__response_type">string</span>
                     &mdash;
                 <section class="phpdocumentor-description"><p>Post type slug, defaults to 'post'.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_render_zero_results_fallback">
+        jpkcom_postfilter_render_zero_results_fallback()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_render_zero_results_fallback" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/filter-injection.php"><a href="files/includes-filter-injection.html"><abbr title="includes/filter-injection.php">filter-injection.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">349</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">When auto-injection should happen but the main loop never started (0 posts),
+output an empty [data-jpkpf-results] container so the AJAX response always
+contains a swappable results zone — and also render the filter bar so the
+user can change their selection on a zero-results page reload.</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_render_zero_results_fallback</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+        <section class="phpdocumentor-description"><p>Runs at priority 1 (early in wp_footer) so it appears before theme scripts.</p>
+<p>A named function rather than a closure so that fragment-response.php can
+re-attach it after clearing wp_footer. A closure could be removed but never
+put back, and losing it would silently break exactly the case this exists
+for: a filter click with zero results would return an empty fragment with no
+results zone at all.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_render_zero_results_fallback_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_render_zero_results_fallback_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.0.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_fragment_segment">
+        jpkcom_postfilter_fragment_segment()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_fragment_segment" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/fragment-response.php"><a href="files/includes-fragment-response.html"><abbr title="includes/fragment-response.php">fragment-response.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">68</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">URL segment that marks a request as a fragment request</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_fragment_segment</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>Deliberately not the obvious <code class="prettyprint">fragment</code>: the segment sits in the same
+path position as taxonomy term slugs, and a site with a term called
+<code class="prettyprint">fragment</code> would produce genuinely ambiguous URLs. A prefixed slug cannot
+collide with a term slug anyone would plausibly create.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_fragment_segment_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_fragment_segment_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.2.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Sanitised URL segment.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_is_fragment_request">
+        jpkcom_postfilter_is_fragment_request()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_is_fragment_request" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/fragment-response.php"><a href="files/includes-fragment-response.html"><abbr title="includes/fragment-response.php">fragment-response.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">101</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether the current request should be answered with a fragment</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_is_fragment_request</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>Reads the query var the rewrite rule sets. Checked against the main query
+only — a secondary WP_Query must never flip the whole response into
+fragment mode.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_is_fragment_request_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_is_fragment_request_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.2.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True on a fragment request.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_zone_open">
+        jpkcom_postfilter_zone_open()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_zone_open" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/fragment-response.php"><a href="files/includes-fragment-response.html"><abbr title="includes/fragment-response.php">fragment-response.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">122</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Emit the opening zone marker, but only on a fragment request</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_zone_open</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+        <section class="phpdocumentor-description"><p>Markers are HTML comments placed <em>outside</em> the element they wrap, so the
+element itself is part of the captured zone. They are written only when a
+fragment is being produced, so normal page output is byte-identical to
+before.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_zone_open_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_zone_open_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.2.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_zone_close">
+        jpkcom_postfilter_zone_close()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_zone_close" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/fragment-response.php"><a href="files/includes-fragment-response.html"><abbr title="includes/fragment-response.php">fragment-response.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">140</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Emit the closing zone marker, but only on a fragment request</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_zone_close</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+    
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_zone_close_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_zone_close_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.2.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_wrap_zone">
+        jpkcom_postfilter_wrap_zone()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_wrap_zone" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/fragment-response.php"><a href="files/includes-fragment-response.html"><abbr title="includes/fragment-response.php">fragment-response.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">162</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Wrap an already-rendered HTML string in zone markers</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_wrap_zone</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$html</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>For the render functions that return a string instead of printing
+(shortcodes, blocks, page-builder elements).</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$html</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Rendered HTML.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_wrap_zone_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_wrap_zone_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.2.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Same HTML, marked when this is a fragment request.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_extract_zones">
+        jpkcom_postfilter_extract_zones()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_extract_zones" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/fragment-response.php"><a href="files/includes-fragment-response.html"><abbr title="includes/fragment-response.php">fragment-response.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">192</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Cut the marked zones out of a rendered page</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_extract_zones</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$html</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>Substring work against markers this plugin wrote itself, deliberately not
+a regex or DOMDocument search for <code class="prettyprint">[data-jpkpf-results]</code>: the results zone
+contains arbitrary theme markup with nested elements, and matching its
+closing tag by pattern is guesswork. Matching a marker is not.</p>
+<p>An unterminated start marker yields nothing rather than everything — the
+failure mode of &quot;return the rest of the document&quot; is exactly the full-page
+dump this whole change exists to avoid.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$html</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Complete rendered output.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_extract_zones_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_extract_zones_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.2.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Concatenated zones in document order; empty string if none.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_fragment_url">
+        jpkcom_postfilter_fragment_url()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_fragment_url" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/fragment-response.php"><a href="files/includes-fragment-response.html"><abbr title="includes/fragment-response.php">fragment-response.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">236</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Append the fragment segment to a filter URL</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_fragment_url</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$url</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>Kept in PHP as well as JS so the two cannot drift apart silently; the
+templates use it for the no-JS-visible data attribute the script reads.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$url</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Absolute or root-relative filter URL.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_fragment_url_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_fragment_url_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.2.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>URL with the fragment segment appended before the query string.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_fragment_ob_callback">
+        jpkcom_postfilter_fragment_ob_callback()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_fragment_ob_callback" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/fragment-response.php"><a href="files/includes-fragment-response.html"><abbr title="includes/fragment-response.php">fragment-response.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">343</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Reduce the captured page to its marked zones</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_fragment_ob_callback</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$buffer</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$buffer</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Complete rendered output.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_fragment_ob_callback_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_fragment_ob_callback_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.2.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Zones only.</p>
 </section>
 
             </section>
@@ -5737,7 +6407,7 @@ class     (string)  Extra CSS class.               Default: ''</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/shortcodes.php"><a href="files/includes-shortcodes.html"><abbr title="includes/shortcodes.php">shortcodes.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">250</span>
+    <span class="phpdocumentor-element-found-in__line">252</span>
 
     </aside>
 
@@ -6729,7 +7399,7 @@ post type has no archive.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-routing.php"><a href="files/includes-url-routing.html"><abbr title="includes/url-routing.php">url-routing.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">408</span>
+    <span class="phpdocumentor-element-found-in__line">451</span>
 
     </aside>
 
@@ -6779,6 +7449,35 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
             </section>
 
 </article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_should_noindex">
+        jpkcom_postfilter_should_noindex()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_should_noindex" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/url-routing.php"><a href="files/includes-url-routing.html"><abbr title="includes/url-routing.php">url-routing.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">489</span>
+
+    </aside>
+
+    
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_should_noindex</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+    
+    
+    
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
             </section>
 
         
@@ -6804,6 +7503,8 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                     <ul class="phpdocumentor-list -clean">
                                                     <li class=""><a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_CACHE_GROUP">JPKCOM_POSTFILTER_CACHE_GROUP</a></li>
                                                     <li class=""><a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_CACHE_TTL">JPKCOM_POSTFILTER_CACHE_TTL</a></li>
+                                                    <li class=""><a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ZONE_END">JPKCOM_POSTFILTER_ZONE_END</a></li>
+                                                    <li class=""><a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ZONE_START">JPKCOM_POSTFILTER_ZONE_START</a></li>
                                             </ul>
                 </li>
             
@@ -6831,6 +7532,7 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_debug_log">jpkcom_postfilter_debug_log()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_default_settings">jpkcom_postfilter_default_settings()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ensure_settings_dir">jpkcom_postfilter_ensure_settings_dir()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_extract_zones">jpkcom_postfilter_extract_zones()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_field_auto_inject">jpkcom_postfilter_field_auto_inject()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_field_cache_ttl">jpkcom_postfilter_field_cache_ttl()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_field_debug_mode">jpkcom_postfilter_field_debug_mode()</a></li>
@@ -6842,6 +7544,9 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_field_settings_cache_enabled">jpkcom_postfilter_field_settings_cache_enabled()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_field_transient_cache_enabled">jpkcom_postfilter_field_transient_cache_enabled()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_field_url_endpoint">jpkcom_postfilter_field_url_endpoint()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_fragment_ob_callback">jpkcom_postfilter_fragment_ob_callback()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_fragment_segment">jpkcom_postfilter_fragment_segment()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_fragment_url">jpkcom_postfilter_fragment_url()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_active_filters">jpkcom_postfilter_get_active_filters()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_archive_base_url">jpkcom_postfilter_get_archive_base_url()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_color_scheme_vars">jpkcom_postfilter_get_color_scheme_vars()</a></li>
@@ -6862,6 +7567,7 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_has_unknown_terms">jpkcom_postfilter_has_unknown_terms()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_is_block_editor_request">jpkcom_postfilter_is_block_editor_request()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_is_filter_request">jpkcom_postfilter_is_filter_request()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_is_fragment_request">jpkcom_postfilter_is_fragment_request()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_layout_row">jpkcom_postfilter_layout_row()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_layout_section_close">jpkcom_postfilter_layout_section_close()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_layout_section_open">jpkcom_postfilter_layout_section_open()</a></li>
@@ -6887,6 +7593,7 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_render_color_field">jpkcom_postfilter_render_color_field()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_render_select_var_field">jpkcom_postfilter_render_select_var_field()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_render_text_var_field">jpkcom_postfilter_render_text_var_field()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_render_zero_results_fallback">jpkcom_postfilter_render_zero_results_fallback()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_run_query">jpkcom_postfilter_run_query()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_cache_settings">jpkcom_postfilter_sanitize_cache_settings()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_csv_ids">jpkcom_postfilter_sanitize_csv_ids()</a></li>
@@ -6906,9 +7613,13 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_shortcode_list">jpkcom_postfilter_shortcode_list()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_shortcode_pagination">jpkcom_postfilter_shortcode_pagination()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_should_auto_inject">jpkcom_postfilter_should_auto_inject()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_should_noindex">jpkcom_postfilter_should_noindex()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_transient_delete">jpkcom_postfilter_transient_delete()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_transient_get">jpkcom_postfilter_transient_get()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_transient_set">jpkcom_postfilter_transient_set()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_wrap_zone">jpkcom_postfilter_wrap_zone()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_zone_close">jpkcom_postfilter_zone_close()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_zone_open">jpkcom_postfilter_zone_open()</a></li>
                                             </ul>
                 </li>
                     </ul>

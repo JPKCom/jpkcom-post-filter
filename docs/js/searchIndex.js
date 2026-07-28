@@ -466,6 +466,61 @@ Search.appendIndex(
             "summary": "Resolve\u0020the\u0020post\u0020type\u0020for\u0020an\u0020auto\u002Dinjection\u0020context",
             "url": "namespaces/default.html#function_jpkcom_postfilter_get_injected_post_type"
         },                {
+            "fqsen": "\\jpkcom_postfilter_render_zero_results_fallback\u0028\u0029",
+            "name": "jpkcom_postfilter_render_zero_results_fallback",
+            "summary": "When\u0020auto\u002Dinjection\u0020should\u0020happen\u0020but\u0020the\u0020main\u0020loop\u0020never\u0020started\u0020\u00280\u0020posts\u0029,\noutput\u0020an\u0020empty\u0020\u005Bdata\u002Djpkpf\u002Dresults\u005D\u0020container\u0020so\u0020the\u0020AJAX\u0020response\u0020always\ncontains\u0020a\u0020swappable\u0020results\u0020zone\u0020\u2014\u0020and\u0020also\u0020render\u0020the\u0020filter\u0020bar\u0020so\u0020the\nuser\u0020can\u0020change\u0020their\u0020selection\u0020on\u0020a\u0020zero\u002Dresults\u0020page\u0020reload.",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_render_zero_results_fallback"
+        },                {
+            "fqsen": "\\JPKCOM_POSTFILTER_ZONE_START",
+            "name": "JPKCOM_POSTFILTER_ZONE_START",
+            "summary": "Marker\u0020written\u0020immediately\u0020before\u0020a\u0020swappable\u0020zone",
+            "url": "namespaces/default.html#constant_JPKCOM_POSTFILTER_ZONE_START"
+        },                {
+            "fqsen": "\\JPKCOM_POSTFILTER_ZONE_END",
+            "name": "JPKCOM_POSTFILTER_ZONE_END",
+            "summary": "Marker\u0020written\u0020immediately\u0020after\u0020a\u0020swappable\u0020zone",
+            "url": "namespaces/default.html#constant_JPKCOM_POSTFILTER_ZONE_END"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_fragment_segment\u0028\u0029",
+            "name": "jpkcom_postfilter_fragment_segment",
+            "summary": "URL\u0020segment\u0020that\u0020marks\u0020a\u0020request\u0020as\u0020a\u0020fragment\u0020request",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_fragment_segment"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_is_fragment_request\u0028\u0029",
+            "name": "jpkcom_postfilter_is_fragment_request",
+            "summary": "Whether\u0020the\u0020current\u0020request\u0020should\u0020be\u0020answered\u0020with\u0020a\u0020fragment",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_is_fragment_request"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_zone_open\u0028\u0029",
+            "name": "jpkcom_postfilter_zone_open",
+            "summary": "Emit\u0020the\u0020opening\u0020zone\u0020marker,\u0020but\u0020only\u0020on\u0020a\u0020fragment\u0020request",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_zone_open"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_zone_close\u0028\u0029",
+            "name": "jpkcom_postfilter_zone_close",
+            "summary": "Emit\u0020the\u0020closing\u0020zone\u0020marker,\u0020but\u0020only\u0020on\u0020a\u0020fragment\u0020request",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_zone_close"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_wrap_zone\u0028\u0029",
+            "name": "jpkcom_postfilter_wrap_zone",
+            "summary": "Wrap\u0020an\u0020already\u002Drendered\u0020HTML\u0020string\u0020in\u0020zone\u0020markers",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_wrap_zone"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_extract_zones\u0028\u0029",
+            "name": "jpkcom_postfilter_extract_zones",
+            "summary": "Cut\u0020the\u0020marked\u0020zones\u0020out\u0020of\u0020a\u0020rendered\u0020page",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_extract_zones"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_fragment_url\u0028\u0029",
+            "name": "jpkcom_postfilter_fragment_url",
+            "summary": "Append\u0020the\u0020fragment\u0020segment\u0020to\u0020a\u0020filter\u0020URL",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_fragment_url"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_fragment_ob_callback\u0028\u0029",
+            "name": "jpkcom_postfilter_fragment_ob_callback",
+            "summary": "Reduce\u0020the\u0020captured\u0020page\u0020to\u0020its\u0020marked\u0020zones",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_fragment_ob_callback"
+        },                {
             "fqsen": "\\jpkcom_postfilter_locate_file\u0028\u0029",
             "name": "jpkcom_postfilter_locate_file",
             "summary": "Locate\u0020an\u0020include\/utility\u0020file\u0020with\u0020override\u0020support",
@@ -876,6 +931,11 @@ Search.appendIndex(
             "summary": "Whether\u0020the\u0020active\u0020filters\u0020reference\u0020term\u0020slugs\u0020that\u0020do\u0020not\u0020exist",
             "url": "namespaces/default.html#function_jpkcom_postfilter_has_unknown_terms"
         },                {
+            "fqsen": "\\jpkcom_postfilter_should_noindex\u0028\u0029",
+            "name": "jpkcom_postfilter_should_noindex",
+            "summary": "",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_should_noindex"
+        },                {
             "fqsen": "\\JPKCOM_POSTFILTER_VERSION",
             "name": "JPKCOM_POSTFILTER_VERSION",
             "summary": "",
@@ -930,6 +990,11 @@ Search.appendIndex(
             "name": "jpkcom_postfilter_deactivate",
             "summary": "Plugin\u0020deactivation\u0020hook",
             "url": "namespaces/default.html#function_jpkcom_postfilter_deactivate"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_maybe_flush_rewrites\u0028\u0029",
+            "name": "jpkcom_postfilter_maybe_flush_rewrites",
+            "summary": "Flush\u0020rewrite\u0020rules\u0020once\u0020after\u0020the\u0020plugin\u0020version\u0020changes",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_maybe_flush_rewrites"
         },                {
             "fqsen": "\\",
             "name": "\\",

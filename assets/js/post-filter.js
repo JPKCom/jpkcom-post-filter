@@ -149,11 +149,20 @@
 			} );
 		} );
 
-		// Handle browser back/forward navigation
+		// Handle browser back/forward navigation.
+		//
+		// The history entry created by the *initial* page load carries no state
+		// at all, so a plain `if ( e.state && e.state.jpkpf )` did nothing when
+		// the user went back to it: the address bar returned to the unfiltered
+		// archive while the results zone kept showing the filtered list, and the
+		// filter buttons stayed pressed. Falling back to location.href re-fetches
+		// whatever URL the entry actually points at, which is correct for both
+		// the initial entry and any entry pushed by another script.
 		window.addEventListener( 'popstate', function ( e ) {
-			if ( e.state && e.state.jpkpf ) {
-				fetchResults( e.state.url, resultZone, liveRegion, false );
-			}
+			const url = ( e.state && e.state.jpkpf ) ? e.state.url : location.href;
+
+			syncButtonsToUrl( filterBar, baseUrl );
+			fetchResults( url, resultZone, liveRegion, false );
 		} );
 
 		// Feature: +/- mode — inject icons after all listeners are set
@@ -193,6 +202,52 @@
 
 		const url = buildFilterUrl( filterBar, baseUrl );
 		fetchResults( url, resultZone, liveRegion, true );
+	}
+
+	/**
+	 * Set the filter buttons to match the current address-bar URL.
+	 *
+	 * Used on back/forward: the results zone is re-fetched from the URL, and the
+	 * buttons have to follow, or the bar claims a selection the list no longer
+	 * shows. Reads the positional filter path the same way the PHP side does —
+	 * segments in filter-group order, '_' meaning "no selection in this group".
+	 *
+	 * @param {HTMLElement} filterBar
+	 * @param {string}      baseUrl
+	 */
+	function syncButtonsToUrl( filterBar, baseUrl ) {
+		const endpoint = cfg.endpoint || 'filter';
+		const groups   = ( cfg.filterGroupOrder && cfg.filterGroupOrder.length ) ? cfg.filterGroupOrder : [];
+
+		let path = location.pathname;
+		try {
+			path = location.pathname.replace( new URL( baseUrl, location.origin ).pathname, '/' );
+		} catch ( err ) {
+			// baseUrl unparseable — fall back to the raw pathname.
+		}
+
+		const parts = path.split( '/' ).filter( Boolean );
+		const active = {};
+
+		if ( parts[ 0 ] === endpoint ) {
+			parts.slice( 1 ).forEach( function ( segment, index ) {
+				if ( segment === '_' || ! groups[ index ] ) { return; }
+				active[ groups[ index ] ] = segment.split( '+' );
+			} );
+		}
+
+		filterBar.querySelectorAll( '.jpkpf-filter-btn[data-filter-term]' ).forEach( function ( btn ) {
+			const tax  = btn.getAttribute( 'data-filter-taxonomy' );
+			const term = btn.getAttribute( 'data-filter-term' );
+			const on   = !! ( active[ tax ] && active[ tax ].indexOf( term ) !== -1 );
+
+			btn.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
+			btn.classList.toggle( 'is-active', on );
+		} );
+
+		enforceLimits( filterBar );
+		updateResetButton( filterBar );
+		updateDropdownTriggers( filterBar );
 	}
 
 	/**
@@ -361,7 +416,7 @@
 			liveRegion.textContent = cfg.i18n.loading || 'Loading…';
 		}
 
-		const requestUrl = addQueryParam( url, 'jpkpf_ajax', '1' );
+		const requestUrl = fragmentUrl( url );
 
 		fetch( requestUrl, {
 			method: 'GET',
@@ -780,6 +835,42 @@
 	function addQueryParam( url, key, value ) {
 		const separator = url.includes( '?' ) ? '&' : '?';
 		return url + separator + encodeURIComponent( key ) + '=' + encodeURIComponent( value );
+	}
+
+	/**
+	 * Turn a filter URL into its fragment URL.
+	 *
+	 * The segment goes into the path, not the query string: a full-page cache
+	 * keys on the URL and several common setups drop query parameters they do
+	 * not recognise. A dropped parameter would collapse this onto the real page
+	 * URL and let the cache hand a bare, theme-less fragment to a normal
+	 * visitor. A path segment cannot collapse that way.
+	 *
+	 * Mirrors jpkcom_postfilter_fragment_url() in includes/fragment-response.php.
+	 *
+	 * @param {string} url Filter URL, possibly with query string and/or hash.
+	 * @return {string} URL with the fragment segment appended to the path.
+	 */
+	function fragmentUrl( url ) {
+		const segment = cfg.fragmentSegment || 'jpkpf-fragment';
+
+		let hash = '';
+		const hashAt = url.indexOf( '#' );
+
+		if ( hashAt !== -1 ) {
+			hash = url.slice( hashAt );
+			url  = url.slice( 0, hashAt );
+		}
+
+		let query = '';
+		const queryAt = url.indexOf( '?' );
+
+		if ( queryAt !== -1 ) {
+			query = url.slice( queryAt );
+			url   = url.slice( 0, queryAt );
+		}
+
+		return url.replace( /\/+$/, '' ) + '/' + segment + '/' + query + hash;
 	}
 
 	// Initialize when DOM is ready

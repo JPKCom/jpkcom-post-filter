@@ -192,7 +192,7 @@
             <dt class="phpdocumentor-table-of-contents__entry -constant -public">
     <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_VERSION">JPKCOM_POSTFILTER_VERSION</a>
     <span>
-        &nbsp;: mixed&nbsp;= &#039;1.1.7&#039;                            </span>
+        &nbsp;: mixed&nbsp;= &#039;1.2.0&#039;                            </span>
 </dt>
 
     </dl>
@@ -226,6 +226,13 @@
                                 &nbsp;: void    </span>
 </dt>
 <dd>Plugin deactivation hook</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_maybe_flush_rewrites">jpkcom_postfilter_maybe_flush_rewrites()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>Flush rewrite rules once after the plugin version changes</dd>
 
     </dl>
 
@@ -467,7 +474,7 @@
     <span class="phpdocumentor-signature__visibility">public</span>
         <span class="phpdocumentor-signature__type">mixed</span>
     <span class="phpdocumentor-signature__name">JPKCOM_POSTFILTER_VERSION</span>
-    = <span class="phpdocumentor-signature__default-value">&#039;1.1.7&#039;</span>
+    = <span class="phpdocumentor-signature__default-value">&#039;1.2.0&#039;</span>
 </code>
 
 
@@ -494,7 +501,7 @@
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="jpkcom-post-filter.php"><a href="files/jpkcom-post-filter.html">jpkcom-post-filter.php</a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">133</span>
+    <span class="phpdocumentor-element-found-in__line">134</span>
 
     </aside>
 
@@ -536,7 +543,7 @@
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="jpkcom-post-filter.php"><a href="files/jpkcom-post-filter.html">jpkcom-post-filter.php</a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">152</span>
+    <span class="phpdocumentor-element-found-in__line">153</span>
 
     </aside>
 
@@ -578,7 +585,7 @@
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="jpkcom-post-filter.php"><a href="files/jpkcom-post-filter.html">jpkcom-post-filter.php</a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">172</span>
+    <span class="phpdocumentor-element-found-in__line">173</span>
 
     </aside>
 
@@ -605,6 +612,53 @@
             </dt>
                             <dd class="phpdocumentor-tag-list__definition">
                                             <span class="phpdocumentor-tag-link">1.0.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_maybe_flush_rewrites">
+        jpkcom_postfilter_maybe_flush_rewrites()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_maybe_flush_rewrites" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="jpkcom-post-filter.php"><a href="files/jpkcom-post-filter.html">jpkcom-post-filter.php</a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">194</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Flush rewrite rules once after the plugin version changes</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_maybe_flush_rewrites</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+        <section class="phpdocumentor-description"><p>The activation hook does not run on an update — WordPress only fires it when
+a plugin is activated. So a release that adds or changes a rewrite rule
+(1.2.0 added the fragment routes) would ship rules that never reach the
+database, and the new URLs would 404 until someone re-saved the permalink
+settings by hand.</p>
+<p>Runs late on <code class="prettyprint">init</code> so every add_rewrite_rule() call has already happened.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_maybe_flush_rewrites_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_maybe_flush_rewrites_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.2.0</span>
                                                                                                         
                                     </dd>
                         </dl>
@@ -649,6 +703,7 @@
                     <ul class="phpdocumentor-list -clean">
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_activate">jpkcom_postfilter_activate()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_deactivate">jpkcom_postfilter_deactivate()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_maybe_flush_rewrites">jpkcom_postfilter_maybe_flush_rewrites()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_textdomain">jpkcom_postfilter_textdomain()</a></li>
                                             </ul>
                 </li>
