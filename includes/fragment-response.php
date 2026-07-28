@@ -292,6 +292,15 @@ add_action( 'template_redirect', static function (): void {
         header( 'X-Content-Type-Options: nosniff' );
     }
 
+    // WordPress's canonical redirect does not recognise the fragment segment as
+    // part of the URL and "repairs" a paginated fragment by appending the page
+    // it thinks is missing: /page/2/jpkpf-fragment/ was answered with a 301 to
+    // /page/2/jpkpf-fragment/page/2/. The script follows the redirect, gets a
+    // 404, and falls back to a full page reload — so paginating a filtered list
+    // silently stopped using AJAX at all. Found on a live install; no amount of
+    // source reading would have shown it.
+    add_filter( 'redirect_canonical', '__return_false', PHP_INT_MAX );
+
     // wp_enqueue_scripts is dispatched from wp_head, so emptying wp_head also
     // removes the entire enqueue and print pipeline — no separate dequeue pass.
     remove_all_actions( 'wp_head' );

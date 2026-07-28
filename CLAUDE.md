@@ -345,11 +345,60 @@ that changes rewrite rules would ship rules that never reach the database.
 `jpkcom_postfilter_rewrite_version` against the plugin version on `init`
 (priority 99) and flushes once.
 
-### Not verified without a live installation
+### Verified on a live installation
 
-That emptying `wp_head` actually suppresses what it should, and how much time
-that saves, cannot be established from source. Verify on a real site before
-trusting the numbers:
+Measured 2026-07-28 on a DDEV instance (WordPress, PHP 8.4, theme
+`bootscore-child`, 19 posts across 3 categories and 3 tags, no page cache, no
+WPML):
+
+| Request | Full page | Fragment |
+|---|---|---|
+| Archive | 76 339 B / 420 ms | 30 653 B / 397 ms |
+| Filtered (`web-design`) | 63 800 B / 483 ms | 18 054 B / 389 ms |
+
+Time-to-first-byte, mean of 8 runs after 3 warm-ups. **Transfer drops 60–72 %,
+server time 5–19 %.** That ratio is the point: the loop and the query stay, so
+do not expect the response time to collapse. Confirmed present in the fragment
+and absent from it: results zone and pagination yes; `<html>`/`<head>`/`<body>`,
+the filter bar, script and stylesheet tags no. `Cache-Control: no-store`,
+`X-Robots-Tag: noindex` and `X-Content-Type-Options` are set on fragments and
+absent on normal pages, which are byte-for-byte unaffected.
+
+`bootscore-child` needed no adaptation. A theme that renders content from
+`wp_head` or `wp_footer` would lose it in a fragment; nothing inside
+`[data-jpkpf-results]` is affected.
+
+**Not covered:** the browser-side DOM swap and event handling were not driven in
+a real browser (no Chrome in the verification environment). What *was* checked
+end-to-end is the chain up to that point — the `href`s rendered into the filter
+bar were passed through the actual `fragmentUrl()` from `post-filter.js` via
+node, and every resulting URL returned a valid, chrome-free fragment with the
+expected post count, including the `_` placeholder form and two-group
+combinations.
+
+### Two bugs this verification exposed
+
+Neither was findable from source, and both are guarded by
+`tests/test-fragment.php` now.
+
+**Canonical redirect ate paginated fragments.** `/page/2/jpkpf-fragment/`
+answered `301 → /page/2/jpkpf-fragment/page/2/`: `redirect_canonical()` does not
+recognise the segment and "repaired" a URL it read as missing its pagination.
+The script follows the redirect, gets a 404 and falls back to a full reload — so
+paginating a filtered list silently stopped using AJAX at all, in exactly the
+case the feature exists for. Fixed by disabling canonical redirects on fragment
+requests.
+
+**`apcu_cache_info()` emitted a PHP warning** from
+`jpkcom_postfilter_apcu_available()` whenever APCu is loaded but inactive for
+the running SAPI — `apc.enable_cli` defaults to 0, so every WP-CLI call produced
+it. `ini_get( 'apc.enabled' )` does not catch this because it reports the
+web-SAPI setting. Not cosmetic here: with `display_errors` on, the warning is
+printed into the response body, and in a fragment it lands inside the swapped
+markup. Replaced with `apcu_enabled()`, which answers the same question without
+a diagnostic. This bug predates 1.2.0 and affects the normal page render too.
+
+### Re-running the checks elsewhere
 
 ```bash
 # Fragment must contain no document chrome
@@ -357,14 +406,11 @@ curl -s https://example.com/blog/filter/web-design/jpkpf-fragment/ | head -c 400
 # Must not be cacheable and must not be indexable
 curl -sI https://example.com/blog/filter/web-design/jpkpf-fragment/ \
   | grep -iE 'cache-control|x-robots-tag'
+# Pagination must not redirect
+curl -sI https://example.com/blog/page/2/jpkpf-fragment/ | grep -iE '^HTTP|^location'
 # The normal page must be unchanged
 curl -s https://example.com/blog/filter/web-design/ | grep -c '<head'
 ```
-
-Theme compatibility is the open risk: a theme that renders content from
-`wp_head` or `wp_footer` loses it in a fragment. Nothing inside
-`[data-jpkpf-results]` is affected, but a theme doing something unusual should
-be checked once.
 
 ---
 

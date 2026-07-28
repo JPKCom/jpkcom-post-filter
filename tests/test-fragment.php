@@ -267,6 +267,31 @@ check(
 	. 'otherwise one of the two produces an unusable fragment.'
 );
 
+echo "\nRegressions found on a live installation\n";
+
+check(
+	'canonical redirects are disabled on fragment requests',
+	str_contains( $fragment, "add_filter( 'redirect_canonical', '__return_false'" ),
+	"WordPress does not recognise the fragment segment and \"repairs\" a paginated "
+	. 'fragment by appending the page it thinks is missing: /page/2/jpkpf-fragment/ '
+	. 'was answered with a 301 to /page/2/jpkpf-fragment/page/2/. The script follows '
+	. 'it, gets a 404 and falls back to a full reload, so paginating a filtered list '
+	. 'silently stopped using AJAX.'
+);
+
+$cache = (string) file_get_contents( dirname( __DIR__ ) . '/includes/cache-manager.php' );
+
+check(
+	'APCu availability is probed without emitting a diagnostic',
+	! str_contains( $cache, 'apcu_cache_info( true ) !== false' )
+		&& str_contains( $cache, 'apcu_enabled()' ),
+	'apcu_cache_info() raises "No APC info available" when the extension is loaded '
+	. 'but inactive for the running SAPI (apc.enable_cli defaults to 0). With '
+	. 'display_errors on, that warning is printed into the response body — inside '
+	. 'the swapped markup on a fragment request. apcu_enabled() answers the same '
+	. 'question silently.'
+);
+
 printf( "\n  %d passed, %d failed\n", $pass, $fail );
 
 exit( $fail > 0 ? 1 : 0 );
