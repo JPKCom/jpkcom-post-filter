@@ -96,6 +96,10 @@ add_action( 'wp_enqueue_scripts', static function (): void {
             'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
             'nonce'         => wp_create_nonce( 'jpkcom_postfilter_ajax' ),
             'endpoint'            => jpkcom_postfilter_settings_get( 'general', 'url_endpoint', JPKCOM_POSTFILTER_URL_ENDPOINT ),
+            // Filterable, so the segment must come from PHP rather than be
+            // hard-coded in the script — otherwise the two drift apart and
+            // every AJAX request 404s.
+            'fragmentSegment'     => jpkcom_postfilter_fragment_segment(),
             'maxFiltersPerGroup'  => (int) jpkcom_postfilter_settings_get( 'general', 'max_filters_per_group', 3 ),
             'maxFilterCombos'     => (int) jpkcom_postfilter_settings_get( 'general', 'max_filter_combos', 3 ),
             'filterGroupOrder'    => array_values( array_map(

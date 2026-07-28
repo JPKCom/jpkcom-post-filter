@@ -77,6 +77,7 @@ $jpkcom_postfilter_includes = [
     'includes/template-loader.php',
     'includes/taxonomies.php',
     'includes/url-routing.php',
+    'includes/fragment-response.php',
     'includes/query-handler.php',
     'includes/filter-injection.php',
     'includes/shortcodes.php',
@@ -174,3 +175,33 @@ function jpkcom_postfilter_deactivate(): void {
 }
 
 register_deactivation_hook( __FILE__, 'jpkcom_postfilter_deactivate' );
+
+
+/**
+ * Flush rewrite rules once after the plugin version changes
+ *
+ * The activation hook does not run on an update — WordPress only fires it when
+ * a plugin is activated. So a release that adds or changes a rewrite rule
+ * (1.2.0 added the fragment routes) would ship rules that never reach the
+ * database, and the new URLs would 404 until someone re-saved the permalink
+ * settings by hand.
+ *
+ * Runs late on `init` so every add_rewrite_rule() call has already happened.
+ *
+ * @since 1.2.0
+ * @return void
+ */
+function jpkcom_postfilter_maybe_flush_rewrites(): void {
+
+    $stored = (string) get_option( 'jpkcom_postfilter_rewrite_version', '' );
+
+    if ( $stored === JPKCOM_POSTFILTER_VERSION ) {
+        return;
+    }
+
+    flush_rewrite_rules();
+
+    update_option( 'jpkcom_postfilter_rewrite_version', JPKCOM_POSTFILTER_VERSION, false );
+}
+
+add_action( 'init', 'jpkcom_postfilter_maybe_flush_rewrites', 99 );

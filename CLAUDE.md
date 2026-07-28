@@ -268,10 +268,169 @@ File: `assets/js/post-filter.js`
 ```
 
 ### AJAX behaviour
-- Request adds `?jpkpf_ajax=1`
+- Request appends the `/jpkpf-fragment/` URL segment (see **Fragment responses** below)
 - JS extracts `[data-jpkpf-results]` from response and swaps into DOM
 - `swapPagination()` updates standalone `[data-jpkpf-pagination]` elements outside the results zone
 - Auto-inject mode (`[data-jpkpf-wrapper]`) skips standalone pagination insertion to prevent duplicates
+
+---
+
+## Fragment responses (since 1.2.0)
+
+Up to 1.1.7 the script sent `?jpkpf_ajax=1` — a parameter that appeared in **no
+PHP file at all**. Every filter click rendered a complete page (theme header, nav
+menus, sidebar widgets, footer, the whole asset pipeline) and the browser threw
+all of it away except `[data-jpkpf-results]`.
+
+`includes/fragment-response.php` answers those requests with just the swappable
+zones. Four things about it are load-bearing.
+
+**1. It is a URL segment, not a query parameter.** A full-page cache keys on the
+URL, and several common configurations strip parameters they do not recognise.
+A stripped parameter collapses the fragment URL onto the real page URL, and the
+cache then serves a bare, theme-less fragment to an ordinary visitor. A path
+segment cannot collapse that way. The segment is `jpkpf-fragment`, not
+`fragment`, because it sits in the same path position as term slugs and a site
+with a term called `fragment` would produce ambiguous URLs. Filterable via
+`jpkcom_postfilter_fragment_segment` — changing it needs a rewrite flush.
+
+**2. The fragment rewrite rules must be registered before the page rules.**
+`add_rewrite_rule( …, 'top' )` keeps insertion order and WordPress takes the
+first match; the page rule's `(.+?)` happily swallows a trailing
+`/jpkpf-fragment` as part of the filter path. Registered in the wrong order the
+fragment rules are unreachable and every AJAX request quietly renders a normal
+page for a non-existent term. Guarded by `tests/test-fragment.php`.
+
+**3. The theme's loop still runs, and has to.** In auto-inject mode the markup
+inside `[data-jpkpf-results]` is produced by the *theme* between `loop_start`
+and `loop_end` — this plugin never renders those posts. So the saving is the nav
+menu and widget queries, the enqueue/print pipeline, and the transferred bytes.
+**Not** the query and **not** the loop. Anyone expecting "renders only the list"
+will be disappointed by a profile.
+
+**4. Zones are cut by markers, not by parsing.** `jpkcom_postfilter_zone_open()`
+/ `_close()` write HTML comments around each swappable zone, and only on a
+fragment request, so normal page output is byte-identical to before. Extraction
+is then substring work against markers this plugin wrote itself. Searching for
+`[data-jpkpf-results]` and its closing tag would be guesswork — the zone holds
+arbitrary theme markup with nested elements. An unterminated marker yields
+nothing rather than the rest of the document; the full-page dump is the exact
+failure this feature exists to remove.
+
+### The one wp_footer callback that must survive
+
+`template_redirect` clears `wp_head` and `wp_footer`, then **re-attaches**
+`jpkcom_postfilter_render_zero_results_fallback()`. When auto-injection applies
+but the main loop never runs — a filter combination with zero results — that
+callback is the only thing that emits a results zone. Without it a zero-result
+click returns a fragment with no swappable zone and the previous results stay on
+screen. That is why it is a named function and not a closure: a closure can be
+removed but never put back. Guarded by `tests/test-fragment.php`.
+
+### PHP and JS build the same URL
+
+`jpkcom_postfilter_fragment_url()` and `fragmentUrl()` in
+`assets/js/post-filter.js` are two implementations of one rule. Nothing in a
+normal test run would notice them drifting — the PHP side would keep passing its
+own tests while every AJAX request 404s. `tests/test-fragment.php` therefore
+runs the JS function through node over a shared case list
+(`tests/fragment-url-cases.json`) and compares. Without node it reports SKIP,
+never PASS.
+
+### Rewrite flush on update
+
+`register_activation_hook` does **not** fire on a plugin update, so a release
+that changes rewrite rules would ship rules that never reach the database.
+`jpkcom_postfilter_maybe_flush_rewrites()` compares
+`jpkcom_postfilter_rewrite_version` against the plugin version on `init`
+(priority 99) and flushes once.
+
+### Verified on a live installation
+
+Measured 2026-07-28 on a DDEV instance (WordPress, PHP 8.4, theme
+`bootscore-child`, 19 posts across 3 categories and 3 tags, no page cache, no
+WPML):
+
+| Request | Full page | Fragment |
+|---|---|---|
+| Archive | 76 339 B / 420 ms | 30 653 B / 397 ms |
+| Filtered (`web-design`) | 63 800 B / 483 ms | 18 054 B / 389 ms |
+
+Time-to-first-byte, mean of 8 runs after 3 warm-ups. **Transfer drops 60–72 %,
+server time 5–19 %.** That ratio is the point: the loop and the query stay, so
+do not expect the response time to collapse. Confirmed present in the fragment
+and absent from it: results zone and pagination yes; `<html>`/`<head>`/`<body>`,
+the filter bar, script and stylesheet tags no. `Cache-Control: no-store`,
+`X-Robots-Tag: noindex` and `X-Content-Type-Options` are set on fragments and
+absent on normal pages, which are byte-for-byte unaffected.
+
+`bootscore-child` needed no adaptation. A theme that renders content from
+`wp_head` or `wp_footer` would lose it in a fragment; nothing inside
+`[data-jpkpf-results]` is affected.
+
+The browser side was driven too, with `tests/browser-check.mjs` (headless
+Chromium, puppeteer). Confirmed on a real click: a fragment request is issued,
+no document request follows, the results zone is swapped while the filter bar
+survives as the same DOM node, `history.pushState` updates the visible URL
+without the fragment segment, no zone markers leak into the DOM, history back
+restores the unfiltered list and releases the buttons, and a zero-result
+combination renders "Keine Beiträge gefunden." inside a live results zone. No
+JavaScript errors.
+
+```bash
+node tests/browser-check.mjs https://your-site.test/
+```
+
+It is not part of the CI suite — CI has no server. `puppeteer-core` arrives
+transitively via `@wordpress/scripts`; a missing module or missing Chromium
+exits 0 with SKIP rather than a failure that says nothing about the plugin. On
+WSL2 with snap Chromium the launch flags in the file are required.
+
+### Three bugs this verification exposed
+
+Neither was findable from source, and both are guarded by
+`tests/test-fragment.php` now.
+
+**Canonical redirect ate paginated fragments.** `/page/2/jpkpf-fragment/`
+answered `301 → /page/2/jpkpf-fragment/page/2/`: `redirect_canonical()` does not
+recognise the segment and "repaired" a URL it read as missing its pagination.
+The script follows the redirect, gets a 404 and falls back to a full reload — so
+paginating a filtered list silently stopped using AJAX at all, in exactly the
+case the feature exists for. Fixed by disabling canonical redirects on fragment
+requests.
+
+**`apcu_cache_info()` emitted a PHP warning** from
+`jpkcom_postfilter_apcu_available()` whenever APCu is loaded but inactive for
+the running SAPI — `apc.enable_cli` defaults to 0, so every WP-CLI call produced
+it. `ini_get( 'apc.enabled' )` does not catch this because it reports the
+web-SAPI setting. Not cosmetic here: with `display_errors` on, the warning is
+printed into the response body, and in a fragment it lands inside the swapped
+markup. Replaced with `apcu_enabled()`, which answers the same question without
+a diagnostic. This bug predates 1.2.0 and affects the normal page render too.
+
+**Browser back left stale results.** The `popstate` handler only re-fetched when
+`e.state.jpkpf` was set — but the history entry created by the *initial page
+load* carries no state at all. Going back to it did nothing: the address bar
+returned to the unfiltered archive while the results zone kept showing the
+filtered list and the filter buttons stayed pressed. Now it falls back to
+`location.href` and re-syncs the buttons from the URL via `syncButtonsToUrl()`.
+This bug also predates 1.2.0 — the handler is byte-identical in 1.1.7 — and is
+unrelated to fragment responses; it was simply never exercised until someone
+clicked back in a browser.
+
+### Re-running the checks elsewhere
+
+```bash
+# Fragment must contain no document chrome
+curl -s https://example.com/blog/filter/web-design/jpkpf-fragment/ | head -c 400
+# Must not be cacheable and must not be indexable
+curl -sI https://example.com/blog/filter/web-design/jpkpf-fragment/ \
+  | grep -iE 'cache-control|x-robots-tag'
+# Pagination must not redirect
+curl -sI https://example.com/blog/page/2/jpkpf-fragment/ | grep -iE '^HTTP|^location'
+# The normal page must be unchanged
+curl -s https://example.com/blog/filter/web-design/ | grep -c '<head'
+```
 
 ---
 
@@ -288,7 +447,53 @@ File: `assets/js/post-filter.js`
 
 ### Filter URLs with unknown term slugs
 
-Term slugs from the URL are sanitised but never checked for existence, so `/blog/filter/does-not-exist/` renders a valid page with zero results. These requests **keep returning 200** — turning them into 404s would break legitimate old links whose terms were later renamed — but `jpkcom_postfilter_has_unknown_terms()` marks them `noindex, follow` via the `wp_robots` filter.
+Term slugs from the URL are sanitised but never checked for existence, so `/blog/filter/does-not-exist/` renders a valid page with zero results. These requests **keep returning 200** — turning them into 404s would break legitimate old links whose terms were later renamed — but `jpkcom_postfilter_has_unknown_terms()` marks them `noindex, follow`.
+
+> **`wp_robots` alone is not enough, and was not enough between 1.1.7 and 1.2.0.**
+> Rank Math calls `remove_all_filters( 'wp_robots' )` before emitting its own tag
+> (`seo-by-rank-math/includes/frontend/class-head.php`). Every callback on that
+> hook is discarded, so the noindex never happened. Measured on a live install: a
+> bogus filter URL rendered `<meta name="robots" content="follow, index">`, and
+> reading the hook registry mid-request showed `wp_robots` with **zero**
+> callbacks while the filter had already run once. This stack ships
+> `jpkcom-rank-math-options`, so Rank Math is the normal configuration — the
+> protection was inert on the sites it was written for. The same rule now also
+> hooks `rank_math/frontend/robots` and `wpseo_robots_array`, all three sharing
+> `jpkcom_postfilter_should_noindex()`. Guarded by `tests/test-fragment.php`.
+
+> **Where the zero-results output appears.** With posts, the filter bar and
+> results zone are injected at `loop_start` — inside the theme's content column,
+> where the listing belongs. With zero posts the loop never starts, `loop_start`
+> never fires, and **no core hook reaches that position**: `have_posts()` returns
+> false before either loop action runs.
+>
+> Until 1.2.0 the fallback ran on `wp_footer` alone, which fires *inside* the
+> footer template — the message and the entire filter bar appeared below the
+> footer. Moving it to `get_footer` got it above the footer but still at the very
+> end of the content area, nowhere near the listing. Both were measured on the
+> verification site; the second one was only caught because someone looked at the
+> rendered page rather than at the markup in isolation.
+>
+> It now runs on the first hook in `jpkcom_postfilter_zero_results_hooks` that
+> fires: `bootscore_before_loop` (immediately before `if ( have_posts() )` in the
+> theme's index.php/archive.php — the correct position, and this stack is built
+> around bootscore), then `get_footer`, then `wp_footer` for block themes that
+> reach neither. Other themes add their own pre-loop hook through the filter.
+>
+> Attaching to a *pre-loop* hook is only safe because the function returns early
+> unless `$wp_query->post_count` is 0 — otherwise a page with posts would render
+> the filter bar twice, once there and once from `loop_start`. A second guard
+> keeps it to one render when several hooks fire. Both are covered by
+> `tests/test-fragment.php`, including the ordering.
+>
+> Verified positions on the same theme: with results, the wrapper opens at byte
+> 32080 right after the content column at 32030; with zero results it opens at
+> 32193 right after the content column at 32035. Before the fix it started at
+> 40153 with the footer already closed at 39713.
+
+**Note the deliberate asymmetry:** an empty result from *existing* terms
+(`/blog/filter/web-design/wordpress/`) stays `index` — it is a legitimate URL
+that simply has no matches today. Only *unknown* slugs get `noindex`.
 
 Without that, every made-up slug was an indexable, self-canonicalising thin-content URL that anyone could generate and link, and each one also produced its own query-cache entry (APCu included).
 

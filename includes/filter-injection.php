@@ -199,7 +199,11 @@ add_action( 'loop_start', static function ( \WP_Query $query ): void {
     $pagination_pos = jpkcom_postfilter_settings_get( 'layout', 'pagination_position', 'below' );
     $pagination_pos = in_array( $pagination_pos, [ 'above', 'below', 'both' ], true ) ? $pagination_pos : 'below';
 
-    // Open the results region (AJAX swaps the contents of this element)
+    // Open the results region (AJAX swaps the contents of this element).
+    // The zone marker sits outside the div so the div itself travels with the
+    // fragment — the script looks the element up by selector in the response.
+    jpkcom_postfilter_zone_open();
+
     echo '<div data-jpkpf-results aria-live="polite" aria-atomic="false">';
 
     // Render above-pagination inside the results div so it gets refreshed on AJAX
@@ -261,6 +265,10 @@ add_action( 'loop_end', static function ( \WP_Query $query ): void {
 
     // Close <div data-jpkpf-results>
     echo '</div>';
+
+    // Close the zone here, not after the wrapper: the wrapper also contains the
+    // filter bar, which the script does not swap and must not receive twice.
+    jpkcom_postfilter_zone_close();
 
     // Close outer <div data-jpkpf-wrapper>
     echo '</div>';
@@ -329,12 +337,24 @@ add_filter( 'previous_posts_link_attributes', static function ( string $attr ): 
  *
  * Runs at priority 1 (early in wp_footer) so it appears before theme scripts.
  *
+ * A named function rather than a closure so that fragment-response.php can
+ * re-attach it after clearing wp_footer. A closure could be removed but never
+ * put back, and losing it would silently break exactly the case this exists
+ * for: a filter click with zero results would return an empty fragment with no
+ * results zone at all.
+ *
  * @since 1.0.0
+ * @return void
  */
-add_action( 'wp_footer', static function (): void {
+function jpkcom_postfilter_render_zero_results_fallback(): void {
 
     // Already injected via loop_start — nothing to do.
     if ( $GLOBALS['_jpkpf_auto_injected'] ?? false ) {
+        return;
+    }
+
+    // Attached to several hooks, and on most themes more than one of them fires.
+    if ( $GLOBALS['_jpkpf_zero_results_rendered'] ?? false ) {
         return;
     }
 
@@ -343,6 +363,17 @@ add_action( 'wp_footer', static function (): void {
     if ( ! jpkcom_postfilter_should_auto_inject( $wp_query ) ) {
         return;
     }
+
+    // Only when the loop will not run at all. This check is what makes it safe
+    // to attach to a hook that fires *before* the loop — such as a theme's
+    // "before loop" action, which is the only position where this output
+    // actually belongs. Without it, a page that does have posts would render
+    // the filter bar twice: once here and once from loop_start.
+    if ( (int) $wp_query->post_count > 0 ) {
+        return;
+    }
+
+    $GLOBALS['_jpkpf_zero_results_rendered'] = true;
 
     $post_type      = jpkcom_postfilter_get_injected_post_type( $wp_query );
     $base_url       = jpkcom_postfilter_get_archive_base_url( $post_type );
@@ -397,10 +428,66 @@ add_action( 'wp_footer', static function (): void {
         ]
     );
 
+    // Mark only the results zone, not the surrounding wrapper: the wrapper also
+    // holds the filter bar, which the script must not swap.
+    jpkcom_postfilter_zone_open();
+
     echo '<div data-jpkpf-results aria-live="polite" aria-atomic="false">';
     echo '<p class="jpkpf-no-results">' . esc_html__( 'No posts found.', 'jpkcom-post-filter' ) . '</p>';
     echo '</div>';
 
+    jpkcom_postfilter_zone_close();
+
     echo '</div>';
 
-}, 1 );
+}
+
+/**
+ * Hooks the zero-results fallback is attached to, best position first
+ *
+ * WHY THIS IS A LIST
+ * ------------------
+ * With posts, the filter bar and results zone are injected at `loop_start` —
+ * inside the theme's content column, exactly where the listing belongs. With
+ * zero posts the loop never starts, `loop_start` never fires, and that position
+ * is simply not reachable through any core hook: `have_posts()` returns false
+ * before either loop action runs.
+ *
+ * Until 1.2.0 the fallback ran on `wp_footer` alone, which fires *inside* the
+ * footer template — the message and the whole filter bar were rendered below
+ * the footer. Moving it to `get_footer` got it above the footer but still at
+ * the very end of the content area, nowhere near where the listing sits when
+ * there are results.
+ *
+ * So the first entry is a theme hook that fires *before* the loop condition.
+ * bootscore's `bootscore_before_loop` runs immediately before
+ * `if ( have_posts() )` in index.php/archive.php, which is precisely the right
+ * spot — and this plugin stack is built around bootscore. Other themes add
+ * their own via the filter; the two footer hooks stay as last resorts so no
+ * theme is left without a way to change the selection.
+ *
+ * The function itself returns early unless the main query really has zero
+ * posts, which is what makes attaching to a pre-loop hook safe.
+ *
+ * @since 1.2.0
+ *
+ * @param string[] $hooks Action hook names.
+ */
+$jpkcom_postfilter_zero_hooks = apply_filters(
+    'jpkcom_postfilter_zero_results_hooks',
+    [
+        'bootscore_before_loop', // fires before `if ( have_posts() )` — correct position
+        'get_footer',            // end of the content area
+        'wp_footer',             // inside the footer; block themes may reach only this
+    ]
+);
+
+foreach ( (array) $jpkcom_postfilter_zero_hooks as $jpkcom_postfilter_zero_hook ) {
+
+    if ( is_string( $jpkcom_postfilter_zero_hook ) && $jpkcom_postfilter_zero_hook !== '' ) {
+        add_action( $jpkcom_postfilter_zero_hook, 'jpkcom_postfilter_render_zero_results_fallback', 1 );
+    }
+
+}
+
+unset( $jpkcom_postfilter_zero_hooks, $jpkcom_postfilter_zero_hook );

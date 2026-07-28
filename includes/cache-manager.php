@@ -238,10 +238,23 @@ if ( ! function_exists( function: 'jpkcom_postfilter_apcu_available' ) ) {
         static $available = null;
 
         if ( $available === null ) {
+
+            // apcu_enabled() answers exactly this question and never emits a
+            // diagnostic. The previous chain ended in apcu_cache_info( true ),
+            // which raises "No APC info available" whenever the extension is
+            // loaded but not active for the running SAPI — the normal case
+            // under WP-CLI, where apc.enable_cli defaults to 0. ini_get(
+            // 'apc.enabled' ) does not catch that, because it reports the
+            // web-SAPI setting.
+            //
+            // Not cosmetic: with display_errors on, that warning is printed
+            // into the response body. In a fragment response it lands inside
+            // the swapped markup.
             $available = extension_loaded( 'apcu' )
-                && function_exists( 'apcu_fetch' )
-                && ini_get( 'apc.enabled' )
-                && ( apcu_cache_info( true ) !== false );  // Verify APCu is actually running, not just loaded
+                && function_exists( 'apcu_enabled' )
+                && apcu_enabled()
+                && function_exists( 'apcu_fetch' );
+
         }
 
         return $available;
