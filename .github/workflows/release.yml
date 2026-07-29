@@ -205,7 +205,7 @@ jobs:
               "download_url": os.environ.get("DOWNLOAD_URL"),
               "checksum_sha256": os.environ.get("SHA256_HASH", ""),
               "requires": clean_meta_value(meta.get("Requiresatleast", "6.9")),
-              "tested": clean_meta_value(meta.get("Testedupto", "6.9")),
+              "tested": clean_meta_value(meta.get("Testedupto", "7.1")),
               "requires_php": clean_meta_value(meta.get("RequiresPHP", "8.3")),
               "author": clean_meta_value(meta.get("Author", "")),
               "author_profile": clean_meta_value(meta.get("AuthorURI", "")),
