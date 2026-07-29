@@ -1,4 +1,16 @@
-<h3 id="section">1.2.1</h3>
+<h3 id="section">1.2.2</h3>
+<ul>
+<li>Changed: <code>Tested up to</code> raised to WordPress 7.1</li>
+<li>Changed: the bundled updater’s runtime floor now matches the
+plugin’s own minimum. It bailed out below WordPress 6.8 while the plugin
+header has required 6.9 for several releases, so the check could never
+fire on a supported installation</li>
+<li>CI: the release manifest’s fallback values for <code>requires</code>
+and <code>tested</code> now say 6.9 and 7.1. They only apply when the
+README metadata cannot be read, but a stale fallback would have
+published a minimum the plugin no longer supports</li>
+</ul>
+<h3 id="section-1">1.2.1</h3>
 <ul>
 <li>Added: plugin banners (<code>assets/banner-1544x500.avif</code>,
 <code>assets/banner-772x250.avif</code>) — a plain <code>#3c4955</code>
@@ -6,7 +18,7 @@ surface with no lettering. The update manifest already advertised these
 two URLs, but nothing was published under them, so the plugin card in
 wp-admin had a broken banner</li>
 </ul>
-<h3 id="section-1">1.2.0</h3>
+<h3 id="section-2">1.2.0</h3>
 <ul>
 <li>Added: filter requests are answered with just the swappable zones
 instead of a complete page. The theme header, nav menus, sidebar widgets
@@ -43,7 +55,7 @@ rules would otherwise never reach the database</li>
 <li>Added: <code>tests/browser-check.mjs</code> drives a real filter
 click in headless Chromium</li>
 </ul>
-<h3 id="section-2">1.1.7</h3>
+<h3 id="section-3">1.1.7</h3>
 <ul>
 <li><strong>Fixed:</strong> the settings-directory containment check was
 a tautology — it compared <code>realpath( WP_CONTENT_DIR )</code> with
@@ -72,7 +84,7 @@ never by the requested slugs</li>
 regression tests for all of the above, each written to fail against the
 previous implementation. Run in CI on every pull request</li>
 </ul>
-<h3 id="section-3">1.1.6</h3>
+<h3 id="section-4">1.1.6</h3>
 <ul>
 <li>Security: update packages are now verified <em>before</em>
 installation — the verified file is handed to WordPress instead of being
@@ -99,13 +111,13 @@ check, YAML validation, action-pinning guard)</li>
 <li>Housekeeping: removed stray editor backups and an unused
 <code>messages.mo</code> from the release package</li>
 </ul>
-<h3 id="section-4">1.1.5</h3>
+<h3 id="section-5">1.1.5</h3>
 <ul>
 <li>Raised “Tested up to” to WordPress 7.0</li>
 <li>Normalized license fallback defaults (updater and release workflow)
 to <code>GPL-2.0-or-later</code> with the HTTPS license URI</li>
 </ul>
-<h3 id="section-5">1.1.4</h3>
+<h3 id="section-6">1.1.4</h3>
 <ul>
 <li>Security: updater prefers an exact match against the manifest
 <code>download_url</code> over the slug heuristic, so a tampered
@@ -122,7 +134,7 @@ completing the <code>no_update</code> transient entry
 (<code>new_version</code>, <code>package</code>, <code>tested</code>,
 <code>requires_php</code>)</li>
 </ul>
-<h3 id="section-6">1.1.3</h3>
+<h3 id="section-7">1.1.3</h3>
 <ul>
 <li><strong>Plus/Minus Icon styling</strong> — New CSS variables
 (<code>--jpkpf-pm-color</code>, <code>--jpkpf-pm-font-size</code>,
@@ -137,7 +149,7 @@ icons, fixing themes that force underlines on links</li>
 <li><strong>Translations</strong> — Updated de_DE and de_DE_formal
 translations for all new strings</li>
 </ul>
-<h3 id="section-7">1.1.2</h3>
+<h3 id="section-8">1.1.2</h3>
 <ul>
 <li><strong>Plugin Updater</strong> — Fixed manual ZIP upload failing
 with “invalid URL” error by adding <code>wp_http_validate_url()</code>
@@ -146,12 +158,12 @@ check in <code>verify_download_checksum()</code></li>
 top-level directory; WordPress now correctly recognises the update by
 using a staging directory with the plugin slug</li>
 </ul>
-<h3 id="section-8">1.1.1</h3>
+<h3 id="section-9">1.1.1</h3>
 <ul>
 <li><strong>.github/workflows/release.yml</strong> — “Build Gutenberg
 blocks” npm ci bugfix</li>
 </ul>
-<h3 id="section-9">1.1.0</h3>
+<h3 id="section-10">1.1.0</h3>
 <ul>
 <li><strong>Gutenberg Blocks</strong> — Three native blocks (Post
 Filter, Post List, Post Pagination) with live server-side preview,
@@ -177,7 +189,7 @@ to multiple pages</li>
 <li><strong>Auto-inject guard</strong> — Prevents duplicate pagination
 insertion in auto-inject mode during AJAX swaps</li>
 </ul>
-<h3 id="section-10">1.0.0</h3>
+<h3 id="section-11">1.0.0</h3>
 <ul>
 <li>Initial release</li>
 <li>Faceted filtering for any post type and taxonomy</li>
