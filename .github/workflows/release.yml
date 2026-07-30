@@ -59,7 +59,7 @@ jobs:
             pandoc README.md -f markdown -t html -o gh-pages-html/readme.html
           fi
 
-          # Original styled HTML für gh-pages Webseite (optional)
+          # Styled HTML for the gh-pages website (optional)
           pandoc README.md -f markdown -t html5 \
             -s -o gh-pages-html/index.html \
             --metadata title="Plugin Documentation" \
