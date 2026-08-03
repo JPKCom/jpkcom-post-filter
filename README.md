@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.2.3  
+**Version:** 1.3.0  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 6.9  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.2.3  
+**Stable tag:** 1.3.0  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -425,6 +425,69 @@ All styles use CSS custom properties prefixed `--jpkpf-`. Override them in your 
 
 ---
 
+## Abilities API
+
+WordPress 6.9 introduced the Abilities API: a registry of machine-readable capabilities that AI assistants, MCP clients and automation tools can discover and call. This plugin registers two of them, both **read-only**, so an assistant can answer questions about your posts without scraping the front end.
+
+| Ability | What it does |
+|---------|--------------|
+| `jpkcom-post-filter/list-filters` | Reports which taxonomies and terms a post type can be filtered by, with a post count per term |
+| `jpkcom-post-filter/query-posts` | Runs a filtered, paginated query and returns the matching posts plus a shareable filter URL |
+
+The point of the pair is that the first one removes the guesswork from the second: an assistant looks up the real taxonomy keys and term slugs, then filters with values that exist. A filter naming a taxonomy your site does not have is rejected with an error listing the valid ones — it never silently returns your whole archive instead.
+
+### What a call looks like
+
+Both are reachable at `/wp-json/wp-abilities/v1/`. Because they only read, they answer on `GET`:
+
+```
+GET /wp-json/wp-abilities/v1/abilities/jpkcom-post-filter/list-filters/run?input[post_type]=post
+
+{ "post_type": "post",
+  "groups": [ { "taxonomy": "category", "label": "Kategorie",
+                "terms": [ { "slug": "allgemein", "name": "Allgemein", "count": 2 }, … ] } ] }
+```
+
+```
+GET /wp-json/wp-abilities/v1/abilities/jpkcom-post-filter/query-posts/run
+      ?input[post_type]=post&input[filters][category][]=allgemein&input[per_page]=3
+
+{ "post_type": "post", "filters": { "category": [ "allgemein" ] },
+  "total": 2, "page": 1, "per_page": 3, "total_pages": 1,
+  "filter_url": "https://example.com/filter/allgemein/",
+  "unknown_terms": {},
+  "posts": [ { "id": 143, "title": "…", "url": "…", "date": "…", "excerpt": "…",
+               "terms": { "category": [ { "slug": "allgemein", "name": "Allgemein" } ] } } ] }
+```
+
+`query-posts` accepts `post_type`, `filters`, `page`, `per_page` (1–50) and `search`. Terms within one taxonomy are combined with OR, different taxonomies with AND — the same logic as the filter bar on your site. A term slug that matches nothing is not an error: the query runs and the slug is reported under `unknown_terms`, so the caller can tell a typo apart from an empty result.
+
+`filter_url` comes back empty whenever no front-end address would show exactly the posts listed beside it — a post type without an archive page, a filter combination longer than your configured limits, a page after the first requested with a page size other than your site's own "posts per page", or a page past the last one. The results are complete either way; the assistant simply has no link to pass on.
+
+### What is exposed, and to whom
+
+- Only **published** posts. The query cannot reach drafts, private or trashed content, and cannot be talked into it — the post status is fixed in the code, not a parameter.
+- Only post types you have enabled for filtering, and only taxonomies you have configured as filter groups.
+- Running an ability requires a logged-in user with the `read` capability. Listing the available abilities is likewise restricted to logged-in users — but note that any logged-in user, including a subscriber, can then see both abilities' descriptions and parameter schemas. That is how WordPress core gates every ability, not something specific to this plugin.
+
+### Turning it off, or tightening it
+
+Add this to `wp-config.php` to register nothing at all:
+
+```php
+define( 'JPKCOM_POSTFILTER_ABILITIES', false );
+```
+
+To keep the abilities but raise the bar for running them, filter the capability:
+
+```php
+add_filter( 'jpkcom_postfilter_ability_capability', static fn(): string => 'edit_posts' );
+```
+
+To keep them out of MCP clients while leaving the REST route intact, or the other way round, use `jpkcom_postfilter_ability_meta` — see the Filters section below.
+
+---
+
 ## Developer Reference
 
 See `CLAUDE.md` in the plugin root for the full developer reference including architecture decisions, constant definitions, cache layer documentation, template action hooks, and implementation notes.
@@ -439,6 +502,7 @@ See `CLAUDE.md` in the plugin root for the full developer reference including ar
 | `JPKCOM_POSTFILTER_URL_ENDPOINT` | `'filter'` | URL path segment |
 | `JPKCOM_POSTFILTER_SETTINGS_DIR` | `WP_CONTENT_DIR . '/.ht.jpkcom-post-filter-settings'` | Settings file cache location |
 | `JPKCOM_POSTFILTER_MAX_FILTER_COMBOS` | `3` | Default max filter group combinations |
+| `JPKCOM_POSTFILTER_ABILITIES` | `true` | Registers the WordPress Abilities API integration. Set to `false` to withdraw both abilities from REST and MCP entirely. |
 
 ### JavaScript data attributes
 
@@ -490,6 +554,11 @@ jpkcom_postfilter_get_filter_groups_enabled()
 jpkcom_postfilter_get_terms_for_group( $group, $active_filters )
 ```
 
+### Filters
+
+- `jpkcom_postfilter_ability_meta( array $meta, string $ability_name )` — adjust the meta of an ability before registration. Set `show_in_rest` to `false` to hide it from the REST API, or `mcp.public` to `false` to hide it from MCP clients.
+- `jpkcom_postfilter_ability_capability( string $capability, string $ability_name )` — the capability required to run an ability. Defaults to `read`, which covers every logged-in user. Raise it to `edit_posts` to restrict bulk machine-readable access to published content.
+
 ---
 
 ## FAQ
@@ -530,6 +599,23 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.3.0
+
+* **Added:** the plugin now registers two read-only WordPress Abilities, `jpkcom-post-filter/list-filters` and `jpkcom-post-filter/query-posts`, in the shared `jpkcom-content` category. MCP clients, REST automation and the WordPress AI client can ask which taxonomies and terms a post type can be filtered by, then run a filtered, paginated query and receive both the results and a shareable filter URL.
+* **Added:** `JPKCOM_POSTFILTER_ABILITIES` (default `true`) withdraws both abilities from REST and MCP when set to `false` in `wp-config.php`, plus the filters `jpkcom_postfilter_ability_meta` and `jpkcom_postfilter_ability_capability` for per-ability control.
+* **Hardened:** a filter naming a taxonomy that does not exist previously produced the complete unfiltered result set, because the query builder drops such a clause silently. The query ability now rejects it and names the valid taxonomies, so a caller can correct itself instead of presenting the whole site as a filtered answer.
+* **Hardened:** the query ability always passes a positive page size. The shortcode default of `-1` sets `no_found_rows`, which reports a total of zero regardless of how many posts exist.
+* **Hardened:** a single request can filter by at most 50 term slugs per taxonomy; anything beyond that is dropped rather than rejected, so an over-eager caller still gets an answer instead of an error. Without the cap one request could ask for thousands of slugs and turn into a query of the same size.
+* **Hardened:** a search term passed to the query ability is answered from the database rather than from the query cache. Search text is free-form, so caching it would let a caller fill the object cache and APCu with one entry per phrase.
+* **Changed:** the query ability returns an empty `filter_url` for post types that have no archive page, such as `page`. It previously returned a relative address like `/filter/news/`, which no rewrite rule serves — a link that would have 404'd.
+* **Fixed:** `filters`, `unknown_terms` and each post's `terms` are sent as `{}` when they hold nothing, rather than as `[]`. The output schema declares all three as objects, so a client validating the response against that schema rejected the empty case — which is the most common case for `unknown_terms`.
+* **Fixed:** both abilities can now be called with no input at all. Every parameter is optional, but a bare call was answered with `ability_invalid_input` — "input is not of type object" — so the most natural way to ask "which filters does this site have?" was the one way that did not work.
+* **Fixed:** the query ability no longer hands out a `filter_url` that leads somewhere else. The link is now returned only when opening it shows exactly the posts reported next to it, and is left empty in four cases: the post type has no archive page; the site caps the number of terms per taxonomy or the number of taxonomies below what was asked for, so the front end would honour only the first few; a page after the first was requested with a page size that differs from the site's own "posts per page" setting, which is the unit the page number in the URL is counted in; or the requested page lies past the last one, where the URL answers 404. The full result set is returned in every one of those cases — only the link is withheld.
+* **Fixed:** the top-level `default` of both abilities' input schemas is now sent to MCP clients as `{}` rather than `[]`. The schema declares it as an object, and WordPress corrected the value on its own REST route but not on the one MCP clients read, so a client that validates schemas saw a contradiction.
+* **Fixed:** asking for a page beyond the last one reported `total: 0` and `total_pages: 0` next to the page number that was requested — a response that contradicted itself and read as "this site has no posts". It now reports the real totals with an empty post list.
+* **Fixed:** caller mistakes — an unknown taxonomy or a post type that is not enabled — are answered over REST with HTTP 400 instead of 500. Both messages name the valid values so the caller can correct itself, which a 500 undoes by telling automation it hit a server fault and should retry the same request unchanged.
+* **Hardened:** a filter group whose taxonomy is no longer registered — the usual cause is deactivating the plugin that provided it — is no longer offered as filterable. Filtering by it used to be accepted on the strength of the configuration alone and then answered with the complete unfiltered corpus; it now returns the unknown-taxonomy error naming the taxonomies that really exist.
 
 ### 1.2.3
 * CI: the lint and guard workflow now also runs on pushes to `main`. It only covered pull requests, so a direct push with bypass rights skipped every check

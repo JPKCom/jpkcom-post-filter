@@ -1,6 +1,131 @@
 Search.appendIndex(
     [
                 {
+            "fqsen": "\\JPKCOM_POSTFILTER_ABILITY_CATEGORY",
+            "name": "JPKCOM_POSTFILTER_ABILITY_CATEGORY",
+            "summary": "Ability\u0020category\u0020shared\u0020with\u0020the\u0020other\u0020JPKCom\u0020content\u0020plugins.",
+            "url": "namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_CATEGORY"
+        },                {
+            "fqsen": "\\JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT",
+            "name": "JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT",
+            "summary": "Default\u0020page\u0020size\u0020for\u0020the\u0020query\u0020ability.",
+            "url": "namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT"
+        },                {
+            "fqsen": "\\JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX",
+            "name": "JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX",
+            "summary": "Maximum\u0020page\u0020size\u0020for\u0020the\u0020query\u0020ability.",
+            "url": "namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_clamp_per_page\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_clamp_per_page",
+            "summary": "Clamp\u0020a\u0020per_page\u0020value\u0020into\u0020the\u0020range\u0020the\u0020query\u0020ability\u0020supports",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_clamp_per_page"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_normalize_filters\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_normalize_filters",
+            "summary": "Normalise\u0020the\u0020filters\u0020input\u0020into\u0020a\u0020taxonomy\u0020\u003D\u003E\u0020term\u0020slugs\u0020map",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_normalize_filters"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_group_applies\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_group_applies",
+            "summary": "Decide\u0020whether\u0020a\u0020filter\u0020group\u0020applies\u0020to\u0020a\u0020post\u0020type",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_group_applies"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_allowed_taxonomies\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_allowed_taxonomies",
+            "summary": "Collect\u0020the\u0020taxonomies\u0020that\u0020may\u0020be\u0020used\u0020to\u0020filter\u0020a\u0020post\u0020type",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_allowed_taxonomies"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_validate_filters\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_validate_filters",
+            "summary": "Reject\u0020filters\u0020that\u0020name\u0020a\u0020taxonomy\u0020which\u0020is\u0020not\u0020filterable",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_validate_filters"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_unknown_post_type_error\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_unknown_post_type_error",
+            "summary": "Build\u0020the\u0020error\u0020returned\u0020for\u0020a\u0020post\u0020type\u0020that\u0020is\u0020not\u0020enabled\u0020for\u0020filtering",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_unknown_post_type_error"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_resolve_post_type\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_resolve_post_type",
+            "summary": "Resolve\u0020the\u0020post_type\u0020input,\u0020applying\u0020the\u0020default\u0020the\u0020schema\u0020advertises",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_resolve_post_type"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_enabled_post_types\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_enabled_post_types",
+            "summary": "Read\u0020the\u0020post\u0020types\u0020that\u0020are\u0020enabled\u0020for\u0020filtering",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_enabled_post_types"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_list_filters\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_list_filters",
+            "summary": "Execute\u0020callback\u0020for\u0020jpkcom\u002Dpost\u002Dfilter\/list\u002Dfilters",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_list_filters"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_json_object\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_json_object",
+            "summary": "Present\u0020a\u0020keyed\u0020map\u0020as\u0020a\u0020JSON\u0020object\u0020even\u0020when\u0020it\u0020is\u0020empty",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_json_object"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_unknown_terms\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_unknown_terms",
+            "summary": "Report\u0020requested\u0020term\u0020slugs\u0020that\u0020match\u0020no\u0020term",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_unknown_terms"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_project_post\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_project_post",
+            "summary": "Project\u0020a\u0020post\u0020into\u0020the\u0020JSON\u002Dserialisable\u0020shape\u0020the\u0020output\u0020schema\u0020promises",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_project_post"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_filters_are_url_expressible\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_filters_are_url_expressible",
+            "summary": "Decide\u0020whether\u0020a\u0020filter\u0020set\u0020survives\u0020a\u0020round\u0020trip\u0020through\u0020a\u0020filter\u0020URL",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_filters_are_url_expressible"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_query_posts\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_query_posts",
+            "summary": "Execute\u0020callback\u0020for\u0020jpkcom\u002Dpost\u002Dfilter\/query\u002Dposts",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_query_posts"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_meta\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_meta",
+            "summary": "Build\u0020the\u0020meta\u0020array\u0020for\u0020an\u0020ability",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_meta"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_user_can\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_user_can",
+            "summary": "Check\u0020the\u0020capability\u0020required\u0020to\u0020run\u0020an\u0020ability",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_user_can"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_permission_list_filters\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_permission_list_filters",
+            "summary": "Permission\u0020callback\u0020for\u0020jpkcom\u002Dpost\u002Dfilter\/list\u002Dfilters",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_permission_list_filters"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_permission_query_posts\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_permission_query_posts",
+            "summary": "Permission\u0020callback\u0020for\u0020jpkcom\u002Dpost\u002Dfilter\/query\u002Dposts",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_permission_query_posts"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_get_ability_definitions\u0028\u0029",
+            "name": "jpkcom_postfilter_get_ability_definitions",
+            "summary": "Build\u0020the\u0020registration\u0020arguments\u0020for\u0020every\u0020ability\u0020this\u0020plugin\u0020provides",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_get_ability_definitions"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_abilities_enabled\u0028\u0029",
+            "name": "jpkcom_postfilter_abilities_enabled",
+            "summary": "Decide\u0020whether\u0020abilities\u0020should\u0020be\u0020registered\u0020at\u0020all",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_abilities_enabled"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_register_ability_category\u0028\u0029",
+            "name": "jpkcom_postfilter_register_ability_category",
+            "summary": "Register\u0020the\u0020shared\u0020JPKCom\u0020content\u0020ability\u0020category",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_register_ability_category"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_register_abilities\u0028\u0029",
+            "name": "jpkcom_postfilter_register_abilities",
+            "summary": "Register\u0020every\u0020ability\u0020this\u0020plugin\u0020provides",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_register_abilities"
+        },                {
             "fqsen": "\\jpkcom_postfilter_field_enabled_post_types\u0028\u0029",
             "name": "jpkcom_postfilter_field_enabled_post_types",
             "summary": "Render\u003A\u0020Enabled\u0020Post\u0020Types\u0020checkboxes",
@@ -965,6 +1090,11 @@ Search.appendIndex(
             "name": "JPKCOM_POSTFILTER_CACHE_ENABLED",
             "summary": "",
             "url": "namespaces/default.html#constant_JPKCOM_POSTFILTER_CACHE_ENABLED"
+        },                {
+            "fqsen": "\\JPKCOM_POSTFILTER_ABILITIES",
+            "name": "JPKCOM_POSTFILTER_ABILITIES",
+            "summary": "",
+            "url": "namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITIES"
         },                {
             "fqsen": "\\JPKCOM_POSTFILTER_DEBUG",
             "name": "JPKCOM_POSTFILTER_DEBUG",

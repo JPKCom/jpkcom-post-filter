@@ -5,7 +5,7 @@ https://github.com/JPKCom/jpkcom-post-filter<br />
 <strong>Description:</strong> Faceted navigation and filtering of Posts,
 Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly
 URLs, AJAX updates, and full screen reader support.<br />
-<strong>Version:</strong> 1.2.3<br />
+<strong>Version:</strong> 1.3.0<br />
 <strong>Author:</strong> Jean Pierre Kolb <a href="mailto:jpk@jpkc.com"
 class="email">jpk@jpkc.com</a><br />
 <strong>Author URI:</strong> https://www.jpkc.com/<br />
@@ -15,7 +15,7 @@ type, AJAX<br />
 <strong>Requires at least:</strong> 6.9<br />
 <strong>Tested up to:</strong> 7.1<br />
 <strong>Requires PHP:</strong> 8.3<br />
-<strong>Stable tag:</strong> 1.2.3<br />
+<strong>Stable tag:</strong> 1.3.0<br />
 <strong>License:</strong> GPL-2.0-or-later<br />
 <strong>License URI:</strong>
 https://www.gnu.org/licenses/gpl-2.0.html<br />
@@ -934,6 +934,100 @@ class="sourceCode css"><code class="sourceCode css"><span id="cb6-1"><a href="#c
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-transition</span>:          <span class="dv">0.2</span><span class="dt">s</span> <span class="dv">ease</span><span class="op">;</span></span>
 <span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <hr />
+<h2 id="abilities-api">Abilities API</h2>
+<p>WordPress 6.9 introduced the Abilities API: a registry of
+machine-readable capabilities that AI assistants, MCP clients and
+automation tools can discover and call. This plugin registers two of
+them, both <strong>read-only</strong>, so an assistant can answer
+questions about your posts without scraping the front end.</p>
+<table>
+<colgroup>
+<col style="width: 39%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Ability</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>jpkcom-post-filter/list-filters</code></td>
+<td>Reports which taxonomies and terms a post type can be filtered by,
+with a post count per term</td>
+</tr>
+<tr class="even">
+<td><code>jpkcom-post-filter/query-posts</code></td>
+<td>Runs a filtered, paginated query and returns the matching posts plus
+a shareable filter URL</td>
+</tr>
+</tbody>
+</table>
+<p>The point of the pair is that the first one removes the guesswork
+from the second: an assistant looks up the real taxonomy keys and term
+slugs, then filters with values that exist. A filter naming a taxonomy
+your site does not have is rejected with an error listing the valid ones
+— it never silently returns your whole archive instead.</p>
+<h3 id="what-a-call-looks-like">What a call looks like</h3>
+<p>Both are reachable at <code>/wp-json/wp-abilities/v1/</code>. Because
+they only read, they answer on <code>GET</code>:</p>
+<pre><code>GET /wp-json/wp-abilities/v1/abilities/jpkcom-post-filter/list-filters/run?input[post_type]=post
+
+{ &quot;post_type&quot;: &quot;post&quot;,
+  &quot;groups&quot;: [ { &quot;taxonomy&quot;: &quot;category&quot;, &quot;label&quot;: &quot;Kategorie&quot;,
+                &quot;terms&quot;: [ { &quot;slug&quot;: &quot;allgemein&quot;, &quot;name&quot;: &quot;Allgemein&quot;, &quot;count&quot;: 2 }, … ] } ] }</code></pre>
+<pre><code>GET /wp-json/wp-abilities/v1/abilities/jpkcom-post-filter/query-posts/run
+      ?input[post_type]=post&amp;input[filters][category][]=allgemein&amp;input[per_page]=3
+
+{ &quot;post_type&quot;: &quot;post&quot;, &quot;filters&quot;: { &quot;category&quot;: [ &quot;allgemein&quot; ] },
+  &quot;total&quot;: 2, &quot;page&quot;: 1, &quot;per_page&quot;: 3, &quot;total_pages&quot;: 1,
+  &quot;filter_url&quot;: &quot;https://example.com/filter/allgemein/&quot;,
+  &quot;unknown_terms&quot;: {},
+  &quot;posts&quot;: [ { &quot;id&quot;: 143, &quot;title&quot;: &quot;…&quot;, &quot;url&quot;: &quot;…&quot;, &quot;date&quot;: &quot;…&quot;, &quot;excerpt&quot;: &quot;…&quot;,
+               &quot;terms&quot;: { &quot;category&quot;: [ { &quot;slug&quot;: &quot;allgemein&quot;, &quot;name&quot;: &quot;Allgemein&quot; } ] } } ] }</code></pre>
+<p><code>query-posts</code> accepts <code>post_type</code>,
+<code>filters</code>, <code>page</code>, <code>per_page</code> (1–50)
+and <code>search</code>. Terms within one taxonomy are combined with OR,
+different taxonomies with AND — the same logic as the filter bar on your
+site. A term slug that matches nothing is not an error: the query runs
+and the slug is reported under <code>unknown_terms</code>, so the caller
+can tell a typo apart from an empty result.</p>
+<p><code>filter_url</code> comes back empty whenever no front-end
+address would show exactly the posts listed beside it — a post type
+without an archive page, a filter combination longer than your
+configured limits, a page after the first requested with a page size
+other than your site’s own “posts per page”, or a page past the last
+one. The results are complete either way; the assistant simply has no
+link to pass on.</p>
+<h3 id="what-is-exposed-and-to-whom">What is exposed, and to whom</h3>
+<ul>
+<li>Only <strong>published</strong> posts. The query cannot reach
+drafts, private or trashed content, and cannot be talked into it — the
+post status is fixed in the code, not a parameter.</li>
+<li>Only post types you have enabled for filtering, and only taxonomies
+you have configured as filter groups.</li>
+<li>Running an ability requires a logged-in user with the
+<code>read</code> capability. Listing the available abilities is
+likewise restricted to logged-in users — but note that any logged-in
+user, including a subscriber, can then see both abilities’ descriptions
+and parameter schemas. That is how WordPress core gates every ability,
+not something specific to this plugin.</li>
+</ul>
+<h3 id="turning-it-off-or-tightening-it">Turning it off, or tightening
+it</h3>
+<p>Add this to <code>wp-config.php</code> to register nothing at
+all:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode php"><code class="sourceCode php"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">define</span>( <span class="st">&#39;JPKCOM_POSTFILTER_ABILITIES&#39;</span><span class="ot">,</span> <span class="kw">false</span> )<span class="ot">;</span></span></code></pre></div>
+<p>To keep the abilities but raise the bar for running them, filter the
+capability:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode php"><code class="sourceCode php"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>add_filter( <span class="st">&#39;jpkcom_postfilter_ability_capability&#39;</span><span class="ot">,</span> <span class="kw">static</span> <span class="kw">fn</span>()<span class="ot">:</span> <span class="dt">string</span> =&gt; <span class="st">&#39;edit_posts&#39;</span> )<span class="ot">;</span></span></code></pre></div>
+<p>To keep them out of MCP clients while leaving the REST route intact,
+or the other way round, use <code>jpkcom_postfilter_ability_meta</code>
+— see the Filters section below.</p>
+<hr />
 <h2 id="developer-reference">Developer Reference</h2>
 <p>See <code>CLAUDE.md</code> in the plugin root for the full developer
 reference including architecture decisions, constant definitions, cache
@@ -985,54 +1079,74 @@ overridable)</h3>
 <td><code>3</code></td>
 <td>Default max filter group combinations</td>
 </tr>
+<tr class="odd">
+<td><code>JPKCOM_POSTFILTER_ABILITIES</code></td>
+<td><code>true</code></td>
+<td>Registers the WordPress Abilities API integration. Set to
+<code>false</code> to withdraw both abilities from REST and MCP
+entirely.</td>
+</tr>
 </tbody>
 </table>
 <h3 id="javascript-data-attributes">JavaScript data attributes</h3>
-<div class="sourceCode" id="cb7"><pre
-class="sourceCode html"><code class="sourceCode html"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- Auto-inject mode: plugin adds data-jpkpf-wrapper automatically --&gt;</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span> <span class="er">data-jpkpf-wrapper</span> <span class="er">data-jpkpf-base-url</span><span class="ot">=</span><span class="st">&quot;/blog/&quot;</span><span class="dt">&gt;</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">nav</span> <span class="er">data-jpkpf-filter-bar</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;post&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">div</span> <span class="er">data-jpkpf-results</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;post&quot;</span> <span class="er">aria-live</span><span class="ot">=</span><span class="st">&quot;polite&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- Shortcode / Block / Elementor / Oxygen mode: paired by data-jpkpf-post-type --&gt;</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">nav</span> <span class="er">data-jpkpf-filter-bar</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;portfolio&quot;</span> <span class="er">data-jpkpf-base-url</span><span class="ot">=</span><span class="st">&quot;/portfolio/&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span> <span class="er">data-jpkpf-results</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;portfolio&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">nav</span> <span class="er">data-jpkpf-pagination</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;portfolio&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- Auto-inject mode: plugin adds data-jpkpf-wrapper automatically --&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span> <span class="er">data-jpkpf-wrapper</span> <span class="er">data-jpkpf-base-url</span><span class="ot">=</span><span class="st">&quot;/blog/&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">nav</span> <span class="er">data-jpkpf-filter-bar</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;post&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">div</span> <span class="er">data-jpkpf-results</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;post&quot;</span> <span class="er">aria-live</span><span class="ot">=</span><span class="st">&quot;polite&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- Shortcode / Block / Elementor / Oxygen mode: paired by data-jpkpf-post-type --&gt;</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">nav</span> <span class="er">data-jpkpf-filter-bar</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;portfolio&quot;</span> <span class="er">data-jpkpf-base-url</span><span class="ot">=</span><span class="st">&quot;/portfolio/&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span> <span class="er">data-jpkpf-results</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;portfolio&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">nav</span> <span class="er">data-jpkpf-pagination</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;portfolio&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span></code></pre></div>
 <p>The <code>data-jpkpf-pagination</code> attribute on standalone
 pagination elements (blocks/shortcodes/Elementor) enables the JS to swap
 pagination content during AJAX filter requests, keeping pagination links
 filter-aware.</p>
 <h3 id="key-php-functions">Key PHP functions</h3>
-<div class="sourceCode" id="cb8"><pre
-class="sourceCode php"><code class="sourceCode php"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Settings</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_settings_get( <span class="st">&#39;general&#39;</span><span class="ot">,</span> <span class="st">&#39;url_endpoint&#39;</span><span class="ot">,</span> <span class="st">&#39;filter&#39;</span> )</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_settings_get_group( <span class="st">&#39;layout&#39;</span> )</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_settings_save( <span class="st">&#39;general&#39;</span><span class="ot">,</span> <span class="va">$data</span> )</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_settings_delete_cache( <span class="st">&#39;*&#39;</span> )  <span class="co">// flush all</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Cache</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_cache_get( <span class="va">$key</span><span class="ot">,</span> <span class="va">$found</span> )</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_cache_set( <span class="va">$key</span><span class="ot">,</span> <span class="va">$value</span><span class="ot">,</span> <span class="va">$ttl</span> )</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_cache_flush_group()</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_transient_get( <span class="st">&#39;terms_category&#39;</span> )</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_transient_set( <span class="st">&#39;terms_category&#39;</span><span class="ot">,</span> <span class="va">$data</span> )</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Templates</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_locate_template( <span class="st">&#39;partials/filter/filter-bar.php&#39;</span> )</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_template_part( <span class="st">&#39;partials/filter/filter-bar&#39;</span><span class="ot">,</span> <span class="st">&#39;&#39;</span><span class="ot">,</span> <span class="va">$args</span> )</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_template_html( <span class="st">&#39;partials/list/list-cards&#39;</span><span class="ot">,</span> <span class="st">&#39;&#39;</span><span class="ot">,</span> <span class="va">$args</span> )</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="co">// URL helpers</span></span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_filter_url( <span class="va">$base_url</span><span class="ot">,</span> <span class="va">$active_filters</span> )</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_archive_base_url( <span class="va">$post_type</span> )</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_active_filters()</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_build_filter_url( <span class="va">$base</span><span class="ot">,</span> <span class="va">$filters</span> )</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_is_filter_request()</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="co">// Filter groups</span></span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_filter_groups_enabled()</span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_terms_for_group( <span class="va">$group</span><span class="ot">,</span> <span class="va">$active_filters</span> )</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode php"><code class="sourceCode php"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Settings</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_settings_get( <span class="st">&#39;general&#39;</span><span class="ot">,</span> <span class="st">&#39;url_endpoint&#39;</span><span class="ot">,</span> <span class="st">&#39;filter&#39;</span> )</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_settings_get_group( <span class="st">&#39;layout&#39;</span> )</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_settings_save( <span class="st">&#39;general&#39;</span><span class="ot">,</span> <span class="va">$data</span> )</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_settings_delete_cache( <span class="st">&#39;*&#39;</span> )  <span class="co">// flush all</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Cache</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_cache_get( <span class="va">$key</span><span class="ot">,</span> <span class="va">$found</span> )</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_cache_set( <span class="va">$key</span><span class="ot">,</span> <span class="va">$value</span><span class="ot">,</span> <span class="va">$ttl</span> )</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_cache_flush_group()</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_transient_get( <span class="st">&#39;terms_category&#39;</span> )</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_transient_set( <span class="st">&#39;terms_category&#39;</span><span class="ot">,</span> <span class="va">$data</span> )</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Templates</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_locate_template( <span class="st">&#39;partials/filter/filter-bar.php&#39;</span> )</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_template_part( <span class="st">&#39;partials/filter/filter-bar&#39;</span><span class="ot">,</span> <span class="st">&#39;&#39;</span><span class="ot">,</span> <span class="va">$args</span> )</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_template_html( <span class="st">&#39;partials/list/list-cards&#39;</span><span class="ot">,</span> <span class="st">&#39;&#39;</span><span class="ot">,</span> <span class="va">$args</span> )</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a><span class="co">// URL helpers</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_filter_url( <span class="va">$base_url</span><span class="ot">,</span> <span class="va">$active_filters</span> )</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_archive_base_url( <span class="va">$post_type</span> )</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_active_filters()</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_build_filter_url( <span class="va">$base</span><span class="ot">,</span> <span class="va">$filters</span> )</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_is_filter_request()</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a><span class="co">// Filter groups</span></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_filter_groups_enabled()</span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>jpkcom_postfilter_get_terms_for_group( <span class="va">$group</span><span class="ot">,</span> <span class="va">$active_filters</span> )</span></code></pre></div>
+<h3 id="filters">Filters</h3>
+<ul>
+<li><code>jpkcom_postfilter_ability_meta( array $meta, string $ability_name )</code>
+— adjust the meta of an ability before registration. Set
+<code>show_in_rest</code> to <code>false</code> to hide it from the REST
+API, or <code>mcp.public</code> to <code>false</code> to hide it from
+MCP clients.</li>
+<li><code>jpkcom_postfilter_ability_capability( string $capability, string $ability_name )</code>
+— the capability required to run an ability. Defaults to
+<code>read</code>, which covers every logged-in user. Raise it to
+<code>edit_posts</code> to restrict bulk machine-readable access to
+published content.</li>
+</ul>
 <hr />
 <h2 id="faq">FAQ</h2>
 <p><strong>Does this plugin work with custom post types?</strong> Yes.
@@ -1087,7 +1201,92 @@ Layout &amp; Design → Advanced</strong>. You are then fully responsible
 for all styling.</p>
 <hr />
 <h2 id="changelog">Changelog</h2>
-<h3 id="section">1.2.3</h3>
+<h3 id="section">1.3.0</h3>
+<ul>
+<li><strong>Added:</strong> the plugin now registers two read-only
+WordPress Abilities, <code>jpkcom-post-filter/list-filters</code> and
+<code>jpkcom-post-filter/query-posts</code>, in the shared
+<code>jpkcom-content</code> category. MCP clients, REST automation and
+the WordPress AI client can ask which taxonomies and terms a post type
+can be filtered by, then run a filtered, paginated query and receive
+both the results and a shareable filter URL.</li>
+<li><strong>Added:</strong> <code>JPKCOM_POSTFILTER_ABILITIES</code>
+(default <code>true</code>) withdraws both abilities from REST and MCP
+when set to <code>false</code> in <code>wp-config.php</code>, plus the
+filters <code>jpkcom_postfilter_ability_meta</code> and
+<code>jpkcom_postfilter_ability_capability</code> for per-ability
+control.</li>
+<li><strong>Hardened:</strong> a filter naming a taxonomy that does not
+exist previously produced the complete unfiltered result set, because
+the query builder drops such a clause silently. The query ability now
+rejects it and names the valid taxonomies, so a caller can correct
+itself instead of presenting the whole site as a filtered answer.</li>
+<li><strong>Hardened:</strong> the query ability always passes a
+positive page size. The shortcode default of <code>-1</code> sets
+<code>no_found_rows</code>, which reports a total of zero regardless of
+how many posts exist.</li>
+<li><strong>Hardened:</strong> a single request can filter by at most 50
+term slugs per taxonomy; anything beyond that is dropped rather than
+rejected, so an over-eager caller still gets an answer instead of an
+error. Without the cap one request could ask for thousands of slugs and
+turn into a query of the same size.</li>
+<li><strong>Hardened:</strong> a search term passed to the query ability
+is answered from the database rather than from the query cache. Search
+text is free-form, so caching it would let a caller fill the object
+cache and APCu with one entry per phrase.</li>
+<li><strong>Changed:</strong> the query ability returns an empty
+<code>filter_url</code> for post types that have no archive page, such
+as <code>page</code>. It previously returned a relative address like
+<code>/filter/news/</code>, which no rewrite rule serves — a link that
+would have 404’d.</li>
+<li><strong>Fixed:</strong> <code>filters</code>,
+<code>unknown_terms</code> and each post’s <code>terms</code> are sent
+as <code>{}</code> when they hold nothing, rather than as
+<code>[]</code>. The output schema declares all three as objects, so a
+client validating the response against that schema rejected the empty
+case — which is the most common case for
+<code>unknown_terms</code>.</li>
+<li><strong>Fixed:</strong> both abilities can now be called with no
+input at all. Every parameter is optional, but a bare call was answered
+with <code>ability_invalid_input</code> — “input is not of type object”
+— so the most natural way to ask “which filters does this site have?”
+was the one way that did not work.</li>
+<li><strong>Fixed:</strong> the query ability no longer hands out a
+<code>filter_url</code> that leads somewhere else. The link is now
+returned only when opening it shows exactly the posts reported next to
+it, and is left empty in four cases: the post type has no archive page;
+the site caps the number of terms per taxonomy or the number of
+taxonomies below what was asked for, so the front end would honour only
+the first few; a page after the first was requested with a page size
+that differs from the site’s own “posts per page” setting, which is the
+unit the page number in the URL is counted in; or the requested page
+lies past the last one, where the URL answers 404. The full result set
+is returned in every one of those cases — only the link is
+withheld.</li>
+<li><strong>Fixed:</strong> the top-level <code>default</code> of both
+abilities’ input schemas is now sent to MCP clients as <code>{}</code>
+rather than <code>[]</code>. The schema declares it as an object, and
+WordPress corrected the value on its own REST route but not on the one
+MCP clients read, so a client that validates schemas saw a
+contradiction.</li>
+<li><strong>Fixed:</strong> asking for a page beyond the last one
+reported <code>total: 0</code> and <code>total_pages: 0</code> next to
+the page number that was requested — a response that contradicted itself
+and read as “this site has no posts”. It now reports the real totals
+with an empty post list.</li>
+<li><strong>Fixed:</strong> caller mistakes — an unknown taxonomy or a
+post type that is not enabled — are answered over REST with HTTP 400
+instead of 500. Both messages name the valid values so the caller can
+correct itself, which a 500 undoes by telling automation it hit a server
+fault and should retry the same request unchanged.</li>
+<li><strong>Hardened:</strong> a filter group whose taxonomy is no
+longer registered — the usual cause is deactivating the plugin that
+provided it — is no longer offered as filterable. Filtering by it used
+to be accepted on the strength of the configuration alone and then
+answered with the complete unfiltered corpus; it now returns the
+unknown-taxonomy error naming the taxonomies that really exist.</li>
+</ul>
+<h3 id="section-1">1.2.3</h3>
 <ul>
 <li>CI: the lint and guard workflow now also runs on pushes to
 <code>main</code>. It only covered pull requests, so a direct push with
@@ -1097,7 +1296,7 @@ repository are now English throughout, and the developer notes in
 <code>CLAUDE.md</code> were translated and trimmed. No effect on the
 shipped plugin</li>
 </ul>
-<h3 id="section-1">1.2.2</h3>
+<h3 id="section-2">1.2.2</h3>
 <ul>
 <li>Changed: <code>Tested up to</code> raised to WordPress 7.1</li>
 <li>Changed: the bundled updater’s runtime floor now matches the
@@ -1109,7 +1308,7 @@ and <code>tested</code> now say 6.9 and 7.1. They only apply when the
 README metadata cannot be read, but a stale fallback would have
 published a minimum the plugin no longer supports</li>
 </ul>
-<h3 id="section-2">1.2.1</h3>
+<h3 id="section-3">1.2.1</h3>
 <ul>
 <li>Added: plugin banners (<code>assets/banner-1544x500.avif</code>,
 <code>assets/banner-772x250.avif</code>) — a plain <code>#3c4955</code>
@@ -1117,7 +1316,7 @@ surface with no lettering. The update manifest already advertised these
 two URLs, but nothing was published under them, so the plugin card in
 wp-admin had a broken banner</li>
 </ul>
-<h3 id="section-3">1.2.0</h3>
+<h3 id="section-4">1.2.0</h3>
 <ul>
 <li>Added: filter requests are answered with just the swappable zones
 instead of a complete page. The theme header, nav menus, sidebar widgets
@@ -1154,7 +1353,7 @@ rules would otherwise never reach the database</li>
 <li>Added: <code>tests/browser-check.mjs</code> drives a real filter
 click in headless Chromium</li>
 </ul>
-<h3 id="section-4">1.1.7</h3>
+<h3 id="section-5">1.1.7</h3>
 <ul>
 <li><strong>Fixed:</strong> the settings-directory containment check was
 a tautology — it compared <code>realpath( WP_CONTENT_DIR )</code> with
@@ -1183,7 +1382,7 @@ never by the requested slugs</li>
 regression tests for all of the above, each written to fail against the
 previous implementation. Run in CI on every pull request</li>
 </ul>
-<h3 id="section-5">1.1.6</h3>
+<h3 id="section-6">1.1.6</h3>
 <ul>
 <li>Security: update packages are now verified <em>before</em>
 installation — the verified file is handed to WordPress instead of being
@@ -1210,13 +1409,13 @@ check, YAML validation, action-pinning guard)</li>
 <li>Housekeeping: removed stray editor backups and an unused
 <code>messages.mo</code> from the release package</li>
 </ul>
-<h3 id="section-6">1.1.5</h3>
+<h3 id="section-7">1.1.5</h3>
 <ul>
 <li>Raised “Tested up to” to WordPress 7.0</li>
 <li>Normalized license fallback defaults (updater and release workflow)
 to <code>GPL-2.0-or-later</code> with the HTTPS license URI</li>
 </ul>
-<h3 id="section-7">1.1.4</h3>
+<h3 id="section-8">1.1.4</h3>
 <ul>
 <li>Security: updater prefers an exact match against the manifest
 <code>download_url</code> over the slug heuristic, so a tampered
@@ -1233,7 +1432,7 @@ completing the <code>no_update</code> transient entry
 (<code>new_version</code>, <code>package</code>, <code>tested</code>,
 <code>requires_php</code>)</li>
 </ul>
-<h3 id="section-8">1.1.3</h3>
+<h3 id="section-9">1.1.3</h3>
 <ul>
 <li><strong>Plus/Minus Icon styling</strong> — New CSS variables
 (<code>--jpkpf-pm-color</code>, <code>--jpkpf-pm-font-size</code>,
@@ -1248,7 +1447,7 @@ icons, fixing themes that force underlines on links</li>
 <li><strong>Translations</strong> — Updated de_DE and de_DE_formal
 translations for all new strings</li>
 </ul>
-<h3 id="section-9">1.1.2</h3>
+<h3 id="section-10">1.1.2</h3>
 <ul>
 <li><strong>Plugin Updater</strong> — Fixed manual ZIP upload failing
 with “invalid URL” error by adding <code>wp_http_validate_url()</code>
@@ -1257,12 +1456,12 @@ check in <code>verify_download_checksum()</code></li>
 top-level directory; WordPress now correctly recognises the update by
 using a staging directory with the plugin slug</li>
 </ul>
-<h3 id="section-10">1.1.1</h3>
+<h3 id="section-11">1.1.1</h3>
 <ul>
 <li><strong>.github/workflows/release.yml</strong> — “Build Gutenberg
 blocks” npm ci bugfix</li>
 </ul>
-<h3 id="section-11">1.1.0</h3>
+<h3 id="section-12">1.1.0</h3>
 <ul>
 <li><strong>Gutenberg Blocks</strong> — Three native blocks (Post
 Filter, Post List, Post Pagination) with live server-side preview,
@@ -1288,7 +1487,7 @@ to multiple pages</li>
 <li><strong>Auto-inject guard</strong> — Prevents duplicate pagination
 insertion in auto-inject mode during AJAX swaps</li>
 </ul>
-<h3 id="section-12">1.0.0</h3>
+<h3 id="section-13">1.0.0</h3>
 <ul>
 <li>Initial release</li>
 <li>Faceted filtering for any post type and taxonomy</li>

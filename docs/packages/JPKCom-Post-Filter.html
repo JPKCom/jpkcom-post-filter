@@ -151,6 +151,27 @@
 </h4>
 <dl class="phpdocumentor-table-of-contents">
             <dt class="phpdocumentor-table-of-contents__entry -constant -public">
+    <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_CATEGORY">JPKCOM_POSTFILTER_ABILITY_CATEGORY</a>
+    <span>
+        &nbsp;: mixed&nbsp;= &#039;jpkcom-content&#039;                            </span>
+</dt>
+<dd>Ability category shared with the other JPKCom content plugins.</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -constant -public">
+    <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT">JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT</a>
+    <span>
+        &nbsp;: mixed&nbsp;= 10                            </span>
+</dt>
+<dd>Default page size for the query ability.</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -constant -public">
+    <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX">JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX</a>
+    <span>
+        &nbsp;: mixed&nbsp;= 50                            </span>
+</dt>
+<dd>Maximum page size for the query ability.</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -constant -public">
     <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_CACHE_GROUP">JPKCOM_POSTFILTER_CACHE_GROUP</a>
     <span>
         &nbsp;: mixed&nbsp;= &#039;jpkcom_postfilter&#039;                            </span>
@@ -189,6 +210,160 @@
 
 </h4>
 <dl class="phpdocumentor-table-of-contents">
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_clamp_per_page">jpkcom_postfilter_ability_clamp_per_page()</a>
+    <span>
+                                &nbsp;: int    </span>
+</dt>
+<dd>Clamp a per_page value into the range the query ability supports</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_normalize_filters">jpkcom_postfilter_ability_normalize_filters()</a>
+    <span>
+                                &nbsp;: array&lt;string, array&lt;string|int, string&gt;&gt;    </span>
+</dt>
+<dd>Normalise the filters input into a taxonomy =&gt; term slugs map</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_group_applies">jpkcom_postfilter_ability_group_applies()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Decide whether a filter group applies to a post type</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_allowed_taxonomies">jpkcom_postfilter_ability_allowed_taxonomies()</a>
+    <span>
+                                &nbsp;: array&lt;string|int, string&gt;    </span>
+</dt>
+<dd>Collect the taxonomies that may be used to filter a post type</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_validate_filters">jpkcom_postfilter_ability_validate_filters()</a>
+    <span>
+                                &nbsp;: true|<abbr title="\WP_Error">WP_Error</abbr>    </span>
+</dt>
+<dd>Reject filters that name a taxonomy which is not filterable</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_unknown_post_type_error">jpkcom_postfilter_ability_unknown_post_type_error()</a>
+    <span>
+                                &nbsp;: <abbr title="\WP_Error">WP_Error</abbr>    </span>
+</dt>
+<dd>Build the error returned for a post type that is not enabled for filtering</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_resolve_post_type">jpkcom_postfilter_ability_resolve_post_type()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Resolve the post_type input, applying the default the schema advertises</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_enabled_post_types">jpkcom_postfilter_ability_enabled_post_types()</a>
+    <span>
+                                &nbsp;: array&lt;string|int, string&gt;    </span>
+</dt>
+<dd>Read the post types that are enabled for filtering</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_list_filters">jpkcom_postfilter_ability_list_filters()</a>
+    <span>
+                                &nbsp;: array&lt;string, mixed&gt;|<abbr title="\WP_Error">WP_Error</abbr>    </span>
+</dt>
+<dd>Execute callback for jpkcom-post-filter/list-filters</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_json_object">jpkcom_postfilter_ability_json_object()</a>
+    <span>
+                                &nbsp;: array&lt;string, mixed&gt;|<abbr title="\stdClass">stdClass</abbr>    </span>
+</dt>
+<dd>Present a keyed map as a JSON object even when it is empty</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_unknown_terms">jpkcom_postfilter_ability_unknown_terms()</a>
+    <span>
+                                &nbsp;: array&lt;string, array&lt;string|int, string&gt;&gt;    </span>
+</dt>
+<dd>Report requested term slugs that match no term</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_project_post">jpkcom_postfilter_ability_project_post()</a>
+    <span>
+                                &nbsp;: array&lt;string, mixed&gt;    </span>
+</dt>
+<dd>Project a post into the JSON-serialisable shape the output schema promises</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_filters_are_url_expressible">jpkcom_postfilter_ability_filters_are_url_expressible()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Decide whether a filter set survives a round trip through a filter URL</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_query_posts">jpkcom_postfilter_ability_query_posts()</a>
+    <span>
+                                &nbsp;: array&lt;string, mixed&gt;|<abbr title="\WP_Error">WP_Error</abbr>    </span>
+</dt>
+<dd>Execute callback for jpkcom-post-filter/query-posts</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_meta">jpkcom_postfilter_ability_meta()</a>
+    <span>
+                                &nbsp;: array&lt;string, mixed&gt;    </span>
+</dt>
+<dd>Build the meta array for an ability</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_user_can">jpkcom_postfilter_ability_user_can()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Check the capability required to run an ability</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_permission_list_filters">jpkcom_postfilter_ability_permission_list_filters()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Permission callback for jpkcom-post-filter/list-filters</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_permission_query_posts">jpkcom_postfilter_ability_permission_query_posts()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Permission callback for jpkcom-post-filter/query-posts</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_get_ability_definitions">jpkcom_postfilter_get_ability_definitions()</a>
+    <span>
+                                &nbsp;: array&lt;string, array&lt;string, mixed&gt;&gt;    </span>
+</dt>
+<dd>Build the registration arguments for every ability this plugin provides</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_abilities_enabled">jpkcom_postfilter_abilities_enabled()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Decide whether abilities should be registered at all</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_register_ability_category">jpkcom_postfilter_register_ability_category()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>Register the shared JPKCom content ability category</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_register_abilities">jpkcom_postfilter_register_abilities()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>Register every ability this plugin provides</dd>
+
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_field_enabled_post_types">jpkcom_postfilter_field_enabled_post_types()</a>
     <span>
@@ -964,6 +1139,99 @@ user can change their selection on a zero-results page reload.</dd>
 
         </h3>
                     <article class="phpdocumentor-element -constant -public ">
+    <h4 class="phpdocumentor-element__name" id="constant_JPKCOM_POSTFILTER_ABILITY_CATEGORY">
+        JPKCOM_POSTFILTER_ABILITY_CATEGORY
+        <a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_CATEGORY" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">23</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Ability category shared with the other JPKCom content plugins.</p>
+
+    
+    <code class="phpdocumentor-signature phpdocumentor-code ">
+    <span class="phpdocumentor-signature__visibility">public</span>
+        <span class="phpdocumentor-signature__type">mixed</span>
+    <span class="phpdocumentor-signature__name">JPKCOM_POSTFILTER_ABILITY_CATEGORY</span>
+    = <span class="phpdocumentor-signature__default-value">&#039;jpkcom-content&#039;</span>
+</code>
+
+
+    
+    
+    
+
+        
+    </article>
+                    <article class="phpdocumentor-element -constant -public ">
+    <h4 class="phpdocumentor-element__name" id="constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT">
+        JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT
+        <a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">28</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Default page size for the query ability.</p>
+
+    
+    <code class="phpdocumentor-signature phpdocumentor-code ">
+    <span class="phpdocumentor-signature__visibility">public</span>
+        <span class="phpdocumentor-signature__type">mixed</span>
+    <span class="phpdocumentor-signature__name">JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT</span>
+    = <span class="phpdocumentor-signature__default-value">10</span>
+</code>
+
+
+    
+    
+    
+
+        
+    </article>
+                    <article class="phpdocumentor-element -constant -public ">
+    <h4 class="phpdocumentor-element__name" id="constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX">
+        JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX
+        <a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">33</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Maximum page size for the query ability.</p>
+
+    
+    <code class="phpdocumentor-signature phpdocumentor-code ">
+    <span class="phpdocumentor-signature__visibility">public</span>
+        <span class="phpdocumentor-signature__type">mixed</span>
+    <span class="phpdocumentor-signature__name">JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX</span>
+    = <span class="phpdocumentor-signature__default-value">50</span>
+</code>
+
+
+    
+    
+    
+
+        
+    </article>
+                    <article class="phpdocumentor-element -constant -public ">
     <h4 class="phpdocumentor-element__name" id="constant_JPKCOM_POSTFILTER_CACHE_GROUP">
         JPKCOM_POSTFILTER_CACHE_GROUP
         <a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_CACHE_GROUP" class="headerlink"><i class="fas fa-link"></i></a>
@@ -1123,6 +1391,1423 @@ user can change their selection on a zero-results page reload.</dd>
             <a href="packages/JPKCom-Post-Filter.html#functions" class="headerlink"><i class="fas fa-link"></i></a>
 
         </h3>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_clamp_per_page">
+        jpkcom_postfilter_ability_clamp_per_page()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_clamp_per_page" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">49</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Clamp a per_page value into the range the query ability supports</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_clamp_per_page</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">mixed&nbsp;</span><span class="phpdocumentor-signature__argument__name">$value</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">int</span></code>
+
+        <section class="phpdocumentor-description"><p>Guards against the shortcode default of -1, which makes
+jpkcom_postfilter_build_query_args() set no_found_rows and therefore
+report a total of 0 regardless of how many posts exist.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$value</span>
+                : <span class="phpdocumentor-argument-list__argument__type">mixed</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Raw per_page input.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_clamp_per_page_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_clamp_per_page_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">int</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Value between 1 and JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_normalize_filters">
+        jpkcom_postfilter_ability_normalize_filters()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_normalize_filters" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">85</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Normalise the filters input into a taxonomy =&gt; term slugs map</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_normalize_filters</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">mixed&nbsp;</span><span class="phpdocumentor-signature__argument__name">$filters</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string, array&lt;string|int, string&gt;&gt;</span></code>
+
+        <section class="phpdocumentor-description"><p>Accepts a scalar term as shorthand for a single-element list, drops
+duplicates and empty taxonomies, and skips values that are not scalar
+rather than letting a TypeError escape.</p>
+<p>The slug list per taxonomy is truncated at
+JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX. <code class="prettyprint">filters</code> is caller-controlled, and
+every slug costs work further down the pipeline - one IN() member in the
+tax query and one entry to diff for the unknown-terms report. Truncating
+rather than erroring mirrors jpkcom_postfilter_parse_filter_path(), which
+already caps over-long filter lists coming from a URL.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$filters</span>
+                : <span class="phpdocumentor-argument-list__argument__type">mixed</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Raw filters input.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_normalize_filters_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_normalize_filters_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string, array&lt;string|int, string&gt;&gt;</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Normalised taxonomy =&gt; term slugs map.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_group_applies">
+        jpkcom_postfilter_ability_group_applies()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_group_applies" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">147</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Decide whether a filter group applies to a post type</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_group_applies</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$group</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$post_type</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;string|int, string&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$enabled_post_types</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>Mirrors the rule used by all three render call sites: a group applies
+when its post_types list contains the post type, or - when that list is
+empty or absent - when the post type is globally enabled.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$group</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, mixed&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Filter group config.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$post_type</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Post type to test.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$enabled_post_types</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string|int, string&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Globally enabled post types.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_group_applies_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_group_applies_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True when the group applies.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_allowed_taxonomies">
+        jpkcom_postfilter_ability_allowed_taxonomies()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_allowed_taxonomies" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">181</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Collect the taxonomies that may be used to filter a post type</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_allowed_taxonomies</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$post_type</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;int, array&lt;string, mixed&gt;&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$groups</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;string|int, string&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$enabled_post_types</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string|int, string&gt;</span></code>
+
+        <section class="phpdocumentor-description"><p>A configured group whose taxonomy is not registered is skipped. The
+configuration outlives the registration - deactivating the plugin that
+registered a taxonomy leaves its filter group behind - and a group in that
+state would otherwise be reported as filterable while
+jpkcom_postfilter_build_tax_query() drops the clause it produces
+(query-handler.php:57), which is the silent-full-corpus failure the
+validation guard exists to prevent. Skipping the group here turns that case
+into a jpkcom_postfilter_unknown_taxonomy error that names the real ones.</p>
+<p>This is why the function reads WordPress state; it is not pure.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$post_type</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Post type to test.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$groups</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;int, array&lt;string, mixed&gt;&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Enabled filter groups.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$enabled_post_types</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string|int, string&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Globally enabled post types.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_allowed_taxonomies_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_allowed_taxonomies_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string|int, string&gt;</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Unique taxonomy keys that are registered right now.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_validate_filters">
+        jpkcom_postfilter_ability_validate_filters()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_validate_filters" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">234</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Reject filters that name a taxonomy which is not filterable</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_validate_filters</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$filters</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;string|int, string&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$allowed_taxonomies</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">true|<abbr title="\WP_Error">WP_Error</abbr></span></code>
+
+        <section class="phpdocumentor-description"><p>The query pipeline drops an unknown taxonomy clause silently and then
+returns the complete unfiltered result set, so this check is the only
+thing standing between a mistyped taxonomy and a wrong answer presented
+as a filtered one. The error message names the valid taxonomies so the
+caller can correct itself without another round trip.</p>
+<p>Carries data['status'] = 400. The REST run controller returns the WP_Error
+verbatim and rest_ensure_response() defaults to 500 without it - which
+tells an agent &quot;transient server fault, retry the same call&quot;, the exact
+opposite of the self-correction this message is written for.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$filters</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Normalised filters map.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$allowed_taxonomies</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string|int, string&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Taxonomies that may be filtered.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_validate_filters_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_validate_filters_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">true|<abbr title="\WP_Error">WP_Error</abbr></span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True when valid, WP_Error otherwise.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_unknown_post_type_error">
+        jpkcom_postfilter_ability_unknown_post_type_error()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_unknown_post_type_error" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">279</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Build the error returned for a post type that is not enabled for filtering</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_unknown_post_type_error</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$post_type</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;string|int, string&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$enabled_post_types</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type"><abbr title="\WP_Error">WP_Error</abbr></span></code>
+
+        <section class="phpdocumentor-description"><p>Carries data['status'] = 400 for the same reason as the unknown-taxonomy
+error: this is caller input, not a server fault, and the REST run
+controller would otherwise answer 500.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$post_type</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>The rejected post type.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$enabled_post_types</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string|int, string&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Post types that are enabled.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_unknown_post_type_error_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_unknown_post_type_error_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type"><abbr title="\WP_Error">WP_Error</abbr></span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>The error to return from the callback.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_resolve_post_type">
+        jpkcom_postfilter_ability_resolve_post_type()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_resolve_post_type" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">310</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Resolve the post_type input, applying the default the schema advertises</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_resolve_post_type</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">mixed&nbsp;</span><span class="phpdocumentor-signature__argument__name">$value</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>Core applies only a top-level schema default and only when the input is
+exactly null, so per-property defaults have to be applied here.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$value</span>
+                : <span class="phpdocumentor-argument-list__argument__type">mixed</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Raw post_type input.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_resolve_post_type_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_resolve_post_type_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Sanitised post type, defaulting to 'post'.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_enabled_post_types">
+        jpkcom_postfilter_ability_enabled_post_types()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_enabled_post_types" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">330</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Read the post types that are enabled for filtering</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_enabled_post_types</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string|int, string&gt;</span></code>
+
+    
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_enabled_post_types_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_enabled_post_types_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string|int, string&gt;</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Enabled post type slugs.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_list_filters">
+        jpkcom_postfilter_ability_list_filters()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_list_filters" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">365</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Execute callback for jpkcom-post-filter/list-filters</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_list_filters</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">mixed&nbsp;</span><span class="phpdocumentor-signature__argument__name">$input</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string, mixed&gt;|<abbr title="\WP_Error">WP_Error</abbr></span></code>
+
+        <section class="phpdocumentor-description"><p>Reports exactly the groups the site's own filter bar renders. There is no
+extra disclosure rule: jpkcom_postfilter_get_terms_for_group() checks only
+taxonomy_exists(), so every enabled group is already public HTML for
+anonymous visitors. Withholding a taxonomy here would have been stricter
+than the front end while changing nothing about what is reachable.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$input</span>
+                : <span class="phpdocumentor-argument-list__argument__type">mixed</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Validated ability input.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_list_filters_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_list_filters_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string, mixed&gt;|<abbr title="\WP_Error">WP_Error</abbr></span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Filter groups, or an error.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_json_object">
+        jpkcom_postfilter_ability_json_object()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_json_object" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">443</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Present a keyed map as a JSON object even when it is empty</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_json_object</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$value</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string, mixed&gt;|<abbr title="\stdClass">stdClass</abbr></span></code>
+
+        <section class="phpdocumentor-description"><p>PHP serialises an empty array as the JSON array <code class="prettyprint">[]</code>, but these values are
+declared as objects in the output schema. A client that validates the
+response against that schema rejects <code class="prettyprint">[]</code> where it expects <code class="prettyprint">}</code>, so an
+empty map is handed back as a stdClass instead. A non-empty map already
+encodes as an object and is returned untouched, so PHP callers keep array
+access in the case that carries data.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$value</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, mixed&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Map to present.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_json_object_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_json_object_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string, mixed&gt;|<abbr title="\stdClass">stdClass</abbr></span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>The map, or an empty object.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_unknown_terms">
+        jpkcom_postfilter_ability_unknown_terms()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_unknown_terms" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">470</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Report requested term slugs that match no term</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_unknown_terms</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$filters</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string, array&lt;string|int, string&gt;&gt;</span></code>
+
+        <section class="phpdocumentor-description"><p>Not an error: the website answers such a request with HTTP 200, zero
+results and a noindex robots tag. Reporting them lets a caller tell a
+typo apart from an genuinely empty result set.</p>
+<p>Checked the same way as jpkcom_postfilter_has_unknown_terms(): one
+array_diff() against the transient-cached per-taxonomy term list, never
+one lookup per requested slug. The cache key is the taxonomy, never the
+requested slugs, so a caller cannot use this to flood the cache and a warm
+cache costs no query at all.</p>
+<p><code class="prettyprint">hide_empty = false</code>: a term with no posts is still a real term.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$filters</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Normalised filters map.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_unknown_terms_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_unknown_terms_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string, array&lt;string|int, string&gt;&gt;</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Taxonomy =&gt; unmatched term slugs.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_project_post">
+        jpkcom_postfilter_ability_project_post()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_project_post" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">504</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Project a post into the JSON-serialisable shape the output schema promises</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_project_post</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type"><abbr title="\WP_Post">WP_Post</abbr>&nbsp;</span><span class="phpdocumentor-signature__argument__name">$post</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;string|int, string&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$taxonomies</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string, mixed&gt;</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$post</span>
+                : <span class="phpdocumentor-argument-list__argument__type"><abbr title="\WP_Post">WP_Post</abbr></span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>The post to project.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$taxonomies</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string|int, string&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Filterable taxonomies to report terms for.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_project_post_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_project_post_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string, mixed&gt;</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Projected post.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_filters_are_url_expressible">
+        jpkcom_postfilter_ability_filters_are_url_expressible()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_filters_are_url_expressible" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">575</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Decide whether a filter set survives a round trip through a filter URL</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_filters_are_url_expressible</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$filters</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>jpkcom_postfilter_get_filter_url() writes every requested slug into the
+path, but jpkcom_postfilter_parse_filter_path() truncates what it reads
+back to max_filters_per_group slugs per taxonomy and max_filter_combos
+taxonomies. Above either limit the built URL therefore shows a <em>different</em>
+result set than the one the ability just reported - measured with four
+category slugs against max_filters_per_group = 3, where the link resolved
+to the first three.</p>
+<p>This is a second implementation of a rule that lives in
+<code class="prettyprint">includes/url-routing.php:74-87</code>. That parser is the authority: it decides
+what a filter URL actually resolves to, and this function only predicts
+it. Change the truncation there and this gate goes stale without any test
+noticing - the suite stubs the settings getter and never loads
+url-routing.php - and the ability resumes emitting links to a narrower
+result set than it reports.</p>
+<p>Both caps treat 0 as unlimited, matching parse_filter_path(). Only
+max_filters_per_group can actually be set to 0 through the admin UI;
+settings.php clamps max_filter_combos to 1..10, so the unlimited branch of
+that one is unreachable on a normally configured site. It is kept because
+this function must mirror the parser, not the settings form.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$filters</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Normalised filters map.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_filters_are_url_expressible_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_filters_are_url_expressible_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True when a built URL parses back to exactly these filters.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_query_posts">
+        jpkcom_postfilter_ability_query_posts()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_query_posts" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">608</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Execute callback for jpkcom-post-filter/query-posts</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_query_posts</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">mixed&nbsp;</span><span class="phpdocumentor-signature__argument__name">$input</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string, mixed&gt;|<abbr title="\WP_Error">WP_Error</abbr></span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$input</span>
+                : <span class="phpdocumentor-argument-list__argument__type">mixed</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Validated ability input.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_query_posts_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_query_posts_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string, mixed&gt;|<abbr title="\WP_Error">WP_Error</abbr></span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Query result, or an error.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_meta">
+        jpkcom_postfilter_ability_meta()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_meta" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">763</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Build the meta array for an ability</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_meta</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$ability_name</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string, mixed&gt;</span></code>
+
+        <section class="phpdocumentor-description"><p>show_in_rest governs core REST visibility. The public key is inert on
+WordPress 6.9 and 7.0 and seeds show_in_rest from 7.1 onwards. The mcp
+key is the MCP Adapter's own gate and is ignored by core.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$ability_name</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Fully qualified ability name.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_meta_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_meta_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string, mixed&gt;</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Meta array for wp_register_ability().</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_user_can">
+        jpkcom_postfilter_ability_user_can()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_user_can" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">805</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Check the capability required to run an ability</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_user_can</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$ability_name</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>Defaults to 'read'. The query is hard-scoped to published posts, so this
+cannot expose drafts or private content - but it is bulk machine-readable
+access, which a site may want to restrict further.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$ability_name</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Fully qualified ability name.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_user_can_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_user_can_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True when the current user may run the ability.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_permission_list_filters">
+        jpkcom_postfilter_ability_permission_list_filters()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_permission_list_filters" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">830</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Permission callback for jpkcom-post-filter/list-filters</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_permission_list_filters</span><span>(</span><span class="phpdocumentor-signature__argument"><span>[</span><span class="phpdocumentor-signature__argument__type">mixed&nbsp;</span><span class="phpdocumentor-signature__argument__name">$input</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">null</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$input</span>
+                : <span class="phpdocumentor-argument-list__argument__type">mixed</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">null</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Validated ability input, unused.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_permission_list_filters_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_permission_list_filters_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True when the current user may run the ability.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_permission_query_posts">
+        jpkcom_postfilter_ability_permission_query_posts()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_permission_query_posts" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">845</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Permission callback for jpkcom-post-filter/query-posts</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_permission_query_posts</span><span>(</span><span class="phpdocumentor-signature__argument"><span>[</span><span class="phpdocumentor-signature__argument__type">mixed&nbsp;</span><span class="phpdocumentor-signature__argument__name">$input</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">null</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$input</span>
+                : <span class="phpdocumentor-argument-list__argument__type">mixed</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">null</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Validated ability input, unused.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_permission_query_posts_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_permission_query_posts_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True when the current user may run the ability.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_get_ability_definitions">
+        jpkcom_postfilter_get_ability_definitions()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_get_ability_definitions" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">865</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Build the registration arguments for every ability this plugin provides</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_get_ability_definitions</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string, array&lt;string, mixed&gt;&gt;</span></code>
+
+        <section class="phpdocumentor-description"><p>Reads no WordPress state and touches no registry, which is what lets the
+CI harness assert the shape of these arrays without a WordPress
+installation. Not free of side effects, though: __() and the two
+jpkcom_postfilter_ability_meta() calls each fire apply_filters(), so
+third-party callbacks run whenever this is called.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_get_ability_definitions_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_get_ability_definitions_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string, array&lt;string, mixed&gt;&gt;</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Ability name =&gt; wp_register_ability() args.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_abilities_enabled">
+        jpkcom_postfilter_abilities_enabled()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_abilities_enabled" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">1073</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Decide whether abilities should be registered at all</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_abilities_enabled</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+    
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_abilities_enabled_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_abilities_enabled_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True when the Abilities API is present and the kill switch is on.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_register_ability_category">
+        jpkcom_postfilter_register_ability_category()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_register_ability_category" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">1097</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Register the shared JPKCom content ability category</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_register_ability_category</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+        <section class="phpdocumentor-description"><p>Registered defensively: categories are global and first-wins, so a
+sibling plugin that registers the same slug first would otherwise make
+this call fail silently.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_register_ability_category_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_register_ability_category_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_register_abilities">
+        jpkcom_postfilter_register_abilities()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_register_abilities" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">1136</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Register every ability this plugin provides</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_register_abilities</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+        <section class="phpdocumentor-description"><p>wp_register_ability() returns null on every failure path and reports only
+through _doing_it_wrong(), which is silent in production, so each result
+is checked explicitly.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_register_abilities_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_register_abilities_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
                     <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_field_enabled_post_types">
         jpkcom_postfilter_field_enabled_post_types()
@@ -5103,7 +6788,7 @@ paged      (int)     Current pagination page.     Default: auto-detected</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/query-handler.php"><a href="files/includes-query-handler.html"><abbr title="includes/query-handler.php">query-handler.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">214</span>
+    <span class="phpdocumentor-element-found-in__line">216</span>
 
     </aside>
 
@@ -7501,6 +9186,9 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                             <li class="phpdocumentor-on-this-page-section__title">Constants</li>
                 <li>
                     <ul class="phpdocumentor-list -clean">
+                                                    <li class=""><a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_CATEGORY">JPKCOM_POSTFILTER_ABILITY_CATEGORY</a></li>
+                                                    <li class=""><a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT">JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT</a></li>
+                                                    <li class=""><a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX">JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX</a></li>
                                                     <li class=""><a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_CACHE_GROUP">JPKCOM_POSTFILTER_CACHE_GROUP</a></li>
                                                     <li class=""><a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_CACHE_TTL">JPKCOM_POSTFILTER_CACHE_TTL</a></li>
                                                     <li class=""><a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ZONE_END">JPKCOM_POSTFILTER_ZONE_END</a></li>
@@ -7511,6 +9199,25 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                             <li class="phpdocumentor-on-this-page-section__title">Functions</li>
                 <li>
                     <ul class="phpdocumentor-list -clean">
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_abilities_enabled">jpkcom_postfilter_abilities_enabled()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_allowed_taxonomies">jpkcom_postfilter_ability_allowed_taxonomies()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_clamp_per_page">jpkcom_postfilter_ability_clamp_per_page()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_enabled_post_types">jpkcom_postfilter_ability_enabled_post_types()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_filters_are_url_expressible">jpkcom_postfilter_ability_filters_are_url_expressible()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_group_applies">jpkcom_postfilter_ability_group_applies()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_json_object">jpkcom_postfilter_ability_json_object()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_list_filters">jpkcom_postfilter_ability_list_filters()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_meta">jpkcom_postfilter_ability_meta()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_normalize_filters">jpkcom_postfilter_ability_normalize_filters()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_permission_list_filters">jpkcom_postfilter_ability_permission_list_filters()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_permission_query_posts">jpkcom_postfilter_ability_permission_query_posts()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_project_post">jpkcom_postfilter_ability_project_post()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_query_posts">jpkcom_postfilter_ability_query_posts()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_resolve_post_type">jpkcom_postfilter_ability_resolve_post_type()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_unknown_post_type_error">jpkcom_postfilter_ability_unknown_post_type_error()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_unknown_terms">jpkcom_postfilter_ability_unknown_terms()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_user_can">jpkcom_postfilter_ability_user_can()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_ability_validate_filters">jpkcom_postfilter_ability_validate_filters()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_apcu_available">jpkcom_postfilter_apcu_available()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_archive_base_regex">jpkcom_postfilter_archive_base_regex()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_archive_query_string">jpkcom_postfilter_archive_query_string()</a></li>
@@ -7547,6 +9254,7 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_fragment_ob_callback">jpkcom_postfilter_fragment_ob_callback()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_fragment_segment">jpkcom_postfilter_fragment_segment()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_fragment_url">jpkcom_postfilter_fragment_url()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_ability_definitions">jpkcom_postfilter_get_ability_definitions()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_active_filters">jpkcom_postfilter_get_active_filters()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_archive_base_url">jpkcom_postfilter_get_archive_base_url()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_color_scheme_vars">jpkcom_postfilter_get_color_scheme_vars()</a></li>
@@ -7590,6 +9298,8 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_path_is_inside">jpkcom_postfilter_path_is_inside()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_prerun_list_blocks">jpkcom_postfilter_prerun_list_blocks()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_query_cache_key">jpkcom_postfilter_query_cache_key()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_register_abilities">jpkcom_postfilter_register_abilities()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_register_ability_category">jpkcom_postfilter_register_ability_category()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_render_color_field">jpkcom_postfilter_render_color_field()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_render_select_var_field">jpkcom_postfilter_render_select_var_field()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_render_text_var_field">jpkcom_postfilter_render_text_var_field()</a></li>
