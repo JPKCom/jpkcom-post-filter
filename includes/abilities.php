@@ -220,6 +220,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_validate_filters' )
      * as a filtered one. The error message names the valid taxonomies so the
      * caller can correct itself without another round trip.
      *
+     * Carries data['status'] = 400. The REST run controller returns the WP_Error
+     * verbatim and rest_ensure_response() defaults to 500 without it - which
+     * tells an agent "transient server fault, retry the same call", the exact
+     * opposite of the self-correction this message is written for.
+     *
      * @since 1.3.0
      *
      * @param array<string, string[]> $filters            Normalised filters map.
@@ -250,7 +255,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_validate_filters' )
                 __( 'Unknown filter taxonomy: %1$s. Valid taxonomies for this post type: %2$s.', 'jpkcom-post-filter' ),
                 implode( ', ', $unknown ),
                 $valid
-            )
+            ),
+            [ 'status' => 400 ]
         );
     }
 }
@@ -259,6 +265,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_validate_filters' )
 if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_post_type_error' ) ) {
     /**
      * Build the error returned for a post type that is not enabled for filtering
+     *
+     * Carries data['status'] = 400 for the same reason as the unknown-taxonomy
+     * error: this is caller input, not a server fault, and the REST run
+     * controller would otherwise answer 500.
      *
      * @since 1.3.0
      *
@@ -278,7 +288,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_post_type_e
                 __( 'Post type "%1$s" is not enabled for filtering. Enabled post types: %2$s.', 'jpkcom-post-filter' ),
                 $post_type,
                 $valid
-            )
+            ),
+            [ 'status' => 400 ]
         );
     }
 }

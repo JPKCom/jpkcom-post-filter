@@ -76,10 +76,12 @@ function wp_json_encode( mixed $value ): string {
 class WP_Error {
 	public string $code    = '';
 	public string $message = '';
+	public mixed  $data    = null;
 
-	public function __construct( string $code = '', string $message = '' ) {
+	public function __construct( string $code = '', string $message = '', mixed $data = null ) {
 		$this->code    = $code;
 		$this->message = $message;
+		$this->data    = $data;
 	}
 
 	public function get_error_code(): string {
@@ -88,6 +90,10 @@ class WP_Error {
 
 	public function get_error_message(): string {
 		return $this->message;
+	}
+
+	public function get_error_data(): mixed {
+		return $this->data;
 	}
 }
 
@@ -579,6 +585,17 @@ check(
 	. 'the valid names corrects itself in a single turn.'
 );
 
+is_same(
+	'the rejection is a 400, so a caller reads it as its own mistake',
+	$rejected instanceof WP_Error ? $rejected->get_error_data() : null,
+	[ 'status' => 400 ],
+	'Measured through rest_do_request(): input[filters][tag][]=seo answered HTTP 500 '
+	. 'with this code. The run controller returns the WP_Error verbatim and '
+	. 'rest_ensure_response() defaults to 500 when no data["status"] is set. A 5xx tells '
+	. 'an agent "transient server fault, retry the same call" — the opposite of the '
+	. 'self-correction this message is written for.'
+);
+
 $no_allowed = jpkcom_postfilter_ability_validate_filters( [ 'category' => [ 'news' ] ], [] );
 
 check(
@@ -600,6 +617,15 @@ check(
 	'the message lists the enabled post types',
 	str_contains( $pt_error->get_error_message(), 'post' )
 		&& str_contains( $pt_error->get_error_message(), 'page' )
+);
+
+is_same(
+	'the rejection is a 400, so a caller reads it as its own mistake',
+	$pt_error->get_error_data(),
+	[ 'status' => 400 ],
+	'Measured through rest_do_request(): input[post_type]=page answered HTTP 500 with '
+	. 'this code. Naming the enabled post types is pointless if the transport says '
+	. '"server fault, retry unchanged".'
 );
 
 section( 'list-filters callback' );
