@@ -56,6 +56,10 @@ function is_wp_error( mixed $thing ): bool {
 	return $thing instanceof WP_Error;
 }
 
+function wp_json_encode( mixed $value ): string {
+	return (string) json_encode( $value );
+}
+
 class WP_Error {
 	public string $code    = '';
 	public string $message = '';
@@ -837,10 +841,50 @@ is_same(
 	[ 'category' => [ 'does-not-exist' ] ]
 );
 
+section( 'empty maps must encode as JSON objects, not arrays' );
+
 is_same(
 	'a known term slug produces no unknown_terms entry',
-	is_array( $result ) ? $result['unknown_terms'] : null,
-	[]
+	is_array( $result ) ? wp_json_encode( $result['unknown_terms'] ) : null,
+	'{}',
+	'unknown_terms is declared type:object in the output schema. PHP serialises an '
+	. 'empty array as [], which a client validating against that schema rejects. '
+	. 'Asserting on the encoded form rather than the PHP type is what makes this '
+	. 'test speak the same language as the consumer.'
+);
+
+$unfiltered_result = jpkcom_postfilter_ability_query_posts( [ 'post_type' => 'post' ] );
+
+is_same(
+	'an unfiltered query encodes filters as {}',
+	is_array( $unfiltered_result ) ? wp_json_encode( $unfiltered_result['filters'] ) : null,
+	'{}'
+);
+
+is_same(
+	'an unfiltered query encodes unknown_terms as {}',
+	is_array( $unfiltered_result ) ? wp_json_encode( $unfiltered_result['unknown_terms'] ) : null,
+	'{}'
+);
+
+is_same(
+	'a post with no terms of the filterable taxonomies encodes terms as {}',
+	wp_json_encode( jpkcom_postfilter_ability_project_post( $post_one, [] )['terms'] ),
+	'{}'
+);
+
+is_same(
+	'a non-empty map still encodes as an object and keeps array access',
+	is_array( $result ) ? wp_json_encode( $result['filters'] ) : null,
+	'{"category":["news"]}',
+	'Only the empty case is wrapped, so PHP callers keep array access on the case '
+	. 'that carries data.'
+);
+
+is_same(
+	'a non-empty map is still a PHP array',
+	is_array( $result ) && is_array( $result['filters'] ),
+	true
 );
 
 $GLOBALS['_stub_term_lookups']    = [];

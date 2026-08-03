@@ -435,6 +435,106 @@ curl -s https://example.com/blog/filter/web-design/ | grep -c '<head'
 
 ---
 
+## Abilities API (since 1.3.0)
+
+`includes/abilities.php` registers two **read-only** WordPress Abilities so MCP clients, REST
+automation and the WordPress AI client can query the plugin without scraping HTML.
+
+| Ability | Returns |
+|---|---|
+| `jpkcom-post-filter/list-filters` | The filter groups and their terms for a post type |
+| `jpkcom-post-filter/query-posts` | A filtered, paginated result set plus a shareable filter URL |
+
+Both live in the category `jpkcom-content`, which `jpkcom-acf-jobs` and `jpkcom-acf-references` are
+meant to share. Categories are global and **first-wins** — the second plugin to register the same slug
+silently gets `null` — so registration goes through `wp_has_ability_category()` first.
+
+### Key functions
+
+```php
+jpkcom_postfilter_get_ability_definitions()                 // pure: the wp_register_ability() args
+jpkcom_postfilter_ability_allowed_taxonomies( $pt, $g, $e ) // pure: which taxonomies may be filtered
+jpkcom_postfilter_ability_validate_filters( $f, $allowed )  // true|WP_Error — the load-bearing guard
+jpkcom_postfilter_ability_clamp_per_page( $value )          // never returns -1
+jpkcom_postfilter_ability_json_object( $map )               // empty map -> stdClass, so it encodes as {}
+jpkcom_postfilter_abilities_enabled()                       // kill switch + API presence
+```
+
+`jpkcom_postfilter_get_ability_definitions()` is deliberately pure — no registry access, no side
+effects beyond `__()` and one `apply_filters()`. That is what lets `tests/test-abilities.php` assert
+the registration arrays without a WordPress install.
+
+### Five things that will bite
+
+**1. The unknown-taxonomy guard is the whole point.** `jpkcom_postfilter_build_tax_query()` drops a
+clause for a taxonomy that does not exist (`query-handler.php:57`) and the query then returns the
+**complete unfiltered corpus** with no error — measured as 19 of 19 posts. `validate_filters()` rejects
+that input and names the valid taxonomies in the message so a model corrects itself in one turn.
+Do not "simplify" it away.
+
+**2. Never pass `-1` as the page size.** `build_query_args()` sets `no_found_rows` when the limit is
+`-1` (`query-handler.php:123`), which reports `found_posts` as 0 no matter how many posts exist. The
+shortcode default *is* `-1`, so mirroring shortcode defaults here ships a permanently-wrong total.
+
+**3. Annotations decide the HTTP verb.** All three default to `null`, and the REST run controller maps
+`readonly` → GET, `destructive` + `idempotent` → DELETE, otherwise POST. An ability registered without
+annotations is POST-only. Both abilities set the full triple explicitly.
+
+**4. Empty maps must encode as `{}`.** `filters`, `unknown_terms` and each post's `terms` are declared
+`type: object`, but PHP serialises an empty array as `[]`, which a schema-validating client rejects.
+`jpkcom_postfilter_ability_json_object()` wraps the empty case only, so PHP callers keep array access
+where there is data.
+
+**5. Nothing may throw.** The declared floor is WP 6.9, where a `Throwable` escaping an ability
+callback is an **uncaught fatal** — the `Throwable → WP_Error` wrapper only landed in 7.0. Every
+external value crosses an `is_array()` / `is_scalar()` / `instanceof` check before use. The
+`instanceof \WP_Term` and `\WP_Post` guards are load-bearing, not defensive noise, and
+`tests/test-abilities.php` feeds them malformed data on purpose.
+
+Also worth knowing: `wp_register_ability()` returns `null` on **every** failure path and reports only
+through `_doing_it_wrong()`, which is silent in production — and so is
+`jpkcom_postfilter_debug_log()` without `WP_DEBUG`. The return value is checked, but do not expect a
+registration failure to announce itself on a customer site.
+
+### Exposure
+
+Three independent switches in `meta`: `show_in_rest` (core REST), `public` (WP 7.1; inert passthrough
+on 6.9/7.0), and `mcp.public` — not a core key at all, but the MCP Adapter's own gate for both
+discovery and execution. Rank Math vendors that adapter, so it is present on the usual stack.
+
+`JPKCOM_POSTFILTER_ABILITIES = false` in `wp-config.php` suppresses registration entirely. Per-ability
+control goes through `jpkcom_postfilter_ability_meta` and `jpkcom_postfilter_ability_capability`
+(default capability `read`).
+
+Listing over REST is gated only by `current_user_can( 'read' )`, so **every logged-in user can read
+both abilities' labels, descriptions and full schemas**. Execution is gated by the permission callback,
+and the query is hard-scoped to `post_status => 'publish'`, so nothing unpublished can leak.
+
+### Verifying against a real installation
+
+`wp ability` needs WP-CLI ≥ 2.13; DDEV ships 2.12, so use `ddev wp eval-file <file>.php` with the file
+placed inside the DDEV project root. Over HTTP, with an application password:
+
+```bash
+# Discovery — anonymous must be 401
+curl -sk -u "$USER:$APP_PW" https://your-site.test/wp-json/wp-abilities/v1/abilities
+
+# Both run routes are GET, because readonly => true
+BASE=https://your-site.test/wp-json/wp-abilities/v1/abilities
+curl -sk -u "$USER:$APP_PW" "$BASE/jpkcom-post-filter/list-filters/run?input%5Bpost_type%5D=post"
+curl -sk -u "$USER:$APP_PW" \
+  "$BASE/jpkcom-post-filter/query-posts/run?input%5Bpost_type%5D=post&input%5Bfilters%5D%5Bcategory%5D%5B%5D=allgemein"
+```
+
+The check that matters is that filtering **narrows**: compare the filtered `total` against the
+unfiltered one and against the term's own count. A suite can pass while the filters never reach
+`WP_Query` at all — that exact regression was caught in review and is now asserted at both call sites.
+
+Note `mcp-adapter/discover-abilities` has `show_in_rest => false`, so probing MCP visibility over REST
+returns 404. Call it in-process instead.
+
+---
+
 ## Security Checklist
 
 - All outputs: `esc_html()`, `esc_url()`, `esc_attr()`, `wp_kses_post()`

@@ -398,6 +398,28 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_list_filters' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_json_object' ) ) {
+    /**
+     * Present a keyed map as a JSON object even when it is empty
+     *
+     * PHP serialises an empty array as the JSON array `[]`, but these values are
+     * declared as objects in the output schema. A client that validates the
+     * response against that schema rejects `[]` where it expects `{}`, so an
+     * empty map is handed back as a stdClass instead. A non-empty map already
+     * encodes as an object and is returned untouched, so PHP callers keep array
+     * access in the case that carries data.
+     *
+     * @since 1.3.0
+     *
+     * @param array<string, mixed> $value Map to present.
+     * @return array<string, mixed>|\stdClass The map, or an empty object.
+     */
+    function jpkcom_postfilter_ability_json_object( array $value ): array|\stdClass {
+        return $value === [] ? new \stdClass() : $value;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_terms' ) ) {
     /**
      * Report requested term slugs that match no term
@@ -487,7 +509,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_project_post' ) ) {
             'url'     => (string) get_permalink( $post ),
             'date'    => (string) get_post_time( 'c', true, $post ),
             'excerpt' => (string) get_the_excerpt( $post ),
-            'terms'   => $terms,
+            'terms'   => jpkcom_postfilter_ability_json_object( $terms ),
         ];
     }
 }
@@ -578,13 +600,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
 
         return [
             'post_type'     => $post_type,
-            'filters'       => $filters,
+            'filters'       => jpkcom_postfilter_ability_json_object( $filters ),
             'total'         => (int) $query->found_posts,
             'page'          => $page,
             'per_page'      => $per_page,
             'total_pages'   => (int) $query->max_num_pages,
             'filter_url'    => $filter_url,
-            'unknown_terms' => jpkcom_postfilter_ability_unknown_terms( $filters ),
+            'unknown_terms' => jpkcom_postfilter_ability_json_object(
+                jpkcom_postfilter_ability_unknown_terms( $filters )
+            ),
             'posts'         => $posts,
         ];
     }

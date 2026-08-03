@@ -425,6 +425,67 @@ All styles use CSS custom properties prefixed `--jpkpf-`. Override them in your 
 
 ---
 
+## Abilities API
+
+WordPress 6.9 introduced the Abilities API: a registry of machine-readable capabilities that AI assistants, MCP clients and automation tools can discover and call. This plugin registers two of them, both **read-only**, so an assistant can answer questions about your posts without scraping the front end.
+
+| Ability | What it does |
+|---------|--------------|
+| `jpkcom-post-filter/list-filters` | Reports which taxonomies and terms a post type can be filtered by, with a post count per term |
+| `jpkcom-post-filter/query-posts` | Runs a filtered, paginated query and returns the matching posts plus a shareable filter URL |
+
+The point of the pair is that the first one removes the guesswork from the second: an assistant looks up the real taxonomy keys and term slugs, then filters with values that exist. A filter naming a taxonomy your site does not have is rejected with an error listing the valid ones — it never silently returns your whole archive instead.
+
+### What a call looks like
+
+Both are reachable at `/wp-json/wp-abilities/v1/`. Because they only read, they answer on `GET`:
+
+```
+GET /wp-json/wp-abilities/v1/abilities/jpkcom-post-filter/list-filters/run?input[post_type]=post
+
+{ "post_type": "post",
+  "groups": [ { "taxonomy": "category", "label": "Kategorie",
+                "terms": [ { "slug": "allgemein", "name": "Allgemein", "count": 2 }, … ] } ] }
+```
+
+```
+GET /wp-json/wp-abilities/v1/abilities/jpkcom-post-filter/query-posts/run
+      ?input[post_type]=post&input[filters][category][]=allgemein&input[per_page]=3
+
+{ "post_type": "post", "filters": { "category": [ "allgemein" ] },
+  "total": 2, "page": 1, "per_page": 3, "total_pages": 1,
+  "filter_url": "https://example.com/filter/allgemein/",
+  "unknown_terms": {},
+  "posts": [ { "id": 143, "title": "…", "url": "…", "date": "…", "excerpt": "…",
+               "terms": { "category": [ { "slug": "allgemein", "name": "Allgemein" } ] } } ] }
+```
+
+`query-posts` accepts `post_type`, `filters`, `page`, `per_page` (1–50) and `search`. Terms within one taxonomy are combined with OR, different taxonomies with AND — the same logic as the filter bar on your site. A term slug that matches nothing is not an error: the query runs and the slug is reported under `unknown_terms`, so the caller can tell a typo apart from an empty result.
+
+### What is exposed, and to whom
+
+- Only **published** posts. The query cannot reach drafts, private or trashed content, and cannot be talked into it — the post status is fixed in the code, not a parameter.
+- Only post types you have enabled for filtering, and only taxonomies you have configured as filter groups.
+- Running an ability requires a logged-in user with the `read` capability. Listing the available abilities is likewise restricted to logged-in users — but note that any logged-in user, including a subscriber, can then see both abilities' descriptions and parameter schemas. That is how WordPress core gates every ability, not something specific to this plugin.
+
+### Turning it off, or tightening it
+
+Add this to `wp-config.php` to register nothing at all:
+
+```php
+define( 'JPKCOM_POSTFILTER_ABILITIES', false );
+```
+
+To keep the abilities but raise the bar for running them, filter the capability:
+
+```php
+add_filter( 'jpkcom_postfilter_ability_capability', static fn(): string => 'edit_posts' );
+```
+
+To keep them out of MCP clients while leaving the REST route intact, or the other way round, use `jpkcom_postfilter_ability_meta` — see the Filters section below.
+
+---
+
 ## Developer Reference
 
 See `CLAUDE.md` in the plugin root for the full developer reference including architecture decisions, constant definitions, cache layer documentation, template action hooks, and implementation notes.
@@ -546,6 +607,7 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 * **Hardened:** a single request can filter by at most 50 term slugs per taxonomy; anything beyond that is dropped rather than rejected, so an over-eager caller still gets an answer instead of an error. Without the cap one request could ask for thousands of slugs and turn into a query of the same size.
 * **Hardened:** a search term passed to the query ability is answered from the database rather than from the query cache. Search text is free-form, so caching it would let a caller fill the object cache and APCu with one entry per phrase.
 * **Changed:** the query ability returns an empty `filter_url` for post types that have no archive page, such as `page`. It previously returned a relative address like `/filter/news/`, which no rewrite rule serves — a link that would have 404'd.
+* **Fixed:** `filters`, `unknown_terms` and each post's `terms` are sent as `{}` when they hold nothing, rather than as `[]`. The output schema declares all three as objects, so a client validating the response against that schema rejected the empty case — which is the most common case for `unknown_terms`.
 
 ### 1.2.3
 * CI: the lint and guard workflow now also runs on pushes to `main`. It only covered pull requests, so a direct push with bypass rights skipped every check
