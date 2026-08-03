@@ -194,6 +194,119 @@ is_same(
 	'On the WP 6.9 floor an uncaught TypeError inside a callback is a fatal, not a WP_Error.'
 );
 
+section( 'filter group applicability' );
+
+$group_explicit = [ 'taxonomy' => 'category', 'post_types' => [ 'post', 'projekt' ] ];
+$group_fallback = [ 'taxonomy' => 'post_tag', 'post_types' => [] ];
+
+check(
+	'an explicit post_types list is honoured',
+	jpkcom_postfilter_ability_group_applies( $group_explicit, 'projekt', [ 'post' ] )
+);
+
+check(
+	'a post type outside the explicit list does not match',
+	! jpkcom_postfilter_ability_group_applies( $group_explicit, 'page', [ 'post', 'page' ] )
+);
+
+check(
+	'an empty post_types list falls back to the enabled post types',
+	jpkcom_postfilter_ability_group_applies( $group_fallback, 'post', [ 'post' ] )
+);
+
+check(
+	'the fallback does not match a post type that is not enabled',
+	! jpkcom_postfilter_ability_group_applies( $group_fallback, 'projekt', [ 'post' ] )
+);
+
+check(
+	'a missing post_types key behaves like an empty one',
+	jpkcom_postfilter_ability_group_applies( [ 'taxonomy' => 'category' ], 'post', [ 'post' ] ),
+	'Live installations store only four of the twelve sanitiser keys, so every key '
+	. 'except taxonomy must be read defensively.'
+);
+
+section( 'allowed taxonomies' );
+
+$groups = [
+	[ 'taxonomy' => 'category', 'post_types' => [ 'post' ] ],
+	[ 'taxonomy' => 'post_tag', 'post_types' => [] ],
+	[ 'taxonomy' => '', 'post_types' => [ 'post' ] ],
+	[ 'taxonomy' => 'category', 'post_types' => [ 'post' ] ],
+];
+
+is_same(
+	'applicable taxonomies are collected without duplicates or blanks',
+	jpkcom_postfilter_ability_allowed_taxonomies( 'post', $groups, [ 'post' ] ),
+	[ 'category', 'post_tag' ]
+);
+
+is_same(
+	'a post type with no applicable group yields an empty list',
+	jpkcom_postfilter_ability_allowed_taxonomies( 'projekt', $groups, [ 'post' ] ),
+	[]
+);
+
+section( 'taxonomy validation — the silent-full-corpus guard' );
+
+$valid = jpkcom_postfilter_ability_validate_filters( [ 'category' => [ 'news' ] ], [ 'category', 'post_tag' ] );
+
+is_same( 'a known taxonomy validates', $valid, true );
+
+$rejected = jpkcom_postfilter_ability_validate_filters( [ 'tag' => [ 'seo' ] ], [ 'category', 'post_tag' ] );
+
+check(
+	'an unknown taxonomy is rejected',
+	$rejected instanceof WP_Error,
+	'build_tax_query() drops a clause for a non-existent taxonomy and the query then '
+	. 'returns the complete unfiltered corpus with no error. Measured: filters of '
+	. '["no_such_tax" => ["x"]] returned 19 of 19 posts. Without this guard a model '
+	. 'that writes "tag" instead of "post_tag" presents the whole site as a filtered answer.'
+);
+
+is_same(
+	'the error code is stable',
+	$rejected instanceof WP_Error ? $rejected->get_error_code() : '',
+	'jpkcom_postfilter_unknown_taxonomy'
+);
+
+check(
+	'the message names the offending taxonomy',
+	$rejected instanceof WP_Error && str_contains( $rejected->get_error_message(), 'tag' )
+);
+
+check(
+	'the message names the valid taxonomies so the caller can self-correct',
+	$rejected instanceof WP_Error
+		&& str_contains( $rejected->get_error_message(), 'category' )
+		&& str_contains( $rejected->get_error_message(), 'post_tag' ),
+	'A model that only learns "that was wrong" retries by guessing. One that is told '
+	. 'the valid names corrects itself in a single turn.'
+);
+
+$no_allowed = jpkcom_postfilter_ability_validate_filters( [ 'category' => [ 'news' ] ], [] );
+
+check(
+	'an empty allow-list rejects everything without a fatal',
+	$no_allowed instanceof WP_Error
+);
+
+section( 'unknown post type error' );
+
+$pt_error = jpkcom_postfilter_ability_unknown_post_type_error( 'projekt', [ 'post', 'page' ] );
+
+is_same(
+	'the error code is stable',
+	$pt_error->get_error_code(),
+	'jpkcom_postfilter_unknown_post_type'
+);
+
+check(
+	'the message lists the enabled post types',
+	str_contains( $pt_error->get_error_message(), 'post' )
+		&& str_contains( $pt_error->get_error_message(), 'page' )
+);
+
 printf( "\n  %d passed, %d failed\n", $pass, $fail );
 
 exit( $fail > 0 ? 1 : 0 );

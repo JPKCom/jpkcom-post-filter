@@ -116,3 +116,143 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_normalize_filters' 
         return $normalized;
     }
 }
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_group_applies' ) ) {
+    /**
+     * Decide whether a filter group applies to a post type
+     *
+     * Mirrors the rule used by all three render call sites: a group applies
+     * when its post_types list contains the post type, or - when that list is
+     * empty or absent - when the post type is globally enabled.
+     *
+     * @since 1.3.0
+     *
+     * @param array<string, mixed> $group              Filter group config.
+     * @param string               $post_type          Post type to test.
+     * @param string[]             $enabled_post_types Globally enabled post types.
+     * @return bool True when the group applies.
+     */
+    function jpkcom_postfilter_ability_group_applies( array $group, string $post_type, array $enabled_post_types ): bool {
+        $group_post_types = $group['post_types'] ?? [];
+
+        if ( ! is_array( $group_post_types ) || $group_post_types === [] ) {
+            return in_array( needle: $post_type, haystack: $enabled_post_types, strict: true );
+        }
+
+        return in_array( needle: $post_type, haystack: $group_post_types, strict: true );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_allowed_taxonomies' ) ) {
+    /**
+     * Collect the taxonomies that may be used to filter a post type
+     *
+     * @since 1.3.0
+     *
+     * @param string                            $post_type          Post type to test.
+     * @param array<int, array<string, mixed>>  $groups             Enabled filter groups.
+     * @param string[]                          $enabled_post_types Globally enabled post types.
+     * @return string[] Unique taxonomy keys.
+     */
+    function jpkcom_postfilter_ability_allowed_taxonomies( string $post_type, array $groups, array $enabled_post_types ): array {
+        $allowed = [];
+
+        foreach ( $groups as $group ) {
+            if ( ! is_array( $group ) ) {
+                continue;
+            }
+
+            $taxonomy = (string) ( $group['taxonomy'] ?? '' );
+
+            if ( $taxonomy === '' ) {
+                continue;
+            }
+
+            if ( ! jpkcom_postfilter_ability_group_applies( $group, $post_type, $enabled_post_types ) ) {
+                continue;
+            }
+
+            if ( ! in_array( needle: $taxonomy, haystack: $allowed, strict: true ) ) {
+                $allowed[] = $taxonomy;
+            }
+        }
+
+        return $allowed;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_validate_filters' ) ) {
+    /**
+     * Reject filters that name a taxonomy which is not filterable
+     *
+     * The query pipeline drops an unknown taxonomy clause silently and then
+     * returns the complete unfiltered result set, so this check is the only
+     * thing standing between a mistyped taxonomy and a wrong answer presented
+     * as a filtered one. The error message names the valid taxonomies so the
+     * caller can correct itself without another round trip.
+     *
+     * @since 1.3.0
+     *
+     * @param array<string, string[]> $filters            Normalised filters map.
+     * @param string[]                $allowed_taxonomies Taxonomies that may be filtered.
+     * @return true|\WP_Error True when valid, WP_Error otherwise.
+     */
+    function jpkcom_postfilter_ability_validate_filters( array $filters, array $allowed_taxonomies ): true|\WP_Error {
+        $unknown = [];
+
+        foreach ( array_keys( $filters ) as $taxonomy ) {
+            if ( ! in_array( needle: (string) $taxonomy, haystack: $allowed_taxonomies, strict: true ) ) {
+                $unknown[] = (string) $taxonomy;
+            }
+        }
+
+        if ( $unknown === [] ) {
+            return true;
+        }
+
+        $valid = $allowed_taxonomies === []
+            ? __( 'none for this post type', 'jpkcom-post-filter' )
+            : implode( ', ', $allowed_taxonomies );
+
+        return new \WP_Error(
+            'jpkcom_postfilter_unknown_taxonomy',
+            sprintf(
+                /* translators: 1: comma-separated rejected taxonomy keys, 2: comma-separated valid taxonomy keys. */
+                __( 'Unknown filter taxonomy: %1$s. Valid taxonomies for this post type: %2$s.', 'jpkcom-post-filter' ),
+                implode( ', ', $unknown ),
+                $valid
+            )
+        );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_post_type_error' ) ) {
+    /**
+     * Build the error returned for a post type that is not enabled for filtering
+     *
+     * @since 1.3.0
+     *
+     * @param string   $post_type          The rejected post type.
+     * @param string[] $enabled_post_types Post types that are enabled.
+     * @return \WP_Error The error to return from the callback.
+     */
+    function jpkcom_postfilter_ability_unknown_post_type_error( string $post_type, array $enabled_post_types ): \WP_Error {
+        $valid = $enabled_post_types === []
+            ? __( 'none', 'jpkcom-post-filter' )
+            : implode( ', ', $enabled_post_types );
+
+        return new \WP_Error(
+            'jpkcom_postfilter_unknown_post_type',
+            sprintf(
+                /* translators: 1: rejected post type, 2: comma-separated enabled post types. */
+                __( 'Post type "%1$s" is not enabled for filtering. Enabled post types: %2$s.', 'jpkcom-post-filter' ),
+                $post_type,
+                $valid
+            )
+        );
+    }
+}
