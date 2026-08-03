@@ -370,17 +370,23 @@ $GLOBALS['_stub_settings']['general']['enabled_post_types'] = [ 'post' ];
 $GLOBALS['_stub_groups']                                    = [
 	[ 'taxonomy' => 'category', 'label' => 'Kategorie', 'post_types' => [ 'post' ] ],
 	[ 'taxonomy' => 'post_tag', 'label' => 'Schlagwort', 'post_types' => [] ],
+	[ 'taxonomy' => 'public_only', 'label' => 'Public Only', 'post_types' => [ 'post' ] ],
+	[ 'taxonomy' => 'rest_only', 'label' => 'REST Only', 'post_types' => [ 'post' ] ],
 	[ 'taxonomy' => 'secret_tax', 'label' => 'Intern', 'post_types' => [ 'post' ] ],
 ];
 $GLOBALS['_stub_terms'] = [
-	'category'   => [ [ 'news', 'News', 4 ] ],
-	'post_tag'   => [ [ 'seo', 'SEO', 6 ] ],
-	'secret_tax' => [ [ 'hidden', 'Hidden', 1 ] ],
+	'category'    => [ [ 'news', 'News', 4 ] ],
+	'post_tag'    => [ [ 'seo', 'SEO', 6 ] ],
+	'public_only' => [ [ 'pub', 'Public Term', 2 ] ],
+	'rest_only'   => [ [ 'rest', 'REST Term', 3 ] ],
+	'secret_tax'  => [ [ 'hidden', 'Hidden', 1 ] ],
 ];
 $GLOBALS['_stub_taxonomies'] = [
-	'category'   => [ 'public' => true, 'show_in_rest' => true ],
-	'post_tag'   => [ 'public' => true, 'show_in_rest' => true ],
-	'secret_tax' => [ 'public' => false, 'show_in_rest' => false ],
+	'category'    => [ 'public' => true, 'show_in_rest' => true ],
+	'post_tag'    => [ 'public' => true, 'show_in_rest' => true ],
+	'public_only' => [ 'public' => true, 'show_in_rest' => false ],
+	'rest_only'   => [ 'public' => false, 'show_in_rest' => true ],
+	'secret_tax'  => [ 'public' => false, 'show_in_rest' => false ],
 ];
 
 $listed = jpkcom_postfilter_ability_list_filters( [ 'post_type' => 'post' ] );
@@ -394,9 +400,10 @@ is_same(
 is_same(
 	'a fully private taxonomy is not disclosed',
 	is_array( $listed ) ? count( $listed['groups'] ) : 0,
-	2,
+	4,
 	'A taxonomy that is neither public nor REST-exposed must not be handed to a '
-	. 'subscriber-level caller, and ability listings are readable by any logged-in user.'
+	. 'subscriber-level caller, and ability listings are readable by any logged-in user. '
+	. 'Mixed-state taxonomies (public OR REST-exposed) must be disclosed: 4 groups.'
 );
 
 is_same(
@@ -409,6 +416,20 @@ is_same(
 	'terms carry slug, name and count',
 	is_array( $listed ) ? $listed['groups'][0]['terms'][0] : null,
 	[ 'slug' => 'news', 'name' => 'News', 'count' => 4 ]
+);
+
+check(
+	'a taxonomy with public=true, show_in_rest=false is disclosed (OR logic)',
+	is_array( $listed ) && count( $listed['groups'] ) >= 3
+		&& ( $listed['groups'][2]['taxonomy'] === 'public_only' || in_array( 'public_only', array_column( $listed['groups'], 'taxonomy' ), true ) ),
+	'The disclosure check must use OR not AND: public is sufficient.'
+);
+
+check(
+	'a taxonomy with public=false, show_in_rest=true is disclosed (OR logic)',
+	is_array( $listed ) && count( $listed['groups'] ) >= 4
+		&& in_array( 'rest_only', array_column( $listed['groups'], 'taxonomy' ), true ),
+	'The disclosure check must use OR not AND: show_in_rest is sufficient.'
 );
 
 is_same(
