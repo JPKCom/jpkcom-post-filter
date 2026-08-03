@@ -732,7 +732,7 @@ caller can correct itself in one turn."
 - Produces:
   - `jpkcom_postfilter_ability_resolve_post_type( mixed $value ): string`
   - `jpkcom_postfilter_ability_enabled_post_types(): array`
-  - `jpkcom_postfilter_ability_taxonomy_is_disclosable( string $taxonomy ): bool`
+  - ~~`jpkcom_postfilter_ability_taxonomy_is_disclosable( string $taxonomy ): bool`~~ — **removed again in the final fix wave.** The rule applied to `list-filters` only while `query-posts` disclosed the same taxonomy anyway, and the site's own filter bar renders every enabled group to anonymous visitors, so it was stricter than the public HTML while protecting nothing. Everything below that mentions it is superseded; see the spec's §4 implementation notes.
   - `jpkcom_postfilter_ability_list_filters( mixed $input ): array|\WP_Error`
 
 - [ ] **Step 1: Add the plugin-function stubs to the test file**
@@ -2220,10 +2220,39 @@ jpk_check(
     ! is_wp_error( $happy ) && count( $happy['posts'] ) <= 3
 );
 jpk_check(
-    'a filter URL is returned',
+    'an unfiltered request returns the plain archive URL',
     ! is_wp_error( $happy ) && str_starts_with( (string) $happy['filter_url'], 'http' ),
     is_wp_error( $happy ) ? '' : (string) $happy['filter_url']
 );
+
+// The filtered URL is the part worth checking. An `http` prefix alone passes on
+// the bare site root, which is exactly the answer a broken URL builder gives.
+$endpoint  = (string) jpkcom_postfilter_settings_get( 'general', 'url_endpoint', JPKCOM_POSTFILTER_URL_ENDPOINT );
+$real_tax  = ! is_wp_error( $filters ) && $filters['groups'] !== [] ? $filters['groups'][0]['taxonomy'] : 'category';
+$real_slug = ! is_wp_error( $filters ) && $filters['groups'] !== [] && $filters['groups'][0]['terms'] !== []
+    ? $filters['groups'][0]['terms'][0]['slug']
+    : '';
+
+if ( $real_slug === '' ) {
+    jpk_check( 'the site has a term to filter by', false, 'no terms configured - the URL check cannot run' );
+} else {
+    $filtered = $query->execute( [ 'post_type' => 'post', 'filters' => [ $real_tax => [ $real_slug ] ] ] );
+    $url      = is_wp_error( $filtered ) ? '' : (string) $filtered['filter_url'];
+
+    jpk_check(
+        'a filtered request returns an absolute URL carrying the endpoint and the term slug',
+        str_starts_with( $url, 'http' )
+            && str_contains( $url, '/' . $endpoint . '/' )
+            && str_contains( $url, $real_slug ),
+        $url === '' ? 'no URL returned' : $url
+    );
+
+    jpk_check(
+        'that URL answers 200 and shows the filtered list',
+        ! is_wp_error( $filtered ) && wp_remote_retrieve_response_code( wp_remote_get( $url ) ) === 200,
+        $url
+    );
+}
 
 $bad_tax = $query->execute( [ 'post_type' => 'post', 'filters' => [ 'no_such_tax' => [ 'x' ] ] ] );
 jpk_check(
@@ -2232,12 +2261,29 @@ jpk_check(
     is_wp_error( $bad_tax ) ? $bad_tax->get_error_message() : 'returned ' . count( $bad_tax['posts'] ) . ' posts'
 );
 
-$real_tax = ! is_wp_error( $filters ) && $filters['groups'] !== [] ? $filters['groups'][0]['taxonomy'] : 'category';
 $bad_term = $query->execute( [ 'post_type' => 'post', 'filters' => [ $real_tax => [ 'definitely-not-a-real-slug' ] ] ] );
 jpk_check(
     'an unknown term slug is reported rather than rejected',
     ! is_wp_error( $bad_term ) && $bad_term['total'] === 0 && $bad_term['unknown_terms'] !== []
 );
+
+// A post type with no archive has no front-end URL that could show a filter, and
+// no rewrite rule either. Only checkable where such a post type is enabled.
+$enabled = (array) jpkcom_postfilter_settings_get( 'general', 'enabled_post_types', [ 'post' ] );
+
+foreach ( $enabled as $enabled_post_type ) {
+    if ( jpkcom_postfilter_get_archive_base_url( (string) $enabled_post_type ) !== '' ) {
+        continue;
+    }
+
+    $archiveless = $query->execute( [ 'post_type' => (string) $enabled_post_type, 'per_page' => 1 ] );
+
+    jpk_check(
+        "an archive-less post type ({$enabled_post_type}) returns no filter URL",
+        ! is_wp_error( $archiveless ) && $archiveless['filter_url'] === '',
+        is_wp_error( $archiveless ) ? $archiveless->get_error_message() : 'got "' . $archiveless['filter_url'] . '"'
+    );
+}
 
 $rest     = new WP_REST_Request( 'GET', '/wp-abilities/v1/abilities' );
 $response = rest_get_server()->dispatch( $rest );

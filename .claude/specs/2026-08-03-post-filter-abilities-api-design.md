@@ -177,9 +177,12 @@ can assert the shape of these arrays but could not assert anything about actual 
   (`taxonomy`, `label`, `enabled`, `post_types`); `slug` and `order` are `null`, which is why
   `jpkcom_postfilter_get_filter_group_by_slug()` returns `null` there. Use `$g['taxonomy']` as the sole
   stable identifier and read every other key with `??`.
-- Skip a group when its taxonomy object has **both** `public === false` and `show_in_rest === false`, so
-  a fully private taxonomy is not disclosed to a subscriber-level caller. A taxonomy that is either
-  public or REST-exposed is already visible to such a caller by other means and is included.
+- ~~Skip a group when its taxonomy object has **both** `public === false` and `show_in_rest === false`.~~
+  **Dropped before release.** The rule was inconsistent — it applied to `list-filters` only, while
+  `query-posts` named the same taxonomy back in its rejection message and emitted its terms for every
+  returned post — and it protected nothing: `jpkcom_postfilter_get_terms_for_group()` checks only
+  `taxonomy_exists()`, so the plugin's own filter bar already renders every enabled group's terms to
+  **anonymous** visitors. Every applicable group with at least one term is reported.
 - The `count` values are **site-wide totals from `WP_Term->count`**, not narrowed by other active
   filters. The output schema description says so explicitly, so a model does not read them as
   intersection sizes.
