@@ -1369,10 +1369,9 @@ foreach ( $definitions as $name => $args ) {
 		. 'passing input to such an ability is a hard ability_missing_input_schema error.'
 	);
 
-	is_same(
+	check(
 		"'{$name}' declares a top-level input default, so a bare call is not rejected",
-		$args['input_schema']['default'] ?? null,
-		[],
+		array_key_exists( 'default', $args['input_schema'] ),
 		'WP_Ability::normalize_input() substitutes the top-level default when the input is '
 		. 'exactly null, and nothing else does. Without it, execute( null ) never reaches '
 		. 'the callback — measured on WordPress 7.0.2, both abilities answered WP_Error '
@@ -1381,6 +1380,17 @@ foreach ( $definitions as $name => $args ) {
 		. 'client does. It must be a sibling of type and properties: core never applies a '
 		. 'per-property default, which is why the callbacks resolve post_type, page and '
 		. 'per_page themselves.'
+	);
+
+	is_same(
+		"'{$name}' encodes that default as a JSON object, not as an array",
+		str_contains( wp_json_encode( $args['input_schema'] ), '"default":{}' ),
+		true,
+		'The schema declares type object, and an empty PHP array encodes as []. Core\'s '
+		. 'REST list controller rewrites that one case before it answers, which is why the '
+		. 'REST route looked correct — but the MCP Adapter reads $ability->get_input_schema() '
+		. 'and passes the raw value to clients, so a schema-validating MCP client saw an '
+		. 'object whose default was an array.'
 	);
 
 	check(

@@ -874,7 +874,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
                 'category'    => JPKCOM_POSTFILTER_ABILITY_CATEGORY,
 
                 'input_schema' => [
-                    'type' => 'object',
+                    'type'       => 'object',
                     // Top level, deliberately. WP_Ability::normalize_input()
                     // substitutes this value when the input is exactly null, and
                     // without it a caller that passes no input at all is rejected
@@ -882,7 +882,18 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
                     // parameter is optional, calling it bare is the natural move.
                     // Per-property defaults are never applied by core, which is
                     // why the callback resolves post_type itself.
-                    'default'    => [],
+                    //
+                    // An object, not []: the declared type here is `object`, and
+                    // an empty PHP array encodes as the JSON array `[]`. Core's
+                    // REST list controller rewrites that special case for its own
+                    // response, but the MCP Adapter reads get_input_schema()
+                    // directly and hands the raw value to clients, so a
+                    // schema-validating client would see an array default on an
+                    // object. The callbacks receive this value verbatim; a
+                    // stdClass is not an array, so they fall through to [] and
+                    // resolve their own per-property defaults, exactly as they do
+                    // for any other input they cannot use.
+                    'default'    => jpkcom_postfilter_ability_json_object( [] ),
                     'properties' => [
                         'post_type' => [
                             'type'        => 'string',
@@ -935,11 +946,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
                 'category'    => JPKCOM_POSTFILTER_ABILITY_CATEGORY,
 
                 'input_schema' => [
-                    'type' => 'object',
+                    'type'       => 'object',
                     // See the note on the list-filters input schema: this rescues
                     // execute( null ), which core would otherwise reject before
-                    // the callback ever runs.
-                    'default'    => [],
+                    // the callback ever runs, and it is an object rather than []
+                    // because MCP clients read this value unmodified.
+                    'default'    => jpkcom_postfilter_ability_json_object( [] ),
                     'properties' => [
                         'post_type' => [
                             'type'        => 'string',
