@@ -256,3 +256,158 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_post_type_e
         );
     }
 }
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_resolve_post_type' ) ) {
+    /**
+     * Resolve the post_type input, applying the default the schema advertises
+     *
+     * Core applies only a top-level schema default and only when the input is
+     * exactly null, so per-property defaults have to be applied here.
+     *
+     * @since 1.3.0
+     *
+     * @param mixed $value Raw post_type input.
+     * @return string Sanitised post type, defaulting to 'post'.
+     */
+    function jpkcom_postfilter_ability_resolve_post_type( mixed $value ): string {
+        if ( ! is_string( $value ) ) {
+            return 'post';
+        }
+
+        $post_type = sanitize_key( $value );
+
+        return $post_type === '' ? 'post' : $post_type;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_enabled_post_types' ) ) {
+    /**
+     * Read the post types that are enabled for filtering
+     *
+     * @since 1.3.0
+     *
+     * @return string[] Enabled post type slugs.
+     */
+    function jpkcom_postfilter_ability_enabled_post_types(): array {
+        $enabled = jpkcom_postfilter_settings_get( 'general', 'enabled_post_types', [ 'post' ] );
+
+        if ( ! is_array( $enabled ) ) {
+            return [ 'post' ];
+        }
+
+        $clean = [];
+
+        foreach ( $enabled as $post_type ) {
+            if ( is_string( $post_type ) && $post_type !== '' ) {
+                $clean[] = $post_type;
+            }
+        }
+
+        return $clean;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_taxonomy_is_disclosable' ) ) {
+    /**
+     * Decide whether a taxonomy may be named in an ability response
+     *
+     * Ability listings are readable by any logged-in user, so a taxonomy that
+     * is neither public nor REST-exposed is withheld.
+     *
+     * @since 1.3.0
+     *
+     * @param string $taxonomy Taxonomy key.
+     * @return bool True when the taxonomy may be disclosed.
+     */
+    function jpkcom_postfilter_ability_taxonomy_is_disclosable( string $taxonomy ): bool {
+        if ( ! taxonomy_exists( $taxonomy ) ) {
+            return false;
+        }
+
+        $object = get_taxonomy( $taxonomy );
+
+        if ( $object === false ) {
+            return false;
+        }
+
+        return (bool) $object->public || (bool) $object->show_in_rest;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_list_filters' ) ) {
+    /**
+     * Execute callback for jpkcom-post-filter/list-filters
+     *
+     * @since 1.3.0
+     *
+     * @param mixed $input Validated ability input.
+     * @return array<string, mixed>|\WP_Error Filter groups, or an error.
+     */
+    function jpkcom_postfilter_ability_list_filters( mixed $input ): array|\WP_Error {
+        $input     = is_array( $input ) ? $input : [];
+        $post_type = jpkcom_postfilter_ability_resolve_post_type( $input['post_type'] ?? null );
+
+        $enabled_post_types = jpkcom_postfilter_ability_enabled_post_types();
+
+        if ( ! in_array( needle: $post_type, haystack: $enabled_post_types, strict: true ) ) {
+            return jpkcom_postfilter_ability_unknown_post_type_error( $post_type, $enabled_post_types );
+        }
+
+        $groups = [];
+
+        foreach ( jpkcom_postfilter_get_filter_groups_enabled() as $group ) {
+            if ( ! is_array( $group ) ) {
+                continue;
+            }
+
+            $taxonomy = (string) ( $group['taxonomy'] ?? '' );
+
+            if ( $taxonomy === '' ) {
+                continue;
+            }
+
+            if ( ! jpkcom_postfilter_ability_group_applies( $group, $post_type, $enabled_post_types ) ) {
+                continue;
+            }
+
+            if ( ! jpkcom_postfilter_ability_taxonomy_is_disclosable( $taxonomy ) ) {
+                continue;
+            }
+
+            $terms = [];
+
+            foreach ( jpkcom_postfilter_get_terms_for_group( $group ) as $entry ) {
+                $term = is_array( $entry ) ? ( $entry['term'] ?? null ) : null;
+
+                if ( ! $term instanceof \WP_Term ) {
+                    continue;
+                }
+
+                $terms[] = [
+                    'slug'  => (string) $term->slug,
+                    'name'  => (string) $term->name,
+                    'count' => (int) $term->count,
+                ];
+            }
+
+            if ( $terms === [] ) {
+                continue;
+            }
+
+            $groups[] = [
+                'taxonomy' => $taxonomy,
+                'label'    => (string) ( $group['label'] ?? $taxonomy ),
+                'terms'    => $terms,
+            ];
+        }
+
+        return [
+            'post_type' => $post_type,
+            'groups'    => $groups,
+        ];
+    }
+}

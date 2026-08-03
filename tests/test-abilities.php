@@ -64,6 +64,63 @@ class WP_Error {
 	}
 }
 
+class WP_Term {
+	public string $slug  = '';
+	public string $name  = '';
+	public int    $count = 0;
+}
+
+class WP_Taxonomy {
+	public bool $public       = true;
+	public bool $show_in_rest = true;
+}
+
+$GLOBALS['_stub_settings']   = [ 'general' => [ 'enabled_post_types' => [ 'post' ] ] ];
+$GLOBALS['_stub_groups']     = [];
+$GLOBALS['_stub_terms']      = [];   // taxonomy => [ [slug, name, count], ... ]
+$GLOBALS['_stub_taxonomies'] = [];   // taxonomy => [ 'public' => bool, 'show_in_rest' => bool ]
+
+function jpkcom_postfilter_settings_get( string $group, string $key, mixed $default = null ): mixed {
+	return $GLOBALS['_stub_settings'][ $group ][ $key ] ?? $default;
+}
+
+function jpkcom_postfilter_get_filter_groups_enabled(): array {
+	return $GLOBALS['_stub_groups'];
+}
+
+function jpkcom_postfilter_get_terms_for_group( array $group, array $active_filters = [] ): array {
+	$taxonomy = (string) ( $group['taxonomy'] ?? '' );
+	$out      = [];
+
+	foreach ( $GLOBALS['_stub_terms'][ $taxonomy ] ?? [] as $row ) {
+		$term        = new WP_Term();
+		$term->slug  = $row[0];
+		$term->name  = $row[1];
+		$term->count = $row[2];
+		$out[]       = [ 'term' => $term, 'is_active' => false ];
+	}
+
+	return $out;
+}
+
+function taxonomy_exists( string $taxonomy ): bool {
+	return isset( $GLOBALS['_stub_taxonomies'][ $taxonomy ] );
+}
+
+function get_taxonomy( string $taxonomy ): WP_Taxonomy|false {
+	if ( ! isset( $GLOBALS['_stub_taxonomies'][ $taxonomy ] ) ) {
+		return false;
+	}
+
+	$object               = new WP_Taxonomy();
+	$object->public       = $GLOBALS['_stub_taxonomies'][ $taxonomy ]['public'];
+	$object->show_in_rest = $GLOBALS['_stub_taxonomies'][ $taxonomy ]['show_in_rest'];
+
+	return $object;
+}
+
+function jpkcom_postfilter_debug_log( string $message, mixed $context = null ): void {}
+
 require_once dirname( __DIR__ ) . '/includes/abilities.php';
 
 // --- Harness ---------------------------------------------------------------
@@ -305,6 +362,76 @@ check(
 	'the message lists the enabled post types',
 	str_contains( $pt_error->get_error_message(), 'post' )
 		&& str_contains( $pt_error->get_error_message(), 'page' )
+);
+
+section( 'list-filters callback' );
+
+$GLOBALS['_stub_settings']['general']['enabled_post_types'] = [ 'post' ];
+$GLOBALS['_stub_groups']                                    = [
+	[ 'taxonomy' => 'category', 'label' => 'Kategorie', 'post_types' => [ 'post' ] ],
+	[ 'taxonomy' => 'post_tag', 'label' => 'Schlagwort', 'post_types' => [] ],
+	[ 'taxonomy' => 'secret_tax', 'label' => 'Intern', 'post_types' => [ 'post' ] ],
+];
+$GLOBALS['_stub_terms'] = [
+	'category'   => [ [ 'news', 'News', 4 ] ],
+	'post_tag'   => [ [ 'seo', 'SEO', 6 ] ],
+	'secret_tax' => [ [ 'hidden', 'Hidden', 1 ] ],
+];
+$GLOBALS['_stub_taxonomies'] = [
+	'category'   => [ 'public' => true, 'show_in_rest' => true ],
+	'post_tag'   => [ 'public' => true, 'show_in_rest' => true ],
+	'secret_tax' => [ 'public' => false, 'show_in_rest' => false ],
+];
+
+$listed = jpkcom_postfilter_ability_list_filters( [ 'post_type' => 'post' ] );
+
+is_same(
+	'the post type is echoed back',
+	is_array( $listed ) ? $listed['post_type'] : null,
+	'post'
+);
+
+is_same(
+	'a fully private taxonomy is not disclosed',
+	is_array( $listed ) ? count( $listed['groups'] ) : 0,
+	2,
+	'A taxonomy that is neither public nor REST-exposed must not be handed to a '
+	. 'subscriber-level caller, and ability listings are readable by any logged-in user.'
+);
+
+is_same(
+	'the group carries the taxonomy key that query-posts accepts',
+	is_array( $listed ) ? $listed['groups'][0]['taxonomy'] : null,
+	'category'
+);
+
+is_same(
+	'terms carry slug, name and count',
+	is_array( $listed ) ? $listed['groups'][0]['terms'][0] : null,
+	[ 'slug' => 'news', 'name' => 'News', 'count' => 4 ]
+);
+
+is_same(
+	'a missing post_type defaults to post',
+	is_array( jpkcom_postfilter_ability_list_filters( [] ) )
+		? jpkcom_postfilter_ability_list_filters( [] )['post_type']
+		: null,
+	'post',
+	'Core applies only a top-level schema default and only for null input; a nested '
+	. 'properties.post_type.default is never filled in, so the callback must do it.'
+);
+
+$rejected_pt = jpkcom_postfilter_ability_list_filters( [ 'post_type' => 'projekt' ] );
+
+check(
+	'a post type that is not enabled is rejected',
+	$rejected_pt instanceof WP_Error
+);
+
+check(
+	'non-array input does not fatal',
+	is_array( jpkcom_postfilter_ability_list_filters( 'post' ) )
+		|| jpkcom_postfilter_ability_list_filters( 'post' ) instanceof WP_Error
 );
 
 printf( "\n  %d passed, %d failed\n", $pass, $fail );
