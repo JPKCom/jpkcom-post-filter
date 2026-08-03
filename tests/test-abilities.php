@@ -1095,6 +1095,19 @@ is_same(
 	. 'the slugs within one.'
 );
 
+is_same(
+	'a filter set spanning exactly max_filter_combos taxonomies is expressible',
+	jpkcom_postfilter_ability_filters_are_url_expressible(
+		[ 'category' => [ 'a' ], 'post_tag' => [ 'a' ], 'third' => [ 'a' ] ]
+	),
+	true,
+	'The mirror of the per-group boundary above, and the case an off-by-one at the combo '
+	. 'cap breaks: parse_filter_path() only slices when the count is *greater* than the '
+	. 'cap, so a set exactly at it round-trips and must keep its link. Getting this wrong '
+	. 'withholds a working URL from every caller filtering by three taxonomies on a site '
+	. 'configured for three.'
+);
+
 $GLOBALS['_stub_settings']['general']['max_filters_per_group'] = 0;
 $GLOBALS['_stub_settings']['general']['max_filter_combos']     = 0;
 
@@ -1310,6 +1323,28 @@ is_same(
 	$GLOBALS['_stub_run_query_calls'],
 	[ 1 ],
 	'The recovery is confined to the out-of-range path, so the normal path costs nothing.'
+);
+
+$GLOBALS['_stub_run_query_calls'] = [];
+
+$in_range_page_two = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'page' => 2, 'per_page' => 10 ]
+);
+
+is_same(
+	'an in-range page 2 with results also runs exactly one query',
+	$GLOBALS['_stub_run_query_calls'],
+	[ 2 ],
+	'The guard is "$query->posts === [] && $page > 1". Weakened to "$page > 1" alone it '
+	. 'would still pass every other check in this section while doubling the query count '
+	. 'on every paginated call — page 1 and the empty out-of-range page are both blind to '
+	. 'it. This is the case that sees it.'
+);
+
+is_same(
+	'and takes its totals from that page, not from a recovery run',
+	is_array( $in_range_page_two ) ? [ $in_range_page_two['total'], $in_range_page_two['total_pages'] ] : null,
+	[ 19, 2 ]
 );
 
 $GLOBALS['_stub_query_by_page']   = [ 1 => $past_end ];
