@@ -676,16 +676,45 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
             $total_pages = (int) $first_page->max_num_pages;
         }
 
-        // jpkcom_postfilter_get_archive_base_url() returns '' for a post type
-        // without an archive - `page` is public, selectable in the settings and
-        // has none. Building a link from '' would yield the relative path
-        // "/filter/news/", and jpkcom_postfilter_archive_base_regex() returns
-        // null for exactly those post types, so no rewrite rule stands behind
-        // it either. The second case is a filter set the site's own parser would
-        // truncate, where the link would show a different result set than the one
-        // reported here. An empty string is a better answer than either.
+        // The link is only handed out when following it lands on exactly the
+        // result set reported here. Four things break that, and all four are
+        // gated in this one place:
+        //
+        // 1. No archive page. jpkcom_postfilter_get_archive_base_url() returns
+        //    '' for a post type without one - `page` is public, selectable in
+        //    the settings and has none. Building a link from '' would yield the
+        //    relative path "/filter/news/", and
+        //    jpkcom_postfilter_archive_base_regex() returns null for exactly
+        //    those post types, so no rewrite rule stands behind it either.
+        // 2. A filter set this site's own parser would truncate - measured with
+        //    four category slugs against max_filters_per_group = 3, where the
+        //    link resolved to the first three.
+        // 3. A page segment that does not mean the same thing on both sides.
+        //    get_filter_url() appends `page/N/`, but the front end reads N in
+        //    units of the *site's* posts_per_page, not the ability's per_page.
+        //    Measured with per_page 3, page 2 against a site posts_per_page of
+        //    10: the ability reported ids 157, 156, 155 and linked to a page
+        //    showing 150 down to 1 - both valid, and disjoint. Page 1 carries no
+        //    page segment at all, so it is safe whatever per_page says.
+        // 4. A page past the last one. That request is answered here with the
+        //    real totals and an empty post list, but the front end answers the
+        //    matching URL with a 404 - measured on .../filter/allgemein/page/3/
+        //    against total_pages 1.
+        //
+        // The full result set is reported in every case; only the link is
+        // withheld. An empty string is a better answer than a link to something
+        // else, or to nothing at all.
         $archive_base_url = jpkcom_postfilter_get_archive_base_url( $post_type );
-        $filter_url       = ( $archive_base_url === '' || ! jpkcom_postfilter_ability_filters_are_url_expressible( $filters ) )
+
+        $page_segment_matches = $page === 1 || $per_page === (int) get_option( 'posts_per_page' );
+        $page_exists          = $total_pages < 1 || $page <= $total_pages;
+
+        $filter_url = (
+            $archive_base_url === ''
+            || ! jpkcom_postfilter_ability_filters_are_url_expressible( $filters )
+            || ! $page_segment_matches
+            || ! $page_exists
+        )
             ? ''
             : jpkcom_postfilter_get_filter_url( $archive_base_url, $filters, $page );
 
@@ -974,7 +1003,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
                         ],
                         'filter_url' => [
                             'type'        => 'string',
-                            'description' => __( 'Shareable front-end URL showing this filter combination. Empty for two reasons: the post type has no archive page, so there is no front-end URL that could show it; or this site caps the number of terms per taxonomy or the number of taxonomies below what was requested, so the URL would resolve to a narrower result set than the one reported here.', 'jpkcom-post-filter' ),
+                            'description' => __( 'Shareable front-end URL showing this filter combination, or an empty string when no URL would show exactly these results. It is empty whenever any of the following applies: the post type has no archive page, so there is no front-end URL that could show it; this site caps the number of terms per taxonomy or the number of taxonomies below what was requested, so the URL would resolve to a narrower result set; a page other than the first was requested with a per_page that differs from the site\'s own posts per page setting, so the page number in the URL would select a different slice; or the requested page lies past the last one, where the URL would answer 404. The results themselves are complete in every one of those cases - only the link is withheld.', 'jpkcom-post-filter' ),
                         ],
                         'unknown_terms' => [
                             'type'        => 'object',

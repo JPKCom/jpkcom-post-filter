@@ -73,6 +73,20 @@ function wp_json_encode( mixed $value ): string {
 	return (string) json_encode( $value );
 }
 
+/**
+ * Site options this fixture answers for.
+ *
+ * Only posts_per_page is read, and only by the filter_url gate: the page
+ * segment of a filter URL is interpreted by the front end in units of this
+ * value, not of the ability's per_page. 10 is the WordPress default and what
+ * the verification install uses.
+ */
+$GLOBALS['_stub_options'] = [ 'posts_per_page' => 10 ];
+
+function get_option( string $option, mixed $default_value = false ): mixed {
+	return $GLOBALS['_stub_options'][ $option ] ?? $default_value;
+}
+
 class WP_Error {
 	public string $code    = '';
 	public string $message = '';
@@ -746,6 +760,14 @@ $query->max_num_pages = 2;
 $GLOBALS['_stub_query']      = $query;
 $GLOBALS['_stub_post_terms'] = [ '42:category' => [ [ 'news', 'News' ] ] ];
 
+// This block is about the shape of the answer, not about the filter_url gate,
+// and it asks for page 2 with a per_page of 5 — a positive value distinct from
+// the clamp default, which is what makes the limit assertion below meaningful.
+// The gate only emits a link for page 2 when per_page matches the site's own
+// posts_per_page, so the fixture site is one that shows 5 posts per page here.
+// The gate itself is exercised further down, against a site that shows 10.
+$GLOBALS['_stub_options']['posts_per_page'] = 5;
+
 $result = jpkcom_postfilter_ability_query_posts(
 	[
 		'post_type' => 'post',
@@ -817,6 +839,8 @@ is_same(
 	'Taxonomy filter combinations are bounded by the configured groups, so their cache '
 	. 'entries are bounded too. Only free-text search is unbounded.'
 );
+
+$GLOBALS['_stub_options']['posts_per_page'] = 10;
 
 $searched = jpkcom_postfilter_ability_query_posts(
 	[ 'post_type' => 'post', 'search' => 'wordpress security' ]
@@ -1130,6 +1154,83 @@ is_same(
 	. 'the filters as well would trade a wrong link for a wrong answer.'
 );
 
+section( 'the page segment of a filter URL must mean the same on both sides' );
+
+// The site shows 10 posts per page; the ability was asked for 3.
+$GLOBALS['_stub_options']['posts_per_page'] = 10;
+$GLOBALS['_stub_filter_url_calls']          = 0;
+
+$foreign_page_size = jpkcom_postfilter_ability_query_posts(
+	[
+		'post_type' => 'post',
+		'filters'   => [ 'category' => [ 'news' ] ],
+		'page'      => 2,
+		'per_page'  => 3,
+	]
+);
+
+is_same(
+	'page 2 with a per_page the site does not use is returned without a filter URL',
+	is_array( $foreign_page_size ) ? $foreign_page_size['filter_url'] : null,
+	'',
+	'get_filter_url() appends page/2/, and the front end reads that 2 in units of the '
+	. "site's posts_per_page, not the ability's per_page. Measured on the live install "
+	. 'with per_page 3 against a site posts_per_page of 10: the ability reported ids '
+	. '157, 156, 155 and handed out https://posts.ddev.site/page/2/, which answers 200 '
+	. 'with 150 down to 1. Both are valid pages; the sets are disjoint.'
+);
+
+is_same(
+	'no URL is built at all in that case',
+	$GLOBALS['_stub_filter_url_calls'],
+	0
+);
+
+is_same(
+	'the requested page and per_page are still reported',
+	is_array( $foreign_page_size )
+		? [ $foreign_page_size['page'], $foreign_page_size['per_page'] ]
+		: null,
+	[ 2, 3 ],
+	'The result set itself is correct and complete — only the link is withheld.'
+);
+
+$first_page = jpkcom_postfilter_ability_query_posts(
+	[
+		'post_type' => 'post',
+		'filters'   => [ 'category' => [ 'news' ] ],
+		'page'      => 1,
+		'per_page'  => 3,
+	]
+);
+
+is_same(
+	'page 1 keeps its link whatever per_page says',
+	is_array( $first_page ) ? $first_page['filter_url'] : null,
+	'https://example.test/post/filter/category/',
+	'get_filter_url() writes no page segment for page 1, so there is no page number that '
+	. 'could be read in the wrong units. Withholding the link here would suppress it for '
+	. 'the overwhelmingly common call.'
+);
+
+$matching_page_size = jpkcom_postfilter_ability_query_posts(
+	[
+		'post_type' => 'post',
+		'filters'   => [ 'category' => [ 'news' ] ],
+		'page'      => 2,
+		'per_page'  => 10,
+	]
+);
+
+is_same(
+	'page 2 keeps its link when per_page matches the site',
+	is_array( $matching_page_size ) ? $matching_page_size['filter_url'] : null,
+	'https://example.test/post/filter/category/',
+	'page/2/ then selects the same slice on both sides. Verified live: per_page 10, page '
+	. '2 reported ids 150 down to 1 and https://posts.ddev.site/page/2/ shows exactly '
+	. 'those. A gate that withheld every page beyond the first would throw this away.'
+);
+
 section( 'a page past the last page must still report the real totals' );
 
 $page_one                = new WP_Query();
@@ -1185,6 +1286,17 @@ is_same(
 	[ 3, 1 ],
 	'It goes through jpkcom_postfilter_run_query(), so the cache layer still applies and '
 	. 'a warm cache costs no database round trip.'
+);
+
+is_same(
+	'and no filter URL is handed out for a page past the end',
+	is_array( $out_of_range ) ? $out_of_range['filter_url'] : null,
+	'',
+	'Recovering the totals turned a visibly broken answer into a well-formed one, which '
+	. 'made the link beside it look trustworthy. Measured on the live install: total 2, '
+	. 'total_pages 1, page 3 answered HTTP 200 while the URL it handed out, '
+	. '.../filter/allgemein/page/3/, answered HTTP 404. per_page here equals the site '
+	. 'posts_per_page, so the page segment itself is sound — only the page does not exist.'
 );
 
 $GLOBALS['_stub_run_query_calls'] = [];
