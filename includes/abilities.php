@@ -866,3 +866,91 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
         ];
     }
 }
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_abilities_enabled' ) ) {
+    /**
+     * Decide whether abilities should be registered at all
+     *
+     * @since 1.3.0
+     *
+     * @return bool True when the Abilities API is present and the kill switch is on.
+     */
+    function jpkcom_postfilter_abilities_enabled(): bool {
+        if ( ! defined( constant_name: 'JPKCOM_POSTFILTER_ABILITIES' ) || ! JPKCOM_POSTFILTER_ABILITIES ) {
+            return false;
+        }
+
+        return function_exists( function: 'wp_register_ability' )
+            && function_exists( function: 'wp_register_ability_category' )
+            && function_exists( function: 'wp_has_ability_category' );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_register_ability_category' ) ) {
+    /**
+     * Register the shared JPKCom content ability category
+     *
+     * Registered defensively: categories are global and first-wins, so a
+     * sibling plugin that registers the same slug first would otherwise make
+     * this call fail silently.
+     *
+     * @since 1.3.0
+     *
+     * @return void
+     */
+    function jpkcom_postfilter_register_ability_category(): void {
+        if ( ! jpkcom_postfilter_abilities_enabled() ) {
+            return;
+        }
+
+        if ( wp_has_ability_category( JPKCOM_POSTFILTER_ABILITY_CATEGORY ) ) {
+            return;
+        }
+
+        $category = wp_register_ability_category(
+            JPKCOM_POSTFILTER_ABILITY_CATEGORY,
+            [
+                'label'       => __( 'JPKCom Content', 'jpkcom-post-filter' ),
+                'description' => __( 'Content discovery and querying abilities provided by JPKCom plugins.', 'jpkcom-post-filter' ),
+            ]
+        );
+
+        if ( $category === null ) {
+            jpkcom_postfilter_debug_log(
+                'Failed to register ability category',
+                [ 'slug' => JPKCOM_POSTFILTER_ABILITY_CATEGORY ]
+            );
+        }
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_register_abilities' ) ) {
+    /**
+     * Register every ability this plugin provides
+     *
+     * wp_register_ability() returns null on every failure path and reports only
+     * through _doing_it_wrong(), which is silent in production, so each result
+     * is checked explicitly.
+     *
+     * @since 1.3.0
+     *
+     * @return void
+     */
+    function jpkcom_postfilter_register_abilities(): void {
+        if ( ! jpkcom_postfilter_abilities_enabled() ) {
+            return;
+        }
+
+        foreach ( jpkcom_postfilter_get_ability_definitions() as $name => $args ) {
+            if ( wp_register_ability( $name, $args ) === null ) {
+                jpkcom_postfilter_debug_log( 'Failed to register ability', [ 'ability' => $name ] );
+            }
+        }
+    }
+}
+
+add_action( 'wp_abilities_api_categories_init', 'jpkcom_postfilter_register_ability_category' );
+add_action( 'wp_abilities_api_init', 'jpkcom_postfilter_register_abilities' );

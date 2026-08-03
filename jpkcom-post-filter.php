@@ -55,6 +55,10 @@ if ( ! defined( 'JPKCOM_POSTFILTER_CACHE_ENABLED' ) ) {
     define( 'JPKCOM_POSTFILTER_CACHE_ENABLED', true );
 }
 
+if ( ! defined( 'JPKCOM_POSTFILTER_ABILITIES' ) ) {
+    define( 'JPKCOM_POSTFILTER_ABILITIES', true );
+}
+
 
 if ( ! defined( 'JPKCOM_POSTFILTER_DEBUG' ) ) {
     define( 'JPKCOM_POSTFILTER_DEBUG', defined( 'WP_DEBUG' ) && WP_DEBUG );
@@ -79,6 +83,7 @@ $jpkcom_postfilter_includes = [
     'includes/url-routing.php',
     'includes/fragment-response.php',
     'includes/query-handler.php',
+    'includes/abilities.php',
     'includes/filter-injection.php',
     'includes/shortcodes.php',
     'includes/blocks.php',

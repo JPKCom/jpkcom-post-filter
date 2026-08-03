@@ -760,6 +760,25 @@ check( 'permission denied otherwise', ! jpkcom_postfilter_ability_permission_que
 
 $GLOBALS['_stub_can'] = true;
 
+section( 'registration guards' );
+
+check(
+	'registration is skipped when the Abilities API is absent',
+	! jpkcom_postfilter_abilities_enabled(),
+	'The test harness defines no wp_register_ability(), so the guard must refuse. '
+	. 'This is what keeps the plugin from fataling on an installation without the API.'
+);
+
+check(
+	'the category registration is a no-op without the API',
+	jpkcom_postfilter_register_ability_category() === null
+);
+
+check(
+	'the ability registration is a no-op without the API',
+	jpkcom_postfilter_register_abilities() === null
+);
+
 printf( "\n  %d passed, %d failed\n", $pass, $fail );
 
 exit( $fail > 0 ? 1 : 0 );
