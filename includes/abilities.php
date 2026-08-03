@@ -656,6 +656,26 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
             $posts[] = jpkcom_postfilter_ability_project_post( $post, $allowed );
         }
 
+        $total       = (int) $query->found_posts;
+        $total_pages = (int) $query->max_num_pages;
+
+        // WP_Query::set_found_posts() returns early when the result set is
+        // empty, leaving found_posts and max_num_pages at 0. A page past the
+        // last one would therefore answer "page 3, total 0, total_pages 0" -
+        // internally contradictory, and a model reading it concludes the corpus
+        // is empty. One extra query for page 1 recovers the real totals; it runs
+        // only on this out-of-range path, so the normal path costs nothing, and
+        // it goes through run_query() so the cache layer still applies.
+        if ( $query->posts === [] && $page > 1 ) {
+            $first_page_args          = $query_args;
+            $first_page_args['paged'] = 1;
+
+            $first_page = jpkcom_postfilter_run_query( $first_page_args, $filters );
+
+            $total       = (int) $first_page->found_posts;
+            $total_pages = (int) $first_page->max_num_pages;
+        }
+
         // jpkcom_postfilter_get_archive_base_url() returns '' for a post type
         // without an archive - `page` is public, selectable in the settings and
         // has none. Building a link from '' would yield the relative path
@@ -672,10 +692,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
         return [
             'post_type'     => $post_type,
             'filters'       => jpkcom_postfilter_ability_json_object( $filters ),
-            'total'         => (int) $query->found_posts,
+            'total'         => $total,
             'page'          => $page,
             'per_page'      => $per_page,
-            'total_pages'   => (int) $query->max_num_pages,
+            'total_pages'   => $total_pages,
             'filter_url'    => $filter_url,
             'unknown_terms' => jpkcom_postfilter_ability_json_object(
                 jpkcom_postfilter_ability_unknown_terms( $filters )

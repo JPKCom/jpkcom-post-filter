@@ -186,10 +186,12 @@ class WP_Query {
 	public int   $max_num_pages = 0;
 }
 
-$GLOBALS['_stub_query']          = null; // WP_Query returned by run_query()
-$GLOBALS['_stub_query_args']     = [];   // captured build_query_args() input
-$GLOBALS['_stub_run_query_args'] = [];   // captured run_query() input
-$GLOBALS['_stub_post_terms']     = [];   // "postID:taxonomy" => [ [slug, name], ... ]
+$GLOBALS['_stub_query']           = null; // WP_Query returned by run_query()
+$GLOBALS['_stub_query_by_page']   = [];   // paged => WP_Query, consulted before _stub_query
+$GLOBALS['_stub_query_args']      = [];   // captured build_query_args() input
+$GLOBALS['_stub_run_query_args']  = [];   // captured run_query() input
+$GLOBALS['_stub_run_query_calls'] = [];   // `paged` of every run_query() call, in order
+$GLOBALS['_stub_post_terms']      = [];   // "postID:taxonomy" => [ [slug, name], ... ]
 
 function jpkcom_postfilter_build_query_args( array $atts, array $active_filters = [] ): array {
 	$GLOBALS['_stub_query_args'] = [ 'atts' => $atts, 'filters' => $active_filters ];
@@ -198,7 +200,14 @@ function jpkcom_postfilter_build_query_args( array $atts, array $active_filters 
 }
 
 function jpkcom_postfilter_run_query( array $query_args, array $active_filters = [] ): WP_Query {
-	$GLOBALS['_stub_run_query_args'] = [ 'args' => $query_args, 'filters' => $active_filters ];
+	$GLOBALS['_stub_run_query_args']    = [ 'args' => $query_args, 'filters' => $active_filters ];
+	$GLOBALS['_stub_run_query_calls'][] = (int) ( $query_args['paged'] ?? 0 );
+
+	$paged = (int) ( $query_args['paged'] ?? 1 );
+
+	if ( isset( $GLOBALS['_stub_query_by_page'][ $paged ] ) ) {
+		return $GLOBALS['_stub_query_by_page'][ $paged ];
+	}
 
 	return $GLOBALS['_stub_query'] ?? new WP_Query();
 }
@@ -1120,6 +1129,98 @@ is_same(
 	'The query really did apply all four — only the URL cannot express them. Suppressing '
 	. 'the filters as well would trade a wrong link for a wrong answer.'
 );
+
+section( 'a page past the last page must still report the real totals' );
+
+$page_one                = new WP_Query();
+$page_one->posts         = [ $post_one ];
+$page_one->found_posts   = 19;
+$page_one->max_num_pages = 2;
+
+// What WP_Query hands back for a page past the end: set_found_posts() returns
+// early when $this->posts is empty, so both counters stay at their 0 default.
+$past_end                = new WP_Query();
+$past_end->posts         = [];
+$past_end->found_posts   = 0;
+$past_end->max_num_pages = 0;
+
+$GLOBALS['_stub_query_by_page']   = [ 1 => $page_one, 3 => $past_end ];
+$GLOBALS['_stub_run_query_calls'] = [];
+
+$out_of_range = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'page' => 3, 'per_page' => 10 ]
+);
+
+is_same(
+	'an out-of-range page reports the real total, not 0',
+	is_array( $out_of_range ) ? $out_of_range['total'] : null,
+	19,
+	'Measured on the live install: 19 posts, per_page 10, page 3 answered HTTP 200 with '
+	. 'total 0, total_pages 0, posts []. A model reading that concludes the corpus is '
+	. 'empty rather than that it asked for a page past the end.'
+);
+
+is_same(
+	'and the real page count',
+	is_array( $out_of_range ) ? $out_of_range['total_pages'] : null,
+	2,
+	'"page: 3" beside "total_pages: 0" is a response that contradicts itself.'
+);
+
+is_same(
+	'while the requested page is echoed back unchanged',
+	is_array( $out_of_range ) ? $out_of_range['page'] : null,
+	3
+);
+
+is_same(
+	'and the post list stays empty, because that page really holds nothing',
+	is_array( $out_of_range ) ? count( $out_of_range['posts'] ) : null,
+	0
+);
+
+is_same(
+	'the totals are recovered with one extra query for page 1',
+	$GLOBALS['_stub_run_query_calls'],
+	[ 3, 1 ],
+	'It goes through jpkcom_postfilter_run_query(), so the cache layer still applies and '
+	. 'a warm cache costs no database round trip.'
+);
+
+$GLOBALS['_stub_run_query_calls'] = [];
+
+$in_range = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'page' => 1, 'per_page' => 10 ]
+);
+
+is_same(
+	'a page that returned posts still runs exactly one query',
+	$GLOBALS['_stub_run_query_calls'],
+	[ 1 ],
+	'The recovery is confined to the out-of-range path, so the normal path costs nothing.'
+);
+
+$GLOBALS['_stub_query_by_page']   = [ 1 => $past_end ];
+$GLOBALS['_stub_run_query_calls'] = [];
+
+$empty_first_page = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'page' => 1, 'per_page' => 10 ]
+);
+
+is_same(
+	'an empty page 1 does not trigger a second query',
+	$GLOBALS['_stub_run_query_calls'],
+	[ 1 ],
+	'total 0 on page 1 is the truthful answer, not a symptom to repair.'
+);
+
+is_same(
+	'and it still reports 0',
+	is_array( $empty_first_page ) ? $empty_first_page['total'] : null,
+	0
+);
+
+$GLOBALS['_stub_query_by_page'] = [];
 
 section( 'ability definitions' );
 
