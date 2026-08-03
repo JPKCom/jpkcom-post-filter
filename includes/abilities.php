@@ -541,6 +541,49 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_project_post' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_filters_are_url_expressible' ) ) {
+    /**
+     * Decide whether a filter set survives a round trip through a filter URL
+     *
+     * jpkcom_postfilter_get_filter_url() writes every requested slug into the
+     * path, but jpkcom_postfilter_parse_filter_path() truncates what it reads
+     * back to max_filters_per_group slugs per taxonomy and max_filter_combos
+     * taxonomies. Above either limit the built URL therefore shows a *different*
+     * result set than the one the ability just reported - measured with four
+     * category slugs against max_filters_per_group = 3, where the link resolved
+     * to the first three.
+     *
+     * In both settings 0 means unlimited, matching parse_filter_path().
+     *
+     * @since 1.3.0
+     *
+     * @param array<string, string[]> $filters Normalised filters map.
+     * @return bool True when a built URL parses back to exactly these filters.
+     */
+    function jpkcom_postfilter_ability_filters_are_url_expressible( array $filters ): bool {
+        $max_combos = (int) jpkcom_postfilter_settings_get( 'general', 'max_filter_combos', 3 );
+
+        if ( $max_combos > 0 && count( $filters ) > $max_combos ) {
+            return false;
+        }
+
+        $max_per_group = (int) jpkcom_postfilter_settings_get( 'general', 'max_filters_per_group', 3 );
+
+        if ( $max_per_group < 1 ) {
+            return true;
+        }
+
+        foreach ( $filters as $slugs ) {
+            if ( is_array( $slugs ) && count( $slugs ) > $max_per_group ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
     /**
      * Execute callback for jpkcom-post-filter/query-posts
@@ -618,9 +661,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
         // has none. Building a link from '' would yield the relative path
         // "/filter/news/", and jpkcom_postfilter_archive_base_regex() returns
         // null for exactly those post types, so no rewrite rule stands behind
-        // it either. An empty string is a better answer than a 404.
+        // it either. The second case is a filter set the site's own parser would
+        // truncate, where the link would show a different result set than the one
+        // reported here. An empty string is a better answer than either.
         $archive_base_url = jpkcom_postfilter_get_archive_base_url( $post_type );
-        $filter_url       = $archive_base_url === ''
+        $filter_url       = ( $archive_base_url === '' || ! jpkcom_postfilter_ability_filters_are_url_expressible( $filters ) )
             ? ''
             : jpkcom_postfilter_get_filter_url( $archive_base_url, $filters, $page );
 
@@ -909,7 +954,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
                         ],
                         'filter_url' => [
                             'type'        => 'string',
-                            'description' => __( 'Shareable front-end URL showing this filter combination. Empty when the post type has no archive page, because there is no front-end URL that could show it.', 'jpkcom-post-filter' ),
+                            'description' => __( 'Shareable front-end URL showing this filter combination. Empty for two reasons: the post type has no archive page, so there is no front-end URL that could show it; or this site caps the number of terms per taxonomy or the number of taxonomies below what was requested, so the URL would resolve to a narrower result set than the one reported here.', 'jpkcom-post-filter' ),
                         ],
                         'unknown_terms' => [
                             'type'        => 'object',

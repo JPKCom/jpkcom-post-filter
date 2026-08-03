@@ -1036,6 +1036,91 @@ check(
 	is_array( jpkcom_postfilter_ability_query_posts( null ) )
 );
 
+section( 'filter_url must round-trip, or not be handed out at all' );
+
+is_same(
+	'a filter set inside both site caps is expressible as a URL',
+	jpkcom_postfilter_ability_filters_are_url_expressible( [ 'category' => [ 'a', 'b', 'c' ] ] ),
+	true,
+	'Exactly at max_filters_per_group. The cap is what the URL parser truncates *beyond*, '
+	. 'so a set at the limit still round-trips and must keep its link.'
+);
+
+is_same(
+	'more slugs in one taxonomy than max_filters_per_group is not',
+	jpkcom_postfilter_ability_filters_are_url_expressible( [ 'category' => [ 'a', 'b', 'c', 'd' ] ] ),
+	false
+);
+
+is_same(
+	'more taxonomies than max_filter_combos is not',
+	jpkcom_postfilter_ability_filters_are_url_expressible(
+		[ 'category' => [ 'a' ], 'post_tag' => [ 'a' ], 'third' => [ 'a' ], 'fourth' => [ 'a' ] ]
+	),
+	false,
+	'parse_filter_path() applies array_slice() to the taxonomies as well, not just to '
+	. 'the slugs within one.'
+);
+
+$GLOBALS['_stub_settings']['general']['max_filters_per_group'] = 0;
+$GLOBALS['_stub_settings']['general']['max_filter_combos']     = 0;
+
+is_same(
+	'0 means unlimited in both settings, as it does in parse_filter_path()',
+	jpkcom_postfilter_ability_filters_are_url_expressible(
+		[
+			'category' => [ 'a', 'b', 'c', 'd', 'e' ],
+			'post_tag' => [ 'a', 'b', 'c', 'd', 'e' ],
+			'third'    => [ 'a' ],
+			'fourth'   => [ 'a' ],
+			'fifth'    => [ 'a' ],
+		]
+	),
+	true,
+	'A site that switched the caps off truncates nothing, so every set round-trips and '
+	. 'suppressing the URL there would withhold a link that works.'
+);
+
+unset(
+	$GLOBALS['_stub_settings']['general']['max_filters_per_group'],
+	$GLOBALS['_stub_settings']['general']['max_filter_combos']
+);
+
+$GLOBALS['_stub_filter_url_calls'] = 0;
+
+$over_cap = jpkcom_postfilter_ability_query_posts(
+	[
+		'post_type' => 'post',
+		'filters'   => [ 'category' => [ 'allgemein', 'entwicklung', 'marketing', 'web-design' ] ],
+	]
+);
+
+is_same(
+	'a filter set the site would truncate is returned without a filter URL',
+	is_array( $over_cap ) ? $over_cap['filter_url'] : null,
+	'',
+	'Measured on the live install with max_filters_per_group = 3: the ability echoed all '
+	. 'four category slugs and handed out '
+	. '.../filter/allgemein+entwicklung+marketing+web-design/, which '
+	. 'jpkcom_postfilter_parse_filter_path() reads back as three. The reported result set '
+	. 'and the linked one were different pages. Same judgement as for a post type with no '
+	. 'archive: no link beats a link to the wrong thing.'
+);
+
+is_same(
+	'no URL is built at all in that case',
+	$GLOBALS['_stub_filter_url_calls'],
+	0
+);
+
+is_same(
+	'the four requested slugs are still reported as applied',
+	is_array( $over_cap ) ? $over_cap['filters'] : null,
+	[ 'category' => [ 'allgemein', 'entwicklung', 'marketing', 'web-design' ] ],
+	'The query really did apply all four — only the URL cannot express them. Suppressing '
+	. 'the filters as well would trade a wrong link for a wrong answer.'
+);
+
 section( 'ability definitions' );
 
 $definitions = jpkcom_postfilter_get_ability_definitions();
