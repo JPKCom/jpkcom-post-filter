@@ -121,6 +121,92 @@ function get_taxonomy( string $taxonomy ): WP_Taxonomy|false {
 
 function jpkcom_postfilter_debug_log( string $message, mixed $context = null ): void {}
 
+class WP_Post {
+	public int    $ID            = 0;
+	public string $post_title    = '';
+	public string $post_date_gmt = '';
+	public string $post_excerpt  = '';
+}
+
+class WP_Query {
+	/** @var WP_Post[] */
+	public array $posts         = [];
+	public int   $found_posts   = 0;
+	public int   $max_num_pages = 0;
+}
+
+$GLOBALS['_stub_query']      = null;   // WP_Query returned by run_query()
+$GLOBALS['_stub_query_args'] = [];     // captured build_query_args() input
+$GLOBALS['_stub_post_terms'] = [];     // "postID:taxonomy" => [ [slug, name], ... ]
+
+function jpkcom_postfilter_build_query_args( array $atts, array $active_filters = [] ): array {
+	$GLOBALS['_stub_query_args'] = [ 'atts' => $atts, 'filters' => $active_filters ];
+
+	return $atts;
+}
+
+function jpkcom_postfilter_run_query( array $query_args, array $active_filters = [] ): WP_Query {
+	return $GLOBALS['_stub_query'] ?? new WP_Query();
+}
+
+function jpkcom_postfilter_get_archive_base_url( string $post_type ): string {
+	return 'https://example.test/' . $post_type . '/';
+}
+
+function jpkcom_postfilter_get_filter_url( string $base_url, array $filters, int $page = 0 ): string {
+	return $base_url . 'filter/' . implode( '-', array_keys( $filters ) ) . '/';
+}
+
+function get_term_by( string $field, string $value, string $taxonomy ): WP_Term|false {
+	foreach ( $GLOBALS['_stub_terms'][ $taxonomy ] ?? [] as $row ) {
+		if ( $row[0] === $value ) {
+			$term        = new WP_Term();
+			$term->slug  = $row[0];
+			$term->name  = $row[1];
+			$term->count = $row[2];
+
+			return $term;
+		}
+	}
+
+	return false;
+}
+
+function get_the_terms( WP_Post $post, string $taxonomy ): array|false {
+	$rows = $GLOBALS['_stub_post_terms'][ $post->ID . ':' . $taxonomy ] ?? null;
+
+	if ( $rows === null ) {
+		return false;
+	}
+
+	$out = [];
+
+	foreach ( $rows as $row ) {
+		$term       = new WP_Term();
+		$term->slug = $row[0];
+		$term->name = $row[1];
+		$out[]      = $term;
+	}
+
+	return $out;
+}
+
+function get_the_title( WP_Post $post ): string {
+	return $post->post_title;
+}
+
+function get_permalink( WP_Post $post ): string {
+	return 'https://example.test/?p=' . $post->ID;
+}
+
+function get_post_time( string $format, bool $gmt, WP_Post $post ): string {
+	return $post->post_date_gmt;
+}
+
+function get_the_excerpt( WP_Post $post ): string {
+	return $post->post_excerpt;
+}
+
 require_once dirname( __DIR__ ) . '/includes/abilities.php';
 
 // --- Harness ---------------------------------------------------------------
@@ -453,6 +539,122 @@ check(
 	'non-array input does not fatal',
 	is_array( jpkcom_postfilter_ability_list_filters( 'post' ) )
 		|| jpkcom_postfilter_ability_list_filters( 'post' ) instanceof WP_Error
+);
+
+section( 'query-posts callback' );
+
+$post_one                = new WP_Post();
+$post_one->ID            = 42;
+$post_one->post_title    = 'Hello';
+$post_one->post_date_gmt = '2026-08-01T09:00:00+00:00';
+$post_one->post_excerpt  = 'An excerpt.';
+
+$query                = new WP_Query();
+$query->posts         = [ $post_one ];
+$query->found_posts   = 19;
+$query->max_num_pages = 2;
+
+$GLOBALS['_stub_query']      = $query;
+$GLOBALS['_stub_post_terms'] = [ '42:category' => [ [ 'news', 'News' ] ] ];
+
+$result = jpkcom_postfilter_ability_query_posts(
+	[
+		'post_type' => 'post',
+		'filters'   => [ 'category' => [ 'news' ] ],
+		'page'      => 2,
+		'per_page'  => 5,
+	]
+);
+
+is_same( 'the total comes from found_posts', is_array( $result ) ? $result['total'] : null, 19 );
+is_same( 'the page is echoed back', is_array( $result ) ? $result['page'] : null, 2 );
+is_same( 'total_pages comes from max_num_pages', is_array( $result ) ? $result['total_pages'] : null, 2 );
+
+is_same(
+	'the normalised filters are echoed back',
+	is_array( $result ) ? $result['filters'] : null,
+	[ 'category' => [ 'news' ] ]
+);
+
+is_same(
+	'a shareable filter URL is returned',
+	is_array( $result ) ? $result['filter_url'] : null,
+	'https://example.test/post/filter/category/'
+);
+
+is_same(
+	'the post projection carries the fields the schema promises',
+	is_array( $result ) ? $result['posts'][0] : null,
+	[
+		'id'      => 42,
+		'title'   => 'Hello',
+		'url'     => 'https://example.test/?p=42',
+		'date'    => '2026-08-01T09:00:00+00:00',
+		'excerpt' => 'An excerpt.',
+		'terms'   => [ 'category' => [ [ 'slug' => 'news', 'name' => 'News' ] ] ],
+	]
+);
+
+is_same(
+	'a positive limit reaches build_query_args',
+	$GLOBALS['_stub_query_args']['atts']['limit'],
+	5,
+	'A limit of -1 makes build_query_args set no_found_rows, which reports a total '
+	. 'of 0 no matter how many posts exist.'
+);
+
+section( 'query-posts guards' );
+
+$unknown_tax = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'filters' => [ 'tag' => [ 'seo' ] ] ]
+);
+
+check(
+	'an unknown taxonomy is an error, not a full unfiltered result set',
+	$unknown_tax instanceof WP_Error
+		&& $unknown_tax->get_error_code() === 'jpkcom_postfilter_unknown_taxonomy'
+);
+
+$unknown_term = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'filters' => [ 'category' => [ 'does-not-exist' ] ] ]
+);
+
+check(
+	'an unknown term slug is not an error',
+	is_array( $unknown_term ),
+	'It matches the website, which answers 200 with zero results and a noindex robots tag.'
+);
+
+is_same(
+	'an unknown term slug is reported so zero results can be explained',
+	is_array( $unknown_term ) ? $unknown_term['unknown_terms'] : null,
+	[ 'category' => [ 'does-not-exist' ] ]
+);
+
+is_same(
+	'a known term slug produces no unknown_terms entry',
+	is_array( $result ) ? $result['unknown_terms'] : null,
+	[]
+);
+
+$clamped = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'per_page' => 5000 ]
+);
+
+is_same(
+	'an oversized per_page is clamped before it reaches the query',
+	$GLOBALS['_stub_query_args']['atts']['limit'],
+	50
+);
+
+check(
+	'a post type that is not enabled is rejected',
+	jpkcom_postfilter_ability_query_posts( [ 'post_type' => 'projekt' ] ) instanceof WP_Error
+);
+
+check(
+	'non-array input does not fatal',
+	is_array( jpkcom_postfilter_ability_query_posts( null ) )
 );
 
 printf( "\n  %d passed, %d failed\n", $pass, $fail );

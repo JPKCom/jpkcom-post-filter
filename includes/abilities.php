@@ -411,3 +411,169 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_list_filters' ) ) {
         ];
     }
 }
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_terms' ) ) {
+    /**
+     * Report requested term slugs that match no term
+     *
+     * Not an error: the website answers such a request with HTTP 200, zero
+     * results and a noindex robots tag. Reporting them lets a caller tell a
+     * typo apart from an genuinely empty result set.
+     *
+     * @since 1.3.0
+     *
+     * @param array<string, string[]> $filters Normalised filters map.
+     * @return array<string, string[]> Taxonomy => unmatched term slugs.
+     */
+    function jpkcom_postfilter_ability_unknown_terms( array $filters ): array {
+        $unknown = [];
+
+        foreach ( $filters as $taxonomy => $slugs ) {
+            $missing = [];
+
+            foreach ( $slugs as $slug ) {
+                if ( ! get_term_by( 'slug', $slug, (string) $taxonomy ) instanceof \WP_Term ) {
+                    $missing[] = $slug;
+                }
+            }
+
+            if ( $missing !== [] ) {
+                $unknown[ (string) $taxonomy ] = $missing;
+            }
+        }
+
+        return $unknown;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_project_post' ) ) {
+    /**
+     * Project a post into the JSON-serialisable shape the output schema promises
+     *
+     * @since 1.3.0
+     *
+     * @param \WP_Post $post       The post to project.
+     * @param string[] $taxonomies Filterable taxonomies to report terms for.
+     * @return array<string, mixed> Projected post.
+     */
+    function jpkcom_postfilter_ability_project_post( \WP_Post $post, array $taxonomies ): array {
+        $terms = [];
+
+        foreach ( $taxonomies as $taxonomy ) {
+            $assigned = get_the_terms( $post, $taxonomy );
+
+            if ( ! is_array( $assigned ) ) {
+                continue;
+            }
+
+            $list = [];
+
+            foreach ( $assigned as $term ) {
+                if ( ! $term instanceof \WP_Term ) {
+                    continue;
+                }
+
+                $list[] = [
+                    'slug' => (string) $term->slug,
+                    'name' => (string) $term->name,
+                ];
+            }
+
+            if ( $list !== [] ) {
+                $terms[ $taxonomy ] = $list;
+            }
+        }
+
+        return [
+            'id'      => (int) $post->ID,
+            'title'   => (string) get_the_title( $post ),
+            'url'     => (string) get_permalink( $post ),
+            'date'    => (string) get_post_time( 'c', true, $post ),
+            'excerpt' => (string) get_the_excerpt( $post ),
+            'terms'   => $terms,
+        ];
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
+    /**
+     * Execute callback for jpkcom-post-filter/query-posts
+     *
+     * @since 1.3.0
+     *
+     * @param mixed $input Validated ability input.
+     * @return array<string, mixed>|\WP_Error Query result, or an error.
+     */
+    function jpkcom_postfilter_ability_query_posts( mixed $input ): array|\WP_Error {
+        $input     = is_array( $input ) ? $input : [];
+        $post_type = jpkcom_postfilter_ability_resolve_post_type( $input['post_type'] ?? null );
+
+        $enabled_post_types = jpkcom_postfilter_ability_enabled_post_types();
+
+        if ( ! in_array( needle: $post_type, haystack: $enabled_post_types, strict: true ) ) {
+            return jpkcom_postfilter_ability_unknown_post_type_error( $post_type, $enabled_post_types );
+        }
+
+        $filters = jpkcom_postfilter_ability_normalize_filters( $input['filters'] ?? [] );
+        $allowed = jpkcom_postfilter_ability_allowed_taxonomies(
+            $post_type,
+            jpkcom_postfilter_get_filter_groups_enabled(),
+            $enabled_post_types
+        );
+
+        $validity = jpkcom_postfilter_ability_validate_filters( $filters, $allowed );
+
+        if ( $validity instanceof \WP_Error ) {
+            return $validity;
+        }
+
+        $per_page = jpkcom_postfilter_ability_clamp_per_page( $input['per_page'] ?? null );
+        $page     = isset( $input['page'] ) && is_numeric( $input['page'] )
+            ? max( 1, (int) $input['page'] )
+            : 1;
+
+        $atts = [
+            'post_type' => $post_type,
+            'limit'     => $per_page,
+            'paged'     => $page,
+        ];
+
+        if ( isset( $input['search'] ) && is_string( $input['search'] ) && $input['search'] !== '' ) {
+            $atts['s'] = $input['search'];
+        }
+
+        $query = jpkcom_postfilter_run_query(
+            jpkcom_postfilter_build_query_args( $atts, $filters ),
+            $filters
+        );
+
+        $posts = [];
+
+        foreach ( $query->posts as $post ) {
+            if ( ! $post instanceof \WP_Post ) {
+                continue;
+            }
+
+            $posts[] = jpkcom_postfilter_ability_project_post( $post, $allowed );
+        }
+
+        return [
+            'post_type'     => $post_type,
+            'filters'       => $filters,
+            'total'         => (int) $query->found_posts,
+            'page'          => $page,
+            'per_page'      => $per_page,
+            'total_pages'   => (int) $query->max_num_pages,
+            'filter_url'    => jpkcom_postfilter_get_filter_url(
+                jpkcom_postfilter_get_archive_base_url( $post_type ),
+                $filters,
+                $page
+            ),
+            'unknown_terms' => jpkcom_postfilter_ability_unknown_terms( $filters ),
+            'posts'         => $posts,
+        ];
+    }
+}
