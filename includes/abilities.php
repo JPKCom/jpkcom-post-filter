@@ -780,7 +780,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
                 'category'    => JPKCOM_POSTFILTER_ABILITY_CATEGORY,
 
                 'input_schema' => [
-                    'type'       => 'object',
+                    'type' => 'object',
+                    // Top level, deliberately. WP_Ability::normalize_input()
+                    // substitutes this value when the input is exactly null, and
+                    // without it a caller that passes no input at all is rejected
+                    // with ability_invalid_input - for an ability whose only
+                    // parameter is optional, calling it bare is the natural move.
+                    // Per-property defaults are never applied by core, which is
+                    // why the callback resolves post_type itself.
+                    'default'    => [],
                     'properties' => [
                         'post_type' => [
                             'type'        => 'string',
@@ -833,7 +841,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
                 'category'    => JPKCOM_POSTFILTER_ABILITY_CATEGORY,
 
                 'input_schema' => [
-                    'type'       => 'object',
+                    'type' => 'object',
+                    // See the note on the list-filters input schema: this rescues
+                    // execute( null ), which core would otherwise reject before
+                    // the callback ever runs.
+                    'default'    => [],
                     'properties' => [
                         'post_type' => [
                             'type'        => 'string',

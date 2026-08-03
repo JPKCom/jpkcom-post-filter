@@ -1071,6 +1071,20 @@ foreach ( $definitions as $name => $args ) {
 		. 'passing input to such an ability is a hard ability_missing_input_schema error.'
 	);
 
+	is_same(
+		"'{$name}' declares a top-level input default, so a bare call is not rejected",
+		$args['input_schema']['default'] ?? null,
+		[],
+		'WP_Ability::normalize_input() substitutes the top-level default when the input is '
+		. 'exactly null, and nothing else does. Without it, execute( null ) never reaches '
+		. 'the callback — measured on WordPress 7.0.2, both abilities answered WP_Error '
+		. 'ability_invalid_input, "input ist nicht vom Typ object". list-filters has one '
+		. 'optional parameter, so calling it with no arguments is the most natural thing a '
+		. 'client does. It must be a sibling of type and properties: core never applies a '
+		. 'per-property default, which is why the callbacks resolve post_type, page and '
+		. 'per_page themselves.'
+	);
+
 	check(
 		"'{$name}' declares an output schema",
 		isset( $args['output_schema']['type'] ) && $args['output_schema']['type'] === 'object'
