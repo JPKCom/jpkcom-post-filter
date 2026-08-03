@@ -543,6 +543,9 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 * **Added:** `JPKCOM_POSTFILTER_ABILITIES` (default `true`) withdraws both abilities from REST and MCP when set to `false` in `wp-config.php`, plus the filters `jpkcom_postfilter_ability_meta` and `jpkcom_postfilter_ability_capability` for per-ability control.
 * **Hardened:** a filter naming a taxonomy that does not exist previously produced the complete unfiltered result set, because the query builder drops such a clause silently. The query ability now rejects it and names the valid taxonomies, so a caller can correct itself instead of presenting the whole site as a filtered answer.
 * **Hardened:** the query ability always passes a positive page size. The shortcode default of `-1` sets `no_found_rows`, which reports a total of zero regardless of how many posts exist.
+* **Hardened:** a single request can filter by at most 50 term slugs per taxonomy; anything beyond that is dropped rather than rejected, so an over-eager caller still gets an answer instead of an error. Without the cap one request could ask for thousands of slugs and turn into a query of the same size.
+* **Hardened:** a search term passed to the query ability is answered from the database rather than from the query cache. Search text is free-form, so caching it would let a caller fill the object cache and APCu with one entry per phrase.
+* **Changed:** the query ability returns an empty `filter_url` for post types that have no archive page, such as `page`. It previously returned a relative address like `/filter/news/`, which no rewrite rule serves — a link that would have 404'd.
 
 ### 1.2.3
 * CI: the lint and guard workflow now also runs on pushes to `main`. It only covered pull requests, so a direct push with bypass rights skipped every check

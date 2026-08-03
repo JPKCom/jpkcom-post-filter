@@ -126,12 +126,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_build_query_args' ) ) {
         // Pass through a small set of extra WP_Query args, each coerced into a
         // shape it is safe to hand to WP_Query.
         //
-        // These used to be copied verbatim. No current caller forwards user
-        // input — both shortcodes go through shortcode_atts() and the block
-        // callback passes four fixed keys — but this is a documented helper,
-        // and an unvalidated `meta_query` reaching WP_Query is exactly the kind
-        // of thing that becomes a problem the moment somebody wires request
-        // data into it.
+        // These used to be copied verbatim. Both shortcodes go through
+        // shortcode_atts() and the block callback passes four fixed keys, but
+        // the abilities integration does forward caller input: the query
+        // ability hands its `search` argument through as `s`, sanitised here.
+        // Because that makes the cache key caller-controlled, the ability sets
+        // `cache => false` on the returned args whenever a search term is
+        // present — see jpkcom_postfilter_ability_query_posts(). Every other key
+        // below is coerced into a shape it is safe to hand to WP_Query.
         //
         // `meta_query` is deliberately not accepted: it is a nested structure
         // that cannot be meaningfully validated in passing. Callers that need

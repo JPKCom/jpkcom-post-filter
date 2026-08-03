@@ -20,7 +20,17 @@ declare(strict_types=1);
 
 define( 'ABSPATH', dirname( __DIR__ ) . '/' );
 define( 'JPKCOM_POSTFILTER_DEBUG', false );
-define( 'JPKCOM_POSTFILTER_ABILITIES', true );
+
+/**
+ * Whether this process is the child run that exercises the kill switch.
+ *
+ * JPKCOM_POSTFILTER_ABILITIES is a constant, so one process can only ever see
+ * one of its two values. The suite therefore re-executes this file with the
+ * environment variable set and inspects what registration did over there.
+ */
+$is_kill_switch_child = getenv( 'JPKPF_ABILITIES_KILL_SWITCH_CHILD' ) === '1';
+
+define( 'JPKCOM_POSTFILTER_ABILITIES', ! $is_kill_switch_child );
 
 // --- WordPress stubs -------------------------------------------------------
 
@@ -70,15 +80,13 @@ class WP_Term {
 	public int    $count = 0;
 }
 
-class WP_Taxonomy {
-	public bool $public       = true;
-	public bool $show_in_rest = true;
-}
-
-$GLOBALS['_stub_settings']   = [ 'general' => [ 'enabled_post_types' => [ 'post' ] ] ];
-$GLOBALS['_stub_groups']     = [];
-$GLOBALS['_stub_terms']      = [];   // taxonomy => [ [slug, name, count], ... ]
-$GLOBALS['_stub_taxonomies'] = [];   // taxonomy => [ 'public' => bool, 'show_in_rest' => bool ]
+$GLOBALS['_stub_settings']         = [ 'general' => [ 'enabled_post_types' => [ 'post' ] ] ];
+$GLOBALS['_stub_groups']           = [];
+$GLOBALS['_stub_terms']            = [];   // taxonomy => [ [slug, name, count], ... ]
+$GLOBALS['_stub_raw_terms']        = [];   // taxonomy => term list returned verbatim (malformed-data tests)
+$GLOBALS['_stub_raw_group_entries'] = [];  // taxonomy => group entry list returned verbatim (malformed-data tests)
+$GLOBALS['_stub_term_lookups']     = [];   // taxonomy => number of get_terms_for_taxonomy() calls
+$GLOBALS['_stub_term_hide_empty']  = null; // hide_empty of the last get_terms_for_taxonomy() call
 
 function jpkcom_postfilter_settings_get( string $group, string $key, mixed $default = null ): mixed {
 	return $GLOBALS['_stub_settings'][ $group ][ $key ] ?? $default;
@@ -88,35 +96,51 @@ function jpkcom_postfilter_get_filter_groups_enabled(): array {
 	return $GLOBALS['_stub_groups'];
 }
 
-function jpkcom_postfilter_get_terms_for_group( array $group, array $active_filters = [] ): array {
-	$taxonomy = (string) ( $group['taxonomy'] ?? '' );
-	$out      = [];
+/**
+ * Build the WP_Term list a taxonomy holds in the fixtures.
+ *
+ * @param string $taxonomy Taxonomy key.
+ * @return array<int, mixed> Terms, or whatever the raw override supplies.
+ */
+function jpkpf_stub_terms( string $taxonomy ): array {
+	if ( isset( $GLOBALS['_stub_raw_terms'][ $taxonomy ] ) ) {
+		return $GLOBALS['_stub_raw_terms'][ $taxonomy ];
+	}
+
+	$out = [];
 
 	foreach ( $GLOBALS['_stub_terms'][ $taxonomy ] ?? [] as $row ) {
 		$term        = new WP_Term();
 		$term->slug  = $row[0];
 		$term->name  = $row[1];
 		$term->count = $row[2];
-		$out[]       = [ 'term' => $term, 'is_active' => false ];
+		$out[]       = $term;
 	}
 
 	return $out;
 }
 
-function taxonomy_exists( string $taxonomy ): bool {
-	return isset( $GLOBALS['_stub_taxonomies'][ $taxonomy ] );
+function jpkcom_postfilter_get_terms_for_taxonomy( string $taxonomy, bool $hide_empty = true ): array {
+	$GLOBALS['_stub_term_lookups'][ $taxonomy ] = ( $GLOBALS['_stub_term_lookups'][ $taxonomy ] ?? 0 ) + 1;
+	$GLOBALS['_stub_term_hide_empty']           = $hide_empty;
+
+	return jpkpf_stub_terms( $taxonomy );
 }
 
-function get_taxonomy( string $taxonomy ): WP_Taxonomy|false {
-	if ( ! isset( $GLOBALS['_stub_taxonomies'][ $taxonomy ] ) ) {
-		return false;
+function jpkcom_postfilter_get_terms_for_group( array $group, array $active_filters = [] ): array {
+	$taxonomy = (string) ( $group['taxonomy'] ?? '' );
+
+	if ( isset( $GLOBALS['_stub_raw_group_entries'][ $taxonomy ] ) ) {
+		return $GLOBALS['_stub_raw_group_entries'][ $taxonomy ];
 	}
 
-	$object               = new WP_Taxonomy();
-	$object->public       = $GLOBALS['_stub_taxonomies'][ $taxonomy ]['public'];
-	$object->show_in_rest = $GLOBALS['_stub_taxonomies'][ $taxonomy ]['show_in_rest'];
+	$out = [];
 
-	return $object;
+	foreach ( jpkpf_stub_terms( $taxonomy ) as $term ) {
+		$out[] = [ 'term' => $term, 'is_active' => false ];
+	}
+
+	return $out;
 }
 
 $GLOBALS['_stub_debug_log_calls'] = 0;
@@ -139,9 +163,10 @@ class WP_Query {
 	public int   $max_num_pages = 0;
 }
 
-$GLOBALS['_stub_query']      = null;   // WP_Query returned by run_query()
-$GLOBALS['_stub_query_args'] = [];     // captured build_query_args() input
-$GLOBALS['_stub_post_terms'] = [];     // "postID:taxonomy" => [ [slug, name], ... ]
+$GLOBALS['_stub_query']          = null; // WP_Query returned by run_query()
+$GLOBALS['_stub_query_args']     = [];   // captured build_query_args() input
+$GLOBALS['_stub_run_query_args'] = [];   // captured run_query() input
+$GLOBALS['_stub_post_terms']     = [];   // "postID:taxonomy" => [ [slug, name], ... ]
 
 function jpkcom_postfilter_build_query_args( array $atts, array $active_filters = [] ): array {
 	$GLOBALS['_stub_query_args'] = [ 'atts' => $atts, 'filters' => $active_filters ];
@@ -150,30 +175,26 @@ function jpkcom_postfilter_build_query_args( array $atts, array $active_filters 
 }
 
 function jpkcom_postfilter_run_query( array $query_args, array $active_filters = [] ): WP_Query {
+	$GLOBALS['_stub_run_query_args'] = [ 'args' => $query_args, 'filters' => $active_filters ];
+
 	return $GLOBALS['_stub_query'] ?? new WP_Query();
 }
 
+$GLOBALS['_stub_archiveless']      = [];  // post types whose archive base URL is empty
+$GLOBALS['_stub_filter_url_calls'] = 0;
+
 function jpkcom_postfilter_get_archive_base_url( string $post_type ): string {
+	if ( in_array( $post_type, $GLOBALS['_stub_archiveless'], true ) ) {
+		return '';
+	}
+
 	return 'https://example.test/' . $post_type . '/';
 }
 
 function jpkcom_postfilter_get_filter_url( string $base_url, array $filters, int $page = 0 ): string {
+	$GLOBALS['_stub_filter_url_calls']++;
+
 	return $base_url . 'filter/' . implode( '-', array_keys( $filters ) ) . '/';
-}
-
-function get_term_by( string $field, string $value, string $taxonomy ): WP_Term|false {
-	foreach ( $GLOBALS['_stub_terms'][ $taxonomy ] ?? [] as $row ) {
-		if ( $row[0] === $value ) {
-			$term        = new WP_Term();
-			$term->slug  = $row[0];
-			$term->name  = $row[1];
-			$term->count = $row[2];
-
-			return $term;
-		}
-	}
-
-	return false;
 }
 
 function get_the_terms( WP_Post $post, string $taxonomy ): array|false {
@@ -217,7 +238,66 @@ function current_user_can( string $capability ): bool {
 	return $GLOBALS['_stub_can'];
 }
 
+$GLOBALS['_stub_has_category']          = false; // wp_has_ability_category() answer
+$GLOBALS['_stub_registered_categories'] = [];    // slug => args
+$GLOBALS['_stub_registered_abilities']  = [];    // name => args
+$GLOBALS['_stub_register_null_for']     = '';    // ability name whose registration fails
+$GLOBALS['_stub_category_returns_null'] = false;
+
+/**
+ * Define the Abilities API stubs.
+ *
+ * Wrapped in a function on purpose. PHP hoists unconditional top-level function
+ * declarations before the script runs, so declaring these at file scope would
+ * make wp_register_ability() exist from line 1 — and the guard section, which
+ * asserts the plugin stays inert when the API is absent, would silently test
+ * nothing. Declaring them inside a function defers it to the call.
+ */
+function jpkpf_define_ability_api_stubs(): void {
+	if ( function_exists( 'wp_register_ability' ) ) {
+		return;
+	}
+
+	function wp_has_ability_category( string $slug ): bool {
+		return (bool) $GLOBALS['_stub_has_category'];
+	}
+
+	function wp_register_ability_category( string $slug, array $args ): ?object {
+		$GLOBALS['_stub_registered_categories'][ $slug ] = $args;
+
+		return $GLOBALS['_stub_category_returns_null'] ? null : (object) [ 'slug' => $slug ];
+	}
+
+	function wp_register_ability( string $name, array $args ): ?object {
+		$GLOBALS['_stub_registered_abilities'][ $name ] = $args;
+
+		return $name === $GLOBALS['_stub_register_null_for'] ? null : (object) [ 'name' => $name ];
+	}
+}
+
 require_once dirname( __DIR__ ) . '/includes/abilities.php';
+
+// --- Kill-switch child mode ------------------------------------------------
+//
+// Reached only in the re-executed process, where JPKCOM_POSTFILTER_ABILITIES is
+// false. The Abilities API is fully present here, so anything that gets
+// registered is the kill switch failing to hold. Reports one machine-readable
+// line and exits before the suite proper.
+if ( $is_kill_switch_child ) {
+	jpkpf_define_ability_api_stubs();
+
+	jpkcom_postfilter_register_ability_category();
+	jpkcom_postfilter_register_abilities();
+
+	printf(
+		"KILL_SWITCH enabled=%d categories=%d abilities=%d\n",
+		jpkcom_postfilter_abilities_enabled() ? 1 : 0,
+		count( $GLOBALS['_stub_registered_categories'] ),
+		count( $GLOBALS['_stub_registered_abilities'] )
+	);
+
+	exit( 0 );
+}
 
 // --- Harness ---------------------------------------------------------------
 
@@ -347,6 +427,33 @@ is_same(
 	'On the WP 6.9 floor an uncaught TypeError inside a callback is a fatal, not a WP_Error.'
 );
 
+$flood = jpkcom_postfilter_ability_normalize_filters(
+	[ 'category' => array_map( static fn( int $i ): string => 'slug-' . $i, range( 1, 500 ) ) ]
+);
+
+is_same(
+	'the slug list per taxonomy is capped',
+	count( $flood['category'] ),
+	JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX,
+	'filters is caller-controlled and deduplication does not bound it. 500 distinct slugs '
+	. 'would otherwise become a 500-value IN() clause. Truncating rather than erroring '
+	. 'matches jpkcom_postfilter_parse_filter_path(), which caps URL filter lists the same way.'
+);
+
+is_same(
+	'the cap truncates from the front, it does not reorder',
+	array_slice( $flood['category'], 0, 3 ),
+	[ 'slug-1', 'slug-2', 'slug-3' ]
+);
+
+is_same(
+	'a list at the cap is untouched',
+	count( jpkcom_postfilter_ability_normalize_filters(
+		[ 'category' => array_map( static fn( int $i ): string => 'slug-' . $i, range( 1, JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX ) ) ]
+	)['category'] ),
+	JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX
+);
+
 section( 'filter group applicability' );
 
 $group_explicit = [ 'taxonomy' => 'category', 'post_types' => [ 'post', 'projekt' ] ];
@@ -466,23 +573,11 @@ $GLOBALS['_stub_settings']['general']['enabled_post_types'] = [ 'post' ];
 $GLOBALS['_stub_groups']                                    = [
 	[ 'taxonomy' => 'category', 'label' => 'Kategorie', 'post_types' => [ 'post' ] ],
 	[ 'taxonomy' => 'post_tag', 'label' => 'Schlagwort', 'post_types' => [] ],
-	[ 'taxonomy' => 'public_only', 'label' => 'Public Only', 'post_types' => [ 'post' ] ],
-	[ 'taxonomy' => 'rest_only', 'label' => 'REST Only', 'post_types' => [ 'post' ] ],
-	[ 'taxonomy' => 'secret_tax', 'label' => 'Intern', 'post_types' => [ 'post' ] ],
+	[ 'taxonomy' => 'empty_tax', 'label' => 'Leer', 'post_types' => [ 'post' ] ],
 ];
 $GLOBALS['_stub_terms'] = [
-	'category'    => [ [ 'news', 'News', 4 ] ],
-	'post_tag'    => [ [ 'seo', 'SEO', 6 ] ],
-	'public_only' => [ [ 'pub', 'Public Term', 2 ] ],
-	'rest_only'   => [ [ 'rest', 'REST Term', 3 ] ],
-	'secret_tax'  => [ [ 'hidden', 'Hidden', 1 ] ],
-];
-$GLOBALS['_stub_taxonomies'] = [
-	'category'    => [ 'public' => true, 'show_in_rest' => true ],
-	'post_tag'    => [ 'public' => true, 'show_in_rest' => true ],
-	'public_only' => [ 'public' => true, 'show_in_rest' => false ],
-	'rest_only'   => [ 'public' => false, 'show_in_rest' => true ],
-	'secret_tax'  => [ 'public' => false, 'show_in_rest' => false ],
+	'category' => [ [ 'news', 'News', 4 ] ],
+	'post_tag' => [ [ 'seo', 'SEO', 6 ] ],
 ];
 
 $listed = jpkcom_postfilter_ability_list_filters( [ 'post_type' => 'post' ] );
@@ -494,12 +589,20 @@ is_same(
 );
 
 is_same(
-	'a fully private taxonomy is not disclosed',
+	'every applicable group with terms is reported',
+	is_array( $listed ) ? array_column( $listed['groups'], 'taxonomy' ) : null,
+	[ 'category', 'post_tag' ],
+	'The ability reports exactly what the site renders. There is no extra disclosure '
+	. 'rule: the filter bar shows every enabled group to anonymous visitors, so '
+	. 'withholding a group here would have been stricter than the public HTML.'
+);
+
+is_same(
+	'a group whose taxonomy yields no terms is skipped',
 	is_array( $listed ) ? count( $listed['groups'] ) : 0,
-	4,
-	'A taxonomy that is neither public nor REST-exposed must not be handed to a '
-	. 'subscriber-level caller, and ability listings are readable by any logged-in user. '
-	. 'Mixed-state taxonomies (public OR REST-exposed) must be disclosed: 4 groups.'
+	2,
+	'empty_tax is applicable but has no terms — an empty group would be noise in a '
+	. 'model context window.'
 );
 
 is_same(
@@ -514,19 +617,25 @@ is_same(
 	[ 'slug' => 'news', 'name' => 'News', 'count' => 4 ]
 );
 
-check(
-	'a taxonomy with public=true, show_in_rest=false is disclosed (OR logic)',
-	is_array( $listed ) && count( $listed['groups'] ) >= 3
-		&& ( $listed['groups'][2]['taxonomy'] === 'public_only' || in_array( 'public_only', array_column( $listed['groups'], 'taxonomy' ), true ) ),
-	'The disclosure check must use OR not AND: public is sufficient.'
+$GLOBALS['_stub_raw_group_entries']['post_tag'] = [
+	'not-an-array',
+	[ 'term' => (object) [ 'slug' => 'bogus', 'name' => 'Bogus' ] ],
+	[ 'is_active' => false ],
+];
+
+$malformed = jpkcom_postfilter_ability_list_filters( [ 'post_type' => 'post' ] );
+
+is_same(
+	'malformed term entries are skipped instead of fataling',
+	is_array( $malformed ) ? array_column( $malformed['groups'], 'taxonomy' ) : null,
+	[ 'category' ],
+	'A stdClass where a WP_Term belongs would make ->slug a dynamic-property read and '
+	. 'a missing entry a TypeError. On the WP 6.9 floor a Throwable escaping an ability '
+	. 'callback is an uncaught fatal, not a WP_Error, so the instanceof guards are '
+	. 'load-bearing. post_tag drops out entirely because none of its entries survive.'
 );
 
-check(
-	'a taxonomy with public=false, show_in_rest=true is disclosed (OR logic)',
-	is_array( $listed ) && count( $listed['groups'] ) >= 4
-		&& in_array( 'rest_only', array_column( $listed['groups'], 'taxonomy' ), true ),
-	'The disclosure check must use OR not AND: show_in_rest is sufficient.'
-);
+$GLOBALS['_stub_raw_group_entries'] = [];
 
 is_same(
 	'a missing post_type defaults to post',
@@ -613,6 +722,93 @@ is_same(
 	. 'of 0 no matter how many posts exist.'
 );
 
+is_same(
+	'the normalised filters reach build_query_args',
+	$GLOBALS['_stub_query_args']['filters'],
+	[ 'category' => [ 'news' ] ],
+	'This is the assertion that catches a dropped second argument. Echoing filters back '
+	. 'in the result proves nothing — that value is computed independently of the query. '
+	. 'Without the filters, build_query_args() builds no tax_query and the ability answers '
+	. 'every filtered request with the entire corpus.'
+);
+
+is_same(
+	'the normalised filters reach run_query',
+	$GLOBALS['_stub_run_query_args']['filters'],
+	[ 'category' => [ 'news' ] ],
+	'run_query() folds the filters into the cache key. Passing them to build_query_args() '
+	. 'but not here would make two different filter combinations share one cache entry.'
+);
+
+is_same(
+	'a query without a search term stays cacheable',
+	array_key_exists( 'cache', $GLOBALS['_stub_run_query_args']['args'] ),
+	false,
+	'Taxonomy filter combinations are bounded by the configured groups, so their cache '
+	. 'entries are bounded too. Only free-text search is unbounded.'
+);
+
+$searched = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'search' => 'wordpress security' ]
+);
+
+is_same(
+	'a search term reaches the query',
+	$GLOBALS['_stub_query_args']['atts']['s'],
+	'wordpress security'
+);
+
+is_same(
+	'a search query is not cached',
+	$GLOBALS['_stub_run_query_args']['args']['cache'] ?? null,
+	false,
+	'run_query() caches under md5( serialize( $args ) ) and stores a serialised WP_Query '
+	. 'with up to 50 full post objects, in the object cache and in APCu. search is '
+	. 'caller-controlled free text, so caching it lets an authenticated caller fill both '
+	. 'without bound. build_query_args() drops `cache` through its allowlist, so the key '
+	. 'has to be set on the returned args.'
+);
+
+$GLOBALS['_stub_settings']['general']['enabled_post_types'] = [ 'post', 'page' ];
+$GLOBALS['_stub_archiveless']                               = [ 'page' ];
+$GLOBALS['_stub_filter_url_calls']                          = 0;
+
+$archiveless = jpkcom_postfilter_ability_query_posts( [ 'post_type' => 'page' ] );
+
+is_same(
+	'a post type without an archive returns no filter URL',
+	is_array( $archiveless ) ? $archiveless['filter_url'] : null,
+	'',
+	'get_archive_base_url() returns "" for a post type with no archive — page is public '
+	. 'and selectable in the settings. trailingslashit("") is "/", so building a link '
+	. 'would hand the caller the relative path "/filter/news/", and archive_base_regex() '
+	. 'returns null for those post types so no rewrite rule stands behind it either. '
+	. 'A model handing a user a 404 link is worse than one with no link to give.'
+);
+
+is_same(
+	'no URL is built at all in that case',
+	$GLOBALS['_stub_filter_url_calls'],
+	0
+);
+
+$GLOBALS['_stub_archiveless']                               = [];
+$GLOBALS['_stub_settings']['general']['enabled_post_types'] = [ 'post' ];
+
+$GLOBALS['_stub_query']->posts = [ (object) [ 'ID' => 7 ], $post_one, 'not-a-post' ];
+
+$malformed_posts = jpkcom_postfilter_ability_query_posts( [ 'post_type' => 'post' ] );
+
+is_same(
+	'non-WP_Post entries in the result set are skipped instead of fataling',
+	is_array( $malformed_posts ) ? array_column( $malformed_posts['posts'], 'id' ) : null,
+	[ 42 ],
+	'project_post() type-hints \WP_Post, so an unguarded call on a stdClass is a '
+	. 'TypeError — an uncaught fatal inside an ability callback on WP 6.9.'
+);
+
+$GLOBALS['_stub_query']->posts = [ $post_one ];
+
 section( 'query-posts guards' );
 
 $unknown_tax = jpkcom_postfilter_ability_query_posts(
@@ -646,6 +842,54 @@ is_same(
 	is_array( $result ) ? $result['unknown_terms'] : null,
 	[]
 );
+
+$GLOBALS['_stub_term_lookups']    = [];
+$GLOBALS['_stub_term_hide_empty'] = null;
+
+$many_slugs = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'filters' => [ 'category' => [ 'news', 'nope-one', 'nope-two', 'nope-three' ] ] ]
+);
+
+is_same(
+	'the term check costs one lookup per taxonomy, not one per slug',
+	$GLOBALS['_stub_term_lookups'],
+	[ 'category' => 1 ],
+	'Four slugs, one lookup. A per-slug get_term_by() would be four queries here and '
+	. 'fifty at the input cap. The cached list is keyed by taxonomy — never by the '
+	. 'requested slugs — so it cannot be used to flood the cache either. Same rule as '
+	. 'jpkcom_postfilter_has_unknown_terms().'
+);
+
+is_same(
+	'the lookup includes terms with no posts',
+	$GLOBALS['_stub_term_hide_empty'],
+	false,
+	'A term with no posts is still a real term and a legitimate filter URL. With '
+	. 'hide_empty = true it would be reported as a typo.'
+);
+
+is_same(
+	'all unmatched slugs are reported, matched ones are not',
+	is_array( $many_slugs ) ? $many_slugs['unknown_terms'] : null,
+	[ 'category' => [ 'nope-one', 'nope-two', 'nope-three' ] ]
+);
+
+$GLOBALS['_stub_raw_terms']['category'] = [ 'not-a-term', (object) [ 'slug' => 'news' ] ];
+
+$malformed_terms = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'filters' => [ 'category' => [ 'news' ] ] ]
+);
+
+is_same(
+	'a malformed cached term list does not fatal, it just matches nothing',
+	is_array( $malformed_terms ) ? $malformed_terms['unknown_terms'] : null,
+	[ 'category' => [ 'news' ] ],
+	'url-routing.php reads the same list through a \WP_Term-typed closure, which would '
+	. 'throw here. Inside an ability callback on WP 6.9 that is an uncaught fatal, so '
+	. 'this copy filters with instanceof instead.'
+);
+
+$GLOBALS['_stub_raw_terms'] = [];
 
 $clamped = jpkcom_postfilter_ability_query_posts(
 	[ 'post_type' => 'post', 'per_page' => 5000 ]
@@ -788,6 +1032,8 @@ check(
 	. 'guard was skipped without a fatal masking it.'
 );
 
+$GLOBALS['_stub_debug_log_calls'] = 0;
+
 jpkcom_postfilter_register_abilities();
 
 check(
@@ -800,6 +1046,140 @@ check(
 	. 'so bypassing the guard would fatal here rather than log - a non-zero count would mean '
 	. 'the guard was skipped without a fatal masking it.'
 );
+
+section( 'registration with the Abilities API present' );
+
+// Everything above this line ran with the API genuinely absent. From here on it
+// exists, so the registration path itself can be exercised.
+jpkpf_define_ability_api_stubs();
+
+check(
+	'the guard passes once the API is present',
+	jpkcom_postfilter_abilities_enabled()
+);
+
+$GLOBALS['_stub_has_category']          = false;
+$GLOBALS['_stub_registered_categories'] = [];
+$GLOBALS['_stub_debug_log_calls']       = 0;
+
+jpkcom_postfilter_register_ability_category();
+
+is_same(
+	'the category is registered when the registry reports it absent',
+	array_keys( $GLOBALS['_stub_registered_categories'] ),
+	[ JPKCOM_POSTFILTER_ABILITY_CATEGORY ]
+);
+
+check(
+	'the category registration carries a label and a description',
+	( $GLOBALS['_stub_registered_categories'][ JPKCOM_POSTFILTER_ABILITY_CATEGORY ]['label'] ?? '' ) !== ''
+		&& ( $GLOBALS['_stub_registered_categories'][ JPKCOM_POSTFILTER_ABILITY_CATEGORY ]['description'] ?? '' ) !== ''
+);
+
+$GLOBALS['_stub_has_category']          = true;
+$GLOBALS['_stub_registered_categories'] = [];
+
+jpkcom_postfilter_register_ability_category();
+
+is_same(
+	'an existing category is not re-registered',
+	$GLOBALS['_stub_registered_categories'],
+	[],
+	'Categories are global and first-wins. A sibling JPKCom plugin may have registered '
+	. 'this slug already, and re-registering would fail silently.'
+);
+
+$GLOBALS['_stub_has_category']          = false;
+$GLOBALS['_stub_category_returns_null'] = true;
+$GLOBALS['_stub_registered_categories'] = [];
+$GLOBALS['_stub_debug_log_calls']       = 0;
+
+jpkcom_postfilter_register_ability_category();
+
+is_same(
+	'a failed category registration is logged',
+	$GLOBALS['_stub_debug_log_calls'],
+	1,
+	'wp_register_ability_category() reports failure only through _doing_it_wrong(), '
+	. 'which is silent in production.'
+);
+
+$GLOBALS['_stub_category_returns_null'] = false;
+
+$GLOBALS['_stub_registered_abilities'] = [];
+$GLOBALS['_stub_debug_log_calls']      = 0;
+
+jpkcom_postfilter_register_abilities();
+
+is_same(
+	'both abilities are registered, by name',
+	array_keys( $GLOBALS['_stub_registered_abilities'] ),
+	[ 'jpkcom-post-filter/list-filters', 'jpkcom-post-filter/query-posts' ],
+	'The whole feature is one wp_register_ability() call per ability. Nothing else in '
+	. 'the suite reaches this line.'
+);
+
+is_same(
+	'both are registered into the shared category',
+	array_column( $GLOBALS['_stub_registered_abilities'], 'category' ),
+	[ JPKCOM_POSTFILTER_ABILITY_CATEGORY, JPKCOM_POSTFILTER_ABILITY_CATEGORY ]
+);
+
+is_same(
+	'a successful registration logs nothing',
+	$GLOBALS['_stub_debug_log_calls'],
+	0
+);
+
+$GLOBALS['_stub_register_null_for'] = 'jpkcom-post-filter/query-posts';
+$GLOBALS['_stub_debug_log_calls']   = 0;
+
+jpkcom_postfilter_register_abilities();
+
+is_same(
+	'a null return is detected and logged, once, for the failing ability only',
+	$GLOBALS['_stub_debug_log_calls'],
+	1,
+	'wp_register_ability() returns null on every failure path and reports only through '
+	. '_doing_it_wrong(). Both are silent in production, so the check cannot surface '
+	. 'anything there — but without it the code would not even notice.'
+);
+
+$GLOBALS['_stub_register_null_for'] = '';
+
+// The kill switch is a constant, so it takes a second process to observe it off.
+$child_output = null;
+
+if ( function_exists( 'exec' ) ) {
+	putenv( 'JPKPF_ABILITIES_KILL_SWITCH_CHILD=1' );
+
+	$lines  = [];
+	$status = 0;
+
+	exec( escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( __FILE__ ) . ' 2>&1', $lines, $status );
+
+	putenv( 'JPKPF_ABILITIES_KILL_SWITCH_CHILD' );
+
+	foreach ( $lines as $line ) {
+		if ( str_starts_with( $line, 'KILL_SWITCH ' ) ) {
+			$child_output = $line;
+		}
+	}
+}
+
+if ( $child_output === null ) {
+	echo "  SKIP  the kill switch could not be exercised (no usable exec())\n";
+} else {
+	is_same(
+		'JPKCOM_POSTFILTER_ABILITIES = false registers nothing at all',
+		$child_output,
+		'KILL_SWITCH enabled=0 categories=0 abilities=0',
+		'Run in a child process with the constant defined false and the Abilities API '
+		. 'fully present, so anything registered would be the switch failing to hold. '
+		. 'A documented wp-config.php escape hatch that silently did nothing would be '
+		. 'worse than none.'
+	);
+}
 
 printf( "\n  %d passed, %d failed\n", $pass, $fail );
 

@@ -70,6 +70,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_normalize_filters' 
      * duplicates and empty taxonomies, and skips values that are not scalar
      * rather than letting a TypeError escape.
      *
+     * The slug list per taxonomy is truncated at
+     * JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX. `filters` is caller-controlled, and
+     * every slug costs work further down the pipeline - one IN() member in the
+     * tax query and one entry to diff for the unknown-terms report. Truncating
+     * rather than erroring mirrors jpkcom_postfilter_parse_filter_path(), which
+     * already caps over-long filter lists coming from a URL.
+     *
      * @since 1.3.0
      *
      * @param mixed $filters Raw filters input.
@@ -106,6 +113,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_normalize_filters' 
                 if ( ! in_array( needle: $clean_slug, haystack: $clean, strict: true ) ) {
                     $clean[] = $clean_slug;
                 }
+            }
+
+            if ( count( $clean ) > JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX ) {
+                $clean = array_slice( $clean, 0, JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX );
             }
 
             if ( $clean !== [] ) {
@@ -310,37 +321,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_enabled_post_types'
 }
 
 
-if ( ! function_exists( function: 'jpkcom_postfilter_ability_taxonomy_is_disclosable' ) ) {
-    /**
-     * Decide whether a taxonomy may be named in an ability response
-     *
-     * Ability listings are readable by any logged-in user, so a taxonomy that
-     * is neither public nor REST-exposed is withheld.
-     *
-     * @since 1.3.0
-     *
-     * @param string $taxonomy Taxonomy key.
-     * @return bool True when the taxonomy may be disclosed.
-     */
-    function jpkcom_postfilter_ability_taxonomy_is_disclosable( string $taxonomy ): bool {
-        if ( ! taxonomy_exists( $taxonomy ) ) {
-            return false;
-        }
-
-        $object = get_taxonomy( $taxonomy );
-
-        if ( $object === false ) {
-            return false;
-        }
-
-        return (bool) $object->public || (bool) $object->show_in_rest;
-    }
-}
-
-
 if ( ! function_exists( function: 'jpkcom_postfilter_ability_list_filters' ) ) {
     /**
      * Execute callback for jpkcom-post-filter/list-filters
+     *
+     * Reports exactly the groups the site's own filter bar renders. There is no
+     * extra disclosure rule: jpkcom_postfilter_get_terms_for_group() checks only
+     * taxonomy_exists(), so every enabled group is already public HTML for
+     * anonymous visitors. Withholding a taxonomy here would have been stricter
+     * than the front end while changing nothing about what is reachable.
      *
      * @since 1.3.0
      *
@@ -371,10 +360,6 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_list_filters' ) ) {
             }
 
             if ( ! jpkcom_postfilter_ability_group_applies( $group, $post_type, $enabled_post_types ) ) {
-                continue;
-            }
-
-            if ( ! jpkcom_postfilter_ability_taxonomy_is_disclosable( $taxonomy ) ) {
                 continue;
             }
 
@@ -421,6 +406,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_terms' ) ) 
      * results and a noindex robots tag. Reporting them lets a caller tell a
      * typo apart from an genuinely empty result set.
      *
+     * Checked the same way as jpkcom_postfilter_has_unknown_terms(): one
+     * array_diff() against the transient-cached per-taxonomy term list, never
+     * one lookup per requested slug. The cache key is the taxonomy, never the
+     * requested slugs, so a caller cannot use this to flood the cache and a warm
+     * cache costs no query at all.
+     *
+     * `hide_empty = false`: a term with no posts is still a real term.
+     *
      * @since 1.3.0
      *
      * @param array<string, string[]> $filters Normalised filters map.
@@ -430,13 +423,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_terms' ) ) 
         $unknown = [];
 
         foreach ( $filters as $taxonomy => $slugs ) {
-            $missing = [];
+            $known = [];
 
-            foreach ( $slugs as $slug ) {
-                if ( ! get_term_by( 'slug', $slug, (string) $taxonomy ) instanceof \WP_Term ) {
-                    $missing[] = $slug;
+            foreach ( jpkcom_postfilter_get_terms_for_taxonomy( (string) $taxonomy, false ) as $term ) {
+                if ( $term instanceof \WP_Term ) {
+                    $known[] = (string) $term->slug;
                 }
             }
+
+            $missing = array_values( array_diff( $slugs, $known ) );
 
             if ( $missing !== [] ) {
                 $unknown[ (string) $taxonomy ] = $missing;
@@ -545,10 +540,20 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
             $atts['s'] = $input['search'];
         }
 
-        $query = jpkcom_postfilter_run_query(
-            jpkcom_postfilter_build_query_args( $atts, $filters ),
-            $filters
-        );
+        $query_args = jpkcom_postfilter_build_query_args( $atts, $filters );
+
+        // A search term is the one piece of free-form caller input that reaches
+        // the query, and jpkcom_postfilter_run_query() caches unconditionally
+        // under md5( serialize( $args ) ) - a serialised WP_Query with up to 50
+        // full post objects per entry, in the object cache and in APCu. A caller
+        // varying the term would fill both without bound, so searches are not
+        // cached. build_query_args() drops `cache` through its allowlist, hence
+        // setting it on the result rather than in $atts.
+        if ( isset( $atts['s'] ) ) {
+            $query_args['cache'] = false;
+        }
+
+        $query = jpkcom_postfilter_run_query( $query_args, $filters );
 
         $posts = [];
 
@@ -560,6 +565,17 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
             $posts[] = jpkcom_postfilter_ability_project_post( $post, $allowed );
         }
 
+        // jpkcom_postfilter_get_archive_base_url() returns '' for a post type
+        // without an archive - `page` is public, selectable in the settings and
+        // has none. Building a link from '' would yield the relative path
+        // "/filter/news/", and jpkcom_postfilter_archive_base_regex() returns
+        // null for exactly those post types, so no rewrite rule stands behind
+        // it either. An empty string is a better answer than a 404.
+        $archive_base_url = jpkcom_postfilter_get_archive_base_url( $post_type );
+        $filter_url       = $archive_base_url === ''
+            ? ''
+            : jpkcom_postfilter_get_filter_url( $archive_base_url, $filters, $page );
+
         return [
             'post_type'     => $post_type,
             'filters'       => $filters,
@@ -567,11 +583,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
             'page'          => $page,
             'per_page'      => $per_page,
             'total_pages'   => (int) $query->max_num_pages,
-            'filter_url'    => jpkcom_postfilter_get_filter_url(
-                jpkcom_postfilter_get_archive_base_url( $post_type ),
-                $filters,
-                $page
-            ),
+            'filter_url'    => $filter_url,
             'unknown_terms' => jpkcom_postfilter_ability_unknown_terms( $filters ),
             'posts'         => $posts,
         ];
@@ -835,7 +847,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
                         ],
                         'filter_url' => [
                             'type'        => 'string',
-                            'description' => __( 'Shareable front-end URL showing this filter combination.', 'jpkcom-post-filter' ),
+                            'description' => __( 'Shareable front-end URL showing this filter combination. Empty when the post type has no archive page, because there is no front-end URL that could show it.', 'jpkcom-post-filter' ),
                         ],
                         'unknown_terms' => [
                             'type'        => 'object',
