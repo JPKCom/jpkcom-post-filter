@@ -160,12 +160,23 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_allowed_taxonomies'
     /**
      * Collect the taxonomies that may be used to filter a post type
      *
+     * A configured group whose taxonomy is not registered is skipped. The
+     * configuration outlives the registration - deactivating the plugin that
+     * registered a taxonomy leaves its filter group behind - and a group in that
+     * state would otherwise be reported as filterable while
+     * jpkcom_postfilter_build_tax_query() drops the clause it produces
+     * (query-handler.php:57), which is the silent-full-corpus failure the
+     * validation guard exists to prevent. Skipping the group here turns that case
+     * into a jpkcom_postfilter_unknown_taxonomy error that names the real ones.
+     *
+     * This is why the function reads WordPress state; it is not pure.
+     *
      * @since 1.3.0
      *
      * @param string                            $post_type          Post type to test.
      * @param array<int, array<string, mixed>>  $groups             Enabled filter groups.
      * @param string[]                          $enabled_post_types Globally enabled post types.
-     * @return string[] Unique taxonomy keys.
+     * @return string[] Unique taxonomy keys that are registered right now.
      */
     function jpkcom_postfilter_ability_allowed_taxonomies( string $post_type, array $groups, array $enabled_post_types ): array {
         $allowed = [];
@@ -178,6 +189,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_allowed_taxonomies'
             $taxonomy = (string) ( $group['taxonomy'] ?? '' );
 
             if ( $taxonomy === '' ) {
+                continue;
+            }
+
+            if ( ! taxonomy_exists( $taxonomy ) ) {
                 continue;
             }
 

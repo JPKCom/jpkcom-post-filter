@@ -56,6 +56,19 @@ function is_wp_error( mixed $thing ): bool {
 	return $thing instanceof WP_Error;
 }
 
+/**
+ * Taxonomies this fixture considers registered.
+ *
+ * jpkcom_postfilter_ability_allowed_taxonomies() consults the registry, because
+ * a filter group outlives the plugin that registered its taxonomy. Anything not
+ * listed here behaves like a taxonomy whose plugin was deactivated.
+ */
+$GLOBALS['_stub_taxonomies'] = [ 'category', 'post_tag', 'empty_tax' ];
+
+function taxonomy_exists( string $taxonomy ): bool {
+	return in_array( $taxonomy, $GLOBALS['_stub_taxonomies'], true );
+}
+
 function wp_json_encode( mixed $value ): string {
 	return (string) json_encode( $value );
 }
@@ -511,6 +524,24 @@ is_same(
 	[]
 );
 
+$ghost_groups = [
+	[ 'taxonomy' => 'category', 'post_types' => [ 'post' ] ],
+	[ 'taxonomy' => 'jpkpf_ghost_tax', 'post_types' => [ 'post' ] ],
+];
+
+is_same(
+	'a group whose taxonomy is no longer registered is skipped',
+	jpkcom_postfilter_ability_allowed_taxonomies( 'post', $ghost_groups, [ 'post' ] ),
+	[ 'category' ],
+	'The settings outlive the registration: deactivating the plugin that registered a '
+	. 'taxonomy leaves its filter group behind. Reproduced in-process — with the group '
+	. 'still configured, taxonomy_exists() was false while this function reported the '
+	. 'taxonomy as filterable, validate_filters() then accepted it, build_query_args() '
+	. 'produced no tax_query (query-handler.php:57 skips unknown taxonomies) and the '
+	. 'ability answered with the complete unfiltered corpus. That is the exact failure '
+	. 'the validation guard exists to prevent, one step further along.'
+);
+
 section( 'taxonomy validation — the silent-full-corpus guard' );
 
 $valid = jpkcom_postfilter_ability_validate_filters( [ 'category' => [ 'news' ] ], [ 'category', 'post_tag' ] );
@@ -840,6 +871,30 @@ is_same(
 	is_array( $unknown_term ) ? $unknown_term['unknown_terms'] : null,
 	[ 'category' => [ 'does-not-exist' ] ]
 );
+
+$GLOBALS['_stub_groups'][] = [ 'taxonomy' => 'jpkpf_ghost_tax', 'label' => 'Geist', 'post_types' => [ 'post' ] ];
+
+$ghost_filtered = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'filters' => [ 'jpkpf_ghost_tax' => [ 'x' ] ] ]
+);
+
+check(
+	'a filter group whose taxonomy is gone is rejected, not answered with everything',
+	$ghost_filtered instanceof WP_Error
+		&& $ghost_filtered->get_error_code() === 'jpkcom_postfilter_unknown_taxonomy',
+	'The group is still configured, so the guard used to wave the filter through on the '
+	. 'strength of the configuration alone — and the query pipeline then dropped the '
+	. 'clause and returned the whole corpus as a filtered answer.'
+);
+
+check(
+	'and the message names the taxonomies that really are registered',
+	$ghost_filtered instanceof WP_Error
+		&& str_contains( $ghost_filtered->get_error_message(), 'category' )
+		&& str_contains( $ghost_filtered->get_error_message(), 'post_tag' )
+);
+
+array_pop( $GLOBALS['_stub_groups'] );
 
 section( 'empty maps must encode as JSON objects, not arrays' );
 
