@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.2.3  
+**Version:** 1.3.0  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 6.9  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.2.3  
+**Stable tag:** 1.3.0  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -439,6 +439,7 @@ See `CLAUDE.md` in the plugin root for the full developer reference including ar
 | `JPKCOM_POSTFILTER_URL_ENDPOINT` | `'filter'` | URL path segment |
 | `JPKCOM_POSTFILTER_SETTINGS_DIR` | `WP_CONTENT_DIR . '/.ht.jpkcom-post-filter-settings'` | Settings file cache location |
 | `JPKCOM_POSTFILTER_MAX_FILTER_COMBOS` | `3` | Default max filter group combinations |
+| `JPKCOM_POSTFILTER_ABILITIES` | `true` | Registers the WordPress Abilities API integration. Set to `false` to withdraw both abilities from REST and MCP entirely. |
 
 ### JavaScript data attributes
 
@@ -490,6 +491,11 @@ jpkcom_postfilter_get_filter_groups_enabled()
 jpkcom_postfilter_get_terms_for_group( $group, $active_filters )
 ```
 
+### Filters
+
+- `jpkcom_postfilter_ability_meta( array $meta, string $ability_name )` — adjust the meta of an ability before registration. Set `show_in_rest` to `false` to hide it from the REST API, or `mcp.public` to `false` to hide it from MCP clients.
+- `jpkcom_postfilter_ability_capability( string $capability, string $ability_name )` — the capability required to run an ability. Defaults to `read`, which covers every logged-in user. Raise it to `edit_posts` to restrict bulk machine-readable access to published content.
+
 ---
 
 ## FAQ
@@ -530,6 +536,13 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.3.0
+
+* **Added:** the plugin now registers two read-only WordPress Abilities, `jpkcom-post-filter/list-filters` and `jpkcom-post-filter/query-posts`, in the shared `jpkcom-content` category. MCP clients, REST automation and the WordPress AI client can ask which taxonomies and terms a post type can be filtered by, then run a filtered, paginated query and receive both the results and a shareable filter URL.
+* **Added:** `JPKCOM_POSTFILTER_ABILITIES` (default `true`) withdraws both abilities from REST and MCP when set to `false` in `wp-config.php`, plus the filters `jpkcom_postfilter_ability_meta` and `jpkcom_postfilter_ability_capability` for per-ability control.
+* **Hardened:** a filter naming a taxonomy that does not exist previously produced the complete unfiltered result set, because the query builder drops such a clause silently. The query ability now rejects it and names the valid taxonomies, so a caller can correct itself instead of presenting the whole site as a filtered answer.
+* **Hardened:** the query ability always passes a positive page size. The shortcode default of `-1` sets `no_found_rows`, which reports a total of zero regardless of how many posts exist.
 
 ### 1.2.3
 * CI: the lint and guard workflow now also runs on pushes to `main`. It only covered pull requests, so a direct push with bypass rights skipped every check

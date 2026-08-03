@@ -48,6 +48,7 @@ All builders call the same shortcode render functions (`jpkcom_postfilter_shortc
 | `JPKCOM_POSTFILTER_CACHE_ENABLED` | `true` | Master cache toggle |
 | `JPKCOM_POSTFILTER_DEBUG` | `WP_DEBUG` | Debug mode |
 | `JPKCOM_POSTFILTER_URL_ENDPOINT` | `'filter'` | URL segment |
+| `JPKCOM_POSTFILTER_ABILITIES` | `true` | Abilities API registration master switch |
 
 ---
 
