@@ -253,7 +253,7 @@ $valid = jpkcom_postfilter_ability_validate_filters( [ 'category' => [ 'news' ] 
 
 is_same( 'a known taxonomy validates', $valid, true );
 
-$rejected = jpkcom_postfilter_ability_validate_filters( [ 'tag' => [ 'seo' ] ], [ 'category', 'post_tag' ] );
+$rejected = jpkcom_postfilter_ability_validate_filters( [ 'nonexistent' => [ 'seo' ] ], [ 'category', 'post_tag' ] );
 
 check(
 	'an unknown taxonomy is rejected',
@@ -272,7 +272,7 @@ is_same(
 
 check(
 	'the message names the offending taxonomy',
-	$rejected instanceof WP_Error && str_contains( $rejected->get_error_message(), 'tag' )
+	$rejected instanceof WP_Error && str_contains( $rejected->get_error_message(), 'nonexistent' )
 );
 
 check(
