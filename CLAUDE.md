@@ -461,8 +461,9 @@ jpkcom_postfilter_abilities_enabled()                       // kill switch + API
 ```
 
 `jpkcom_postfilter_get_ability_definitions()` is deliberately pure — no registry access, no side
-effects beyond `__()` and one `apply_filters()`. That is what lets `tests/test-abilities.php` assert
-the registration arrays without a WordPress install.
+effects beyond `__()` and the `jpkcom_postfilter_ability_meta` filter, which runs once per ability.
+That is what lets `tests/test-abilities.php` assert the registration arrays without a WordPress
+install.
 
 ### Five things that will bite
 
