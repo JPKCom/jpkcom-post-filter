@@ -207,6 +207,12 @@ function get_the_excerpt( WP_Post $post ): string {
 	return $post->post_excerpt;
 }
 
+$GLOBALS['_stub_can'] = true;
+
+function current_user_can( string $capability ): bool {
+	return $GLOBALS['_stub_can'];
+}
+
 require_once dirname( __DIR__ ) . '/includes/abilities.php';
 
 // --- Harness ---------------------------------------------------------------
@@ -656,6 +662,103 @@ check(
 	'non-array input does not fatal',
 	is_array( jpkcom_postfilter_ability_query_posts( null ) )
 );
+
+section( 'ability definitions' );
+
+$definitions = jpkcom_postfilter_get_ability_definitions();
+
+is_same( 'exactly two abilities are defined', count( $definitions ), 2 );
+
+foreach ( $definitions as $name => $args ) {
+	check(
+		"name '{$name}' matches the core registry regex",
+		(bool) preg_match( '/^[a-z0-9-]+\/[a-z0-9-]+$/', $name ),
+		'Lowercase, hyphens and exactly one slash. Core rejects anything else, and it '
+		. 'returns null with only a _doing_it_wrong() notice, which is silent in production.'
+	);
+
+	foreach ( [ 'label', 'description', 'category', 'execute_callback', 'permission_callback' ] as $key ) {
+		check( "'{$name}' declares {$key}", isset( $args[ $key ] ) && $args[ $key ] !== '' );
+	}
+
+	check(
+		"'{$name}' points at an existing execute callback",
+		function_exists( $args['execute_callback'] )
+	);
+
+	check(
+		"'{$name}' points at an existing permission callback",
+		function_exists( $args['permission_callback'] )
+	);
+
+	check(
+		"'{$name}' declares a non-empty input schema",
+		isset( $args['input_schema']['properties'] ) && $args['input_schema']['properties'] !== [],
+		'With an empty input schema core calls the callbacks with zero arguments, and '
+		. 'passing input to such an ability is a hard ability_missing_input_schema error.'
+	);
+
+	check(
+		"'{$name}' declares an output schema",
+		isset( $args['output_schema']['type'] ) && $args['output_schema']['type'] === 'object'
+	);
+
+	foreach ( [ 'readonly', 'destructive', 'idempotent' ] as $annotation ) {
+		check(
+			"'{$name}' sets the {$annotation} annotation explicitly",
+			isset( $args['meta']['annotations'][ $annotation ] )
+				&& is_bool( $args['meta']['annotations'][ $annotation ] ),
+			'Annotations default to null, and the REST run controller derives the required '
+			. 'HTTP verb from them: an ability with no annotations is POST-only.'
+		);
+	}
+
+	check(
+		"'{$name}' is marked read-only",
+		$args['meta']['annotations']['readonly'] === true
+	);
+
+	check(
+		"'{$name}' opts into REST",
+		$args['meta']['show_in_rest'] === true
+	);
+
+	check(
+		"'{$name}' opts into MCP",
+		$args['meta']['mcp']['public'] === true,
+		'The MCP Adapter gates both discovery and execution on meta.mcp.public; without '
+		. 'it the ability is invisible to MCP clients.'
+	);
+
+	foreach ( $args['input_schema']['properties'] as $property => $schema ) {
+		check(
+			"'{$name}' documents the input property {$property}",
+			isset( $schema['description'] ) && $schema['description'] !== ''
+		);
+	}
+}
+
+check(
+	'the category slug matches the stricter category regex',
+	(bool) preg_match( '/^[a-z0-9]+(?:-[a-z0-9]+)*$/', JPKCOM_POSTFILTER_ABILITY_CATEGORY ),
+	'Category slugs may not contain a slash and may not start or end with a hyphen.'
+);
+
+is_same(
+	'the schema maximum and the clamp cannot drift apart',
+	$definitions['jpkcom-post-filter/query-posts']['input_schema']['properties']['per_page']['maximum'],
+	jpkcom_postfilter_ability_clamp_per_page( 100000 )
+);
+
+section( 'permission callbacks' );
+
+$GLOBALS['_stub_can'] = true;
+check( 'permission granted when the capability is held', jpkcom_postfilter_ability_permission_query_posts( [] ) );
+
+$GLOBALS['_stub_can'] = false;
+check( 'permission denied otherwise', ! jpkcom_postfilter_ability_permission_query_posts( [] ) );
+
+$GLOBALS['_stub_can'] = true;
 
 printf( "\n  %d passed, %d failed\n", $pass, $fail );
 

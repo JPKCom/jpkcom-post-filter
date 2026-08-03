@@ -577,3 +577,292 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
         ];
     }
 }
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_meta' ) ) {
+    /**
+     * Build the meta array for an ability
+     *
+     * show_in_rest governs core REST visibility. The public key is inert on
+     * WordPress 6.9 and 7.0 and seeds show_in_rest from 7.1 onwards. The mcp
+     * key is the MCP Adapter's own gate and is ignored by core.
+     *
+     * @since 1.3.0
+     *
+     * @param string $ability_name Fully qualified ability name.
+     * @return array<string, mixed> Meta array for wp_register_ability().
+     */
+    function jpkcom_postfilter_ability_meta( string $ability_name ): array {
+        $meta = [
+            'show_in_rest' => true,
+            'public'       => true,
+            'mcp'          => [ 'public' => true ],
+            'annotations'  => [
+                'readonly'    => true,
+                'destructive' => false,
+                'idempotent'  => true,
+            ],
+        ];
+
+        /**
+         * Filter the meta array of a JPKCom Post Filter ability
+         *
+         * Use this to withdraw an ability from REST or MCP on a specific site.
+         *
+         * @since 1.3.0
+         *
+         * @param array<string, mixed> $meta         Meta array.
+         * @param string               $ability_name Fully qualified ability name.
+         */
+        $filtered = apply_filters( 'jpkcom_postfilter_ability_meta', $meta, $ability_name );
+
+        return is_array( $filtered ) ? $filtered : $meta;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_user_can' ) ) {
+    /**
+     * Check the capability required to run an ability
+     *
+     * Defaults to 'read'. The query is hard-scoped to published posts, so this
+     * cannot expose drafts or private content - but it is bulk machine-readable
+     * access, which a site may want to restrict further.
+     *
+     * @since 1.3.0
+     *
+     * @param string $ability_name Fully qualified ability name.
+     * @return bool True when the current user may run the ability.
+     */
+    function jpkcom_postfilter_ability_user_can( string $ability_name ): bool {
+        /**
+         * Filter the capability required to run a JPKCom Post Filter ability
+         *
+         * @since 1.3.0
+         *
+         * @param string $capability   Capability name.
+         * @param string $ability_name Fully qualified ability name.
+         */
+        $capability = apply_filters( 'jpkcom_postfilter_ability_capability', 'read', $ability_name );
+
+        return current_user_can( is_string( $capability ) ? $capability : 'read' );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_permission_list_filters' ) ) {
+    /**
+     * Permission callback for jpkcom-post-filter/list-filters
+     *
+     * @since 1.3.0
+     *
+     * @param mixed $input Validated ability input, unused.
+     * @return bool True when the current user may run the ability.
+     */
+    function jpkcom_postfilter_ability_permission_list_filters( mixed $input = null ): bool {
+        return jpkcom_postfilter_ability_user_can( 'jpkcom-post-filter/list-filters' );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_permission_query_posts' ) ) {
+    /**
+     * Permission callback for jpkcom-post-filter/query-posts
+     *
+     * @since 1.3.0
+     *
+     * @param mixed $input Validated ability input, unused.
+     * @return bool True when the current user may run the ability.
+     */
+    function jpkcom_postfilter_ability_permission_query_posts( mixed $input = null ): bool {
+        return jpkcom_postfilter_ability_user_can( 'jpkcom-post-filter/query-posts' );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) ) {
+    /**
+     * Build the registration arguments for every ability this plugin provides
+     *
+     * Pure: touches no WordPress state, calls no registry, has no side effects.
+     * That is what lets the CI harness assert the shape of these arrays without
+     * a WordPress installation.
+     *
+     * @since 1.3.0
+     *
+     * @return array<string, array<string, mixed>> Ability name => wp_register_ability() args.
+     */
+    function jpkcom_postfilter_get_ability_definitions(): array {
+        $term_schema = [
+            'type'       => 'object',
+            'properties' => [
+                'slug' => [
+                    'type'        => 'string',
+                    'description' => __( 'Term slug. Use this value inside the "filters" input of jpkcom-post-filter/query-posts.', 'jpkcom-post-filter' ),
+                ],
+                'name' => [
+                    'type'        => 'string',
+                    'description' => __( 'Human-readable term name.', 'jpkcom-post-filter' ),
+                ],
+                'count' => [
+                    'type'        => 'integer',
+                    'description' => __( 'Number of published posts carrying this term across the whole site. This total is NOT narrowed by any other active filter, so it does not describe the size of a combined result set.', 'jpkcom-post-filter' ),
+                ],
+            ],
+        ];
+
+        return [
+            'jpkcom-post-filter/list-filters' => [
+                'label'       => __( 'List available post filters', 'jpkcom-post-filter' ),
+                'description' => __( 'Returns the taxonomies and terms that can be used to filter a post type on this site. Call this before jpkcom-post-filter/query-posts so taxonomy keys and term slugs never have to be guessed.', 'jpkcom-post-filter' ),
+                'category'    => JPKCOM_POSTFILTER_ABILITY_CATEGORY,
+
+                'input_schema' => [
+                    'type'       => 'object',
+                    'properties' => [
+                        'post_type' => [
+                            'type'        => 'string',
+                            'description' => __( 'Post type to list filters for. Defaults to "post".', 'jpkcom-post-filter' ),
+                            'default'     => 'post',
+                        ],
+                    ],
+                ],
+
+                'output_schema' => [
+                    'type'       => 'object',
+                    'properties' => [
+                        'post_type' => [
+                            'type'        => 'string',
+                            'description' => __( 'The post type these filters apply to.', 'jpkcom-post-filter' ),
+                        ],
+                        'groups' => [
+                            'type'        => 'array',
+                            'description' => __( 'Configured filter groups, in the order they appear on the site.', 'jpkcom-post-filter' ),
+                            'items'       => [
+                                'type'       => 'object',
+                                'properties' => [
+                                    'taxonomy' => [
+                                        'type'        => 'string',
+                                        'description' => __( 'Taxonomy key. Use this value as a key in the "filters" input of jpkcom-post-filter/query-posts.', 'jpkcom-post-filter' ),
+                                    ],
+                                    'label' => [
+                                        'type'        => 'string',
+                                        'description' => __( 'Human-readable label configured for this filter group.', 'jpkcom-post-filter' ),
+                                    ],
+                                    'terms' => [
+                                        'type'        => 'array',
+                                        'description' => __( 'Terms available for this taxonomy.', 'jpkcom-post-filter' ),
+                                        'items'       => $term_schema,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+
+                'execute_callback'    => 'jpkcom_postfilter_ability_list_filters',
+                'permission_callback' => 'jpkcom_postfilter_ability_permission_list_filters',
+                'meta'                => jpkcom_postfilter_ability_meta( 'jpkcom-post-filter/list-filters' ),
+            ],
+
+            'jpkcom-post-filter/query-posts' => [
+                'label'       => __( 'Query filtered posts', 'jpkcom-post-filter' ),
+                'description' => __( 'Runs a taxonomy-filtered, paginated query over published posts and returns the results together with a shareable filter URL. Only taxonomies reported by jpkcom-post-filter/list-filters are accepted; any other taxonomy key is rejected with an error naming the valid ones.', 'jpkcom-post-filter' ),
+                'category'    => JPKCOM_POSTFILTER_ABILITY_CATEGORY,
+
+                'input_schema' => [
+                    'type'       => 'object',
+                    'properties' => [
+                        'post_type' => [
+                            'type'        => 'string',
+                            'description' => __( 'Post type to query. Must be enabled for filtering on this site. Defaults to "post".', 'jpkcom-post-filter' ),
+                            'default'     => 'post',
+                        ],
+                        'filters' => [
+                            'type'                 => 'object',
+                            'description'          => __( 'Taxonomy filters as a map of taxonomy key to a list of term slugs, for example {"category":["news"],"post_tag":["seo"]}. Terms within one taxonomy are combined with OR, different taxonomies with AND.', 'jpkcom-post-filter' ),
+                            'additionalProperties' => [
+                                'type'  => 'array',
+                                'items' => [ 'type' => 'string' ],
+                            ],
+                        ],
+                        'page' => [
+                            'type'        => 'integer',
+                            'description' => __( 'Page number, starting at 1.', 'jpkcom-post-filter' ),
+                            'minimum'     => 1,
+                            'default'     => 1,
+                        ],
+                        'per_page' => [
+                            'type'        => 'integer',
+                            'description' => __( 'Number of posts to return per page.', 'jpkcom-post-filter' ),
+                            'minimum'     => 1,
+                            'maximum'     => JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX,
+                            'default'     => JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT,
+                        ],
+                        'search' => [
+                            'type'        => 'string',
+                            'description' => __( 'Optional free-text search applied in addition to the taxonomy filters.', 'jpkcom-post-filter' ),
+                        ],
+                    ],
+                ],
+
+                'output_schema' => [
+                    'type'       => 'object',
+                    'properties' => [
+                        'post_type' => [
+                            'type'        => 'string',
+                            'description' => __( 'The post type that was queried.', 'jpkcom-post-filter' ),
+                        ],
+                        'filters' => [
+                            'type'        => 'object',
+                            'description' => __( 'The filters that were actually applied, after normalisation.', 'jpkcom-post-filter' ),
+                        ],
+                        'total' => [
+                            'type'        => 'integer',
+                            'description' => __( 'Total number of published posts matching the filters.', 'jpkcom-post-filter' ),
+                        ],
+                        'page' => [
+                            'type'        => 'integer',
+                            'description' => __( 'The page that was returned.', 'jpkcom-post-filter' ),
+                        ],
+                        'per_page' => [
+                            'type'        => 'integer',
+                            'description' => __( 'The page size that was applied after clamping.', 'jpkcom-post-filter' ),
+                        ],
+                        'total_pages' => [
+                            'type'        => 'integer',
+                            'description' => __( 'Number of pages available for these filters.', 'jpkcom-post-filter' ),
+                        ],
+                        'filter_url' => [
+                            'type'        => 'string',
+                            'description' => __( 'Shareable front-end URL showing this filter combination.', 'jpkcom-post-filter' ),
+                        ],
+                        'unknown_terms' => [
+                            'type'        => 'object',
+                            'description' => __( 'Requested term slugs that match no existing term, keyed by taxonomy. A non-empty value explains why a result set is empty.', 'jpkcom-post-filter' ),
+                        ],
+                        'posts' => [
+                            'type'        => 'array',
+                            'description' => __( 'The matching posts for the requested page.', 'jpkcom-post-filter' ),
+                            'items'       => [
+                                'type'       => 'object',
+                                'properties' => [
+                                    'id'      => [ 'type' => 'integer', 'description' => __( 'Post ID.', 'jpkcom-post-filter' ) ],
+                                    'title'   => [ 'type' => 'string', 'description' => __( 'Post title.', 'jpkcom-post-filter' ) ],
+                                    'url'     => [ 'type' => 'string', 'description' => __( 'Permalink.', 'jpkcom-post-filter' ) ],
+                                    'date'    => [ 'type' => 'string', 'description' => __( 'Publication date in ISO 8601, UTC.', 'jpkcom-post-filter' ) ],
+                                    'excerpt' => [ 'type' => 'string', 'description' => __( 'Post excerpt.', 'jpkcom-post-filter' ) ],
+                                    'terms'   => [ 'type' => 'object', 'description' => __( 'Assigned terms of the filterable taxonomies, keyed by taxonomy.', 'jpkcom-post-filter' ) ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+
+                'execute_callback'    => 'jpkcom_postfilter_ability_query_posts',
+                'permission_callback' => 'jpkcom_postfilter_ability_permission_query_posts',
+                'meta'                => jpkcom_postfilter_ability_meta( 'jpkcom-post-filter/query-posts' ),
+            ],
+        ];
+    }
+}
