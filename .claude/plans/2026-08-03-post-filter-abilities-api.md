@@ -493,7 +493,7 @@ $valid = jpkcom_postfilter_ability_validate_filters( [ 'category' => [ 'news' ] 
 
 is_same( 'a known taxonomy validates', $valid, true );
 
-$rejected = jpkcom_postfilter_ability_validate_filters( [ 'tag' => [ 'seo' ] ], [ 'category', 'post_tag' ] );
+$rejected = jpkcom_postfilter_ability_validate_filters( [ 'nonexistent' => [ 'seo' ] ], [ 'category', 'post_tag' ] );
 
 check(
 	'an unknown taxonomy is rejected',
@@ -501,7 +501,8 @@ check(
 	'build_tax_query() drops a clause for a non-existent taxonomy and the query then '
 	. 'returns the complete unfiltered corpus with no error. Measured: filters of '
 	. '["no_such_tax" => ["x"]] returned 19 of 19 posts. Without this guard a model '
-	. 'that writes "tag" instead of "post_tag" presents the whole site as a filtered answer.'
+	. 'that writes a taxonomy name the site does not have presents the whole site as a '
+	. 'filtered answer.'
 );
 
 is_same(
@@ -512,7 +513,10 @@ is_same(
 
 check(
 	'the message names the offending taxonomy',
-	$rejected instanceof WP_Error && str_contains( $rejected->get_error_message(), 'tag' )
+	$rejected instanceof WP_Error && str_contains( $rejected->get_error_message(), 'nonexistent' ),
+	'The rejected name must share no substring with any valid taxonomy. With "tag" as the '
+	. 'rejected key this assertion was vacuous, because "post_tag" contains "tag" and the '
+	. 'check passed even when the message named nothing at all.'
 );
 
 check(
