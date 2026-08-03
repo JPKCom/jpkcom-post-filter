@@ -40,7 +40,7 @@ Every task's requirements implicitly include this section.
 | `README.md`, `CLAUDE.md` (modify) | Constants table, filter documentation, changelog. |
 | `phpdoc.xml` (modify) | Version. |
 
-`includes/abilities.php` ends up around 450 lines. That is in line with the plugin's other feature files (`fragment-response.php`, `query-handler.php`) and it is one cohesive responsibility, so it is not split.
+`includes/abilities.php` ends up around 850 lines. (The original estimate of 450 was wrong — it was already at 579 after Task 4, before the two JSON schemas landed. Reviewed and ruled on after Task 4: the file stays whole.) That is in line with the plugin's other feature files — `url-routing.php` is 733 lines and `settings.php` 969 — and it is one cohesive responsibility, so it is not split.
 
 ---
 
