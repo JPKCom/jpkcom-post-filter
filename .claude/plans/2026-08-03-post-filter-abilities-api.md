@@ -1956,14 +1956,25 @@ check(
 	. 'This is what keeps the plugin from fataling on an installation without the API.'
 );
 
+$GLOBALS['_stub_debug_log_calls'] = 0;
+
+jpkcom_postfilter_register_ability_category();
+
 check(
 	'the category registration is a no-op without the API',
-	jpkcom_postfilter_register_ability_category() === null
+	$GLOBALS['_stub_debug_log_calls'] === 0,
+	'Both registration functions are void, so a raw return-value check would be '
+	. 'tautological - a void call always evaluates to NULL. They log through '
+	. 'jpkcom_postfilter_debug_log() only after getting past the guard, so a non-zero '
+	. 'count means the guard was skipped.'
 );
+
+jpkcom_postfilter_register_abilities();
 
 check(
 	'the ability registration is a no-op without the API',
-	jpkcom_postfilter_register_abilities() === null
+	$GLOBALS['_stub_debug_log_calls'] === 0,
+	'Same reasoning as above, for the ability loop.'
 );
 ```
 
