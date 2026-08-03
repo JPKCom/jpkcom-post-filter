@@ -119,7 +119,11 @@ function get_taxonomy( string $taxonomy ): WP_Taxonomy|false {
 	return $object;
 }
 
-function jpkcom_postfilter_debug_log( string $message, mixed $context = null ): void {}
+$GLOBALS['_stub_debug_log_calls'] = 0;
+
+function jpkcom_postfilter_debug_log( string $message, mixed $context = null ): void {
+	$GLOBALS['_stub_debug_log_calls']++;
+}
 
 class WP_Post {
 	public int    $ID            = 0;
@@ -769,14 +773,32 @@ check(
 	. 'This is what keeps the plugin from fataling on an installation without the API.'
 );
 
+$GLOBALS['_stub_debug_log_calls'] = 0;
+
+jpkcom_postfilter_register_ability_category();
+
 check(
 	'the category registration is a no-op without the API',
-	jpkcom_postfilter_register_ability_category() === null
+	$GLOBALS['_stub_debug_log_calls'] === 0,
+	'jpkcom_postfilter_register_ability_category() is void, so a raw return-value check is '
+	. 'tautological - a void call always evaluates to NULL. It logs through '
+	. 'jpkcom_postfilter_debug_log() only after getting past the abilities_enabled() guard and '
+	. 'then failing to register. The test harness defines no wp_has_ability_category(), so '
+	. 'bypassing the guard would fatal here rather than log - a non-zero count would mean the '
+	. 'guard was skipped without a fatal masking it.'
 );
+
+jpkcom_postfilter_register_abilities();
 
 check(
 	'the ability registration is a no-op without the API',
-	jpkcom_postfilter_register_abilities() === null
+	$GLOBALS['_stub_debug_log_calls'] === 0,
+	'jpkcom_postfilter_register_abilities() is void, so a raw return-value check is '
+	. 'tautological - a void call always evaluates to NULL. It logs through '
+	. 'jpkcom_postfilter_debug_log() only after getting past the abilities_enabled() guard and '
+	. 'then failing to register an ability. The test harness defines no wp_register_ability(), '
+	. 'so bypassing the guard would fatal here rather than log - a non-zero count would mean '
+	. 'the guard was skipped without a fatal masking it.'
 );
 
 printf( "\n  %d passed, %d failed\n", $pass, $fail );
