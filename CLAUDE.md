@@ -501,22 +501,49 @@ external value crosses an `is_array()` / `is_scalar()` / `instanceof` check befo
 `instanceof \WP_Term` and `\WP_Post` guards are load-bearing, not defensive noise, and
 `tests/test-abilities.php` feeds them malformed data on purpose.
 
-**6. `filter_url` is only emitted when it round-trips.** `jpkcom_postfilter_get_filter_url()` writes
-every requested slug into the path, but `jpkcom_postfilter_parse_filter_path()` truncates what it
-reads back to `max_filters_per_group` slugs per taxonomy and `max_filter_combos` taxonomies (0 =
-unlimited in both). Measured with four category slugs against a cap of 3: the ability reported four
-and linked to a page showing three. `filters_are_url_expressible()` now gates the link, so
-`filter_url` is `''` for **two** reasons — no archive page, or a filter set this site would truncate.
-Callers get the full result set either way; only the link is withheld. Do not "restore" the
-unconditional link.
+**6. `filter_url` is only emitted when following it lands on the reported result set.** Four
+independent reasons withhold it, all gated in one place in `query_posts()`, and every one of them was
+measured on the verification install:
+
+1. **No archive page.** `get_archive_base_url()` returns `''` for a post type without one — `page` is
+   public and selectable in the settings. The link would be the relative path `/filter/news/`, and
+   `archive_base_regex()` returns `null` for those post types, so no rewrite rule serves it either.
+2. **A filter set this site would truncate.** `get_filter_url()` writes every requested slug into the
+   path, but `parse_filter_path()` reads back at most `max_filters_per_group` slugs per taxonomy and
+   `max_filter_combos` taxonomies (0 = unlimited in both, though only the per-group cap can be set to
+   0 through the admin UI). Measured with four category slugs against a cap of 3: the ability reported
+   four and linked to a page showing three. Gated by `filters_are_url_expressible()`, which is a
+   second implementation of `url-routing.php:74-87` — that parser is the authority and nothing
+   cross-checks them, so a change there must be mirrored here by hand.
+3. **A page segment that means something else on the front end.** The URL carries `page/N/`, and the
+   front end reads N in units of the **site's** `posts_per_page`, not the ability's `per_page`.
+   Measured with `per_page` 3, `page` 2 against a site showing 10: the ability reported ids 157, 156,
+   155 and handed out `/page/2/`, which answers 200 with 150 down to 1. Two valid pages, disjoint
+   sets. So the link needs `page === 1` — which writes no page segment at all — or a `per_page` equal
+   to the site's.
+4. **A page past the last one.** Since the totals are recovered (see 9) that response is well-formed,
+   which is exactly what makes the link dangerous: `/filter/allgemein/page/3/` against `total_pages`
+   1 answers **404** while the ability answers 200.
+
+Callers get the full result set in all four cases; only the link is withheld. Do not "restore" the
+unconditional link, and do not drop a reason because the response next to it looks fine — reasons 3
+and 4 exist precisely because it does.
 
 **7. An ability whose parameters are all optional still needs a top-level input `default`.**
 `WP_Ability::normalize_input()` substitutes the input schema's **top-level** `default` when the input
 is exactly `null`, and nothing else does. Without it `execute( null )` fails `validate_input()` with
 `ability_invalid_input` before the callback ever runs — measured on WP 7.0.2 for both abilities. Both
-schemas therefore carry `'default' => []` as a sibling of `type` and `properties`. Core never applies
+schemas therefore carry a `default` as a sibling of `type` and `properties`. Core never applies
 a **per-property** default, which is why the callbacks still resolve `post_type`, `page` and
 `per_page` themselves; the two mechanisms are unrelated and both are needed.
+
+That default goes through `ability_json_object()` for the same reason as point 4, and this one is
+easy to believe is fine: `'default' => []` encodes as `[]` on a schema declaring `type: object`, and
+the REST route still looks correct because core's list controller special-cases exactly that value
+and rewrites it to `{}`. The MCP Adapter does not — it reads `$ability->get_input_schema()` and hands
+the raw value to clients, so a schema-validating MCP client saw an object whose default was an array.
+The callbacks are unaffected: a `stdClass` fails their `is_array()` check and falls through to `[]`,
+which is what they do with any input they cannot use.
 
 **8. A caller error without `data['status']` is an HTTP 500.** The REST run controller returns the
 `WP_Error` verbatim and `rest_ensure_response()` defaults to 500. Both guards pass
@@ -531,7 +558,10 @@ when `$this->posts` is empty, so `found_posts` and `max_num_pages` stay at 0. Me
 a model reads it as an empty corpus. `query_posts()` therefore re-runs the same args for page 1 on
 that path only and takes the totals from there, keeping `posts` empty and echoing the requested page
 back. It goes through `run_query()`, so the cache layer still applies, and the normal path still costs
-exactly one query.
+exactly one query — the guard is `$query->posts === [] && $page > 1`, and dropping the first half
+doubles the query count on every paginated call. Repairing this answer is also what makes point 6's
+fourth reason necessary: the response stopped looking broken, so nothing warned a caller off the
+`filter_url` beside it, and that URL is a 404.
 
 Also worth knowing: `wp_register_ability()` returns `null` on **every** failure path and reports only
 through `_doing_it_wrong()`, which is silent in production — and so is
@@ -582,6 +612,12 @@ unfiltered one and against the term's own count. A suite can pass while the filt
 Two more that only a real installation can answer, both regressions that shipped once: a `filter_url`
 must parse back to the filters it was built from (feed it to `jpkcom_postfilter_parse_filter_path()`),
 and a `page` past the last one must still report the real `total` and `total_pages`.
+
+Parsing the URL back is necessary but not sufficient — it says nothing about the page segment. The
+check that catches point 6's reasons 3 and 4 is to **fetch** the emitted `filter_url` and compare the
+post ids it renders against the ones just reported, for `page` 2 with a `per_page` that differs from
+the site's `posts_per_page` and for a `page` past the last one. Both answered plausibly and both were
+wrong: one 200 with a disjoint set, one 404.
 
 Note `mcp-adapter/discover-abilities` has `show_in_rest => false`, so probing MCP visibility over REST
 returns 404. Call it in-process instead.

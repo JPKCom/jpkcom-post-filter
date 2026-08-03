@@ -553,7 +553,19 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_filters_are_url_exp
      * category slugs against max_filters_per_group = 3, where the link resolved
      * to the first three.
      *
-     * In both settings 0 means unlimited, matching parse_filter_path().
+     * This is a second implementation of a rule that lives in
+     * `includes/url-routing.php:74-87`. That parser is the authority: it decides
+     * what a filter URL actually resolves to, and this function only predicts
+     * it. Change the truncation there and this gate goes stale without any test
+     * noticing - the suite stubs the settings getter and never loads
+     * url-routing.php - and the ability resumes emitting links to a narrower
+     * result set than it reports.
+     *
+     * Both caps treat 0 as unlimited, matching parse_filter_path(). Only
+     * max_filters_per_group can actually be set to 0 through the admin UI;
+     * settings.php clamps max_filter_combos to 1..10, so the unlimited branch of
+     * that one is unreachable on a normally configured site. It is kept because
+     * this function must mirror the parser, not the settings form.
      *
      * @since 1.3.0
      *
@@ -840,9 +852,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
     /**
      * Build the registration arguments for every ability this plugin provides
      *
-     * Pure: touches no WordPress state, calls no registry, has no side effects.
-     * That is what lets the CI harness assert the shape of these arrays without
-     * a WordPress installation.
+     * Reads no WordPress state and touches no registry, which is what lets the
+     * CI harness assert the shape of these arrays without a WordPress
+     * installation. Not free of side effects, though: __() and the two
+     * jpkcom_postfilter_ability_meta() calls each fire apply_filters(), so
+     * third-party callbacks run whenever this is called.
      *
      * @since 1.3.0
      *
