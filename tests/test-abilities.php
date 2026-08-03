@@ -56,17 +56,46 @@ function is_wp_error( mixed $thing ): bool {
 	return $thing instanceof WP_Error;
 }
 
+/**
+ * Taxonomies this fixture considers registered.
+ *
+ * jpkcom_postfilter_ability_allowed_taxonomies() consults the registry, because
+ * a filter group outlives the plugin that registered its taxonomy. Anything not
+ * listed here behaves like a taxonomy whose plugin was deactivated.
+ */
+$GLOBALS['_stub_taxonomies'] = [ 'category', 'post_tag', 'empty_tax' ];
+
+function taxonomy_exists( string $taxonomy ): bool {
+	return in_array( $taxonomy, $GLOBALS['_stub_taxonomies'], true );
+}
+
 function wp_json_encode( mixed $value ): string {
 	return (string) json_encode( $value );
+}
+
+/**
+ * Site options this fixture answers for.
+ *
+ * Only posts_per_page is read, and only by the filter_url gate: the page
+ * segment of a filter URL is interpreted by the front end in units of this
+ * value, not of the ability's per_page. 10 is the WordPress default and what
+ * the verification install uses.
+ */
+$GLOBALS['_stub_options'] = [ 'posts_per_page' => 10 ];
+
+function get_option( string $option, mixed $default_value = false ): mixed {
+	return $GLOBALS['_stub_options'][ $option ] ?? $default_value;
 }
 
 class WP_Error {
 	public string $code    = '';
 	public string $message = '';
+	public mixed  $data    = null;
 
-	public function __construct( string $code = '', string $message = '' ) {
+	public function __construct( string $code = '', string $message = '', mixed $data = null ) {
 		$this->code    = $code;
 		$this->message = $message;
+		$this->data    = $data;
 	}
 
 	public function get_error_code(): string {
@@ -75,6 +104,10 @@ class WP_Error {
 
 	public function get_error_message(): string {
 		return $this->message;
+	}
+
+	public function get_error_data(): mixed {
+		return $this->data;
 	}
 }
 
@@ -167,10 +200,12 @@ class WP_Query {
 	public int   $max_num_pages = 0;
 }
 
-$GLOBALS['_stub_query']          = null; // WP_Query returned by run_query()
-$GLOBALS['_stub_query_args']     = [];   // captured build_query_args() input
-$GLOBALS['_stub_run_query_args'] = [];   // captured run_query() input
-$GLOBALS['_stub_post_terms']     = [];   // "postID:taxonomy" => [ [slug, name], ... ]
+$GLOBALS['_stub_query']           = null; // WP_Query returned by run_query()
+$GLOBALS['_stub_query_by_page']   = [];   // paged => WP_Query, consulted before _stub_query
+$GLOBALS['_stub_query_args']      = [];   // captured build_query_args() input
+$GLOBALS['_stub_run_query_args']  = [];   // captured run_query() input
+$GLOBALS['_stub_run_query_calls'] = [];   // `paged` of every run_query() call, in order
+$GLOBALS['_stub_post_terms']      = [];   // "postID:taxonomy" => [ [slug, name], ... ]
 
 function jpkcom_postfilter_build_query_args( array $atts, array $active_filters = [] ): array {
 	$GLOBALS['_stub_query_args'] = [ 'atts' => $atts, 'filters' => $active_filters ];
@@ -179,7 +214,14 @@ function jpkcom_postfilter_build_query_args( array $atts, array $active_filters 
 }
 
 function jpkcom_postfilter_run_query( array $query_args, array $active_filters = [] ): WP_Query {
-	$GLOBALS['_stub_run_query_args'] = [ 'args' => $query_args, 'filters' => $active_filters ];
+	$GLOBALS['_stub_run_query_args']    = [ 'args' => $query_args, 'filters' => $active_filters ];
+	$GLOBALS['_stub_run_query_calls'][] = (int) ( $query_args['paged'] ?? 0 );
+
+	$paged = (int) ( $query_args['paged'] ?? 1 );
+
+	if ( isset( $GLOBALS['_stub_query_by_page'][ $paged ] ) ) {
+		return $GLOBALS['_stub_query_by_page'][ $paged ];
+	}
 
 	return $GLOBALS['_stub_query'] ?? new WP_Query();
 }
@@ -511,6 +553,24 @@ is_same(
 	[]
 );
 
+$ghost_groups = [
+	[ 'taxonomy' => 'category', 'post_types' => [ 'post' ] ],
+	[ 'taxonomy' => 'jpkpf_ghost_tax', 'post_types' => [ 'post' ] ],
+];
+
+is_same(
+	'a group whose taxonomy is no longer registered is skipped',
+	jpkcom_postfilter_ability_allowed_taxonomies( 'post', $ghost_groups, [ 'post' ] ),
+	[ 'category' ],
+	'The settings outlive the registration: deactivating the plugin that registered a '
+	. 'taxonomy leaves its filter group behind. Reproduced in-process — with the group '
+	. 'still configured, taxonomy_exists() was false while this function reported the '
+	. 'taxonomy as filterable, validate_filters() then accepted it, build_query_args() '
+	. 'produced no tax_query (query-handler.php:57 skips unknown taxonomies) and the '
+	. 'ability answered with the complete unfiltered corpus. That is the exact failure '
+	. 'the validation guard exists to prevent, one step further along.'
+);
+
 section( 'taxonomy validation — the silent-full-corpus guard' );
 
 $valid = jpkcom_postfilter_ability_validate_filters( [ 'category' => [ 'news' ] ], [ 'category', 'post_tag' ] );
@@ -548,6 +608,17 @@ check(
 	. 'the valid names corrects itself in a single turn.'
 );
 
+is_same(
+	'the rejection is a 400, so a caller reads it as its own mistake',
+	$rejected instanceof WP_Error ? $rejected->get_error_data() : null,
+	[ 'status' => 400 ],
+	'Measured through rest_do_request(): input[filters][tag][]=seo answered HTTP 500 '
+	. 'with this code. The run controller returns the WP_Error verbatim and '
+	. 'rest_ensure_response() defaults to 500 when no data["status"] is set. A 5xx tells '
+	. 'an agent "transient server fault, retry the same call" — the opposite of the '
+	. 'self-correction this message is written for.'
+);
+
 $no_allowed = jpkcom_postfilter_ability_validate_filters( [ 'category' => [ 'news' ] ], [] );
 
 check(
@@ -569,6 +640,15 @@ check(
 	'the message lists the enabled post types',
 	str_contains( $pt_error->get_error_message(), 'post' )
 		&& str_contains( $pt_error->get_error_message(), 'page' )
+);
+
+is_same(
+	'the rejection is a 400, so a caller reads it as its own mistake',
+	$pt_error->get_error_data(),
+	[ 'status' => 400 ],
+	'Measured through rest_do_request(): input[post_type]=page answered HTTP 500 with '
+	. 'this code. Naming the enabled post types is pointless if the transport says '
+	. '"server fault, retry unchanged".'
 );
 
 section( 'list-filters callback' );
@@ -680,6 +760,14 @@ $query->max_num_pages = 2;
 $GLOBALS['_stub_query']      = $query;
 $GLOBALS['_stub_post_terms'] = [ '42:category' => [ [ 'news', 'News' ] ] ];
 
+// This block is about the shape of the answer, not about the filter_url gate,
+// and it asks for page 2 with a per_page of 5 — a positive value distinct from
+// the clamp default, which is what makes the limit assertion below meaningful.
+// The gate only emits a link for page 2 when per_page matches the site's own
+// posts_per_page, so the fixture site is one that shows 5 posts per page here.
+// The gate itself is exercised further down, against a site that shows 10.
+$GLOBALS['_stub_options']['posts_per_page'] = 5;
+
 $result = jpkcom_postfilter_ability_query_posts(
 	[
 		'post_type' => 'post',
@@ -751,6 +839,8 @@ is_same(
 	'Taxonomy filter combinations are bounded by the configured groups, so their cache '
 	. 'entries are bounded too. Only free-text search is unbounded.'
 );
+
+$GLOBALS['_stub_options']['posts_per_page'] = 10;
 
 $searched = jpkcom_postfilter_ability_query_posts(
 	[ 'post_type' => 'post', 'search' => 'wordpress security' ]
@@ -840,6 +930,30 @@ is_same(
 	is_array( $unknown_term ) ? $unknown_term['unknown_terms'] : null,
 	[ 'category' => [ 'does-not-exist' ] ]
 );
+
+$GLOBALS['_stub_groups'][] = [ 'taxonomy' => 'jpkpf_ghost_tax', 'label' => 'Geist', 'post_types' => [ 'post' ] ];
+
+$ghost_filtered = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'filters' => [ 'jpkpf_ghost_tax' => [ 'x' ] ] ]
+);
+
+check(
+	'a filter group whose taxonomy is gone is rejected, not answered with everything',
+	$ghost_filtered instanceof WP_Error
+		&& $ghost_filtered->get_error_code() === 'jpkcom_postfilter_unknown_taxonomy',
+	'The group is still configured, so the guard used to wave the filter through on the '
+	. 'strength of the configuration alone — and the query pipeline then dropped the '
+	. 'clause and returned the whole corpus as a filtered answer.'
+);
+
+check(
+	'and the message names the taxonomies that really are registered',
+	$ghost_filtered instanceof WP_Error
+		&& str_contains( $ghost_filtered->get_error_message(), 'category' )
+		&& str_contains( $ghost_filtered->get_error_message(), 'post_tag' )
+);
+
+array_pop( $GLOBALS['_stub_groups'] );
 
 section( 'empty maps must encode as JSON objects, not arrays' );
 
@@ -955,6 +1069,306 @@ check(
 	is_array( jpkcom_postfilter_ability_query_posts( null ) )
 );
 
+section( 'filter_url must round-trip, or not be handed out at all' );
+
+is_same(
+	'a filter set inside both site caps is expressible as a URL',
+	jpkcom_postfilter_ability_filters_are_url_expressible( [ 'category' => [ 'a', 'b', 'c' ] ] ),
+	true,
+	'Exactly at max_filters_per_group. The cap is what the URL parser truncates *beyond*, '
+	. 'so a set at the limit still round-trips and must keep its link.'
+);
+
+is_same(
+	'more slugs in one taxonomy than max_filters_per_group is not',
+	jpkcom_postfilter_ability_filters_are_url_expressible( [ 'category' => [ 'a', 'b', 'c', 'd' ] ] ),
+	false
+);
+
+is_same(
+	'more taxonomies than max_filter_combos is not',
+	jpkcom_postfilter_ability_filters_are_url_expressible(
+		[ 'category' => [ 'a' ], 'post_tag' => [ 'a' ], 'third' => [ 'a' ], 'fourth' => [ 'a' ] ]
+	),
+	false,
+	'parse_filter_path() applies array_slice() to the taxonomies as well, not just to '
+	. 'the slugs within one.'
+);
+
+is_same(
+	'a filter set spanning exactly max_filter_combos taxonomies is expressible',
+	jpkcom_postfilter_ability_filters_are_url_expressible(
+		[ 'category' => [ 'a' ], 'post_tag' => [ 'a' ], 'third' => [ 'a' ] ]
+	),
+	true,
+	'The mirror of the per-group boundary above, and the case an off-by-one at the combo '
+	. 'cap breaks: parse_filter_path() only slices when the count is *greater* than the '
+	. 'cap, so a set exactly at it round-trips and must keep its link. Getting this wrong '
+	. 'withholds a working URL from every caller filtering by three taxonomies on a site '
+	. 'configured for three.'
+);
+
+$GLOBALS['_stub_settings']['general']['max_filters_per_group'] = 0;
+$GLOBALS['_stub_settings']['general']['max_filter_combos']     = 0;
+
+is_same(
+	'0 means unlimited in both settings, as it does in parse_filter_path()',
+	jpkcom_postfilter_ability_filters_are_url_expressible(
+		[
+			'category' => [ 'a', 'b', 'c', 'd', 'e' ],
+			'post_tag' => [ 'a', 'b', 'c', 'd', 'e' ],
+			'third'    => [ 'a' ],
+			'fourth'   => [ 'a' ],
+			'fifth'    => [ 'a' ],
+		]
+	),
+	true,
+	'A site that switched the caps off truncates nothing, so every set round-trips and '
+	. 'suppressing the URL there would withhold a link that works.'
+);
+
+unset(
+	$GLOBALS['_stub_settings']['general']['max_filters_per_group'],
+	$GLOBALS['_stub_settings']['general']['max_filter_combos']
+);
+
+$GLOBALS['_stub_filter_url_calls'] = 0;
+
+$over_cap = jpkcom_postfilter_ability_query_posts(
+	[
+		'post_type' => 'post',
+		'filters'   => [ 'category' => [ 'allgemein', 'entwicklung', 'marketing', 'web-design' ] ],
+	]
+);
+
+is_same(
+	'a filter set the site would truncate is returned without a filter URL',
+	is_array( $over_cap ) ? $over_cap['filter_url'] : null,
+	'',
+	'Measured on the live install with max_filters_per_group = 3: the ability echoed all '
+	. 'four category slugs and handed out '
+	. '.../filter/allgemein+entwicklung+marketing+web-design/, which '
+	. 'jpkcom_postfilter_parse_filter_path() reads back as three. The reported result set '
+	. 'and the linked one were different pages. Same judgement as for a post type with no '
+	. 'archive: no link beats a link to the wrong thing.'
+);
+
+is_same(
+	'no URL is built at all in that case',
+	$GLOBALS['_stub_filter_url_calls'],
+	0
+);
+
+is_same(
+	'the four requested slugs are still reported as applied',
+	is_array( $over_cap ) ? $over_cap['filters'] : null,
+	[ 'category' => [ 'allgemein', 'entwicklung', 'marketing', 'web-design' ] ],
+	'The query really did apply all four — only the URL cannot express them. Suppressing '
+	. 'the filters as well would trade a wrong link for a wrong answer.'
+);
+
+section( 'the page segment of a filter URL must mean the same on both sides' );
+
+// The site shows 10 posts per page; the ability was asked for 3.
+$GLOBALS['_stub_options']['posts_per_page'] = 10;
+$GLOBALS['_stub_filter_url_calls']          = 0;
+
+$foreign_page_size = jpkcom_postfilter_ability_query_posts(
+	[
+		'post_type' => 'post',
+		'filters'   => [ 'category' => [ 'news' ] ],
+		'page'      => 2,
+		'per_page'  => 3,
+	]
+);
+
+is_same(
+	'page 2 with a per_page the site does not use is returned without a filter URL',
+	is_array( $foreign_page_size ) ? $foreign_page_size['filter_url'] : null,
+	'',
+	'get_filter_url() appends page/2/, and the front end reads that 2 in units of the '
+	. "site's posts_per_page, not the ability's per_page. Measured on the live install "
+	. 'with per_page 3 against a site posts_per_page of 10: the ability reported ids '
+	. '157, 156, 155 and handed out https://posts.ddev.site/page/2/, which answers 200 '
+	. 'with 150 down to 1. Both are valid pages; the sets are disjoint.'
+);
+
+is_same(
+	'no URL is built at all in that case',
+	$GLOBALS['_stub_filter_url_calls'],
+	0
+);
+
+is_same(
+	'the requested page and per_page are still reported',
+	is_array( $foreign_page_size )
+		? [ $foreign_page_size['page'], $foreign_page_size['per_page'] ]
+		: null,
+	[ 2, 3 ],
+	'The result set itself is correct and complete — only the link is withheld.'
+);
+
+$first_page = jpkcom_postfilter_ability_query_posts(
+	[
+		'post_type' => 'post',
+		'filters'   => [ 'category' => [ 'news' ] ],
+		'page'      => 1,
+		'per_page'  => 3,
+	]
+);
+
+is_same(
+	'page 1 keeps its link whatever per_page says',
+	is_array( $first_page ) ? $first_page['filter_url'] : null,
+	'https://example.test/post/filter/category/',
+	'get_filter_url() writes no page segment for page 1, so there is no page number that '
+	. 'could be read in the wrong units. Withholding the link here would suppress it for '
+	. 'the overwhelmingly common call.'
+);
+
+$matching_page_size = jpkcom_postfilter_ability_query_posts(
+	[
+		'post_type' => 'post',
+		'filters'   => [ 'category' => [ 'news' ] ],
+		'page'      => 2,
+		'per_page'  => 10,
+	]
+);
+
+is_same(
+	'page 2 keeps its link when per_page matches the site',
+	is_array( $matching_page_size ) ? $matching_page_size['filter_url'] : null,
+	'https://example.test/post/filter/category/',
+	'page/2/ then selects the same slice on both sides. Verified live: per_page 10, page '
+	. '2 reported ids 150 down to 1 and https://posts.ddev.site/page/2/ shows exactly '
+	. 'those. A gate that withheld every page beyond the first would throw this away.'
+);
+
+section( 'a page past the last page must still report the real totals' );
+
+$page_one                = new WP_Query();
+$page_one->posts         = [ $post_one ];
+$page_one->found_posts   = 19;
+$page_one->max_num_pages = 2;
+
+// What WP_Query hands back for a page past the end: set_found_posts() returns
+// early when $this->posts is empty, so both counters stay at their 0 default.
+$past_end                = new WP_Query();
+$past_end->posts         = [];
+$past_end->found_posts   = 0;
+$past_end->max_num_pages = 0;
+
+$GLOBALS['_stub_query_by_page']   = [ 1 => $page_one, 3 => $past_end ];
+$GLOBALS['_stub_run_query_calls'] = [];
+
+$out_of_range = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'page' => 3, 'per_page' => 10 ]
+);
+
+is_same(
+	'an out-of-range page reports the real total, not 0',
+	is_array( $out_of_range ) ? $out_of_range['total'] : null,
+	19,
+	'Measured on the live install: 19 posts, per_page 10, page 3 answered HTTP 200 with '
+	. 'total 0, total_pages 0, posts []. A model reading that concludes the corpus is '
+	. 'empty rather than that it asked for a page past the end.'
+);
+
+is_same(
+	'and the real page count',
+	is_array( $out_of_range ) ? $out_of_range['total_pages'] : null,
+	2,
+	'"page: 3" beside "total_pages: 0" is a response that contradicts itself.'
+);
+
+is_same(
+	'while the requested page is echoed back unchanged',
+	is_array( $out_of_range ) ? $out_of_range['page'] : null,
+	3
+);
+
+is_same(
+	'and the post list stays empty, because that page really holds nothing',
+	is_array( $out_of_range ) ? count( $out_of_range['posts'] ) : null,
+	0
+);
+
+is_same(
+	'the totals are recovered with one extra query for page 1',
+	$GLOBALS['_stub_run_query_calls'],
+	[ 3, 1 ],
+	'It goes through jpkcom_postfilter_run_query(), so the cache layer still applies and '
+	. 'a warm cache costs no database round trip.'
+);
+
+is_same(
+	'and no filter URL is handed out for a page past the end',
+	is_array( $out_of_range ) ? $out_of_range['filter_url'] : null,
+	'',
+	'Recovering the totals turned a visibly broken answer into a well-formed one, which '
+	. 'made the link beside it look trustworthy. Measured on the live install: total 2, '
+	. 'total_pages 1, page 3 answered HTTP 200 while the URL it handed out, '
+	. '.../filter/allgemein/page/3/, answered HTTP 404. per_page here equals the site '
+	. 'posts_per_page, so the page segment itself is sound — only the page does not exist.'
+);
+
+$GLOBALS['_stub_run_query_calls'] = [];
+
+$in_range = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'page' => 1, 'per_page' => 10 ]
+);
+
+is_same(
+	'a page that returned posts still runs exactly one query',
+	$GLOBALS['_stub_run_query_calls'],
+	[ 1 ],
+	'The recovery is confined to the out-of-range path, so the normal path costs nothing.'
+);
+
+$GLOBALS['_stub_run_query_calls'] = [];
+
+$in_range_page_two = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'page' => 2, 'per_page' => 10 ]
+);
+
+is_same(
+	'an in-range page 2 with results also runs exactly one query',
+	$GLOBALS['_stub_run_query_calls'],
+	[ 2 ],
+	'The guard is "$query->posts === [] && $page > 1". Weakened to "$page > 1" alone it '
+	. 'would still pass every other check in this section while doubling the query count '
+	. 'on every paginated call — page 1 and the empty out-of-range page are both blind to '
+	. 'it. This is the case that sees it.'
+);
+
+is_same(
+	'and takes its totals from that page, not from a recovery run',
+	is_array( $in_range_page_two ) ? [ $in_range_page_two['total'], $in_range_page_two['total_pages'] ] : null,
+	[ 19, 2 ]
+);
+
+$GLOBALS['_stub_query_by_page']   = [ 1 => $past_end ];
+$GLOBALS['_stub_run_query_calls'] = [];
+
+$empty_first_page = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'page' => 1, 'per_page' => 10 ]
+);
+
+is_same(
+	'an empty page 1 does not trigger a second query',
+	$GLOBALS['_stub_run_query_calls'],
+	[ 1 ],
+	'total 0 on page 1 is the truthful answer, not a symptom to repair.'
+);
+
+is_same(
+	'and it still reports 0',
+	is_array( $empty_first_page ) ? $empty_first_page['total'] : null,
+	0
+);
+
+$GLOBALS['_stub_query_by_page'] = [];
+
 section( 'ability definitions' );
 
 $definitions = jpkcom_postfilter_get_ability_definitions();
@@ -988,6 +1402,30 @@ foreach ( $definitions as $name => $args ) {
 		isset( $args['input_schema']['properties'] ) && $args['input_schema']['properties'] !== [],
 		'With an empty input schema core calls the callbacks with zero arguments, and '
 		. 'passing input to such an ability is a hard ability_missing_input_schema error.'
+	);
+
+	check(
+		"'{$name}' declares a top-level input default, so a bare call is not rejected",
+		array_key_exists( 'default', $args['input_schema'] ),
+		'WP_Ability::normalize_input() substitutes the top-level default when the input is '
+		. 'exactly null, and nothing else does. Without it, execute( null ) never reaches '
+		. 'the callback — measured on WordPress 7.0.2, both abilities answered WP_Error '
+		. 'ability_invalid_input, "input ist nicht vom Typ object". list-filters has one '
+		. 'optional parameter, so calling it with no arguments is the most natural thing a '
+		. 'client does. It must be a sibling of type and properties: core never applies a '
+		. 'per-property default, which is why the callbacks resolve post_type, page and '
+		. 'per_page themselves.'
+	);
+
+	is_same(
+		"'{$name}' encodes that default as a JSON object, not as an array",
+		str_contains( wp_json_encode( $args['input_schema'] ), '"default":{}' ),
+		true,
+		'The schema declares type object, and an empty PHP array encodes as []. Core\'s '
+		. 'REST list controller rewrites that one case before it answers, which is why the '
+		. 'REST route looked correct — but the MCP Adapter reads $ability->get_input_schema() '
+		. 'and passes the raw value to clients, so a schema-validating MCP client saw an '
+		. 'object whose default was an array.'
 	);
 
 	check(

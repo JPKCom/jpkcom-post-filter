@@ -453,9 +453,10 @@ silently gets `null` — so registration goes through `wp_has_ability_category()
 
 ```php
 jpkcom_postfilter_get_ability_definitions()                 // pure: the wp_register_ability() args
-jpkcom_postfilter_ability_allowed_taxonomies( $pt, $g, $e ) // pure: which taxonomies may be filtered
+jpkcom_postfilter_ability_allowed_taxonomies( $pt, $g, $e ) // which taxonomies may be filtered — reads taxonomy_exists()
 jpkcom_postfilter_ability_validate_filters( $f, $allowed )  // true|WP_Error — the load-bearing guard
 jpkcom_postfilter_ability_clamp_per_page( $value )          // never returns -1
+jpkcom_postfilter_ability_filters_are_url_expressible( $f ) // may a filter_url be handed out for these filters?
 jpkcom_postfilter_ability_json_object( $map )               // empty map -> stdClass, so it encodes as {}
 jpkcom_postfilter_abilities_enabled()                       // kill switch + API presence
 ```
@@ -465,13 +466,21 @@ effects beyond `__()` and the `jpkcom_postfilter_ability_meta` filter, which run
 That is what lets `tests/test-abilities.php` assert the registration arrays without a WordPress
 install.
 
-### Five things that will bite
+### Nine things that will bite
 
 **1. The unknown-taxonomy guard is the whole point.** `jpkcom_postfilter_build_tax_query()` drops a
 clause for a taxonomy that does not exist (`query-handler.php:57`) and the query then returns the
 **complete unfiltered corpus** with no error — measured as 19 of 19 posts. `validate_filters()` rejects
 that input and names the valid taxonomies in the message so a model corrects itself in one turn.
 Do not "simplify" it away.
+
+The allow-list it validates against comes from `allowed_taxonomies()`, which asks `taxonomy_exists()`
+about every configured group. **The configuration outlives the registration** — deactivate the plugin
+that registered a taxonomy and its filter group stays in the settings — and a group in that state used
+to be reported as filterable, accepted by `validate_filters()`, and then dropped by the query builder:
+the same full-corpus failure, one step further along. Verified on the live install by saving a group
+for `jpkpf_ghost_tax` and calling the ability. This is why that function reads WordPress state and is
+not pure; only `get_ability_definitions()` still is.
 
 **2. Never pass `-1` as the page size.** `build_query_args()` sets `no_found_rows` when the limit is
 `-1` (`query-handler.php:123`), which reports `found_posts` as 0 no matter how many posts exist. The
@@ -491,6 +500,68 @@ callback is an **uncaught fatal** — the `Throwable → WP_Error` wrapper only 
 external value crosses an `is_array()` / `is_scalar()` / `instanceof` check before use. The
 `instanceof \WP_Term` and `\WP_Post` guards are load-bearing, not defensive noise, and
 `tests/test-abilities.php` feeds them malformed data on purpose.
+
+**6. `filter_url` is only emitted when following it lands on the reported result set.** Four
+independent reasons withhold it, all gated in one place in `query_posts()`, and every one of them was
+measured on the verification install:
+
+1. **No archive page.** `get_archive_base_url()` returns `''` for a post type without one — `page` is
+   public and selectable in the settings. The link would be the relative path `/filter/news/`, and
+   `archive_base_regex()` returns `null` for those post types, so no rewrite rule serves it either.
+2. **A filter set this site would truncate.** `get_filter_url()` writes every requested slug into the
+   path, but `parse_filter_path()` reads back at most `max_filters_per_group` slugs per taxonomy and
+   `max_filter_combos` taxonomies (0 = unlimited in both, though only the per-group cap can be set to
+   0 through the admin UI). Measured with four category slugs against a cap of 3: the ability reported
+   four and linked to a page showing three. Gated by `filters_are_url_expressible()`, which is a
+   second implementation of `url-routing.php:74-87` — that parser is the authority and nothing
+   cross-checks them, so a change there must be mirrored here by hand.
+3. **A page segment that means something else on the front end.** The URL carries `page/N/`, and the
+   front end reads N in units of the **site's** `posts_per_page`, not the ability's `per_page`.
+   Measured with `per_page` 3, `page` 2 against a site showing 10: the ability reported ids 157, 156,
+   155 and handed out `/page/2/`, which answers 200 with 150 down to 1. Two valid pages, disjoint
+   sets. So the link needs `page === 1` — which writes no page segment at all — or a `per_page` equal
+   to the site's.
+4. **A page past the last one.** Since the totals are recovered (see 9) that response is well-formed,
+   which is exactly what makes the link dangerous: `/filter/allgemein/page/3/` against `total_pages`
+   1 answers **404** while the ability answers 200.
+
+Callers get the full result set in all four cases; only the link is withheld. Do not "restore" the
+unconditional link, and do not drop a reason because the response next to it looks fine — reasons 3
+and 4 exist precisely because it does.
+
+**7. An ability whose parameters are all optional still needs a top-level input `default`.**
+`WP_Ability::normalize_input()` substitutes the input schema's **top-level** `default` when the input
+is exactly `null`, and nothing else does. Without it `execute( null )` fails `validate_input()` with
+`ability_invalid_input` before the callback ever runs — measured on WP 7.0.2 for both abilities. Both
+schemas therefore carry a `default` as a sibling of `type` and `properties`. Core never applies
+a **per-property** default, which is why the callbacks still resolve `post_type`, `page` and
+`per_page` themselves; the two mechanisms are unrelated and both are needed.
+
+That default goes through `ability_json_object()` for the same reason as point 4, and this one is
+easy to believe is fine: `'default' => []` encodes as `[]` on a schema declaring `type: object`, and
+the REST route still looks correct because core's list controller special-cases exactly that value
+and rewrites it to `{}`. The MCP Adapter does not — it reads `$ability->get_input_schema()` and hands
+the raw value to clients, so a schema-validating MCP client saw an object whose default was an array.
+The callbacks are unaffected: a `stdClass` fails their `is_array()` check and falls through to `[]`,
+which is what they do with any input they cannot use.
+
+**8. A caller error without `data['status']` is an HTTP 500.** The REST run controller returns the
+`WP_Error` verbatim and `rest_ensure_response()` defaults to 500. Both guards pass
+`[ 'status' => 400 ]`. This matters more than a status code usually does: the entire design of these
+messages is that they name the valid taxonomies or post types so an agent corrects itself in one turn
+— and a 5xx tells that agent "transient server fault, retry the same call unchanged", the exact
+opposite instruction.
+
+**9. `WP_Query` reports 0 of everything for a page past the end.** `set_found_posts()` returns early
+when `$this->posts` is empty, so `found_posts` and `max_num_pages` stay at 0. Measured: 19 posts,
+`per_page` 10, `page` 3 answered `total: 0, total_pages: 0` beside `page: 3` — self-contradictory, and
+a model reads it as an empty corpus. `query_posts()` therefore re-runs the same args for page 1 on
+that path only and takes the totals from there, keeping `posts` empty and echoing the requested page
+back. It goes through `run_query()`, so the cache layer still applies, and the normal path still costs
+exactly one query — the guard is `$query->posts === [] && $page > 1`, and dropping the first half
+doubles the query count on every paginated call. Repairing this answer is also what makes point 6's
+fourth reason necessary: the response stopped looking broken, so nothing warned a caller off the
+`filter_url` beside it, and that URL is a 404.
 
 Also worth knowing: `wp_register_ability()` returns `null` on **every** failure path and reports only
 through `_doing_it_wrong()`, which is silent in production — and so is
@@ -525,11 +596,28 @@ BASE=https://your-site.test/wp-json/wp-abilities/v1/abilities
 curl -sk -u "$USER:$APP_PW" "$BASE/jpkcom-post-filter/list-filters/run?input%5Bpost_type%5D=post"
 curl -sk -u "$USER:$APP_PW" \
   "$BASE/jpkcom-post-filter/query-posts/run?input%5Bpost_type%5D=post&input%5Bfilters%5D%5Bcategory%5D%5B%5D=allgemein"
+
+# No input at all must work — every parameter is optional
+curl -sk -u "$USER:$APP_PW" "$BASE/jpkcom-post-filter/list-filters/run"
+
+# A caller mistake must be 4xx, not 5xx
+curl -skio /dev/null -w '%{http_code}\n' -u "$USER:$APP_PW" \
+  "$BASE/jpkcom-post-filter/query-posts/run?input%5Bfilters%5D%5Btag%5D%5B%5D=seo"
 ```
 
 The check that matters is that filtering **narrows**: compare the filtered `total` against the
 unfiltered one and against the term's own count. A suite can pass while the filters never reach
 `WP_Query` at all — that exact regression was caught in review and is now asserted at both call sites.
+
+Two more that only a real installation can answer, both regressions that shipped once: a `filter_url`
+must parse back to the filters it was built from (feed it to `jpkcom_postfilter_parse_filter_path()`),
+and a `page` past the last one must still report the real `total` and `total_pages`.
+
+Parsing the URL back is necessary but not sufficient — it says nothing about the page segment. The
+check that catches point 6's reasons 3 and 4 is to **fetch** the emitted `filter_url` and compare the
+post ids it renders against the ones just reported, for `page` 2 with a `per_page` that differs from
+the site's `posts_per_page` and for a `page` past the last one. Both answered plausibly and both were
+wrong: one 200 with a disjoint set, one 404.
 
 Note `mcp-adapter/discover-abilities` has `show_in_rest => false`, so probing MCP visibility over REST
 returns 404. Call it in-process instead.

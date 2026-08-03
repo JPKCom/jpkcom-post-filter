@@ -160,12 +160,23 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_allowed_taxonomies'
     /**
      * Collect the taxonomies that may be used to filter a post type
      *
+     * A configured group whose taxonomy is not registered is skipped. The
+     * configuration outlives the registration - deactivating the plugin that
+     * registered a taxonomy leaves its filter group behind - and a group in that
+     * state would otherwise be reported as filterable while
+     * jpkcom_postfilter_build_tax_query() drops the clause it produces
+     * (query-handler.php:57), which is the silent-full-corpus failure the
+     * validation guard exists to prevent. Skipping the group here turns that case
+     * into a jpkcom_postfilter_unknown_taxonomy error that names the real ones.
+     *
+     * This is why the function reads WordPress state; it is not pure.
+     *
      * @since 1.3.0
      *
      * @param string                            $post_type          Post type to test.
      * @param array<int, array<string, mixed>>  $groups             Enabled filter groups.
      * @param string[]                          $enabled_post_types Globally enabled post types.
-     * @return string[] Unique taxonomy keys.
+     * @return string[] Unique taxonomy keys that are registered right now.
      */
     function jpkcom_postfilter_ability_allowed_taxonomies( string $post_type, array $groups, array $enabled_post_types ): array {
         $allowed = [];
@@ -178,6 +189,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_allowed_taxonomies'
             $taxonomy = (string) ( $group['taxonomy'] ?? '' );
 
             if ( $taxonomy === '' ) {
+                continue;
+            }
+
+            if ( ! taxonomy_exists( $taxonomy ) ) {
                 continue;
             }
 
@@ -204,6 +219,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_validate_filters' )
      * thing standing between a mistyped taxonomy and a wrong answer presented
      * as a filtered one. The error message names the valid taxonomies so the
      * caller can correct itself without another round trip.
+     *
+     * Carries data['status'] = 400. The REST run controller returns the WP_Error
+     * verbatim and rest_ensure_response() defaults to 500 without it - which
+     * tells an agent "transient server fault, retry the same call", the exact
+     * opposite of the self-correction this message is written for.
      *
      * @since 1.3.0
      *
@@ -235,7 +255,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_validate_filters' )
                 __( 'Unknown filter taxonomy: %1$s. Valid taxonomies for this post type: %2$s.', 'jpkcom-post-filter' ),
                 implode( ', ', $unknown ),
                 $valid
-            )
+            ),
+            [ 'status' => 400 ]
         );
     }
 }
@@ -244,6 +265,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_validate_filters' )
 if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_post_type_error' ) ) {
     /**
      * Build the error returned for a post type that is not enabled for filtering
+     *
+     * Carries data['status'] = 400 for the same reason as the unknown-taxonomy
+     * error: this is caller input, not a server fault, and the REST run
+     * controller would otherwise answer 500.
      *
      * @since 1.3.0
      *
@@ -263,7 +288,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_post_type_e
                 __( 'Post type "%1$s" is not enabled for filtering. Enabled post types: %2$s.', 'jpkcom-post-filter' ),
                 $post_type,
                 $valid
-            )
+            ),
+            [ 'status' => 400 ]
         );
     }
 }
@@ -515,6 +541,61 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_project_post' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_filters_are_url_expressible' ) ) {
+    /**
+     * Decide whether a filter set survives a round trip through a filter URL
+     *
+     * jpkcom_postfilter_get_filter_url() writes every requested slug into the
+     * path, but jpkcom_postfilter_parse_filter_path() truncates what it reads
+     * back to max_filters_per_group slugs per taxonomy and max_filter_combos
+     * taxonomies. Above either limit the built URL therefore shows a *different*
+     * result set than the one the ability just reported - measured with four
+     * category slugs against max_filters_per_group = 3, where the link resolved
+     * to the first three.
+     *
+     * This is a second implementation of a rule that lives in
+     * `includes/url-routing.php:74-87`. That parser is the authority: it decides
+     * what a filter URL actually resolves to, and this function only predicts
+     * it. Change the truncation there and this gate goes stale without any test
+     * noticing - the suite stubs the settings getter and never loads
+     * url-routing.php - and the ability resumes emitting links to a narrower
+     * result set than it reports.
+     *
+     * Both caps treat 0 as unlimited, matching parse_filter_path(). Only
+     * max_filters_per_group can actually be set to 0 through the admin UI;
+     * settings.php clamps max_filter_combos to 1..10, so the unlimited branch of
+     * that one is unreachable on a normally configured site. It is kept because
+     * this function must mirror the parser, not the settings form.
+     *
+     * @since 1.3.0
+     *
+     * @param array<string, string[]> $filters Normalised filters map.
+     * @return bool True when a built URL parses back to exactly these filters.
+     */
+    function jpkcom_postfilter_ability_filters_are_url_expressible( array $filters ): bool {
+        $max_combos = (int) jpkcom_postfilter_settings_get( 'general', 'max_filter_combos', 3 );
+
+        if ( $max_combos > 0 && count( $filters ) > $max_combos ) {
+            return false;
+        }
+
+        $max_per_group = (int) jpkcom_postfilter_settings_get( 'general', 'max_filters_per_group', 3 );
+
+        if ( $max_per_group < 1 ) {
+            return true;
+        }
+
+        foreach ( $filters as $slugs ) {
+            if ( is_array( $slugs ) && count( $slugs ) > $max_per_group ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
     /**
      * Execute callback for jpkcom-post-filter/query-posts
@@ -587,24 +668,75 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
             $posts[] = jpkcom_postfilter_ability_project_post( $post, $allowed );
         }
 
-        // jpkcom_postfilter_get_archive_base_url() returns '' for a post type
-        // without an archive - `page` is public, selectable in the settings and
-        // has none. Building a link from '' would yield the relative path
-        // "/filter/news/", and jpkcom_postfilter_archive_base_regex() returns
-        // null for exactly those post types, so no rewrite rule stands behind
-        // it either. An empty string is a better answer than a 404.
+        $total       = (int) $query->found_posts;
+        $total_pages = (int) $query->max_num_pages;
+
+        // WP_Query::set_found_posts() returns early when the result set is
+        // empty, leaving found_posts and max_num_pages at 0. A page past the
+        // last one would therefore answer "page 3, total 0, total_pages 0" -
+        // internally contradictory, and a model reading it concludes the corpus
+        // is empty. One extra query for page 1 recovers the real totals; it runs
+        // only on this out-of-range path, so the normal path costs nothing, and
+        // it goes through run_query() so the cache layer still applies.
+        if ( $query->posts === [] && $page > 1 ) {
+            $first_page_args          = $query_args;
+            $first_page_args['paged'] = 1;
+
+            $first_page = jpkcom_postfilter_run_query( $first_page_args, $filters );
+
+            $total       = (int) $first_page->found_posts;
+            $total_pages = (int) $first_page->max_num_pages;
+        }
+
+        // The link is only handed out when following it lands on exactly the
+        // result set reported here. Four things break that, and all four are
+        // gated in this one place:
+        //
+        // 1. No archive page. jpkcom_postfilter_get_archive_base_url() returns
+        //    '' for a post type without one - `page` is public, selectable in
+        //    the settings and has none. Building a link from '' would yield the
+        //    relative path "/filter/news/", and
+        //    jpkcom_postfilter_archive_base_regex() returns null for exactly
+        //    those post types, so no rewrite rule stands behind it either.
+        // 2. A filter set this site's own parser would truncate - measured with
+        //    four category slugs against max_filters_per_group = 3, where the
+        //    link resolved to the first three.
+        // 3. A page segment that does not mean the same thing on both sides.
+        //    get_filter_url() appends `page/N/`, but the front end reads N in
+        //    units of the *site's* posts_per_page, not the ability's per_page.
+        //    Measured with per_page 3, page 2 against a site posts_per_page of
+        //    10: the ability reported ids 157, 156, 155 and linked to a page
+        //    showing 150 down to 1 - both valid, and disjoint. Page 1 carries no
+        //    page segment at all, so it is safe whatever per_page says.
+        // 4. A page past the last one. That request is answered here with the
+        //    real totals and an empty post list, but the front end answers the
+        //    matching URL with a 404 - measured on .../filter/allgemein/page/3/
+        //    against total_pages 1.
+        //
+        // The full result set is reported in every case; only the link is
+        // withheld. An empty string is a better answer than a link to something
+        // else, or to nothing at all.
         $archive_base_url = jpkcom_postfilter_get_archive_base_url( $post_type );
-        $filter_url       = $archive_base_url === ''
+
+        $page_segment_matches = $page === 1 || $per_page === (int) get_option( 'posts_per_page' );
+        $page_exists          = $total_pages < 1 || $page <= $total_pages;
+
+        $filter_url = (
+            $archive_base_url === ''
+            || ! jpkcom_postfilter_ability_filters_are_url_expressible( $filters )
+            || ! $page_segment_matches
+            || ! $page_exists
+        )
             ? ''
             : jpkcom_postfilter_get_filter_url( $archive_base_url, $filters, $page );
 
         return [
             'post_type'     => $post_type,
             'filters'       => jpkcom_postfilter_ability_json_object( $filters ),
-            'total'         => (int) $query->found_posts,
+            'total'         => $total,
             'page'          => $page,
             'per_page'      => $per_page,
-            'total_pages'   => (int) $query->max_num_pages,
+            'total_pages'   => $total_pages,
             'filter_url'    => $filter_url,
             'unknown_terms' => jpkcom_postfilter_ability_json_object(
                 jpkcom_postfilter_ability_unknown_terms( $filters )
@@ -720,9 +852,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
     /**
      * Build the registration arguments for every ability this plugin provides
      *
-     * Pure: touches no WordPress state, calls no registry, has no side effects.
-     * That is what lets the CI harness assert the shape of these arrays without
-     * a WordPress installation.
+     * Reads no WordPress state and touches no registry, which is what lets the
+     * CI harness assert the shape of these arrays without a WordPress
+     * installation. Not free of side effects, though: __() and the two
+     * jpkcom_postfilter_ability_meta() calls each fire apply_filters(), so
+     * third-party callbacks run whenever this is called.
      *
      * @since 1.3.0
      *
@@ -755,6 +889,25 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
 
                 'input_schema' => [
                     'type'       => 'object',
+                    // Top level, deliberately. WP_Ability::normalize_input()
+                    // substitutes this value when the input is exactly null, and
+                    // without it a caller that passes no input at all is rejected
+                    // with ability_invalid_input - for an ability whose only
+                    // parameter is optional, calling it bare is the natural move.
+                    // Per-property defaults are never applied by core, which is
+                    // why the callback resolves post_type itself.
+                    //
+                    // An object, not []: the declared type here is `object`, and
+                    // an empty PHP array encodes as the JSON array `[]`. Core's
+                    // REST list controller rewrites that special case for its own
+                    // response, but the MCP Adapter reads get_input_schema()
+                    // directly and hands the raw value to clients, so a
+                    // schema-validating client would see an array default on an
+                    // object. The callbacks receive this value verbatim; a
+                    // stdClass is not an array, so they fall through to [] and
+                    // resolve their own per-property defaults, exactly as they do
+                    // for any other input they cannot use.
+                    'default'    => jpkcom_postfilter_ability_json_object( [] ),
                     'properties' => [
                         'post_type' => [
                             'type'        => 'string',
@@ -808,6 +961,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
 
                 'input_schema' => [
                     'type'       => 'object',
+                    // See the note on the list-filters input schema: this rescues
+                    // execute( null ), which core would otherwise reject before
+                    // the callback ever runs, and it is an object rather than []
+                    // because MCP clients read this value unmodified.
+                    'default'    => jpkcom_postfilter_ability_json_object( [] ),
                     'properties' => [
                         'post_type' => [
                             'type'        => 'string',
@@ -871,7 +1029,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
                         ],
                         'filter_url' => [
                             'type'        => 'string',
-                            'description' => __( 'Shareable front-end URL showing this filter combination. Empty when the post type has no archive page, because there is no front-end URL that could show it.', 'jpkcom-post-filter' ),
+                            'description' => __( 'Shareable front-end URL showing this filter combination, or an empty string when no URL would show exactly these results. It is empty whenever any of the following applies: the post type has no archive page, so there is no front-end URL that could show it; this site caps the number of terms per taxonomy or the number of taxonomies below what was requested, so the URL would resolve to a narrower result set; a page other than the first was requested with a per_page that differs from the site\'s own posts per page setting, so the page number in the URL would select a different slice; or the requested page lies past the last one, where the URL would answer 404. The results themselves are complete in every one of those cases - only the link is withheld.', 'jpkcom-post-filter' ),
                         ],
                         'unknown_terms' => [
                             'type'        => 'object',
