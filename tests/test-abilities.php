@@ -274,7 +274,67 @@ function get_post_time( string $format, bool $gmt, WP_Post $post ): string {
 	return $post->post_date_gmt;
 }
 
+/**
+ * Minimal stand-in for core's embed handler.
+ *
+ * Only the two method names matter: WP_Embed::__construct() registers both on
+ * `the_content` at priority 8 (class-wp-embed.php:33 and :41), and both reach
+ * WP_Embed::shortcode(), which is what performs the outbound request and the
+ * wp_insert_post( post_type => oembed_cache ).
+ */
+class WP_Embed {
+	public function autoembed( string $content ): string {
+		return $content;
+	}
+
+	public function run_shortcode( string $content ): string {
+		return $content;
+	}
+}
+
+// A very small hook registry: enough to see whether a callback is attached to
+// the_content at a given priority, which is the whole question below.
+$GLOBALS['_stub_hooks'] = [];
+
+function jpkpf_stub_hook_key( mixed $callback ): string {
+	return is_array( $callback ) ? get_class( $callback[0] ) . '::' . $callback[1] : (string) $callback;
+}
+
+function add_filter( string $tag, mixed $callback, int $priority = 10 ): bool {
+	$GLOBALS['_stub_hooks'][ $tag ][ $priority ][ jpkpf_stub_hook_key( $callback ) ] = true;
+	return true;
+}
+
+function remove_filter( string $tag, mixed $callback, int $priority = 10 ): bool {
+	$key = jpkpf_stub_hook_key( $callback );
+
+	if ( ! isset( $GLOBALS['_stub_hooks'][ $tag ][ $priority ][ $key ] ) ) {
+		return false;
+	}
+
+	unset( $GLOBALS['_stub_hooks'][ $tag ][ $priority ][ $key ] );
+	return true;
+}
+
+function jpkpf_stub_attached( string $tag, int $priority ): array {
+	$keys = array_keys( $GLOBALS['_stub_hooks'][ $tag ][ $priority ] ?? [] );
+	sort( $keys );
+	return $keys;
+}
+
+$GLOBALS['_stub_excerpt_saw']    = null;  // hooks attached at the moment of the read
+$GLOBALS['_stub_excerpt_throws'] = false;
+
 function get_the_excerpt( WP_Post $post ): string {
+	// Recording what is attached AT THE MOMENT OF THE READ is the point. A test
+	// that only checks the hooks before and after would pass on an
+	// implementation that removes and restores them without wrapping anything.
+	$GLOBALS['_stub_excerpt_saw'] = jpkpf_stub_attached( 'the_content', 8 );
+
+	if ( $GLOBALS['_stub_excerpt_throws'] ) {
+		throw new RuntimeException( 'excerpt read blew up' );
+	}
+
 	return $post->post_excerpt;
 }
 
@@ -1573,6 +1633,117 @@ check(
 	'A guard that rejects the documented input would be worse than the defect.'
 );
 
+section( 'a read-only ability must not let the embed handler write' );
+
+// get_the_excerpt() on a post with an empty post_excerpt runs wp_trim_excerpt(),
+// which applies the the_content chain. WP_Embed registers TWO callbacks there at
+// priority 8 - autoembed (class-wp-embed.php:41) and run_shortcode (:33) - and
+// both reach WP_Embed::shortcode(). In an ability there is no post context, so
+// that method takes the branch which fetches the URL over the network and calls
+// wp_insert_post( post_type => 'oembed_cache', post_status => 'publish' ).
+//
+// Measured on WP 7.0.3 against the released 1.3.0: a GET to a route annotated
+// readonly:true wrote a published post, authored by the calling subscriber, and
+// made outbound requests to third-party hosts - one per URL, 3.5 s cold for
+// three of them.
+
+$GLOBALS['_stub_hooks'] = [];
+$embed_stub             = new WP_Embed();
+$GLOBALS['wp_embed']    = $embed_stub;
+
+add_filter( 'the_content', [ $embed_stub, 'run_shortcode' ], 8 );
+add_filter( 'the_content', [ $embed_stub, 'autoembed' ], 8 );
+add_filter( 'the_content', 'wptexturize', 8 );
+
+$excerpt_post             = new WP_Post();
+$excerpt_post->ID         = 99;
+$excerpt_post->post_excerpt = 'the excerpt as core produced it';
+
+$GLOBALS['_stub_excerpt_saw'] = null;
+
+$excerpt = jpkcom_postfilter_ability_excerpt( $excerpt_post );
+
+is_same(
+	'the embed handler is not attached while the excerpt is read',
+	$GLOBALS['_stub_excerpt_saw'],
+	[ 'wptexturize' ],
+	'Both WP_Embed callbacks must be gone for the duration of the read. Removing '
+	. 'only autoembed leaves run_shortcode, which registers [embed] and reaches the '
+	. 'same WP_Embed::shortcode() through do_shortcode.'
+);
+
+is_same(
+	'unrelated callbacks at the same priority are left alone',
+	in_array( 'wptexturize', $GLOBALS['_stub_excerpt_saw'], true ),
+	true,
+	'The point is to stop one handler writing, not to strip the content chain. '
+	. 'Output must stay byte-identical, which is the entire reason this fix was '
+	. 'chosen over projecting the excerpt from raw content.'
+);
+
+is_same(
+	'both callbacks are put back afterwards',
+	jpkpf_stub_attached( 'the_content', 8 ),
+	[ 'WP_Embed::autoembed', 'WP_Embed::run_shortcode', 'wptexturize' ],
+	'The ability runs inside a normal request. Leaving the embed handler detached '
+	. 'would change how the rest of that request renders.'
+);
+
+is_same(
+	'the excerpt itself is returned unchanged',
+	$excerpt,
+	'the excerpt as core produced it',
+	'This fix must not alter a single delivered string — that is what distinguishes '
+	. 'it from projecting the excerpt from raw content, which changes 10 of 17 '
+	. 'measured content shapes.'
+);
+
+// A third-party the_content callback can throw. On the declared 6.9 floor that is
+// an uncaught fatal either way, but the filters must not stay detached for the
+// rest of the request on any version.
+$GLOBALS['_stub_excerpt_throws'] = true;
+$threw                           = false;
+
+try {
+	jpkcom_postfilter_ability_excerpt( $excerpt_post );
+} catch ( RuntimeException $e ) {
+	$threw = true;
+}
+
+$GLOBALS['_stub_excerpt_throws'] = false;
+
+check( 'a throwing excerpt read still propagates', $threw );
+
+is_same(
+	'and the callbacks are restored even then',
+	jpkpf_stub_attached( 'the_content', 8 ),
+	[ 'WP_Embed::autoembed', 'WP_Embed::run_shortcode', 'wptexturize' ],
+	'Without a finally, one throwing callback would silently disable embeds for '
+	. 'every later the_content in the same request.'
+);
+
+// Nothing may throw out of an ability callback on the 6.9 floor, so the absence
+// of the global must not be a TypeError.
+unset( $GLOBALS['wp_embed'] );
+$GLOBALS['_stub_hooks']       = [];
+$GLOBALS['_stub_excerpt_saw'] = null;
+
+is_same(
+	'no embed handler present is not an error',
+	jpkcom_postfilter_ability_excerpt( $excerpt_post ),
+	'the excerpt as core produced it'
+);
+
+is_same(
+	'and nothing is added to the chain in that case',
+	jpkpf_stub_attached( 'the_content', 8 ),
+	[],
+	'remove_filter() returned false for both, so neither may be re-added — that '
+	. 'would attach a handler the site had deliberately removed.'
+);
+
+$GLOBALS['wp_embed'] = $embed_stub;
+
 section( 'source-text guards for defects a stubbed suite cannot see' );
 
 // Two rules below are asserted against the source text rather than against
@@ -1661,6 +1832,36 @@ check(
 	'the APCu flush asks for the full listing',
 	(bool) preg_match( '/apcu_cache_info\(\s*false\s*\)/', $flush_group_src ),
 	'The delete loop needs cache_list, which only the unlimited form returns.'
+);
+
+$abilities_src = jpkpf_code_without_comments( dirname( __DIR__ ) . '/includes/abilities.php' );
+
+is_same(
+	'get_the_excerpt() is called from exactly one place in the ability path',
+	substr_count( $abilities_src, 'get_the_excerpt(' ),
+	1,
+	'The behavioural test above can only prove that ONE function suppresses the '
+	. 'embed handler. A second, unwrapped call anywhere in this file reopens the '
+	. 'defect, and no stubbed test would see it — this suite models get_the_excerpt() '
+	. 'as a field read, which is exactly why the original defect survived review.'
+);
+
+check(
+	'and that place is the wrapper that suppresses the embed handler',
+	str_contains(
+		jpkpf_function_source( $abilities_src, 'jpkcom_postfilter_ability_excerpt' ),
+		'get_the_excerpt('
+	),
+	'If the single call migrates out of the wrapper, the count above still reads 1 '
+	. 'while the suppression is gone.'
+);
+
+check(
+	'the wrapper suppresses run_shortcode as well as autoembed',
+	str_contains( jpkpf_function_source( $abilities_src, 'jpkcom_postfilter_ability_excerpt' ), 'run_shortcode' ),
+	'WP_Embed registers both on the_content at priority 8 and both reach '
+	. 'WP_Embed::shortcode(). Removing only the obvious one leaves the [embed] route '
+	. 'open, which the front end reaches through do_shortcode.'
 );
 
 check(

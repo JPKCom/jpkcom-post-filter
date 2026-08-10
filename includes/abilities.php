@@ -614,6 +614,76 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_terms' ) ) 
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_excerpt' ) ) {
+    /**
+     * Read a post's excerpt without letting the embed handler write to the database
+     *
+     * `get_the_excerpt()` on a post with an empty `post_excerpt` runs
+     * `wp_trim_excerpt()`, which applies the whole `the_content` chain. WP_Embed
+     * registers TWO callbacks on that chain at priority 8 - `run_shortcode`
+     * (class-wp-embed.php:33) and `autoembed` (:41) - and both end up in
+     * `WP_Embed::shortcode()`.
+     *
+     * In an ability callback there is no post context, so that method takes the
+     * branch at class-wp-embed.php:317-366 rather than the `update_post_meta` one:
+     * it fetches the URL over the network and calls `wp_insert_post()` with
+     * `post_type => 'oembed_cache'` and `post_status => 'publish'`. Measured on WP
+     * 7.0.3 against 1.3.0: a GET to a route annotated `readonly: true` wrote a
+     * published post authored by the calling subscriber, and made one outbound
+     * request per URL - 3.5 s cold for three of them. Any user with `read` can
+     * trigger it.
+     *
+     * Both callbacks are removed for the duration of the read and put back
+     * afterwards, and nothing else in the chain is touched, so the delivered string
+     * is byte-identical to what 1.3.0 returned. That is the whole reason this shape
+     * was chosen over projecting the excerpt from raw content: a raw projection
+     * changes 10 of 17 measured content shapes and has to reimplement the password
+     * gate, the `<!--more-->` and `<!--nextpage-->` cuts and the block allow-list,
+     * which is core's own function copied into a plugin and going stale on every
+     * release.
+     *
+     * KNOWN LIMIT, on purpose: this closes the case, not the class. `do_shortcode`
+     * still runs at priority 11, and every other `the_content` callback still runs.
+     * A registered shortcode that writes would write here too. The general rule -
+     * an ability callback has no post context, so no accessor whose contract is
+     * "as the front end would render it" may be called - is documented in
+     * CLAUDE.md, and `get_permalink()`, `get_the_terms()` and `list-filters`'
+     * `get_terms()` are in the same class and have not been audited.
+     *
+     * @since 1.3.1
+     *
+     * @param \WP_Post $post Post to read.
+     * @return string The excerpt, exactly as get_the_excerpt() produces it.
+     */
+    function jpkcom_postfilter_ability_excerpt( \WP_Post $post ): string {
+        $embed   = $GLOBALS['wp_embed'] ?? null;
+        $removed = [];
+
+        if ( $embed instanceof \WP_Embed ) {
+            foreach ( [ 'autoembed', 'run_shortcode' ] as $method ) {
+                // Only re-attach what this function actually detached. A site that
+                // removed the handler itself must not find it back afterwards.
+                if ( remove_filter( 'the_content', [ $embed, $method ], 8 ) ) {
+                    $removed[] = $method;
+                }
+            }
+        }
+
+        try {
+            return (string) get_the_excerpt( $post );
+        } finally {
+            // finally, not a trailing statement: a third-party the_content callback
+            // that throws would otherwise leave embeds disabled for the rest of the
+            // request. On the declared 6.9 floor such a throw is an uncaught fatal
+            // either way, but the restore must not depend on the happy path.
+            foreach ( $removed as $method ) {
+                add_filter( 'the_content', [ $embed, $method ], 8 );
+            }
+        }
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_ability_project_post' ) ) {
     /**
      * Project a post into the JSON-serialisable shape the output schema promises
@@ -657,7 +727,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_project_post' ) ) {
             'title'   => (string) get_the_title( $post ),
             'url'     => (string) get_permalink( $post ),
             'date'    => (string) get_post_time( 'c', true, $post ),
-            'excerpt' => (string) get_the_excerpt( $post ),
+            'excerpt' => jpkcom_postfilter_ability_excerpt( $post ),
             'terms'   => jpkcom_postfilter_ability_json_object( $terms ),
         ];
     }
