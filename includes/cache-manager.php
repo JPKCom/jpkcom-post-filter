@@ -141,7 +141,17 @@ if ( ! function_exists( function: 'jpkcom_postfilter_cache_flush_group' ) ) {
         }
 
         if ( jpkcom_postfilter_apcu_available() ) {
-            $info = apcu_cache_info( true );
+            // apcu_cache_info( true ) means $limited = true, and the limited form
+            // OMITS cache_list from its return value - so the isset() below was
+            // always false and this whole loop was dead code. Every invalidation
+            // path in the plugin (save_post, deleted_post, the term hooks, the
+            // settings save, and both admin "Clear cache" buttons) therefore left
+            // the APCu layer untouched while reporting success, and stale query
+            // results survived until their TTL. Measured: 20 jpkpf_ entries before
+            // the call, 20 after. Guarded by a source-text assertion in
+            // tests/test-abilities.php, because apc.enable_cli is 0 and no
+            // behavioural test can reach this branch under WP-CLI.
+            $info = apcu_cache_info( false );
             if ( isset( $info['cache_list'] ) && is_array( $info['cache_list'] ) ) {
                 foreach ( $info['cache_list'] as $entry ) {
                     $entry_key = $entry['info'] ?? $entry['key'] ?? '';

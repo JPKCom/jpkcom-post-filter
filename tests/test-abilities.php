@@ -274,7 +274,67 @@ function get_post_time( string $format, bool $gmt, WP_Post $post ): string {
 	return $post->post_date_gmt;
 }
 
+/**
+ * Minimal stand-in for core's embed handler.
+ *
+ * Only the two method names matter: WP_Embed::__construct() registers both on
+ * `the_content` at priority 8 (class-wp-embed.php:33 and :41), and both reach
+ * WP_Embed::shortcode(), which is what performs the outbound request and the
+ * wp_insert_post( post_type => oembed_cache ).
+ */
+class WP_Embed {
+	public function autoembed( string $content ): string {
+		return $content;
+	}
+
+	public function run_shortcode( string $content ): string {
+		return $content;
+	}
+}
+
+// A very small hook registry: enough to see whether a callback is attached to
+// the_content at a given priority, which is the whole question below.
+$GLOBALS['_stub_hooks'] = [];
+
+function jpkpf_stub_hook_key( mixed $callback ): string {
+	return is_array( $callback ) ? get_class( $callback[0] ) . '::' . $callback[1] : (string) $callback;
+}
+
+function add_filter( string $tag, mixed $callback, int $priority = 10 ): bool {
+	$GLOBALS['_stub_hooks'][ $tag ][ $priority ][ jpkpf_stub_hook_key( $callback ) ] = true;
+	return true;
+}
+
+function remove_filter( string $tag, mixed $callback, int $priority = 10 ): bool {
+	$key = jpkpf_stub_hook_key( $callback );
+
+	if ( ! isset( $GLOBALS['_stub_hooks'][ $tag ][ $priority ][ $key ] ) ) {
+		return false;
+	}
+
+	unset( $GLOBALS['_stub_hooks'][ $tag ][ $priority ][ $key ] );
+	return true;
+}
+
+function jpkpf_stub_attached( string $tag, int $priority ): array {
+	$keys = array_keys( $GLOBALS['_stub_hooks'][ $tag ][ $priority ] ?? [] );
+	sort( $keys );
+	return $keys;
+}
+
+$GLOBALS['_stub_excerpt_saw']    = null;  // hooks attached at the moment of the read
+$GLOBALS['_stub_excerpt_throws'] = false;
+
 function get_the_excerpt( WP_Post $post ): string {
+	// Recording what is attached AT THE MOMENT OF THE READ is the point. A test
+	// that only checks the hooks before and after would pass on an
+	// implementation that removes and restores them without wrapping anything.
+	$GLOBALS['_stub_excerpt_saw'] = jpkpf_stub_attached( 'the_content', 8 );
+
+	if ( $GLOBALS['_stub_excerpt_throws'] ) {
+		throw new RuntimeException( 'excerpt read blew up' );
+	}
+
 	return $post->post_excerpt;
 }
 
@@ -1368,6 +1428,452 @@ is_same(
 );
 
 $GLOBALS['_stub_query_by_page'] = [];
+
+section( 'a search term core would silently discard must be refused up front' );
+
+// WP_Query::parse_query() blanks `s` when strlen() exceeds 1600 — an anti-DoS
+// guard that runs INSIDE the query, after every check the ability made, with no
+// error and no filter. The result is not "no matches": it is the same answer the
+// call would have given with no search term at all, and nothing in the response
+// says the term was dropped, because `search` is never echoed back. Measured on
+// WP 7.0.3: 1601 bytes returned all 19 posts of the corpus while 1600 returned 0.
+// The unit is bytes because core calls strlen(), not mb_strlen().
+
+$GLOBALS['_stub_query_args']['atts']['s'] = null;
+
+$search_at_limit = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'search' => str_repeat( 'z', 1600 ) ]
+);
+
+is_same(
+	'a search term of exactly 1600 bytes still reaches the query',
+	$GLOBALS['_stub_query_args']['atts']['s'] ?? null,
+	str_repeat( 'z', 1600 ),
+	'The core guard is strictly > 1600, so 1600 is the last length that works. '
+	. 'Refusing it too would reject input core accepts.'
+);
+
+$GLOBALS['_stub_query_args']['atts']['s'] = null;
+
+$search_over_limit = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'search' => str_repeat( 'z', 1601 ) ]
+);
+
+check(
+	'a search term of 1601 bytes is refused instead of silently dropped',
+	$search_over_limit instanceof WP_Error,
+	'Without this the ability answers 200 with the unsearched result set. A model '
+	. 'reading "19 results" has no way to know its search term never applied.'
+);
+
+is_same(
+	'the refusal is a caller error, not a server fault',
+	$search_over_limit instanceof WP_Error ? ( $search_over_limit->get_error_data()['status'] ?? null ) : null,
+	400,
+	'rest_ensure_response() defaults to 500 without data[status], which tells an '
+	. 'agent "transient fault, retry unchanged" — the opposite instruction.'
+);
+
+check(
+	'the message names the limit so the caller can correct itself in one turn',
+	$search_over_limit instanceof WP_Error
+		&& str_contains( $search_over_limit->get_error_message(), '1600' ),
+	'Every other guard in this file names the valid values. A refusal that does not '
+	. 'say how long is too long cannot terminate a correction loop.'
+);
+
+is_same(
+	'nothing reached the query on the refused call',
+	$GLOBALS['_stub_query_args']['atts']['s'] ?? null,
+	null,
+	'The guard has to run before the query is built, not after.'
+);
+
+// The multibyte case is the one a maxLength in the JSON Schema would get wrong:
+// JSON Schema counts characters, core counts bytes. 801 x U+00FC is 801
+// characters and 1602 bytes, so a maxLength of 1600 would let it through.
+
+$GLOBALS['_stub_query_args']['atts']['s'] = null;
+
+$umlauts_at_limit = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'search' => str_repeat( "\u{00fc}", 800 ) ]
+);
+
+is_same(
+	'800 umlauts (1600 bytes, 800 characters) are accepted',
+	$GLOBALS['_stub_query_args']['atts']['s'] ?? null,
+	str_repeat( "\u{00fc}", 800 )
+);
+
+$umlauts_over_limit = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'search' => str_repeat( "\u{00fc}", 801 ) ]
+);
+
+check(
+	'801 umlauts are refused — the unit is bytes, not characters',
+	$umlauts_over_limit instanceof WP_Error,
+	'801 characters, 1602 bytes. A character-counting guard passes this straight '
+	. 'into the hole it was written to close.'
+);
+
+section( 'filter_url must not be handed out when a search narrowed the answer' );
+
+// get_filter_url() builds a path from the archive base, the taxonomy slug
+// segments and an optional page segment. It has no parameter for a search term
+// and never writes one, so the link resolves to the same set MINUS the search.
+// Measured on WP 7.0.3: filters={category:[web-design]} + search=wordpress
+// reported total 0 and handed out a URL rendering six posts. Reported set and
+// linked set were disjoint.
+
+$GLOBALS['_stub_options']['posts_per_page'] = 10;
+$GLOBALS['_stub_filter_url_calls']          = 0;
+
+$searched_url = jpkcom_postfilter_ability_query_posts(
+	[
+		'post_type' => 'post',
+		'filters'   => [ 'category' => [ 'allgemein' ] ],
+		'search'    => 'wordpress',
+	]
+);
+
+is_same(
+	'a search term withholds the filter URL',
+	is_array( $searched_url ) ? $searched_url['filter_url'] : null,
+	'',
+	'This is the fifth withholding reason beside the four already documented. The '
+	. 'front end has no search input of its own, so the ability is the only surface '
+	. 'that can pair a search-narrowed result set with a filter link.'
+);
+
+is_same(
+	'no URL is built at all in that case',
+	$GLOBALS['_stub_filter_url_calls'],
+	0
+);
+
+check(
+	'the full result set is still reported — only the link is withheld',
+	is_array( $searched_url ) && array_key_exists( 'total', $searched_url )
+		&& is_array( $searched_url['posts'] ),
+	'Every other withholding reason keeps the answer and drops only the link.'
+);
+
+$GLOBALS['_stub_filter_url_calls'] = 0;
+
+$unsearched_url = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'filters' => [ 'category' => [ 'allgemein' ] ] ]
+);
+
+check(
+	'the same call without a search term still gets its link',
+	is_array( $unsearched_url ) && $unsearched_url['filter_url'] !== '',
+	'The guard must be scoped to the search axis. Withholding the link generally '
+	. 'would remove a feature to fix a defect.'
+);
+
+section( 'an input key at the wrong nesting level must not pass as a filtered call' );
+
+// Neither input schema declares additionalProperties, so a key at the wrong
+// level is dropped before the callback sees it and the ability answers with the
+// complete unfiltered corpus, HTTP 200, filters {}. Measured on WP 7.0.3:
+// input[category][]=marketing returned total 19 while input[filters][category][]
+// =marketing returned 6. This is the exact failure validate_filters() exists to
+// prevent, reached by a route the guard does not stand on — and flattening a
+// nested map is the commonest shape error a tool-calling model makes.
+
+$flattened = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'category' => [ 'marketing' ] ]
+);
+
+check(
+	'a flattened filter key is refused instead of answered with the whole corpus',
+	$flattened instanceof WP_Error,
+	'Answering 200 with filters {} and every post on the site is worse than an '
+	. 'error, because it looks like a successful filtered query.'
+);
+
+is_same(
+	'that refusal is a caller error too',
+	$flattened instanceof WP_Error ? ( $flattened->get_error_data()['status'] ?? null ) : null,
+	400
+);
+
+check(
+	'the message names the key it rejected and where it belongs',
+	$flattened instanceof WP_Error
+		&& str_contains( $flattened->get_error_message(), 'category' )
+		&& str_contains( $flattened->get_error_message(), 'filters' ),
+	'The caller has to be able to move the key without guessing.'
+);
+
+$typo = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'perPage' => 3 ]
+);
+
+check(
+	'an unrecognised key is refused rather than silently ignored',
+	$typo instanceof WP_Error,
+	'perPage instead of per_page is silently ignored today, so the caller gets a '
+	. 'page size it did not ask for and no indication why.'
+);
+
+$all_valid = jpkcom_postfilter_ability_query_posts(
+	[
+		'post_type' => 'post',
+		'filters'   => [ 'category' => [ 'allgemein' ] ],
+		'page'      => 1,
+		'per_page'  => 5,
+		'search'    => 'wordpress',
+	]
+);
+
+check(
+	'every documented key together is still accepted',
+	! ( $all_valid instanceof WP_Error ),
+	'A guard that rejects the documented input would be worse than the defect.'
+);
+
+section( 'a read-only ability must not let the embed handler write' );
+
+// get_the_excerpt() on a post with an empty post_excerpt runs wp_trim_excerpt(),
+// which applies the the_content chain. WP_Embed registers TWO callbacks there at
+// priority 8 - autoembed (class-wp-embed.php:41) and run_shortcode (:33) - and
+// both reach WP_Embed::shortcode(). In an ability there is no post context, so
+// that method takes the branch which fetches the URL over the network and calls
+// wp_insert_post( post_type => 'oembed_cache', post_status => 'publish' ).
+//
+// Measured on WP 7.0.3 against the released 1.3.0: a GET to a route annotated
+// readonly:true wrote a published post, authored by the calling subscriber, and
+// made outbound requests to third-party hosts - one per URL, 3.5 s cold for
+// three of them.
+
+$GLOBALS['_stub_hooks'] = [];
+$embed_stub             = new WP_Embed();
+$GLOBALS['wp_embed']    = $embed_stub;
+
+add_filter( 'the_content', [ $embed_stub, 'run_shortcode' ], 8 );
+add_filter( 'the_content', [ $embed_stub, 'autoembed' ], 8 );
+add_filter( 'the_content', 'wptexturize', 8 );
+
+$excerpt_post             = new WP_Post();
+$excerpt_post->ID         = 99;
+$excerpt_post->post_excerpt = 'the excerpt as core produced it';
+
+$GLOBALS['_stub_excerpt_saw'] = null;
+
+$excerpt = jpkcom_postfilter_ability_excerpt( $excerpt_post );
+
+is_same(
+	'the embed handler is not attached while the excerpt is read',
+	$GLOBALS['_stub_excerpt_saw'],
+	[ 'wptexturize' ],
+	'Both WP_Embed callbacks must be gone for the duration of the read. Removing '
+	. 'only autoembed leaves run_shortcode, which registers [embed] and reaches the '
+	. 'same WP_Embed::shortcode() through do_shortcode.'
+);
+
+is_same(
+	'unrelated callbacks at the same priority are left alone',
+	in_array( 'wptexturize', $GLOBALS['_stub_excerpt_saw'], true ),
+	true,
+	'The point is to stop one handler writing, not to strip the content chain. '
+	. 'Output must stay byte-identical, which is the entire reason this fix was '
+	. 'chosen over projecting the excerpt from raw content.'
+);
+
+is_same(
+	'both callbacks are put back afterwards',
+	jpkpf_stub_attached( 'the_content', 8 ),
+	[ 'WP_Embed::autoembed', 'WP_Embed::run_shortcode', 'wptexturize' ],
+	'The ability runs inside a normal request. Leaving the embed handler detached '
+	. 'would change how the rest of that request renders.'
+);
+
+is_same(
+	'the excerpt itself is returned unchanged',
+	$excerpt,
+	'the excerpt as core produced it',
+	'This fix must not alter a single delivered string — that is what distinguishes '
+	. 'it from projecting the excerpt from raw content, which changes 10 of 17 '
+	. 'measured content shapes.'
+);
+
+// A third-party the_content callback can throw. On the declared 6.9 floor that is
+// an uncaught fatal either way, but the filters must not stay detached for the
+// rest of the request on any version.
+$GLOBALS['_stub_excerpt_throws'] = true;
+$threw                           = false;
+
+try {
+	jpkcom_postfilter_ability_excerpt( $excerpt_post );
+} catch ( RuntimeException $e ) {
+	$threw = true;
+}
+
+$GLOBALS['_stub_excerpt_throws'] = false;
+
+check( 'a throwing excerpt read still propagates', $threw );
+
+is_same(
+	'and the callbacks are restored even then',
+	jpkpf_stub_attached( 'the_content', 8 ),
+	[ 'WP_Embed::autoembed', 'WP_Embed::run_shortcode', 'wptexturize' ],
+	'Without a finally, one throwing callback would silently disable embeds for '
+	. 'every later the_content in the same request.'
+);
+
+// Nothing may throw out of an ability callback on the 6.9 floor, so the absence
+// of the global must not be a TypeError.
+unset( $GLOBALS['wp_embed'] );
+$GLOBALS['_stub_hooks']       = [];
+$GLOBALS['_stub_excerpt_saw'] = null;
+
+is_same(
+	'no embed handler present is not an error',
+	jpkcom_postfilter_ability_excerpt( $excerpt_post ),
+	'the excerpt as core produced it'
+);
+
+is_same(
+	'and nothing is added to the chain in that case',
+	jpkpf_stub_attached( 'the_content', 8 ),
+	[],
+	'remove_filter() returned false for both, so neither may be re-added — that '
+	. 'would attach a handler the site had deliberately removed.'
+);
+
+$GLOBALS['wp_embed'] = $embed_stub;
+
+section( 'source-text guards for defects a stubbed suite cannot see' );
+
+// Two rules below are asserted against the source text rather than against
+// behaviour, because this suite cannot execute either one. Both are documented
+// failures of exactly that kind: the excerpt defect was invisible because the
+// suite stubs get_the_excerpt() as a pure field read, and the APCu defect is
+// invisible because apc.enable_cli is 0, so the whole layer is inert under CLI.
+
+/**
+ * Return a file's PHP source with all comments removed.
+ *
+ * The guards below match against source text, so they must not be satisfied — or
+ * broken — by prose. Without this, documenting a defect in a comment beside its
+ * own fix trips the guard that proves the fix, which happened on the first
+ * attempt at exactly that.
+ *
+ * @param string $path Absolute path to a PHP file.
+ * @return string The file's code with comments stripped.
+ */
+function jpkpf_code_without_comments( string $path ): string {
+	$out = '';
+
+	foreach ( token_get_all( (string) file_get_contents( $path ) ) as $token ) {
+		if ( is_array( $token ) ) {
+			if ( $token[0] === T_COMMENT || $token[0] === T_DOC_COMMENT ) {
+				continue;
+			}
+
+			$out .= $token[1];
+			continue;
+		}
+
+		$out .= $token;
+	}
+
+	return $out;
+}
+
+/**
+ * Return the source of one function, so a guard cannot be satisfied or broken by
+ * an unrelated call elsewhere in the same file.
+ *
+ * The first version of the APCu guard below matched the whole file and failed on
+ * jpkcom_postfilter_cache_stats(), which passes true on purpose — the admin panel
+ * wants the summary and not a listing of every entry. A guard that forbids a
+ * correct call is worse than no guard, because the way to make it pass is to
+ * break working code.
+ *
+ * @param string $src  Comment-stripped PHP source.
+ * @param string $name Function name to extract.
+ * @return string The function's source, or '' when it is not found.
+ */
+function jpkpf_function_source( string $src, string $name ): string {
+	$start = strpos( $src, 'function ' . $name . '(' );
+
+	if ( $start === false ) {
+		return '';
+	}
+
+	$next = strpos( $src, 'function ', $start + strlen( $name ) + 10 );
+
+	return $next === false ? substr( $src, $start ) : substr( $src, $start, $next - $start );
+}
+
+$cache_manager_src = jpkpf_code_without_comments( dirname( __DIR__ ) . '/includes/cache-manager.php' );
+$flush_group_src   = jpkpf_function_source( $cache_manager_src, 'jpkcom_postfilter_cache_flush_group' );
+
+check(
+	'the flush function was found, so the guards below mean something',
+	$flush_group_src !== '',
+	'A source-text guard that silently matches an empty string passes forever.'
+);
+
+check(
+	'the APCu flush does not ask for limited cache info',
+	! preg_match( '/apcu_cache_info\(\s*true\s*\)/', $flush_group_src ),
+	'apcu_cache_info( true ) means $limited = true, which OMITS cache_list from the '
+	. 'return — so the isset() guard below it is always false and the delete loop is '
+	. 'dead code. Measured: 20 jpkpf_ entries before flush_group(), 20 after. Every '
+	. 'invalidation path the plugin has (save_post, term hooks, settings save, both '
+	. 'admin Clear-cache buttons) is silently inert, and the admin still reports '
+	. 'success. apc.enable_cli is 0, so no behavioural test here can catch this.'
+);
+
+check(
+	'the APCu flush asks for the full listing',
+	(bool) preg_match( '/apcu_cache_info\(\s*false\s*\)/', $flush_group_src ),
+	'The delete loop needs cache_list, which only the unlimited form returns.'
+);
+
+$abilities_src = jpkpf_code_without_comments( dirname( __DIR__ ) . '/includes/abilities.php' );
+
+is_same(
+	'get_the_excerpt() is called from exactly one place in the ability path',
+	substr_count( $abilities_src, 'get_the_excerpt(' ),
+	1,
+	'The behavioural test above can only prove that ONE function suppresses the '
+	. 'embed handler. A second, unwrapped call anywhere in this file reopens the '
+	. 'defect, and no stubbed test would see it — this suite models get_the_excerpt() '
+	. 'as a field read, which is exactly why the original defect survived review.'
+);
+
+check(
+	'and that place is the wrapper that suppresses the embed handler',
+	str_contains(
+		jpkpf_function_source( $abilities_src, 'jpkcom_postfilter_ability_excerpt' ),
+		'get_the_excerpt('
+	),
+	'If the single call migrates out of the wrapper, the count above still reads 1 '
+	. 'while the suppression is gone.'
+);
+
+check(
+	'the wrapper suppresses run_shortcode as well as autoembed',
+	str_contains( jpkpf_function_source( $abilities_src, 'jpkcom_postfilter_ability_excerpt' ), 'run_shortcode' ),
+	'WP_Embed registers both on the_content at priority 8 and both reach '
+	. 'WP_Embed::shortcode(). Removing only the obvious one leaves the [embed] route '
+	. 'open, which the front end reaches through do_shortcode.'
+);
+
+check(
+	'the admin stats call is left alone',
+	(bool) preg_match(
+		'/apcu_cache_info\(\s*true\s*\)/',
+		jpkpf_function_source( $cache_manager_src, 'jpkcom_postfilter_cache_stats' )
+	),
+	'cache_stats() passes true deliberately — the admin panel wants the summary, not '
+	. 'a listing of every entry. This assertion exists so a future tidy-up of the '
+	. 'flush cannot spread to a call that is already correct.'
+);
 
 section( 'ability definitions' );
 

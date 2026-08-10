@@ -466,6 +466,37 @@ effects beyond `__()` and the `jpkcom_postfilter_ability_meta` filter, which run
 That is what lets `tests/test-abilities.php` assert the registration arrays without a WordPress
 install.
 
+### Eleven things that will bite
+
+**10. A search term over 1600 BYTES is discarded by core, silently, inside the query** (guarded since
+1.3.1). `WP_Query::parse_query()` blanks `s` when `strlen()` exceeds 1600 — an anti-DoS measure with
+no error, no filter and no notice, at `wp-includes/class-wp-query.php:867`, byte-identical on 6.9.4,
+7.0.2 and 7.0.3. Because it runs *inside* the query, past every check the ability made, the caller
+receives exactly the answer it would have got with no search term at all. Measured on WP 7.0.3: 1600
+bytes returned 0 of 19, 1601 bytes returned all 19 — and since `search` is not echoed back in the
+response, **nothing at all told the caller its term had been dropped**. Over MCP the wrapper even
+reports `"success": true`.
+
+The unit is **bytes**, and that is the whole trap: core calls `strlen()`, not `mb_strlen()`, so 801
+`ü` is over the limit at 801 characters and 401 emoji at 401 characters. A `maxLength` in the input
+schema counts *characters* and would therefore leave the hole open for exactly the input most likely
+to hit it. The guard is `jpkcom_postfilter_ability_validate_search()`, it counts bytes, and it refuses
+with a 400 that names the limit.
+
+**11. An input key at the wrong nesting level is not an error — it is a full-corpus answer** (guarded
+since 1.3.1). Neither input schema declares `additionalProperties`, so core hands the callback input
+containing keys it never declared and the callback simply does not read them. Measured on WP 7.0.3:
+`input[category][]=marketing` answered **HTTP 200, `total: 19`, `filters: {}`** while
+`input[filters][category][]=marketing` answered `total: 6`. That is the exact failure
+`validate_filters()` exists to prevent (see trap 1), reached by a route that guard does not stand on —
+and flattening a nested map is the commonest shape error a tool-calling model makes. `perPage` for
+`per_page` behaves the same way, silently.
+
+`jpkcom_postfilter_ability_validate_input_keys()` rejects any top-level key outside
+`JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS` with a 400 that names both the rejected key and the accepted
+set. Keep that constant in step with the input schemas — they are two statements of one list, and
+nothing cross-checks them.
+
 ### Nine things that will bite
 
 **1. The unknown-taxonomy guard is the whole point.** `jpkcom_postfilter_build_tax_query()` drops a
@@ -501,7 +532,7 @@ external value crosses an `is_array()` / `is_scalar()` / `instanceof` check befo
 `instanceof \WP_Term` and `\WP_Post` guards are load-bearing, not defensive noise, and
 `tests/test-abilities.php` feeds them malformed data on purpose.
 
-**6. `filter_url` is only emitted when following it lands on the reported result set.** Four
+**6. `filter_url` is only emitted when following it lands on the reported result set.** Five
 independent reasons withhold it, all gated in one place in `query_posts()`, and every one of them was
 measured on the verification install:
 
@@ -524,10 +555,19 @@ measured on the verification install:
 4. **A page past the last one.** Since the totals are recovered (see 9) that response is well-formed,
    which is exactly what makes the link dangerous: `/filter/allgemein/page/3/` against `total_pages`
    1 answers **404** while the ability answers 200.
+5. **A search term was applied** (since 1.3.1). `get_filter_url()` writes the archive base, the
+   taxonomy segments and an optional page segment. It has no parameter for a search term and never
+   had one, so the link resolves to the same set *minus* the search. Measured on WP 7.0.3:
+   `filters={category:[web-design]}` with `search=wordpress` reported `total 0` and handed out a URL
+   rendering six posts — reported set and linked set disjoint. This reason was missing from 1.3.0
+   because `search` was added to the ability in the same release as this gate and never got its entry.
+   Appending `?s=` is **not** the fix: the front end's own filter chips are built by
+   `get_filter_url()` too and drop the parameter, so the first click silently widens the set again.
 
-Callers get the full result set in all four cases; only the link is withheld. Do not "restore" the
+Callers get the full result set in all five cases; only the link is withheld. Do not "restore" the
 unconditional link, and do not drop a reason because the response next to it looks fine — reasons 3
-and 4 exist precisely because it does.
+and 4 exist precisely because it does. And when a new input axis is added to `query-posts`, ask what
+it does to this gate before merging: reason 5 is what it costs to forget.
 
 **7. An ability whose parameters are all optional still needs a top-level input `default`.**
 `WP_Ability::normalize_input()` substitutes the input schema's **top-level** `default` when the input
@@ -580,7 +620,18 @@ control goes through `jpkcom_postfilter_ability_meta` and `jpkcom_postfilter_abi
 
 Listing over REST is gated only by `current_user_can( 'read' )`, so **every logged-in user can read
 both abilities' labels, descriptions and full schemas**. Execution is gated by the permission callback,
-and the query is hard-scoped to `post_status => 'publish'`, so nothing unpublished can leak.
+and the query the ability *builds* is scoped to `post_status => 'publish'`.
+
+> **That scoping is in the arguments, and the arguments are not necessarily what runs.** An earlier
+> version of this line claimed unconditionally that "nothing unpublished can leak". It is not true.
+> `post_status` is an ordinary query var and `pre_get_posts` holds the query by reference, so a
+> third-party callback without an `is_main_query()` guard — or a site using this plugin's own
+> documented `jpkcom_postfilter_query_args` filter to widen it — changes what comes back.
+> `jpkcom_postfilter_ability_project_post()` then checks `instanceof \WP_Post` and **nothing else**:
+> no status, no `post_password`. Measured on WP 7.0.3: a draft came back through the ability with its
+> body text as `excerpt`, HTTP 200. The sibling plugin `jpkcom-acf-jobs` has a reader gate for exactly
+> this (its trap 2); this one does not. Treat the guarantee as "the *base* rule is publish-only", not
+> as "unpublished content cannot be reached".
 
 ### Verifying against a real installation
 

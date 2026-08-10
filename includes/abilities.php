@@ -32,6 +32,36 @@ const JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT = 10;
  */
 const JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX = 50;
 
+/**
+ * Longest search term, in BYTES, that WP_Query will actually apply.
+ *
+ * WP_Query::parse_query() blanks `s` when strlen() exceeds this, as an anti-DoS
+ * measure, and it does so silently: no error, no filter, no notice. Because that
+ * happens inside the query, past every check an ability could make, the caller
+ * receives exactly the answer it would have got with no search term at all.
+ *
+ * The unit is bytes, not characters, because core calls strlen() rather than
+ * mb_strlen() - so 801 x U+00FC is over the limit at 801 characters. A maxLength
+ * in the JSON Schema counts characters and would therefore leave the hole open.
+ */
+const JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES = 1600;
+
+/**
+ * Input keys each ability accepts at the top level.
+ *
+ * Neither input schema declares additionalProperties, so core drops an unknown
+ * key before the callback ever sees it. Without this list a caller that flattens
+ * the nested map - `category` instead of `filters.category`, the commonest shape
+ * error a tool-calling model makes - is answered with the complete unfiltered
+ * corpus, HTTP 200 and `filters: {}`, which reads like a successful filtered
+ * query. That is the failure jpkcom_postfilter_ability_validate_filters() exists
+ * to prevent, reached by a route that guard does not stand on.
+ */
+const JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS = [
+    'jpkcom-post-filter/list-filters' => [ 'post_type' ],
+    'jpkcom-post-filter/query-posts'  => [ 'post_type', 'filters', 'page', 'per_page', 'search' ],
+];
+
 
 if ( ! function_exists( function: 'jpkcom_postfilter_ability_clamp_per_page' ) ) {
     /**
@@ -262,6 +292,92 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_validate_filters' )
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_validate_input_keys' ) ) {
+    /**
+     * Reject top-level input keys the ability does not accept
+     *
+     * Core validates the input against the declared schema, but neither schema
+     * declares additionalProperties, so an unrecognised key is simply dropped and
+     * the callback is handed input it never sent. The observable result is the
+     * complete unfiltered corpus returned as a successful filtered query.
+     *
+     * Carries data['status'] = 400 for the same reason as the sibling guards: the
+     * REST run controller returns the WP_Error verbatim and rest_ensure_response()
+     * defaults to 500 without it, which reads as "retry unchanged".
+     *
+     * @since 1.3.1
+     *
+     * @param array<string, mixed> $input        Raw ability input.
+     * @param string               $ability_name Fully qualified ability name.
+     * @return true|\WP_Error True when every key is accepted, WP_Error otherwise.
+     */
+    function jpkcom_postfilter_ability_validate_input_keys( array $input, string $ability_name ): true|\WP_Error {
+        $allowed = JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS[ $ability_name ] ?? [];
+        $unknown = [];
+
+        foreach ( array_keys( $input ) as $key ) {
+            if ( ! in_array( needle: (string) $key, haystack: $allowed, strict: true ) ) {
+                $unknown[] = (string) $key;
+            }
+        }
+
+        if ( $unknown === [] ) {
+            return true;
+        }
+
+        return new \WP_Error(
+            'jpkcom_postfilter_unknown_input_key',
+            sprintf(
+                /* translators: 1: comma-separated rejected input keys, 2: comma-separated accepted input keys. */
+                __( 'Unknown input key: %1$s. Accepted keys: %2$s. Taxonomy filters belong inside "filters", as a map of taxonomy key to a list of term slugs.', 'jpkcom-post-filter' ),
+                implode( ', ', $unknown ),
+                implode( ', ', $allowed )
+            ),
+            [ 'status' => 400 ]
+        );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_validate_search' ) ) {
+    /**
+     * Reject a search term WordPress would silently discard
+     *
+     * See JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES for why this cannot be a
+     * maxLength in the input schema: JSON Schema counts characters and core
+     * counts bytes, so a 1600-character limit still lets 1602 bytes of umlauts
+     * through into the exact hole it was meant to close.
+     *
+     * @since 1.3.1
+     *
+     * @param mixed $search Raw search input.
+     * @return true|\WP_Error True when the term is usable, WP_Error otherwise.
+     */
+    function jpkcom_postfilter_ability_validate_search( mixed $search ): true|\WP_Error {
+        if ( ! is_string( $search ) ) {
+            return true;
+        }
+
+        $bytes = strlen( $search );
+
+        if ( $bytes <= JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES ) {
+            return true;
+        }
+
+        return new \WP_Error(
+            'jpkcom_postfilter_search_too_long',
+            sprintf(
+                /* translators: 1: submitted length in bytes, 2: maximum length in bytes. */
+                __( 'The search term is %1$d bytes long; WordPress applies no search term over %2$d bytes. Shorten it and call again. The limit is counted in bytes, so accented and emoji characters cost more than one each.', 'jpkcom-post-filter' ),
+                $bytes,
+                JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES
+            ),
+            [ 'status' => 400 ]
+        );
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_post_type_error' ) ) {
     /**
      * Build the error returned for a post type that is not enabled for filtering
@@ -363,7 +479,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_list_filters' ) ) {
      * @return array<string, mixed>|\WP_Error Filter groups, or an error.
      */
     function jpkcom_postfilter_ability_list_filters( mixed $input ): array|\WP_Error {
-        $input     = is_array( $input ) ? $input : [];
+        $input = is_array( $input ) ? $input : [];
+
+        $keys_valid = jpkcom_postfilter_ability_validate_input_keys( $input, 'jpkcom-post-filter/list-filters' );
+
+        if ( $keys_valid instanceof \WP_Error ) {
+            return $keys_valid;
+        }
+
         $post_type = jpkcom_postfilter_ability_resolve_post_type( $input['post_type'] ?? null );
 
         $enabled_post_types = jpkcom_postfilter_ability_enabled_post_types();
@@ -491,6 +614,76 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_terms' ) ) 
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_excerpt' ) ) {
+    /**
+     * Read a post's excerpt without letting the embed handler write to the database
+     *
+     * `get_the_excerpt()` on a post with an empty `post_excerpt` runs
+     * `wp_trim_excerpt()`, which applies the whole `the_content` chain. WP_Embed
+     * registers TWO callbacks on that chain at priority 8 - `run_shortcode`
+     * (class-wp-embed.php:33) and `autoembed` (:41) - and both end up in
+     * `WP_Embed::shortcode()`.
+     *
+     * In an ability callback there is no post context, so that method takes the
+     * branch at class-wp-embed.php:317-366 rather than the `update_post_meta` one:
+     * it fetches the URL over the network and calls `wp_insert_post()` with
+     * `post_type => 'oembed_cache'` and `post_status => 'publish'`. Measured on WP
+     * 7.0.3 against 1.3.0: a GET to a route annotated `readonly: true` wrote a
+     * published post authored by the calling subscriber, and made one outbound
+     * request per URL - 3.5 s cold for three of them. Any user with `read` can
+     * trigger it.
+     *
+     * Both callbacks are removed for the duration of the read and put back
+     * afterwards, and nothing else in the chain is touched, so the delivered string
+     * is byte-identical to what 1.3.0 returned. That is the whole reason this shape
+     * was chosen over projecting the excerpt from raw content: a raw projection
+     * changes 10 of 17 measured content shapes and has to reimplement the password
+     * gate, the `<!--more-->` and `<!--nextpage-->` cuts and the block allow-list,
+     * which is core's own function copied into a plugin and going stale on every
+     * release.
+     *
+     * KNOWN LIMIT, on purpose: this closes the case, not the class. `do_shortcode`
+     * still runs at priority 11, and every other `the_content` callback still runs.
+     * A registered shortcode that writes would write here too. The general rule -
+     * an ability callback has no post context, so no accessor whose contract is
+     * "as the front end would render it" may be called - is documented in
+     * CLAUDE.md, and `get_permalink()`, `get_the_terms()` and `list-filters`'
+     * `get_terms()` are in the same class and have not been audited.
+     *
+     * @since 1.3.1
+     *
+     * @param \WP_Post $post Post to read.
+     * @return string The excerpt, exactly as get_the_excerpt() produces it.
+     */
+    function jpkcom_postfilter_ability_excerpt( \WP_Post $post ): string {
+        $embed   = $GLOBALS['wp_embed'] ?? null;
+        $removed = [];
+
+        if ( $embed instanceof \WP_Embed ) {
+            foreach ( [ 'autoembed', 'run_shortcode' ] as $method ) {
+                // Only re-attach what this function actually detached. A site that
+                // removed the handler itself must not find it back afterwards.
+                if ( remove_filter( 'the_content', [ $embed, $method ], 8 ) ) {
+                    $removed[] = $method;
+                }
+            }
+        }
+
+        try {
+            return (string) get_the_excerpt( $post );
+        } finally {
+            // finally, not a trailing statement: a third-party the_content callback
+            // that throws would otherwise leave embeds disabled for the rest of the
+            // request. On the declared 6.9 floor such a throw is an uncaught fatal
+            // either way, but the restore must not depend on the happy path.
+            foreach ( $removed as $method ) {
+                add_filter( 'the_content', [ $embed, $method ], 8 );
+            }
+        }
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_ability_project_post' ) ) {
     /**
      * Project a post into the JSON-serialisable shape the output schema promises
@@ -534,7 +727,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_project_post' ) ) {
             'title'   => (string) get_the_title( $post ),
             'url'     => (string) get_permalink( $post ),
             'date'    => (string) get_post_time( 'c', true, $post ),
-            'excerpt' => (string) get_the_excerpt( $post ),
+            'excerpt' => jpkcom_postfilter_ability_excerpt( $post ),
             'terms'   => jpkcom_postfilter_ability_json_object( $terms ),
         ];
     }
@@ -606,7 +799,23 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
      * @return array<string, mixed>|\WP_Error Query result, or an error.
      */
     function jpkcom_postfilter_ability_query_posts( mixed $input ): array|\WP_Error {
-        $input     = is_array( $input ) ? $input : [];
+        $input = is_array( $input ) ? $input : [];
+
+        $keys_valid = jpkcom_postfilter_ability_validate_input_keys( $input, 'jpkcom-post-filter/query-posts' );
+
+        if ( $keys_valid instanceof \WP_Error ) {
+            return $keys_valid;
+        }
+
+        // Checked before anything is built, because a term core would discard must
+        // not reach the query at all: the caller has to learn the term was unusable
+        // instead of receiving the unsearched result set dressed as a search.
+        $search_valid = jpkcom_postfilter_ability_validate_search( $input['search'] ?? null );
+
+        if ( $search_valid instanceof \WP_Error ) {
+            return $search_valid;
+        }
+
         $post_type = jpkcom_postfilter_ability_resolve_post_type( $input['post_type'] ?? null );
 
         $enabled_post_types = jpkcom_postfilter_ability_enabled_post_types();
@@ -645,6 +854,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
 
         $query_args = jpkcom_postfilter_build_query_args( $atts, $filters );
 
+        // NOTE: the claim below that search is the ONLY free-form caller input is
+        // wrong, and is kept here only so the next reader does not rediscover it as
+        // a surprise. `filters[<taxonomy>][]` is sanitize_title() of any caller
+        // string, unbounded across calls, and lands in the same object cache and the
+        // same APCu segment - measured, with two bogus slugs producing two distinct
+        // cached entries. Whether the filter axis deserves the same treatment is an
+        // open question with its own trade-off (it would remove the cache from the
+        // plugin's most common read path), so it is deliberately NOT changed here.
+        //
         // A search term is the one piece of free-form caller input that reaches
         // the query, and jpkcom_postfilter_run_query() caches unconditionally
         // under md5( serialize( $args ) ) - a serialised WP_Query with up to 50
@@ -712,6 +930,17 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
         //    real totals and an empty post list, but the front end answers the
         //    matching URL with a 404 - measured on .../filter/allgemein/page/3/
         //    against total_pages 1.
+        // 5. A search term was applied. get_filter_url() builds a path from the
+        //    archive base, the taxonomy segments and an optional page segment; it
+        //    has no parameter for a search term and never writes one, so the link
+        //    resolves to the same set MINUS the search. Measured on WP 7.0.3:
+        //    filters={category:[web-design]} with search=wordpress reported total 0
+        //    and handed out a URL rendering six posts - the reported set and the
+        //    linked set were disjoint. Appending ?s= is not the fix: the front end's
+        //    own filter chips drop the parameter, so the first click silently widens
+        //    the result set again. The front end has no search input of its own,
+        //    which is why the ability is the only surface that can produce this
+        //    pairing at all.
         //
         // The full result set is reported in every case; only the link is
         // withheld. An empty string is a better answer than a link to something
@@ -726,6 +955,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
             || ! jpkcom_postfilter_ability_filters_are_url_expressible( $filters )
             || ! $page_segment_matches
             || ! $page_exists
+            || isset( $atts['s'] )
         )
             ? ''
             : jpkcom_postfilter_get_filter_url( $archive_base_url, $filters, $page );
