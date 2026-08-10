@@ -1369,6 +1369,107 @@ is_same(
 
 $GLOBALS['_stub_query_by_page'] = [];
 
+section( 'source-text guards for defects a stubbed suite cannot see' );
+
+// Two rules below are asserted against the source text rather than against
+// behaviour, because this suite cannot execute either one. Both are documented
+// failures of exactly that kind: the excerpt defect was invisible because the
+// suite stubs get_the_excerpt() as a pure field read, and the APCu defect is
+// invisible because apc.enable_cli is 0, so the whole layer is inert under CLI.
+
+/**
+ * Return a file's PHP source with all comments removed.
+ *
+ * The guards below match against source text, so they must not be satisfied — or
+ * broken — by prose. Without this, documenting a defect in a comment beside its
+ * own fix trips the guard that proves the fix, which happened on the first
+ * attempt at exactly that.
+ *
+ * @param string $path Absolute path to a PHP file.
+ * @return string The file's code with comments stripped.
+ */
+function jpkpf_code_without_comments( string $path ): string {
+	$out = '';
+
+	foreach ( token_get_all( (string) file_get_contents( $path ) ) as $token ) {
+		if ( is_array( $token ) ) {
+			if ( $token[0] === T_COMMENT || $token[0] === T_DOC_COMMENT ) {
+				continue;
+			}
+
+			$out .= $token[1];
+			continue;
+		}
+
+		$out .= $token;
+	}
+
+	return $out;
+}
+
+/**
+ * Return the source of one function, so a guard cannot be satisfied or broken by
+ * an unrelated call elsewhere in the same file.
+ *
+ * The first version of the APCu guard below matched the whole file and failed on
+ * jpkcom_postfilter_cache_stats(), which passes true on purpose — the admin panel
+ * wants the summary and not a listing of every entry. A guard that forbids a
+ * correct call is worse than no guard, because the way to make it pass is to
+ * break working code.
+ *
+ * @param string $src  Comment-stripped PHP source.
+ * @param string $name Function name to extract.
+ * @return string The function's source, or '' when it is not found.
+ */
+function jpkpf_function_source( string $src, string $name ): string {
+	$start = strpos( $src, 'function ' . $name . '(' );
+
+	if ( $start === false ) {
+		return '';
+	}
+
+	$next = strpos( $src, 'function ', $start + strlen( $name ) + 10 );
+
+	return $next === false ? substr( $src, $start ) : substr( $src, $start, $next - $start );
+}
+
+$cache_manager_src = jpkpf_code_without_comments( dirname( __DIR__ ) . '/includes/cache-manager.php' );
+$flush_group_src   = jpkpf_function_source( $cache_manager_src, 'jpkcom_postfilter_cache_flush_group' );
+
+check(
+	'the flush function was found, so the guards below mean something',
+	$flush_group_src !== '',
+	'A source-text guard that silently matches an empty string passes forever.'
+);
+
+check(
+	'the APCu flush does not ask for limited cache info',
+	! preg_match( '/apcu_cache_info\(\s*true\s*\)/', $flush_group_src ),
+	'apcu_cache_info( true ) means $limited = true, which OMITS cache_list from the '
+	. 'return — so the isset() guard below it is always false and the delete loop is '
+	. 'dead code. Measured: 20 jpkpf_ entries before flush_group(), 20 after. Every '
+	. 'invalidation path the plugin has (save_post, term hooks, settings save, both '
+	. 'admin Clear-cache buttons) is silently inert, and the admin still reports '
+	. 'success. apc.enable_cli is 0, so no behavioural test here can catch this.'
+);
+
+check(
+	'the APCu flush asks for the full listing',
+	(bool) preg_match( '/apcu_cache_info\(\s*false\s*\)/', $flush_group_src ),
+	'The delete loop needs cache_list, which only the unlimited form returns.'
+);
+
+check(
+	'the admin stats call is left alone',
+	(bool) preg_match(
+		'/apcu_cache_info\(\s*true\s*\)/',
+		jpkpf_function_source( $cache_manager_src, 'jpkcom_postfilter_cache_stats' )
+	),
+	'cache_stats() passes true deliberately — the admin panel wants the summary, not '
+	. 'a listing of every entry. This assertion exists so a future tidy-up of the '
+	. 'flush cannot spread to a call that is already correct.'
+);
+
 section( 'ability definitions' );
 
 $definitions = jpkcom_postfilter_get_ability_definitions();
