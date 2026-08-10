@@ -555,7 +555,6 @@ measured on the verification install:
 4. **A page past the last one.** Since the totals are recovered (see 9) that response is well-formed,
    which is exactly what makes the link dangerous: `/filter/allgemein/page/3/` against `total_pages`
    1 answers **404** while the ability answers 200.
-
 5. **A search term was applied** (since 1.3.1). `get_filter_url()` writes the archive base, the
    taxonomy segments and an optional page segment. It has no parameter for a search term and never
    had one, so the link resolves to the same set *minus* the search. Measured on WP 7.0.3:
@@ -621,7 +620,18 @@ control goes through `jpkcom_postfilter_ability_meta` and `jpkcom_postfilter_abi
 
 Listing over REST is gated only by `current_user_can( 'read' )`, so **every logged-in user can read
 both abilities' labels, descriptions and full schemas**. Execution is gated by the permission callback,
-and the query is hard-scoped to `post_status => 'publish'`, so nothing unpublished can leak.
+and the query the ability *builds* is scoped to `post_status => 'publish'`.
+
+> **That scoping is in the arguments, and the arguments are not necessarily what runs.** An earlier
+> version of this line claimed unconditionally that "nothing unpublished can leak". It is not true.
+> `post_status` is an ordinary query var and `pre_get_posts` holds the query by reference, so a
+> third-party callback without an `is_main_query()` guard — or a site using this plugin's own
+> documented `jpkcom_postfilter_query_args` filter to widen it — changes what comes back.
+> `jpkcom_postfilter_ability_project_post()` then checks `instanceof \WP_Post` and **nothing else**:
+> no status, no `post_password`. Measured on WP 7.0.3: a draft came back through the ability with its
+> body text as `excerpt`, HTTP 200. The sibling plugin `jpkcom-acf-jobs` has a reader gate for exactly
+> this (its trap 2); this one does not. Treat the guarantee as "the *base* rule is publish-only", not
+> as "unpublished content cannot be reached".
 
 ### Verifying against a real installation
 

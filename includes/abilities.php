@@ -784,6 +784,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
 
         $query_args = jpkcom_postfilter_build_query_args( $atts, $filters );
 
+        // NOTE: the claim below that search is the ONLY free-form caller input is
+        // wrong, and is kept here only so the next reader does not rediscover it as
+        // a surprise. `filters[<taxonomy>][]` is sanitize_title() of any caller
+        // string, unbounded across calls, and lands in the same object cache and the
+        // same APCu segment - measured, with two bogus slugs producing two distinct
+        // cached entries. Whether the filter axis deserves the same treatment is an
+        // open question with its own trade-off (it would remove the cache from the
+        // plugin's most common read path), so it is deliberately NOT changed here.
+        //
         // A search term is the one piece of free-form caller input that reaches
         // the query, and jpkcom_postfilter_run_query() caches unconditionally
         // under md5( serialize( $args ) ) - a serialised WP_Query with up to 50
