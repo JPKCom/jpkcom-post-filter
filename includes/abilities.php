@@ -32,6 +32,36 @@ const JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT = 10;
  */
 const JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX = 50;
 
+/**
+ * Longest search term, in BYTES, that WP_Query will actually apply.
+ *
+ * WP_Query::parse_query() blanks `s` when strlen() exceeds this, as an anti-DoS
+ * measure, and it does so silently: no error, no filter, no notice. Because that
+ * happens inside the query, past every check an ability could make, the caller
+ * receives exactly the answer it would have got with no search term at all.
+ *
+ * The unit is bytes, not characters, because core calls strlen() rather than
+ * mb_strlen() - so 801 x U+00FC is over the limit at 801 characters. A maxLength
+ * in the JSON Schema counts characters and would therefore leave the hole open.
+ */
+const JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES = 1600;
+
+/**
+ * Input keys each ability accepts at the top level.
+ *
+ * Neither input schema declares additionalProperties, so core drops an unknown
+ * key before the callback ever sees it. Without this list a caller that flattens
+ * the nested map - `category` instead of `filters.category`, the commonest shape
+ * error a tool-calling model makes - is answered with the complete unfiltered
+ * corpus, HTTP 200 and `filters: {}`, which reads like a successful filtered
+ * query. That is the failure jpkcom_postfilter_ability_validate_filters() exists
+ * to prevent, reached by a route that guard does not stand on.
+ */
+const JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS = [
+    'jpkcom-post-filter/list-filters' => [ 'post_type' ],
+    'jpkcom-post-filter/query-posts'  => [ 'post_type', 'filters', 'page', 'per_page', 'search' ],
+];
+
 
 if ( ! function_exists( function: 'jpkcom_postfilter_ability_clamp_per_page' ) ) {
     /**
@@ -262,6 +292,92 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_validate_filters' )
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_validate_input_keys' ) ) {
+    /**
+     * Reject top-level input keys the ability does not accept
+     *
+     * Core validates the input against the declared schema, but neither schema
+     * declares additionalProperties, so an unrecognised key is simply dropped and
+     * the callback is handed input it never sent. The observable result is the
+     * complete unfiltered corpus returned as a successful filtered query.
+     *
+     * Carries data['status'] = 400 for the same reason as the sibling guards: the
+     * REST run controller returns the WP_Error verbatim and rest_ensure_response()
+     * defaults to 500 without it, which reads as "retry unchanged".
+     *
+     * @since 1.3.1
+     *
+     * @param array<string, mixed> $input        Raw ability input.
+     * @param string               $ability_name Fully qualified ability name.
+     * @return true|\WP_Error True when every key is accepted, WP_Error otherwise.
+     */
+    function jpkcom_postfilter_ability_validate_input_keys( array $input, string $ability_name ): true|\WP_Error {
+        $allowed = JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS[ $ability_name ] ?? [];
+        $unknown = [];
+
+        foreach ( array_keys( $input ) as $key ) {
+            if ( ! in_array( needle: (string) $key, haystack: $allowed, strict: true ) ) {
+                $unknown[] = (string) $key;
+            }
+        }
+
+        if ( $unknown === [] ) {
+            return true;
+        }
+
+        return new \WP_Error(
+            'jpkcom_postfilter_unknown_input_key',
+            sprintf(
+                /* translators: 1: comma-separated rejected input keys, 2: comma-separated accepted input keys. */
+                __( 'Unknown input key: %1$s. Accepted keys: %2$s. Taxonomy filters belong inside "filters", as a map of taxonomy key to a list of term slugs.', 'jpkcom-post-filter' ),
+                implode( ', ', $unknown ),
+                implode( ', ', $allowed )
+            ),
+            [ 'status' => 400 ]
+        );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_ability_validate_search' ) ) {
+    /**
+     * Reject a search term WordPress would silently discard
+     *
+     * See JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES for why this cannot be a
+     * maxLength in the input schema: JSON Schema counts characters and core
+     * counts bytes, so a 1600-character limit still lets 1602 bytes of umlauts
+     * through into the exact hole it was meant to close.
+     *
+     * @since 1.3.1
+     *
+     * @param mixed $search Raw search input.
+     * @return true|\WP_Error True when the term is usable, WP_Error otherwise.
+     */
+    function jpkcom_postfilter_ability_validate_search( mixed $search ): true|\WP_Error {
+        if ( ! is_string( $search ) ) {
+            return true;
+        }
+
+        $bytes = strlen( $search );
+
+        if ( $bytes <= JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES ) {
+            return true;
+        }
+
+        return new \WP_Error(
+            'jpkcom_postfilter_search_too_long',
+            sprintf(
+                /* translators: 1: submitted length in bytes, 2: maximum length in bytes. */
+                __( 'The search term is %1$d bytes long; WordPress applies no search term over %2$d bytes. Shorten it and call again. The limit is counted in bytes, so accented and emoji characters cost more than one each.', 'jpkcom-post-filter' ),
+                $bytes,
+                JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES
+            ),
+            [ 'status' => 400 ]
+        );
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_post_type_error' ) ) {
     /**
      * Build the error returned for a post type that is not enabled for filtering
@@ -363,7 +479,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_list_filters' ) ) {
      * @return array<string, mixed>|\WP_Error Filter groups, or an error.
      */
     function jpkcom_postfilter_ability_list_filters( mixed $input ): array|\WP_Error {
-        $input     = is_array( $input ) ? $input : [];
+        $input = is_array( $input ) ? $input : [];
+
+        $keys_valid = jpkcom_postfilter_ability_validate_input_keys( $input, 'jpkcom-post-filter/list-filters' );
+
+        if ( $keys_valid instanceof \WP_Error ) {
+            return $keys_valid;
+        }
+
         $post_type = jpkcom_postfilter_ability_resolve_post_type( $input['post_type'] ?? null );
 
         $enabled_post_types = jpkcom_postfilter_ability_enabled_post_types();
@@ -606,7 +729,23 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
      * @return array<string, mixed>|\WP_Error Query result, or an error.
      */
     function jpkcom_postfilter_ability_query_posts( mixed $input ): array|\WP_Error {
-        $input     = is_array( $input ) ? $input : [];
+        $input = is_array( $input ) ? $input : [];
+
+        $keys_valid = jpkcom_postfilter_ability_validate_input_keys( $input, 'jpkcom-post-filter/query-posts' );
+
+        if ( $keys_valid instanceof \WP_Error ) {
+            return $keys_valid;
+        }
+
+        // Checked before anything is built, because a term core would discard must
+        // not reach the query at all: the caller has to learn the term was unusable
+        // instead of receiving the unsearched result set dressed as a search.
+        $search_valid = jpkcom_postfilter_ability_validate_search( $input['search'] ?? null );
+
+        if ( $search_valid instanceof \WP_Error ) {
+            return $search_valid;
+        }
+
         $post_type = jpkcom_postfilter_ability_resolve_post_type( $input['post_type'] ?? null );
 
         $enabled_post_types = jpkcom_postfilter_ability_enabled_post_types();

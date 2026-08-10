@@ -1369,6 +1369,155 @@ is_same(
 
 $GLOBALS['_stub_query_by_page'] = [];
 
+section( 'a search term core would silently discard must be refused up front' );
+
+// WP_Query::parse_query() blanks `s` when strlen() exceeds 1600 — an anti-DoS
+// guard that runs INSIDE the query, after every check the ability made, with no
+// error and no filter. The result is not "no matches": it is the same answer the
+// call would have given with no search term at all, and nothing in the response
+// says the term was dropped, because `search` is never echoed back. Measured on
+// WP 7.0.3: 1601 bytes returned all 19 posts of the corpus while 1600 returned 0.
+// The unit is bytes because core calls strlen(), not mb_strlen().
+
+$GLOBALS['_stub_query_args']['atts']['s'] = null;
+
+$search_at_limit = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'search' => str_repeat( 'z', 1600 ) ]
+);
+
+is_same(
+	'a search term of exactly 1600 bytes still reaches the query',
+	$GLOBALS['_stub_query_args']['atts']['s'] ?? null,
+	str_repeat( 'z', 1600 ),
+	'The core guard is strictly > 1600, so 1600 is the last length that works. '
+	. 'Refusing it too would reject input core accepts.'
+);
+
+$GLOBALS['_stub_query_args']['atts']['s'] = null;
+
+$search_over_limit = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'search' => str_repeat( 'z', 1601 ) ]
+);
+
+check(
+	'a search term of 1601 bytes is refused instead of silently dropped',
+	$search_over_limit instanceof WP_Error,
+	'Without this the ability answers 200 with the unsearched result set. A model '
+	. 'reading "19 results" has no way to know its search term never applied.'
+);
+
+is_same(
+	'the refusal is a caller error, not a server fault',
+	$search_over_limit instanceof WP_Error ? ( $search_over_limit->get_error_data()['status'] ?? null ) : null,
+	400,
+	'rest_ensure_response() defaults to 500 without data[status], which tells an '
+	. 'agent "transient fault, retry unchanged" — the opposite instruction.'
+);
+
+check(
+	'the message names the limit so the caller can correct itself in one turn',
+	$search_over_limit instanceof WP_Error
+		&& str_contains( $search_over_limit->get_error_message(), '1600' ),
+	'Every other guard in this file names the valid values. A refusal that does not '
+	. 'say how long is too long cannot terminate a correction loop.'
+);
+
+is_same(
+	'nothing reached the query on the refused call',
+	$GLOBALS['_stub_query_args']['atts']['s'] ?? null,
+	null,
+	'The guard has to run before the query is built, not after.'
+);
+
+// The multibyte case is the one a maxLength in the JSON Schema would get wrong:
+// JSON Schema counts characters, core counts bytes. 801 x U+00FC is 801
+// characters and 1602 bytes, so a maxLength of 1600 would let it through.
+
+$GLOBALS['_stub_query_args']['atts']['s'] = null;
+
+$umlauts_at_limit = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'search' => str_repeat( "\u{00fc}", 800 ) ]
+);
+
+is_same(
+	'800 umlauts (1600 bytes, 800 characters) are accepted',
+	$GLOBALS['_stub_query_args']['atts']['s'] ?? null,
+	str_repeat( "\u{00fc}", 800 )
+);
+
+$umlauts_over_limit = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'search' => str_repeat( "\u{00fc}", 801 ) ]
+);
+
+check(
+	'801 umlauts are refused — the unit is bytes, not characters',
+	$umlauts_over_limit instanceof WP_Error,
+	'801 characters, 1602 bytes. A character-counting guard passes this straight '
+	. 'into the hole it was written to close.'
+);
+
+section( 'an input key at the wrong nesting level must not pass as a filtered call' );
+
+// Neither input schema declares additionalProperties, so a key at the wrong
+// level is dropped before the callback sees it and the ability answers with the
+// complete unfiltered corpus, HTTP 200, filters {}. Measured on WP 7.0.3:
+// input[category][]=marketing returned total 19 while input[filters][category][]
+// =marketing returned 6. This is the exact failure validate_filters() exists to
+// prevent, reached by a route the guard does not stand on — and flattening a
+// nested map is the commonest shape error a tool-calling model makes.
+
+$flattened = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'category' => [ 'marketing' ] ]
+);
+
+check(
+	'a flattened filter key is refused instead of answered with the whole corpus',
+	$flattened instanceof WP_Error,
+	'Answering 200 with filters {} and every post on the site is worse than an '
+	. 'error, because it looks like a successful filtered query.'
+);
+
+is_same(
+	'that refusal is a caller error too',
+	$flattened instanceof WP_Error ? ( $flattened->get_error_data()['status'] ?? null ) : null,
+	400
+);
+
+check(
+	'the message names the key it rejected and where it belongs',
+	$flattened instanceof WP_Error
+		&& str_contains( $flattened->get_error_message(), 'category' )
+		&& str_contains( $flattened->get_error_message(), 'filters' ),
+	'The caller has to be able to move the key without guessing.'
+);
+
+$typo = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'perPage' => 3 ]
+);
+
+check(
+	'an unrecognised key is refused rather than silently ignored',
+	$typo instanceof WP_Error,
+	'perPage instead of per_page is silently ignored today, so the caller gets a '
+	. 'page size it did not ask for and no indication why.'
+);
+
+$all_valid = jpkcom_postfilter_ability_query_posts(
+	[
+		'post_type' => 'post',
+		'filters'   => [ 'category' => [ 'allgemein' ] ],
+		'page'      => 1,
+		'per_page'  => 5,
+		'search'    => 'wordpress',
+	]
+);
+
+check(
+	'every documented key together is still accepted',
+	! ( $all_valid instanceof WP_Error ),
+	'A guard that rejects the documented input would be worse than the defect.'
+);
+
 section( 'source-text guards for defects a stubbed suite cannot see' );
 
 // Two rules below are asserted against the source text rather than against

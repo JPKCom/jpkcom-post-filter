@@ -466,6 +466,37 @@ effects beyond `__()` and the `jpkcom_postfilter_ability_meta` filter, which run
 That is what lets `tests/test-abilities.php` assert the registration arrays without a WordPress
 install.
 
+### Eleven things that will bite
+
+**10. A search term over 1600 BYTES is discarded by core, silently, inside the query** (guarded since
+1.3.1). `WP_Query::parse_query()` blanks `s` when `strlen()` exceeds 1600 — an anti-DoS measure with
+no error, no filter and no notice, at `wp-includes/class-wp-query.php:867`, byte-identical on 6.9.4,
+7.0.2 and 7.0.3. Because it runs *inside* the query, past every check the ability made, the caller
+receives exactly the answer it would have got with no search term at all. Measured on WP 7.0.3: 1600
+bytes returned 0 of 19, 1601 bytes returned all 19 — and since `search` is not echoed back in the
+response, **nothing at all told the caller its term had been dropped**. Over MCP the wrapper even
+reports `"success": true`.
+
+The unit is **bytes**, and that is the whole trap: core calls `strlen()`, not `mb_strlen()`, so 801
+`ü` is over the limit at 801 characters and 401 emoji at 401 characters. A `maxLength` in the input
+schema counts *characters* and would therefore leave the hole open for exactly the input most likely
+to hit it. The guard is `jpkcom_postfilter_ability_validate_search()`, it counts bytes, and it refuses
+with a 400 that names the limit.
+
+**11. An input key at the wrong nesting level is not an error — it is a full-corpus answer** (guarded
+since 1.3.1). Neither input schema declares `additionalProperties`, so core hands the callback input
+containing keys it never declared and the callback simply does not read them. Measured on WP 7.0.3:
+`input[category][]=marketing` answered **HTTP 200, `total: 19`, `filters: {}`** while
+`input[filters][category][]=marketing` answered `total: 6`. That is the exact failure
+`validate_filters()` exists to prevent (see trap 1), reached by a route that guard does not stand on —
+and flattening a nested map is the commonest shape error a tool-calling model makes. `perPage` for
+`per_page` behaves the same way, silently.
+
+`jpkcom_postfilter_ability_validate_input_keys()` rejects any top-level key outside
+`JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS` with a 400 that names both the rejected key and the accepted
+set. Keep that constant in step with the input schemas — they are two statements of one list, and
+nothing cross-checks them.
+
 ### Nine things that will bite
 
 **1. The unknown-taxonomy guard is the whole point.** `jpkcom_postfilter_build_tax_query()` drops a
