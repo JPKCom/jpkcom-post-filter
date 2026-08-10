@@ -171,6 +171,13 @@
 <dd>Ability category shared with the other JPKCom content plugins.</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -constant -public">
+    <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS">JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS</a>
+    <span>
+        &nbsp;: mixed&nbsp;= [&#039;jpkcom-post-filter/list-filters&#039; =&gt; [&#039;post_ty...                            </span>
+</dt>
+<dd>Input keys each ability accepts at the top level.</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -constant -public">
     <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT">JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT</a>
     <span>
         &nbsp;: mixed&nbsp;= 10                            </span>
@@ -183,6 +190,13 @@
         &nbsp;: mixed&nbsp;= 50                            </span>
 </dt>
 <dd>Maximum page size for the query ability.</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -constant -public">
+    <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES">JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES</a>
+    <span>
+        &nbsp;: mixed&nbsp;= 1600                            </span>
+</dt>
+<dd>Longest search term, in BYTES, that WP_Query will actually apply.</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -constant -public">
     <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_BASENAME">JPKCOM_POSTFILTER_BASENAME</a>
@@ -243,7 +257,7 @@
             <dt class="phpdocumentor-table-of-contents__entry -constant -public">
     <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_VERSION">JPKCOM_POSTFILTER_VERSION</a>
     <span>
-        &nbsp;: mixed&nbsp;= &#039;1.3.0&#039;                            </span>
+        &nbsp;: mixed&nbsp;= &#039;1.3.1&#039;                            </span>
 </dt>
 
             <dt class="phpdocumentor-table-of-contents__entry -constant -public">
@@ -307,6 +321,20 @@
 <dd>Reject filters that name a taxonomy which is not filterable</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_validate_input_keys">jpkcom_postfilter_ability_validate_input_keys()</a>
+    <span>
+                                &nbsp;: true|<abbr title="\WP_Error">WP_Error</abbr>    </span>
+</dt>
+<dd>Reject top-level input keys the ability does not accept</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_validate_search">jpkcom_postfilter_ability_validate_search()</a>
+    <span>
+                                &nbsp;: true|<abbr title="\WP_Error">WP_Error</abbr>    </span>
+</dt>
+<dd>Reject a search term WordPress would silently discard</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_unknown_post_type_error">jpkcom_postfilter_ability_unknown_post_type_error()</a>
     <span>
                                 &nbsp;: <abbr title="\WP_Error">WP_Error</abbr>    </span>
@@ -347,6 +375,13 @@
                                 &nbsp;: array&lt;string, array&lt;string|int, string&gt;&gt;    </span>
 </dt>
 <dd>Report requested term slugs that match no term</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_excerpt">jpkcom_postfilter_ability_excerpt()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Read a post&#039;s excerpt without letting the embed handler write to the database</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ability_project_post">jpkcom_postfilter_ability_project_post()</a>
@@ -1289,6 +1324,45 @@ user can change their selection on a zero-results page reload.</dd>
         
     </article>
                     <article class="phpdocumentor-element -constant -public ">
+    <h4 class="phpdocumentor-element__name" id="constant_JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS">
+        JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS
+        <a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">60</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Input keys each ability accepts at the top level.</p>
+
+    
+    <code class="phpdocumentor-signature phpdocumentor-code ">
+    <span class="phpdocumentor-signature__visibility">public</span>
+        <span class="phpdocumentor-signature__type">mixed</span>
+    <span class="phpdocumentor-signature__name">JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS</span>
+    = <span class="phpdocumentor-signature__default-value">[&#039;jpkcom-post-filter/list-filters&#039; =&gt; [&#039;post_type&#039;], &#039;jpkcom-post-filter/query-posts&#039; =&gt; [&#039;post_type&#039;, &#039;filters&#039;, &#039;page&#039;, &#039;per_page&#039;, &#039;search&#039;]]</span>
+</code>
+
+
+        <section class="phpdocumentor-description"><p>Neither input schema declares additionalProperties, so core drops an unknown
+key before the callback ever sees it. Without this list a caller that flattens
+the nested map - <code class="prettyprint">category</code> instead of <code class="prettyprint">filters.category</code>, the commonest shape
+error a tool-calling model makes - is answered with the complete unfiltered
+corpus, HTTP 200 and <code class="prettyprint">filters: }</code>, which reads like a successful filtered
+query. That is the failure jpkcom_postfilter_ability_validate_filters() exists
+to prevent, reached by a route that guard does not stand on.</p>
+</section>
+
+    
+    
+
+        
+    </article>
+                    <article class="phpdocumentor-element -constant -public ">
     <h4 class="phpdocumentor-element__name" id="constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT">
         JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT
         <a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_DEFAULT" class="headerlink"><i class="fas fa-link"></i></a>
@@ -1345,6 +1419,45 @@ user can change their selection on a zero-results page reload.</dd>
 
 
     
+    
+    
+
+        
+    </article>
+                    <article class="phpdocumentor-element -constant -public ">
+    <h4 class="phpdocumentor-element__name" id="constant_JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES">
+        JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES
+        <a href="namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">47</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Longest search term, in BYTES, that WP_Query will actually apply.</p>
+
+    
+    <code class="phpdocumentor-signature phpdocumentor-code ">
+    <span class="phpdocumentor-signature__visibility">public</span>
+        <span class="phpdocumentor-signature__type">mixed</span>
+    <span class="phpdocumentor-signature__name">JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES</span>
+    = <span class="phpdocumentor-signature__default-value">1600</span>
+</code>
+
+
+        <section class="phpdocumentor-description"><p>WP_Query::parse_query() blanks <code class="prettyprint">s</code> when strlen() exceeds this, as an anti-DoS
+measure, and it does so silently: no error, no filter, no notice. Because that
+happens inside the query, past every check an ability could make, the caller
+receives exactly the answer it would have got with no search term at all.</p>
+<p>The unit is bytes, not characters, because core calls strlen() rather than
+mb_strlen() - so 801 x U+00FC is over the limit at 801 characters. A maxLength
+in the JSON Schema counts characters and would therefore leave the hole open.</p>
+</section>
+
     
     
 
@@ -1642,7 +1755,7 @@ user can change their selection on a zero-results page reload.</dd>
     <span class="phpdocumentor-signature__visibility">public</span>
         <span class="phpdocumentor-signature__type">mixed</span>
     <span class="phpdocumentor-signature__name">JPKCOM_POSTFILTER_VERSION</span>
-    = <span class="phpdocumentor-signature__default-value">&#039;1.3.0&#039;</span>
+    = <span class="phpdocumentor-signature__default-value">&#039;1.3.1&#039;</span>
 </code>
 
 
@@ -1759,7 +1872,7 @@ user can change their selection on a zero-results page reload.</dd>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">49</span>
+    <span class="phpdocumentor-element-found-in__line">79</span>
 
     </aside>
 
@@ -1823,7 +1936,7 @@ report a total of 0 regardless of how many posts exist.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">85</span>
+    <span class="phpdocumentor-element-found-in__line">115</span>
 
     </aside>
 
@@ -1893,7 +2006,7 @@ already caps over-long filter lists coming from a URL.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">147</span>
+    <span class="phpdocumentor-element-found-in__line">177</span>
 
     </aside>
 
@@ -1975,7 +2088,7 @@ empty or absent - when the post type is globally enabled.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">181</span>
+    <span class="phpdocumentor-element-found-in__line">211</span>
 
     </aside>
 
@@ -2063,7 +2176,7 @@ into a jpkcom_postfilter_unknown_taxonomy error that names the real ones.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">234</span>
+    <span class="phpdocumentor-element-found-in__line">264</span>
 
     </aside>
 
@@ -2134,6 +2247,148 @@ opposite of the self-correction this message is written for.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_validate_input_keys">
+        jpkcom_postfilter_ability_validate_input_keys()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_validate_input_keys" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">314</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Reject top-level input keys the ability does not accept</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_validate_input_keys</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$input</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$ability_name</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">true|<abbr title="\WP_Error">WP_Error</abbr></span></code>
+
+        <section class="phpdocumentor-description"><p>Core validates the input against the declared schema, but neither schema
+declares additionalProperties, so an unrecognised key is simply dropped and
+the callback is handed input it never sent. The observable result is the
+complete unfiltered corpus returned as a successful filtered query.</p>
+<p>Carries data['status'] = 400 for the same reason as the sibling guards: the
+REST run controller returns the WP_Error verbatim and rest_ensure_response()
+defaults to 500 without it, which reads as &quot;retry unchanged&quot;.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$input</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, mixed&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Raw ability input.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$ability_name</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Fully qualified ability name.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_validate_input_keys_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_validate_input_keys_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">true|<abbr title="\WP_Error">WP_Error</abbr></span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True when every key is accepted, WP_Error otherwise.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_validate_search">
+        jpkcom_postfilter_ability_validate_search()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_validate_search" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">356</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Reject a search term WordPress would silently discard</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_validate_search</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">mixed&nbsp;</span><span class="phpdocumentor-signature__argument__name">$search</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">true|<abbr title="\WP_Error">WP_Error</abbr></span></code>
+
+        <section class="phpdocumentor-description"><p>See JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES for why this cannot be a
+maxLength in the input schema: JSON Schema counts characters and core
+counts bytes, so a 1600-character limit still lets 1602 bytes of umlauts
+through into the exact hole it was meant to close.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$search</span>
+                : <span class="phpdocumentor-argument-list__argument__type">mixed</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Raw search input.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_validate_search_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_validate_search_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">true|<abbr title="\WP_Error">WP_Error</abbr></span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True when the term is usable, WP_Error otherwise.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_unknown_post_type_error">
         jpkcom_postfilter_ability_unknown_post_type_error()
         <a href="namespaces/default.html#function_jpkcom_postfilter_ability_unknown_post_type_error" class="headerlink"><i class="fas fa-link"></i></a>
@@ -2142,7 +2397,7 @@ opposite of the self-correction this message is written for.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">279</span>
+    <span class="phpdocumentor-element-found-in__line">395</span>
 
     </aside>
 
@@ -2215,7 +2470,7 @@ controller would otherwise answer 500.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">310</span>
+    <span class="phpdocumentor-element-found-in__line">426</span>
 
     </aside>
 
@@ -2278,7 +2533,7 @@ exactly null, so per-property defaults have to be applied here.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">330</span>
+    <span class="phpdocumentor-element-found-in__line">446</span>
 
     </aside>
 
@@ -2326,7 +2581,7 @@ exactly null, so per-property defaults have to be applied here.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">365</span>
+    <span class="phpdocumentor-element-found-in__line">481</span>
 
     </aside>
 
@@ -2392,7 +2647,7 @@ than the front end while changing nothing about what is reachable.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">443</span>
+    <span class="phpdocumentor-element-found-in__line">566</span>
 
     </aside>
 
@@ -2459,7 +2714,7 @@ access in the case that carries data.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">470</span>
+    <span class="phpdocumentor-element-found-in__line">593</span>
 
     </aside>
 
@@ -2521,6 +2776,95 @@ cache costs no query at all.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_excerpt">
+        jpkcom_postfilter_ability_excerpt()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_excerpt" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">658</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Read a post&#039;s excerpt without letting the embed handler write to the database</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_excerpt</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type"><abbr title="\WP_Post">WP_Post</abbr>&nbsp;</span><span class="phpdocumentor-signature__argument__name">$post</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p><code class="prettyprint">get_the_excerpt()</code> on a post with an empty <code class="prettyprint">post_excerpt</code> runs
+<code class="prettyprint">wp_trim_excerpt()</code>, which applies the whole <code class="prettyprint">the_content</code> chain. WP_Embed
+registers TWO callbacks on that chain at priority 8 - <code class="prettyprint">run_shortcode</code>
+(class-wp-embed.php:33) and <code class="prettyprint">autoembed</code> (:41) - and both end up in
+<code class="prettyprint">WP_Embed::shortcode()</code>.</p>
+<p>In an ability callback there is no post context, so that method takes the
+branch at class-wp-embed.php:317-366 rather than the <code class="prettyprint">update_post_meta</code> one:
+it fetches the URL over the network and calls <code class="prettyprint">wp_insert_post()</code> with
+<code class="prettyprint">post_type =&gt; 'oembed_cache'</code> and <code class="prettyprint">post_status =&gt; 'publish'</code>. Measured on WP
+7.0.3 against 1.3.0: a GET to a route annotated <code class="prettyprint">readonly: true</code> wrote a
+published post authored by the calling subscriber, and made one outbound
+request per URL - 3.5 s cold for three of them. Any user with <code class="prettyprint">read</code> can
+trigger it.</p>
+<p>Both callbacks are removed for the duration of the read and put back
+afterwards, and nothing else in the chain is touched, so the delivered string
+is byte-identical to what 1.3.0 returned. That is the whole reason this shape
+was chosen over projecting the excerpt from raw content: a raw projection
+changes 10 of 17 measured content shapes and has to reimplement the password
+gate, the <code class="prettyprint">&lt;!--more--&gt;</code> and <code class="prettyprint">&lt;!--nextpage--&gt;</code> cuts and the block allow-list,
+which is core's own function copied into a plugin and going stale on every
+release.</p>
+<p>KNOWN LIMIT, on purpose: this closes the case, not the class. <code class="prettyprint">do_shortcode</code>
+still runs at priority 11, and every other <code class="prettyprint">the_content</code> callback still runs.
+A registered shortcode that writes would write here too. The general rule -
+an ability callback has no post context, so no accessor whose contract is
+&quot;as the front end would render it&quot; may be called - is documented in
+CLAUDE.md, and <code class="prettyprint">get_permalink()</code>, <code class="prettyprint">get_the_terms()</code> and <code class="prettyprint">list-filters</code>'
+<code class="prettyprint">get_terms()</code> are in the same class and have not been audited.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$post</span>
+                : <span class="phpdocumentor-argument-list__argument__type"><abbr title="\WP_Post">WP_Post</abbr></span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Post to read.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_ability_excerpt_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_ability_excerpt_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.3.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>The excerpt, exactly as get_the_excerpt() produces it.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ability_project_post">
         jpkcom_postfilter_ability_project_post()
         <a href="namespaces/default.html#function_jpkcom_postfilter_ability_project_post" class="headerlink"><i class="fas fa-link"></i></a>
@@ -2529,7 +2873,7 @@ cache costs no query at all.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">504</span>
+    <span class="phpdocumentor-element-found-in__line">697</span>
 
     </aside>
 
@@ -2598,7 +2942,7 @@ cache costs no query at all.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">575</span>
+    <span class="phpdocumentor-element-found-in__line">768</span>
 
     </aside>
 
@@ -2678,7 +3022,7 @@ this function must mirror the parser, not the settings form.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">608</span>
+    <span class="phpdocumentor-element-found-in__line">801</span>
 
     </aside>
 
@@ -2738,7 +3082,7 @@ this function must mirror the parser, not the settings form.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">763</span>
+    <span class="phpdocumentor-element-found-in__line">993</span>
 
     </aside>
 
@@ -2802,7 +3146,7 @@ key is the MCP Adapter's own gate and is ignored by core.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">805</span>
+    <span class="phpdocumentor-element-found-in__line">1035</span>
 
     </aside>
 
@@ -2866,7 +3210,7 @@ access, which a site may want to restrict further.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">830</span>
+    <span class="phpdocumentor-element-found-in__line">1060</span>
 
     </aside>
 
@@ -2926,7 +3270,7 @@ access, which a site may want to restrict further.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">845</span>
+    <span class="phpdocumentor-element-found-in__line">1075</span>
 
     </aside>
 
@@ -2986,7 +3330,7 @@ access, which a site may want to restrict further.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">865</span>
+    <span class="phpdocumentor-element-found-in__line">1095</span>
 
     </aside>
 
@@ -3040,7 +3384,7 @@ third-party callbacks run whenever this is called.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1073</span>
+    <span class="phpdocumentor-element-found-in__line">1303</span>
 
     </aside>
 
@@ -3088,7 +3432,7 @@ third-party callbacks run whenever this is called.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1097</span>
+    <span class="phpdocumentor-element-found-in__line">1327</span>
 
     </aside>
 
@@ -3132,7 +3476,7 @@ this call fail silently.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1136</span>
+    <span class="phpdocumentor-element-found-in__line">1366</span>
 
     </aside>
 
@@ -5406,7 +5750,7 @@ JS plus/minus feature for the editor preview.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">171</span>
+    <span class="phpdocumentor-element-found-in__line">181</span>
 
     </aside>
 
@@ -5466,7 +5810,7 @@ JS plus/minus feature for the editor preview.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">196</span>
+    <span class="phpdocumentor-element-found-in__line">206</span>
 
     </aside>
 
@@ -5544,7 +5888,7 @@ JS plus/minus feature for the editor preview.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">219</span>
+    <span class="phpdocumentor-element-found-in__line">229</span>
 
     </aside>
 
@@ -5604,7 +5948,7 @@ JS plus/minus feature for the editor preview.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">237</span>
+    <span class="phpdocumentor-element-found-in__line">247</span>
 
     </aside>
 
@@ -5652,7 +5996,7 @@ JS plus/minus feature for the editor preview.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">279</span>
+    <span class="phpdocumentor-element-found-in__line">289</span>
 
     </aside>
 
@@ -5721,7 +6065,7 @@ JS plus/minus feature for the editor preview.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">361</span>
+    <span class="phpdocumentor-element-found-in__line">371</span>
 
     </aside>
 

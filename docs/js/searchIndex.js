@@ -16,6 +16,16 @@ Search.appendIndex(
             "summary": "Maximum\u0020page\u0020size\u0020for\u0020the\u0020query\u0020ability.",
             "url": "namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_PER_PAGE_MAX"
         },                {
+            "fqsen": "\\JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES",
+            "name": "JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES",
+            "summary": "Longest\u0020search\u0020term,\u0020in\u0020BYTES,\u0020that\u0020WP_Query\u0020will\u0020actually\u0020apply.",
+            "url": "namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_SEARCH_MAX_BYTES"
+        },                {
+            "fqsen": "\\JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS",
+            "name": "JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS",
+            "summary": "Input\u0020keys\u0020each\u0020ability\u0020accepts\u0020at\u0020the\u0020top\u0020level.",
+            "url": "namespaces/default.html#constant_JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS"
+        },                {
             "fqsen": "\\jpkcom_postfilter_ability_clamp_per_page\u0028\u0029",
             "name": "jpkcom_postfilter_ability_clamp_per_page",
             "summary": "Clamp\u0020a\u0020per_page\u0020value\u0020into\u0020the\u0020range\u0020the\u0020query\u0020ability\u0020supports",
@@ -40,6 +50,16 @@ Search.appendIndex(
             "name": "jpkcom_postfilter_ability_validate_filters",
             "summary": "Reject\u0020filters\u0020that\u0020name\u0020a\u0020taxonomy\u0020which\u0020is\u0020not\u0020filterable",
             "url": "namespaces/default.html#function_jpkcom_postfilter_ability_validate_filters"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_validate_input_keys\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_validate_input_keys",
+            "summary": "Reject\u0020top\u002Dlevel\u0020input\u0020keys\u0020the\u0020ability\u0020does\u0020not\u0020accept",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_validate_input_keys"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_validate_search\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_validate_search",
+            "summary": "Reject\u0020a\u0020search\u0020term\u0020WordPress\u0020would\u0020silently\u0020discard",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_validate_search"
         },                {
             "fqsen": "\\jpkcom_postfilter_ability_unknown_post_type_error\u0028\u0029",
             "name": "jpkcom_postfilter_ability_unknown_post_type_error",
@@ -70,6 +90,11 @@ Search.appendIndex(
             "name": "jpkcom_postfilter_ability_unknown_terms",
             "summary": "Report\u0020requested\u0020term\u0020slugs\u0020that\u0020match\u0020no\u0020term",
             "url": "namespaces/default.html#function_jpkcom_postfilter_ability_unknown_terms"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_ability_excerpt\u0028\u0029",
+            "name": "jpkcom_postfilter_ability_excerpt",
+            "summary": "Read\u0020a\u0020post\u0027s\u0020excerpt\u0020without\u0020letting\u0020the\u0020embed\u0020handler\u0020write\u0020to\u0020the\u0020database",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_ability_excerpt"
         },                {
             "fqsen": "\\jpkcom_postfilter_ability_project_post\u0028\u0029",
             "name": "jpkcom_postfilter_ability_project_post",
