@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.3.0  
+**Version:** 1.3.1  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 6.9  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.3.0  
+**Stable tag:** 1.3.1  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -599,6 +599,15 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.3.1
+
+* **Fixed:** the query ability is declared read-only, but reading a post's excerpt made WordPress' embed handler run — and with no post to attach its cache to, it stored the result as a published post of its own and fetched the linked address from the third-party site while doing so. One request could therefore add rows to the database and contact outside hosts, and any logged-in user was allowed to trigger it. The excerpt is now read with that handler switched off for the duration and switched back on afterwards, so the text you get back is unchanged.
+* **Fixed:** clearing the cache never cleared the fastest layer of it. Saving a post, editing a term, saving the settings, and both "Clear cache" buttons in the admin all reported success while leaving stale query results in place until they expired on their own — up to an hour by default. This affects every site, whether or not the abilities are used.
+* **Fixed:** a search term longer than 1600 bytes was thrown away by WordPress itself, inside the query and without any warning, so the answer was the same one you would have got without searching at all — and nothing in the response said so. Such a term is now refused with a message naming the limit. The limit counts bytes, so accented characters and emoji use more than one each.
+* **Fixed:** the shareable filter link was handed out even when a search term had narrowed the result set. The link cannot carry a search term, so it led to a larger, different list than the one reported beside it — in the clearest case, an answer of "no results" next to a link showing six posts. The link is now withheld in that case; the results themselves are still returned in full.
+* **Fixed:** a filter sent at the wrong nesting level was neither applied nor rejected. The response was a normal, successful-looking answer containing every post on the site, with the filter section empty. Unrecognised input is now refused with a message naming both the key it rejected and the ones it accepts.
+* **Changed:** two statements in the developer documentation were corrected. The claim that nothing unpublished can be reached through the abilities was unconditional and did not hold — the restriction lives in the query the plugin builds, and another plugin can change that query before it runs. The behaviour is unchanged; the description of it now matches.
 
 ### 1.3.0
 
