@@ -851,6 +851,17 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
         //    real totals and an empty post list, but the front end answers the
         //    matching URL with a 404 - measured on .../filter/allgemein/page/3/
         //    against total_pages 1.
+        // 5. A search term was applied. get_filter_url() builds a path from the
+        //    archive base, the taxonomy segments and an optional page segment; it
+        //    has no parameter for a search term and never writes one, so the link
+        //    resolves to the same set MINUS the search. Measured on WP 7.0.3:
+        //    filters={category:[web-design]} with search=wordpress reported total 0
+        //    and handed out a URL rendering six posts - the reported set and the
+        //    linked set were disjoint. Appending ?s= is not the fix: the front end's
+        //    own filter chips drop the parameter, so the first click silently widens
+        //    the result set again. The front end has no search input of its own,
+        //    which is why the ability is the only surface that can produce this
+        //    pairing at all.
         //
         // The full result set is reported in every case; only the link is
         // withheld. An empty string is a better answer than a link to something
@@ -865,6 +876,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
             || ! jpkcom_postfilter_ability_filters_are_url_expressible( $filters )
             || ! $page_segment_matches
             || ! $page_exists
+            || isset( $atts['s'] )
         )
             ? ''
             : jpkcom_postfilter_get_filter_url( $archive_base_url, $filters, $page );

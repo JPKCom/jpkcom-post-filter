@@ -1456,6 +1456,61 @@ check(
 	. 'into the hole it was written to close.'
 );
 
+section( 'filter_url must not be handed out when a search narrowed the answer' );
+
+// get_filter_url() builds a path from the archive base, the taxonomy slug
+// segments and an optional page segment. It has no parameter for a search term
+// and never writes one, so the link resolves to the same set MINUS the search.
+// Measured on WP 7.0.3: filters={category:[web-design]} + search=wordpress
+// reported total 0 and handed out a URL rendering six posts. Reported set and
+// linked set were disjoint.
+
+$GLOBALS['_stub_options']['posts_per_page'] = 10;
+$GLOBALS['_stub_filter_url_calls']          = 0;
+
+$searched_url = jpkcom_postfilter_ability_query_posts(
+	[
+		'post_type' => 'post',
+		'filters'   => [ 'category' => [ 'allgemein' ] ],
+		'search'    => 'wordpress',
+	]
+);
+
+is_same(
+	'a search term withholds the filter URL',
+	is_array( $searched_url ) ? $searched_url['filter_url'] : null,
+	'',
+	'This is the fifth withholding reason beside the four already documented. The '
+	. 'front end has no search input of its own, so the ability is the only surface '
+	. 'that can pair a search-narrowed result set with a filter link.'
+);
+
+is_same(
+	'no URL is built at all in that case',
+	$GLOBALS['_stub_filter_url_calls'],
+	0
+);
+
+check(
+	'the full result set is still reported — only the link is withheld',
+	is_array( $searched_url ) && array_key_exists( 'total', $searched_url )
+		&& is_array( $searched_url['posts'] ),
+	'Every other withholding reason keeps the answer and drops only the link.'
+);
+
+$GLOBALS['_stub_filter_url_calls'] = 0;
+
+$unsearched_url = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'filters' => [ 'category' => [ 'allgemein' ] ] ]
+);
+
+check(
+	'the same call without a search term still gets its link',
+	is_array( $unsearched_url ) && $unsearched_url['filter_url'] !== '',
+	'The guard must be scoped to the search axis. Withholding the link generally '
+	. 'would remove a feature to fix a defect.'
+);
+
 section( 'an input key at the wrong nesting level must not pass as a filtered call' );
 
 // Neither input schema declares additionalProperties, so a key at the wrong

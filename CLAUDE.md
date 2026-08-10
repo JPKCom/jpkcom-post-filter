@@ -532,7 +532,7 @@ external value crosses an `is_array()` / `is_scalar()` / `instanceof` check befo
 `instanceof \WP_Term` and `\WP_Post` guards are load-bearing, not defensive noise, and
 `tests/test-abilities.php` feeds them malformed data on purpose.
 
-**6. `filter_url` is only emitted when following it lands on the reported result set.** Four
+**6. `filter_url` is only emitted when following it lands on the reported result set.** Five
 independent reasons withhold it, all gated in one place in `query_posts()`, and every one of them was
 measured on the verification install:
 
@@ -556,9 +556,19 @@ measured on the verification install:
    which is exactly what makes the link dangerous: `/filter/allgemein/page/3/` against `total_pages`
    1 answers **404** while the ability answers 200.
 
-Callers get the full result set in all four cases; only the link is withheld. Do not "restore" the
+5. **A search term was applied** (since 1.3.1). `get_filter_url()` writes the archive base, the
+   taxonomy segments and an optional page segment. It has no parameter for a search term and never
+   had one, so the link resolves to the same set *minus* the search. Measured on WP 7.0.3:
+   `filters={category:[web-design]}` with `search=wordpress` reported `total 0` and handed out a URL
+   rendering six posts — reported set and linked set disjoint. This reason was missing from 1.3.0
+   because `search` was added to the ability in the same release as this gate and never got its entry.
+   Appending `?s=` is **not** the fix: the front end's own filter chips are built by
+   `get_filter_url()` too and drop the parameter, so the first click silently widens the set again.
+
+Callers get the full result set in all five cases; only the link is withheld. Do not "restore" the
 unconditional link, and do not drop a reason because the response next to it looks fine — reasons 3
-and 4 exist precisely because it does.
+and 4 exist precisely because it does. And when a new input axis is added to `query-posts`, ask what
+it does to this gate before merging: reason 5 is what it costs to forget.
 
 **7. An ability whose parameters are all optional still needs a top-level input `default`.**
 `WP_Ability::normalize_input()` substitutes the input schema's **top-level** `default` when the input
