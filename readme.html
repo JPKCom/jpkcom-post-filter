@@ -5,7 +5,7 @@ https://github.com/JPKCom/jpkcom-post-filter<br />
 <strong>Description:</strong> Faceted navigation and filtering of Posts,
 Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly
 URLs, AJAX updates, and full screen reader support.<br />
-<strong>Version:</strong> 1.4.2<br />
+<strong>Version:</strong> 1.4.3<br />
 <strong>Author:</strong> Jean Pierre Kolb <a href="mailto:jpk@jpkc.com"
 class="email">jpk@jpkc.com</a><br />
 <strong>Author URI:</strong> https://www.jpkc.com/<br />
@@ -15,7 +15,7 @@ type, AJAX<br />
 <strong>Requires at least:</strong> 7.0<br />
 <strong>Tested up to:</strong> 7.1<br />
 <strong>Requires PHP:</strong> 8.3<br />
-<strong>Stable tag:</strong> 1.4.2<br />
+<strong>Stable tag:</strong> 1.4.3<br />
 <strong>License:</strong> GPL-2.0-or-later<br />
 <strong>License URI:</strong>
 https://www.gnu.org/licenses/gpl-2.0.html<br />
@@ -1201,7 +1201,19 @@ Layout &amp; Design → Advanced</strong>. You are then fully responsible
 for all styling.</p>
 <hr />
 <h2 id="changelog">Changelog</h2>
-<h3 id="section">1.4.2</h3>
+<h3 id="section">1.4.3</h3>
+<ul>
+<li><strong>Fixed:</strong> the 1.4.1 release note said the German
+translation had fallen behind “for three releases”. The actual figure is
+twelve: the catalogue was generated at 1.1.2, and 1.1.3, 1.1.4, 1.1.5,
+1.1.6, 1.1.7, 1.2.0, 1.2.1, 1.2.2, 1.2.3, 1.3.0, 1.3.1 and 1.4.0 all
+shipped with it stale before 1.4.1 regenerated it. The wrong number
+understated how long the gap had gone unnoticed, which was the whole
+point of the note. The 1.4.1 entry has been corrected and marked. No
+code is affected — this release exists so the corrected note reaches the
+sites that read the published changelog.</li>
+</ul>
+<h3 id="section-1">1.4.2</h3>
 <ul>
 <li><strong>Added:</strong> 46 German translations that were missing.
 Affected were the three block titles and their descriptions and search
@@ -1222,22 +1234,24 @@ and keywords, sixteen in total — as missing from the compiled catalogue,
 although they were present. It now reads the context the way WordPress
 stores it.</li>
 </ul>
-<h3 id="section-1">1.4.1</h3>
+<h3 id="section-2">1.4.1</h3>
 <ul>
 <li><strong>Fixed:</strong> the German translation had not kept up with
-the plugin for three releases. The translation catalogue was last
+the plugin for twelve releases. The translation catalogue was last
 generated at version 1.1.2, so every text added since — including all of
 the messages the abilities return — appeared in English on a German
 site, with nothing anywhere to indicate it. The catalogue now covers the
 whole plugin again. The existing German translations are unchanged; the
 newly added texts are listed but not yet translated, so they still
-appear in English until they are.</li>
+appear in English until they are. <strong>This entry as originally
+published said three releases. The figure is twelve — 1.1.3 through
+1.4.0 all shipped with the stale catalogue; see 1.4.3</strong></li>
 <li><strong>Hardened:</strong> the build now fails when the translation
 catalogue falls behind the code. Regenerating it was never an automated
 step and was not on the release checklist, which is how it went
-unnoticed for three releases. It is now both.</li>
+unnoticed for twelve releases. It is now both.</li>
 </ul>
-<h3 id="section-2">1.4.0</h3>
+<h3 id="section-3">1.4.0</h3>
 <ul>
 <li><strong>Changed:</strong> WordPress 7.0 is now the minimum. Up to
 6.9 an unexpected error inside an ability callback ended the whole
@@ -1257,7 +1271,7 @@ abilities is now written directly as an empty object instead of being
 produced by a helper. What clients receive is unchanged, and it stays an
 object rather than an empty list.</li>
 </ul>
-<h3 id="section-3">1.3.1</h3>
+<h3 id="section-4">1.3.1</h3>
 <ul>
 <li><strong>Fixed:</strong> the query ability is declared read-only, but
 reading a post’s excerpt made WordPress’ embed handler run — and with no
@@ -1298,7 +1312,7 @@ restriction lives in the query the plugin builds, and another plugin can
 change that query before it runs. The behaviour is unchanged; the
 description of it now matches.</li>
 </ul>
-<h3 id="section-4">1.3.0</h3>
+<h3 id="section-5">1.3.0</h3>
 <ul>
 <li><strong>Added:</strong> the plugin now registers two read-only
 WordPress Abilities, <code>jpkcom-post-filter/list-filters</code> and
@@ -1383,7 +1397,7 @@ to be accepted on the strength of the configuration alone and then
 answered with the complete unfiltered corpus; it now returns the
 unknown-taxonomy error naming the taxonomies that really exist.</li>
 </ul>
-<h3 id="section-5">1.2.3</h3>
+<h3 id="section-6">1.2.3</h3>
 <ul>
 <li>CI: the lint and guard workflow now also runs on pushes to
 <code>main</code>. It only covered pull requests, so a direct push with
@@ -1393,7 +1407,7 @@ repository are now English throughout, and the developer notes in
 <code>CLAUDE.md</code> were translated and trimmed. No effect on the
 shipped plugin</li>
 </ul>
-<h3 id="section-6">1.2.2</h3>
+<h3 id="section-7">1.2.2</h3>
 <ul>
 <li>Changed: <code>Tested up to</code> raised to WordPress 7.1</li>
 <li>Changed: the bundled updater’s runtime floor now matches the
@@ -1405,7 +1419,7 @@ and <code>tested</code> now say 6.9 and 7.1. They only apply when the
 README metadata cannot be read, but a stale fallback would have
 published a minimum the plugin no longer supports</li>
 </ul>
-<h3 id="section-7">1.2.1</h3>
+<h3 id="section-8">1.2.1</h3>
 <ul>
 <li>Added: plugin banners (<code>assets/banner-1544x500.avif</code>,
 <code>assets/banner-772x250.avif</code>) — a plain <code>#3c4955</code>
@@ -1413,7 +1427,7 @@ surface with no lettering. The update manifest already advertised these
 two URLs, but nothing was published under them, so the plugin card in
 wp-admin had a broken banner</li>
 </ul>
-<h3 id="section-8">1.2.0</h3>
+<h3 id="section-9">1.2.0</h3>
 <ul>
 <li>Added: filter requests are answered with just the swappable zones
 instead of a complete page. The theme header, nav menus, sidebar widgets
@@ -1450,7 +1464,7 @@ rules would otherwise never reach the database</li>
 <li>Added: <code>tests/browser-check.mjs</code> drives a real filter
 click in headless Chromium</li>
 </ul>
-<h3 id="section-9">1.1.7</h3>
+<h3 id="section-10">1.1.7</h3>
 <ul>
 <li><strong>Fixed:</strong> the settings-directory containment check was
 a tautology — it compared <code>realpath( WP_CONTENT_DIR )</code> with
@@ -1479,7 +1493,7 @@ never by the requested slugs</li>
 regression tests for all of the above, each written to fail against the
 previous implementation. Run in CI on every pull request</li>
 </ul>
-<h3 id="section-10">1.1.6</h3>
+<h3 id="section-11">1.1.6</h3>
 <ul>
 <li>Security: update packages are now verified <em>before</em>
 installation — the verified file is handed to WordPress instead of being
@@ -1506,13 +1520,13 @@ check, YAML validation, action-pinning guard)</li>
 <li>Housekeeping: removed stray editor backups and an unused
 <code>messages.mo</code> from the release package</li>
 </ul>
-<h3 id="section-11">1.1.5</h3>
+<h3 id="section-12">1.1.5</h3>
 <ul>
 <li>Raised “Tested up to” to WordPress 7.0</li>
 <li>Normalized license fallback defaults (updater and release workflow)
 to <code>GPL-2.0-or-later</code> with the HTTPS license URI</li>
 </ul>
-<h3 id="section-12">1.1.4</h3>
+<h3 id="section-13">1.1.4</h3>
 <ul>
 <li>Security: updater prefers an exact match against the manifest
 <code>download_url</code> over the slug heuristic, so a tampered
@@ -1529,7 +1543,7 @@ completing the <code>no_update</code> transient entry
 (<code>new_version</code>, <code>package</code>, <code>tested</code>,
 <code>requires_php</code>)</li>
 </ul>
-<h3 id="section-13">1.1.3</h3>
+<h3 id="section-14">1.1.3</h3>
 <ul>
 <li><strong>Plus/Minus Icon styling</strong> — New CSS variables
 (<code>--jpkpf-pm-color</code>, <code>--jpkpf-pm-font-size</code>,
@@ -1544,7 +1558,7 @@ icons, fixing themes that force underlines on links</li>
 <li><strong>Translations</strong> — Updated de_DE and de_DE_formal
 translations for all new strings</li>
 </ul>
-<h3 id="section-14">1.1.2</h3>
+<h3 id="section-15">1.1.2</h3>
 <ul>
 <li><strong>Plugin Updater</strong> — Fixed manual ZIP upload failing
 with “invalid URL” error by adding <code>wp_http_validate_url()</code>
@@ -1553,12 +1567,12 @@ check in <code>verify_download_checksum()</code></li>
 top-level directory; WordPress now correctly recognises the update by
 using a staging directory with the plugin slug</li>
 </ul>
-<h3 id="section-15">1.1.1</h3>
+<h3 id="section-16">1.1.1</h3>
 <ul>
 <li><strong>.github/workflows/release.yml</strong> — “Build Gutenberg
 blocks” npm ci bugfix</li>
 </ul>
-<h3 id="section-16">1.1.0</h3>
+<h3 id="section-17">1.1.0</h3>
 <ul>
 <li><strong>Gutenberg Blocks</strong> — Three native blocks (Post
 Filter, Post List, Post Pagination) with live server-side preview,
@@ -1584,7 +1598,7 @@ to multiple pages</li>
 <li><strong>Auto-inject guard</strong> — Prevents duplicate pagination
 insertion in auto-inject mode during AJAX swaps</li>
 </ul>
-<h3 id="section-17">1.0.0</h3>
+<h3 id="section-18">1.0.0</h3>
 <ul>
 <li>Initial release</li>
 <li>Faceted filtering for any post type and taxonomy</li>
