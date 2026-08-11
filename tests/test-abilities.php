@@ -2169,6 +2169,50 @@ if ( $child_output === null ) {
 	);
 }
 
+section( 'JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS agrees with the input schemas' );
+
+// The constant and each input schema's `properties` are two statements of one
+// list, and until this ran nothing compared them. Both drift directions are
+// bugs, but they are not equally bad:
+//
+//   schema gains a key, constant does not -> validate_input_keys() refuses a
+//     legitimate, documented input with a 400. A caller that reads the schema
+//     and sends exactly what it declares is told the key does not exist. That
+//     is a guard rejecting a legitimate call, which is worse than the hole it
+//     closes: the hole needs a caller to make a mistake, the false positive
+//     needs only a caller.
+//   constant gains a key, schema does not -> the guard waves through a key no
+//     callback reads, which is the full-corpus-behind-a-200 failure the guard
+//     exists to prevent, one step further along.
+//
+// Declaring `additionalProperties => false` on these schemas would derive the
+// list automatically and make the constant redundant - but it was measured on
+// WordPress 7.0.3 to preempt the guard entirely, because validate_input() runs
+// before the execute callback. The reply degrades from "Unknown input key:
+// category. Accepted keys: post_type, filters, page, per_page, search.
+// Taxonomy filters belong inside "filters" ..." to core's "category is not a
+// valid property of the object" - the accepted set and the nesting hint both
+// gone, and localized into the site language while the plugin's own messages
+// are not. Self-correction in one turn is the whole design of these messages,
+// so the guard stays and this assertion is what makes it safe.
+foreach ( jpkcom_postfilter_get_ability_definitions() as $name => $args ) {
+	$declared = array_keys( (array) ( $args['input_schema']['properties'] ?? [] ) );
+	$guarded  = JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS[ $name ] ?? [];
+
+	sort( $declared );
+	sort( $guarded );
+
+	is_same(
+		$name . ': guarded keys match the schema properties',
+		$guarded,
+		$declared,
+		'Add the key in both places or in neither. A key present only in the schema is '
+		. 'refused by jpkcom_postfilter_ability_validate_input_keys() despite being '
+		. 'declared to callers; a key present only in the constant is accepted and then '
+		. 'read by nobody.'
+	);
+}
+
 printf( "\n  %d passed, %d failed\n", $pass, $fail );
 
 exit( $fail > 0 ? 1 : 0 );
