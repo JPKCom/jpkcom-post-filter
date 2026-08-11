@@ -178,6 +178,92 @@ i18n_chk(
 	. ( $missing === [] ? '' : "        first few:\n          " . implode( "\n          ", array_slice( $missing, 0, 8 ) ) )
 );
 
+// --- The compiled forms must be derived from the .po ------------------------
+//
+// The catalogues here are maintained with Loco Translate, which writes .po, .mo
+// AND .l10n.php. In the sibling plugin jpkcom-acf-jobs the .l10n.php had drifted
+// AHEAD of the .po it is supposed to come from - 90 translated entries against
+// 63 - and because WordPress 6.8+ reads the .l10n.php first, those extra
+// translations were the ones actually being served. Regenerating from the .po
+// deleted 27 of them, and nothing in the repository could have said so, because
+// nothing compared the two files. This plugin measured clean; this assertion is
+// what keeps it that way.
+//
+// Direction matters: a string translated in the .po and missing from the
+// .l10n.php is a build that was not run. A string in the .l10n.php and not in
+// the .po is worse - it means the .po is not the source, and the next person to
+// regenerate destroys work.
+
+foreach ( glob( $root . '/languages/*-*.po' ) as $po_path ) {
+	$locale = preg_replace( '/^.*-([^-]+(?:_[A-Za-z_]+)?)\.po$/', '$1', basename( $po_path ) );
+	$php_path = preg_replace( '/\.po$/', '.l10n.php', $po_path );
+
+	if ( ! is_readable( $php_path ) ) {
+		i18n_chk(
+			$locale . ': the .l10n.php exists beside the .po',
+			false,
+			'WordPress 6.8+ prefers the .l10n.php. Without it this locale falls back to the .mo, and if '
+			. 'that is stale too the strings appear untranslated. Run `wp i18n make-php languages`.'
+		);
+		continue;
+	}
+
+	$po       = (string) file_get_contents( $po_path );
+	$compiled = include $php_path;
+	$messages = is_array( $compiled ) ? ( $compiled['messages'] ?? $compiled ) : [];
+
+	// Translated msgids in the .po: an entry whose msgstr is a non-empty literal.
+	$translated = [];
+
+	foreach ( preg_split( '/\n\s*\n/', $po ) as $entry ) {
+		if ( strpos( $entry, '#~' ) !== false ) {
+			continue;
+		}
+
+		if ( ! preg_match( '/^msgid((?:\s+"(?:[^"\\\\]|\\\\.)*")+)/m', $entry, $id_match ) ) {
+			continue;
+		}
+
+		// msgstr[0] as well as msgstr: a plural entry carries its translation in
+		// the indexed form, and reading only the bare one reports every plural as
+		// untranslated in the .po while it is present in the compiled file - a
+		// guard failing on a correct catalogue. Caught by the first run against
+		// jpkcom-post-filter, which has one.
+		if ( ! preg_match( '/^msgstr(?:\[0\])?((?:\s+"(?:[^"\\\\]|\\\\.)*")+)/m', $entry, $str_match ) ) {
+			continue;
+		}
+
+		preg_match_all( '/"((?:[^"\\\\]|\\\\.)*)"/', $id_match[1], $id_parts );
+		preg_match_all( '/"((?:[^"\\\\]|\\\\.)*)"/', $str_match[1], $str_parts );
+
+		$id  = i18n_unescape_pot( implode( '', $id_parts[1] ) );
+		$str = i18n_unescape_pot( implode( '', $str_parts[1] ) );
+
+		if ( $id !== '' && $str !== '' ) {
+			$translated[ $id ] = $str;
+		}
+	}
+
+	$only_in_po  = array_diff_key( $translated, $messages );
+	$only_in_php = array_diff_key( $messages, $translated );
+
+	i18n_chk(
+		$locale . ': the .l10n.php carries every translation the .po has',
+		$only_in_po === [],
+		count( $only_in_po ) . ' translated string(s) are in the .po and not in the compiled file, so they '
+		. 'are not being served. Run `wp i18n make-php languages` and `msgfmt` the .mo.'
+	);
+
+	i18n_chk(
+		$locale . ': the .l10n.php carries nothing the .po does not',
+		$only_in_php === [],
+		count( $only_in_php ) . ' translation(s) exist ONLY in the compiled file. The .po is then not the '
+		. "source of truth, and the next regeneration deletes them - and this is how the sibling plugin lost 27 in\n"
+		. "        its own 1.5.1. Recover them into the .po before regenerating:\n          "
+		. implode( "\n          ", array_slice( array_keys( $only_in_php ), 0, 6 ) )
+	);
+}
+
 printf( "\n  %d passed, %d failed\n", $pass, $fail );
 
 exit( $fail > 0 ? 1 : 0 );
