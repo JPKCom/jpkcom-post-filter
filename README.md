@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.4.2  
+**Version:** 1.4.3  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 7.0  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.4.2  
+**Stable tag:** 1.4.3  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -600,6 +600,10 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 
 ## Changelog
 
+### 1.4.3
+
+* **Fixed:** the 1.4.1 release note said the German translation had fallen behind "for three releases". The actual figure is twelve: the catalogue was generated at 1.1.2, and 1.1.3, 1.1.4, 1.1.5, 1.1.6, 1.1.7, 1.2.0, 1.2.1, 1.2.2, 1.2.3, 1.3.0, 1.3.1 and 1.4.0 all shipped with it stale before 1.4.1 regenerated it. The wrong number understated how long the gap had gone unnoticed, which was the whole point of the note. The 1.4.1 entry has been corrected and marked. No code is affected — this release exists so the corrected note reaches the sites that read the published changelog.
+
 ### 1.4.2
 
 * **Added:** 46 German translations that were missing. Affected were the three block titles and their descriptions and search keywords, the Elementor and Oxygen widget labels, several settings hints, and the updater's security messages — all of which appeared in English on a German site. The Abilities API texts stay English on purpose: they are read by AI clients and automation, not in the admin area, and their exact wording is what lets a caller correct a mistaken request in one attempt.
@@ -608,8 +612,8 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 
 ### 1.4.1
 
-* **Fixed:** the German translation had not kept up with the plugin for three releases. The translation catalogue was last generated at version 1.1.2, so every text added since — including all of the messages the abilities return — appeared in English on a German site, with nothing anywhere to indicate it. The catalogue now covers the whole plugin again. The existing German translations are unchanged; the newly added texts are listed but not yet translated, so they still appear in English until they are.
-* **Hardened:** the build now fails when the translation catalogue falls behind the code. Regenerating it was never an automated step and was not on the release checklist, which is how it went unnoticed for three releases. It is now both.
+* **Fixed:** the German translation had not kept up with the plugin for twelve releases. The translation catalogue was last generated at version 1.1.2, so every text added since — including all of the messages the abilities return — appeared in English on a German site, with nothing anywhere to indicate it. The catalogue now covers the whole plugin again. The existing German translations are unchanged; the newly added texts are listed but not yet translated, so they still appear in English until they are. **This entry as originally published said three releases. The figure is twelve — 1.1.3 through 1.4.0 all shipped with the stale catalogue; see 1.4.3**
+* **Hardened:** the build now fails when the translation catalogue falls behind the code. Regenerating it was never an automated step and was not on the release checklist, which is how it went unnoticed for twelve releases. It is now both.
 
 ### 1.4.0
 
