@@ -180,14 +180,19 @@ i18n_chk(
 
 // --- The compiled forms must be derived from the .po ------------------------
 //
-// The catalogues here are maintained with Loco Translate, which writes .po, .mo
-// AND .l10n.php. In the sibling plugin jpkcom-acf-jobs the .l10n.php had drifted
-// AHEAD of the .po it is supposed to come from - 90 translated entries against
-// 63 - and because WordPress 6.8+ reads the .l10n.php first, those extra
-// translations were the ones actually being served. Regenerating from the .po
-// deleted 27 of them, and nothing in the repository could have said so, because
-// nothing compared the two files. This plugin measured clean; this assertion is
-// what keeps it that way.
+// Since WordPress 6.5 the .l10n.php is the format core loads FIRST. It is not a
+// build artefact of the .po - across this plugin family some locales are
+// authored directly in it and have no .po at all. Check a file's `x-generator`
+// before assuming where it came from.
+//
+// The two directions are therefore NOT symmetrical:
+//
+//   .po has a translation the .l10n.php lacks -> FAIL. Core reads the .l10n.php
+//     first, so the translation is not being served.
+//   .l10n.php has more than the .po           -> legitimate, reported as a NOTE.
+//     The danger is not the state but `wp i18n make-php`, which writes the
+//     .l10n.php FROM the .po and deletes the difference. That is how the sibling
+//     plugin jpkcom-acf-jobs lost 27 German entries in its 1.5.1.
 //
 // Direction matters: a string translated in the .po and missing from the
 // .l10n.php is a build that was not run. A string in the .l10n.php and not in
@@ -254,14 +259,18 @@ foreach ( glob( $root . '/languages/*-*.po' ) as $po_path ) {
 		. 'are not being served. Run `wp i18n make-php languages` and `msgfmt` the .mo.'
 	);
 
-	i18n_chk(
-		$locale . ': the .l10n.php carries nothing the .po does not',
-		$only_in_php === [],
-		count( $only_in_php ) . ' translation(s) exist ONLY in the compiled file. The .po is then not the '
-		. "source of truth, and the next regeneration deletes them - and this is how the sibling plugin lost 27 in\n"
-		. "        its own 1.5.1. Recover them into the .po before regenerating:\n          "
-		. implode( "\n          ", array_slice( array_keys( $only_in_php ), 0, 6 ) )
-	);
+	// Deliberately NOT an assertion. A .l10n.php carrying more than its .po is a
+	// legitimate state in this plugin family - some locales are authored directly
+	// in that format, which is the one WordPress loads first. Failing on it would
+	// be a guard rejecting correct work, and it would push whoever hit it toward
+	// `make-php`, the operation that destroys exactly these entries.
+	if ( $only_in_php !== [] ) {
+		echo '  NOTE  ' . $locale . ': the .l10n.php carries ' . count( $only_in_php )
+			. " translation(s) the .po does not.\n";
+		echo "        That is allowed - it is the format WordPress loads first. But it means\n";
+		echo "        `wp i18n make-php` would DELETE them, because it writes the .l10n.php\n";
+		echo "        from the .po. Do not run it for this locale without merging first.\n";
+	}
 }
 
 printf( "\n  %d passed, %d failed\n", $pass, $fail );
