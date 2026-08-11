@@ -801,6 +801,14 @@ Heed `make-pot`'s warnings. A `translators:` comment only reaches the catalogue 
 **immediately** above the `__()` call — putting an ordinary comment between the two detaches it
 silently, and that is exactly what the first run of this step caught.
 
+> **Project decision: the Abilities API stays English, in every language.** The two abilities' labels,
+> descriptions, schema texts and error messages are read by MCP clients and agents, not by people in
+> wp-admin, and their wording is the feature — a message that names the valid taxonomies is what lets
+> a caller correct itself in one turn instead of retrying blind. All 41 strings from
+> `includes/abilities.php` are in the catalogue so the state is visible, and all 41 are untranslated
+> on purpose. **Do not "complete" them**, and do not read an empty `msgstr` on one of them as a
+> backlog.
+
 **Releasing.** Bump those, commit, then push a `v*` tag — that tag push is the only trigger, and `.github/workflows/release.yml` creates the GitHub release itself. Pipeline: README metadata via Pandoc → `npm ci && npm run build` for the Gutenberg block → slug-named ZIP (excludes `.git`, `.github`, `CLAUDE.md`, `tests`, `tools`, `node_modules`, build config, `docs`) → SHA256 → upload ZIP + `.sha256` → `plugin_jpkcom-post-filter.json` manifest → PHPDoc → deploy to `gh-pages`. ZIP and manifest must come from the same run, since the manifest's `checksum_sha256` is what the updater verifies.
 
 **Actions are pinned to commit SHAs.** Every `uses:` line in `.github/workflows/` references a 40-character commit SHA instead of a tag (`@v4`), with the version as a trailing comment. A tag is a movable pointer and can be repointed; a SHA cannot. Since the release workflow builds the plugin ZIP **and** the SHA256 checksum the auto-updater trusts, a compromised action would ship a tampered ZIP together with a matching checksum — the checksum secures the transport, the pinning secures the build. `.github/dependabot.yml` keeps the pins current weekly in one combined PR; when updating, always change the SHA *and* the version comment together.
