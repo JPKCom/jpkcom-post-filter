@@ -229,6 +229,18 @@ foreach ( glob( $root . '/languages/*-*.po' ) as $po_path ) {
 			continue;
 		}
 
+		// A msgctxt makes the catalogue key "<context>\4<msgid>", which is how
+		// WordPress stores and looks it up. Ignoring it reports all 16 of this
+		// plugin's block.json entries as missing from a compiled file that has
+		// them - a guard failing on a correct catalogue, caught by its own first
+		// run against a locale that carries context entries.
+		$context = '';
+
+		if ( preg_match( '/^msgctxt((?:\s+"(?:[^"\\\\]|\\\\.)*")+)/m', $entry, $ctx_match ) ) {
+			preg_match_all( '/"((?:[^"\\\\]|\\\\.)*)"/', $ctx_match[1], $ctx_parts );
+			$context = i18n_unescape_pot( implode( '', $ctx_parts[1] ) ) . chr( 4 );
+		}
+
 		// msgstr[0] as well as msgstr: a plural entry carries its translation in
 		// the indexed form, and reading only the bare one reports every plural as
 		// untranslated in the .po while it is present in the compiled file - a
@@ -245,7 +257,7 @@ foreach ( glob( $root . '/languages/*-*.po' ) as $po_path ) {
 		$str = i18n_unescape_pot( implode( '', $str_parts[1] ) );
 
 		if ( $id !== '' && $str !== '' ) {
-			$translated[ $id ] = $str;
+			$translated[ $context . $id ] = $str;
 		}
 	}
 
