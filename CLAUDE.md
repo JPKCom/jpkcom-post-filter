@@ -770,6 +770,37 @@ Validation reuses the transient-cached per-taxonomy term list, keyed by **taxono
 
 The version appears in five places and must be kept in sync: header `Version:` and `Stable tag:` plus `JPKCOM_POSTFILTER_VERSION` in `jpkcom-post-filter.php`, `<version number="…">` in `phpdoc.xml`, and `**Version:**` / `**Stable tag:**` in `README.md` — where a new `### x.y.z` changelog block is also needed.
 
+**Sixth place, and it is not a version number: the translation catalogue.** Any release that adds or
+edits a translatable string regenerates `languages/`. This was missing from the checklist and the
+`.pot` fell three minor releases behind — every string added in between shipped untranslated, and
+nothing said so. `tests/test-i18n.php` now fails the build when the catalogue is behind the code, so
+this is a reminder rather than the only line of defence.
+
+```bash
+# 1. Regenerate the catalogue. CI has no WP-CLI, so this is a local step.
+#    The plugin must sit inside a DDEV project for eval to reach it.
+ddev wp i18n make-pot <plugin-dir> <plugin-dir>/languages/jpkcom-post-filter.pot \
+  --slug=jpkcom-post-filter --domain=jpkcom-post-filter \
+  --exclude="node_modules,tests,tools,docs,.github,blocks/build,debug-templates"
+
+# 2. Carry existing translations over. --no-fuzzy-matching, because a fuzzy
+#    match on these strings is a wrong translation shipped silently.
+for po in languages/*-*.po; do msgmerge --update --backup=none --no-fuzzy-matching "$po" languages/jpkcom-post-filter.pot; done
+
+# 3. Binary and PHP forms. WordPress 6.8+ reads the .l10n.php first.
+for po in languages/*-*.po; do msgfmt -o "${po%.po}.mo" "$po"; done
+ddev wp i18n make-php <plugin-dir>/languages
+
+# 4. Prove nothing was lost, rather than assuming it. Compare the translated
+#    msgid SET before and after - msgfmt's own counts include plural forms and
+#    move for reasons that are not losses.
+msgattrib --translated --no-obsolete languages/jpkcom-post-filter-de_DE.po | grep '^msgid "' | sort -u
+```
+
+Heed `make-pot`'s warnings. A `translators:` comment only reaches the catalogue when it sits
+**immediately** above the `__()` call — putting an ordinary comment between the two detaches it
+silently, and that is exactly what the first run of this step caught.
+
 **Releasing.** Bump those, commit, then push a `v*` tag — that tag push is the only trigger, and `.github/workflows/release.yml` creates the GitHub release itself. Pipeline: README metadata via Pandoc → `npm ci && npm run build` for the Gutenberg block → slug-named ZIP (excludes `.git`, `.github`, `CLAUDE.md`, `tests`, `tools`, `node_modules`, build config, `docs`) → SHA256 → upload ZIP + `.sha256` → `plugin_jpkcom-post-filter.json` manifest → PHPDoc → deploy to `gh-pages`. ZIP and manifest must come from the same run, since the manifest's `checksum_sha256` is what the updater verifies.
 
 **Actions are pinned to commit SHAs.** Every `uses:` line in `.github/workflows/` references a 40-character commit SHA instead of a tag (`@v4`), with the version as a trailing comment. A tag is a movable pointer and can be repointed; a SHA cannot. Since the release workflow builds the plugin ZIP **and** the SHA256 checksum the auto-updater trusts, a compromised action would ship a tampered ZIP together with a matching checksum — the checksum secures the transport, the pinning secures the build. `.github/dependabot.yml` keeps the pins current weekly in one combined PR; when updating, always change the SHA *and* the version comment together.
