@@ -1810,7 +1810,12 @@ function jpkcom_postfilter_page_filter_groups(): void {
     var jpkcomFilterGroupsI18n = {
         segmentLabel:        <?php echo wp_json_encode( __( 'URL-Filter-Segment', 'jpkcom-post-filter' ) ); ?>,
         confirmRemove:       <?php echo wp_json_encode( __( 'Are you sure you want to remove this filter group?', 'jpkcom-post-filter' ) ); ?>,
-        confirmRemoveCustom: <?php echo wp_json_encode( __( "Warning: This group uses a Custom Taxonomy registered by this plugin.\n\nRemoving it will unregister the taxonomy \u2014 all term assignments on posts will be permanently lost and cannot be recovered.\n\nAre you sure you want to remove this group?", 'jpkcom-post-filter' ) ); ?>
+        // \u{2014} WITH braces. PHP reads only the braced form as an escape, so the
+        // bare \u2014 stayed in the string verbatim and the admin read those six
+        // characters in the confirm dialog. Kept as an escape rather than as the
+        // character itself: the em dash does not survive every editing path into
+        // this file, which is how the bare form got here in the first place.
+        confirmRemoveCustom: <?php echo wp_json_encode( __( "Warning: This group uses a Custom Taxonomy registered by this plugin.\n\nRemoving it will unregister the taxonomy \u{2014} all term assignments on posts will be permanently lost and cannot be recovered.\n\nAre you sure you want to remove this group?", 'jpkcom-post-filter' ) ); ?>
     };
     document.addEventListener( 'change', function ( e ) {
         if ( ! e.target.classList.contains( 'jpkcom-custom-toggle' ) ) return;

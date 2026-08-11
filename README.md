@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.4.1  
+**Version:** 1.4.2  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 7.0  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.4.1  
+**Stable tag:** 1.4.2  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -599,6 +599,12 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.4.2
+
+* **Added:** 46 German translations that were missing. Affected were the three block titles and their descriptions and search keywords, the Elementor and Oxygen widget labels, several settings hints, and the updater's security messages — all of which appeared in English on a German site. The Abilities API texts stay English on purpose: they are read by AI clients and automation, not in the admin area, and their exact wording is what lets a caller correct a mistaken request in one attempt.
+* **Fixed:** the confirmation dialog shown when removing a filter group with its own taxonomy printed the six characters `\u2014` instead of a dash. PHP reads that escape only in its braced form, so the plain one stayed in the text and was shown as-is.
+* **Hardened:** the translation check added in 1.4.0 reported every entry carrying a context — the block titles, descriptions and keywords, sixteen in total — as missing from the compiled catalogue, although they were present. It now reads the context the way WordPress stores it.
 
 ### 1.4.1
 
