@@ -5,7 +5,7 @@
 WordPress plugin for faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies.
 
 - **Text Domain:** `jpkcom-post-filter`
-- **Min PHP:** 8.3 | **Min WP:** 6.9
+- **Min PHP:** 8.3 | **Min WP:** 7.0
 - **No ACF, No Bootstrap** – everything self-written
 - **Languages:** EN, de_DE, de_DE_formal
 
@@ -494,8 +494,23 @@ and flattening a nested map is the commonest shape error a tool-calling model ma
 
 `jpkcom_postfilter_ability_validate_input_keys()` rejects any top-level key outside
 `JPKCOM_POSTFILTER_ABILITY_INPUT_KEYS` with a 400 that names both the rejected key and the accepted
-set. Keep that constant in step with the input schemas — they are two statements of one list, and
-nothing cross-checks them.
+set.
+
+**Since 1.4.0 a build check cross-references that constant against each schema's `properties`**, so
+the two statements of one list can no longer drift apart in silence. The drift that matters is the
+one that looks harmless: a property added to the schema and not to the constant makes the guard
+refuse an input the schema *documents*, which is a guard rejecting a correct request — worse than
+the hole it closes, because the hole needs a caller to make a mistake and the false positive needs
+only a caller. The other direction re-opens the full-corpus answer this guard exists to prevent.
+
+**Do not replace the guard with `additionalProperties => false`.** Measured on WP 7.0.3: it is safe
+(no fatal, anonymous included, a clean 400) but it preempts the guard entirely, because
+`validate_input()` runs before the execute callback. The reply degrades from *"Unknown input key:
+category. Accepted keys: post_type, filters, page, per_page, search. Taxonomy filters belong inside
+"filters" …"* to core's *"category is not a valid property of the object"* — the accepted set and the
+nesting hint both gone, and localised into the site language while these messages are not. The
+static lint in the WordPress `wp-abilities-verify` skill asks for it on every object schema; on these
+two schemas that recommendation is wrong, and this is the measurement that says so.
 
 ### Nine things that will bite
 
@@ -526,11 +541,17 @@ annotations is POST-only. Both abilities set the full triple explicitly.
 `jpkcom_postfilter_ability_json_object()` wraps the empty case only, so PHP callers keep array access
 where there is data.
 
-**5. Nothing may throw.** The declared floor is WP 6.9, where a `Throwable` escaping an ability
-callback is an **uncaught fatal** — the `Throwable → WP_Error` wrapper only landed in 7.0. Every
-external value crosses an `is_array()` / `is_scalar()` / `instanceof` check before use. The
-`instanceof \WP_Term` and `\WP_Post` guards are load-bearing, not defensive noise, and
-`tests/test-abilities.php` feeds them malformed data on purpose.
+**5. Nothing may throw.** Every external value crosses an `is_array()` / `is_scalar()` /
+`instanceof` check before use. The `instanceof \WP_Term` and `\WP_Post` guards are not defensive
+noise, and `tests/test-abilities.php` feeds them malformed data on purpose.
+
+> **The reason these exist changed in 1.4.0, and they were kept anyway.** The floor was WP 6.9, where
+> a `Throwable` escaping an ability callback is an **uncaught fatal** — the `Throwable → WP_Error`
+> wrapper only landed in 7.0. The floor is now 7.0, so the core wrapper is always present and a
+> throw is an error a client can act on rather than a blank page. The guards stayed because turning
+> a malformed stored value into a usable answer is still better than turning it into a 500, and
+> because removing them would be a change with no measurement behind it. What changed is their
+> status: they are a quality choice now, not the only thing between a caller and a white screen.
 
 **6. `filter_url` is only emitted when following it lands on the reported result set.** Five
 independent reasons withhold it, all gated in one place in `query_posts()`, and every one of them was

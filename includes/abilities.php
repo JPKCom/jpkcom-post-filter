@@ -1137,7 +1137,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
                     // stdClass is not an array, so they fall through to [] and
                     // resolve their own per-property defaults, exactly as they do
                     // for any other input they cannot use.
-                    'default'    => jpkcom_postfilter_ability_json_object( [] ),
+                    'default'    => (object) array(),
                     'properties' => [
                         'post_type' => [
                             'type'        => 'string',
@@ -1195,7 +1195,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_ability_definitions' ) 
                     // execute( null ), which core would otherwise reject before
                     // the callback ever runs, and it is an object rather than []
                     // because MCP clients read this value unmodified.
-                    'default'    => jpkcom_postfilter_ability_json_object( [] ),
+                    'default'    => (object) array(),
                     'properties' => [
                         'post_type' => [
                             'type'        => 'string',
