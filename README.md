@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.4.0  
+**Version:** 1.4.1  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 7.0  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.4.0  
+**Stable tag:** 1.4.1  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -599,6 +599,11 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.4.1
+
+* **Fixed:** the German translation had not kept up with the plugin for three releases. The translation catalogue was last generated at version 1.1.2, so every text added since — including all of the messages the abilities return — appeared in English on a German site, with nothing anywhere to indicate it. The catalogue now covers the whole plugin again. The existing German translations are unchanged; the newly added texts are listed but not yet translated, so they still appear in English until they are.
+* **Hardened:** the build now fails when the translation catalogue falls behind the code. Regenerating it was never an automated step and was not on the release checklist, which is how it went unnoticed for three releases. It is now both.
 
 ### 1.4.0
 
