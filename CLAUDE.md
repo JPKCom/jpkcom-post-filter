@@ -310,13 +310,112 @@ menu and widget queries, the enqueue/print pipeline, and the transferred bytes.
 will be disappointed by a profile.
 
 **4. Zones are cut by markers, not by parsing.** `jpkcom_postfilter_zone_open()`
-/ `_close()` write HTML comments around each swappable zone, and only on a
+/ `_close()` write a marker around each swappable zone, and only on a
 fragment request, so normal page output is byte-identical to before. Extraction
 is then substring work against markers this plugin wrote itself. Searching for
 `[data-jpkpf-results]` and its closing tag would be guesswork — the zone holds
 arbitrary theme markup with nested elements. An unterminated marker yields
 nothing rather than the rest of the document; the full-page dump is the exact
 failure this feature exists to remove.
+
+**The markers were HTML comments until 1.4.4, and that was a bug** — see below.
+They are empty `<template>` elements now.
+
+### An HTML minifier deletes a comment. That is what it is for.
+
+Up to 1.4.3 the markers were `<!--jpkpf:zone:start-->` / `<!--jpkpf:zone:end-->`.
+Autoptimize ships with **"Optimize HTML Code" on and "Keep HTML comments" off**
+(`autoptimizeConfig::get_defaults()`: `autoptimize_html => 1`,
+`autoptimize_html_keepcomments => 0`, and `get()` falls back to those defaults
+whenever the option row is absent). It removed both markers, extraction found no
+zone, and every filter click was answered with **0 bytes**.
+
+Measured on the verification install (`~/ddev/posts`, bootscore-child, 19 posts,
+Autoptimize 3.1.15.1), one filtered fragment URL:
+
+| Autoptimize | `autoptimize_html` | `keepcomments` | Fragment |
+|---|---|---|---|
+| inactive | – | – | 18 300 B |
+| active | 1 | 0 (stock) | **0 B** |
+| active | 1 | 1 | 8 976 B |
+| active | 0 | – | 18 300 B |
+
+Which isolates it to the comment stripping and to nothing else Autoptimize does.
+
+**Why Autoptimize wins the race.** Both plugins buffer the same response. This
+one starts at `template_redirect` priority **0**, Autoptimize at priority **2**
+(`autoptimizeMain::DEFAULT_HOOK_PRIORITY`). The later `ob_start()` is the
+*inner* buffer and is flushed *first*, so Autoptimize minifies the page and hands
+the result to `jpkcom_postfilter_fragment_ob_callback()`. Being the outer buffer
+is what makes this plugin's output final — and it is also what put the minifier
+upstream of the markers. Note the inverse case is harmless: with
+`AUTOPTIMIZE_INIT_EARLIER` defined Autoptimize buffers from `init`, becomes the
+outer one, and skips the fragment because `is_valid_buffer()` rejects a body
+without `<html`.
+
+**No minifier removes elements**, so the markers are elements now. `<template>`
+because it renders nothing and is valid nearly anywhere. They never reach a
+browser either way — extraction returns what lies *between* them.
+
+### The failure mode was worse than the failure
+
+A 0-byte 200 is not distinguishable from "the filter matched nothing" unless
+someone says so. Nothing did: the script's `.catch()` → full-reload path only
+fires on a network error, and its other branch wrote the no-results message into
+the zone. So the filter looked like it worked and reported **no matches on every
+click**, on a site where everything matched. That is why this reached production
+and sat there.
+
+Two rules now, and they are the general protection — the marker change only fixes
+the one vendor that was found:
+
+- **A fragment without `[data-jpkpf-results]` is never a zero-result answer.**
+  Every list template writes that wrapper *before* it looks at the query and puts
+  the empty state inside it (`list-cards.php:20`), and auto-inject mode has
+  `render_zero_results_fallback()` for the same reason. So the script treats a
+  missing zone as a damaged response and does a **full page load** of the same
+  URL: slower, and always what the server would have rendered.
+- **The server says which of the two happened.** `jpkcom_postfilter_zone_count()`
+  counts what was written, because the buffer looks identical whether a zone was
+  never marked or its markers were destroyed. The answer is
+  `<div data-jpkpf-fragment-error="markers-stripped">` or `="no-zone"`, never an
+  empty body.
+
+### Optimisers are asked to skip fragment requests
+
+`autoptimize_filter_noptimize` plus the `DONOTMINIFY` convention, both keyed on
+`jpkcom_postfilter_request_looks_like_fragment()`. Three things about it:
+
+**It is registered while the plugin file loads, not on a hook.** Autoptimize
+decides once per request and caches the answer in a `static` inside
+`should_buffer()`; `autoptimizeExtra::run_on_frontend()` and
+`autoptimizeImages::run_on_frontend()` both call it on **`wp`**. A filter added
+in `template_redirect` — where the rest of `fragment-response.php` works —
+arrives after the decision is already frozen.
+
+**The check cannot rely on the query var alone.** `wp` runs after the query is
+parsed, but `init` does not, and with `AUTOPTIMIZE_INIT_EARLIER` that is where
+the question is asked — `get_query_var()` would answer "no" and the page would
+be minified anyway. Hence the `REQUEST_URI` path check, with the query var
+preferred wherever it can answer. Note the `isset( $GLOBALS['wp_query'] )` guard is
+load-bearing: the `DONOTMINIFY` line runs at include time, and `get_query_var()`
+on a null `$wp_query` is a fatal.
+
+**It is not the fix, it is the second layer.** With element markers a minifier
+can no longer destroy a fragment, but nothing an optimiser does to one is wanted
+in the first place — it has no head, no footer and no asset pipeline. Other
+vendors go through `jpkcom_postfilter_fragment_noptimize_filters`, which is
+applied at load time and therefore hookable **only from an mu-plugin**.
+
+Verified on the same install, Autoptimize active with stock settings: fragment
+18 300 B (identical to the Autoptimize-off baseline, so it really does stand
+down), normal page 52 470 B against 65 149 B unoptimised (so normal pages are
+still optimised). `tests/browser-check.mjs` all green. With a deliberately
+aggressive mu-plugin that strips the `<template>` markers too, the fragment
+answers `<div data-jpkpf-fragment-error="markers-stripped"></div>` and the click
+falls back to a document request that lands on the correctly filtered page —
+which is the browser check's one expected failure in that scenario ("no document
+request").
 
 ### The one wp_footer callback that must survive
 

@@ -38,18 +38,59 @@ if ( ! defined( constant_name: 'ABSPATH' ) ) {
 /**
  * Marker written immediately before a swappable zone
  *
+ * An empty `<template>` and not an HTML comment, since 1.4.4. Comments are
+ * precisely what an HTML minifier is built to delete: Autoptimize ships with
+ * "Optimize HTML Code" on and "Keep HTML comments" off, and its buffer is the
+ * *inner* one (`template_redirect` priority 2 against this file's 0), so it
+ * minified the page before `jpkcom_postfilter_extract_zones()` ever saw it.
+ * Both markers gone, no zone found, a 0-byte 200 on every filter click.
+ * Measured on the verification install: 18 300 B with Autoptimize off, 0 B with
+ * its stock settings, 18 300 B again with `autoptimize_html` off and 8 976 B
+ * with `autoptimize_html_keepcomments` on — which isolates it to the comment
+ * stripping and nothing else about Autoptimize.
+ *
+ * No minifier removes elements, so a marker that *is* an element survives all
+ * of them; `<template>` because it renders nothing and is valid almost
+ * anywhere, including inside a table. It never reaches a browser either way —
+ * extraction returns what lies *between* the markers.
+ *
  * @since 1.2.0
+ * @since 1.4.4 An element instead of an HTML comment.
  * @var string
  */
-const JPKCOM_POSTFILTER_ZONE_START = '<!--jpkpf:zone:start-->';
+const JPKCOM_POSTFILTER_ZONE_START = '<template data-jpkpf-zone="start"></template>';
 
 /**
  * Marker written immediately after a swappable zone
  *
  * @since 1.2.0
+ * @since 1.4.4 An element instead of an HTML comment.
  * @var string
  */
-const JPKCOM_POSTFILTER_ZONE_END = '<!--jpkpf:zone:end-->';
+const JPKCOM_POSTFILTER_ZONE_END = '<template data-jpkpf-zone="end"></template>';
+
+/**
+ * Answer for a fragment request whose markers were emitted but not found again
+ *
+ * Something between this plugin and the socket removed them. The response says
+ * so instead of being empty, because an empty 200 is indistinguishable from
+ * "no posts matched" and the script used to render it as exactly that.
+ *
+ * @since 1.4.4
+ * @var string
+ */
+const JPKCOM_POSTFILTER_FRAGMENT_ERROR_STRIPPED = '<div data-jpkpf-fragment-error="markers-stripped"></div>';
+
+/**
+ * Answer for a fragment request that never marked a zone in the first place
+ *
+ * A URL that is not a filterable archive, or a page whose list was removed.
+ * Not an error, but equally not something the script can swap in.
+ *
+ * @since 1.4.4
+ * @var string
+ */
+const JPKCOM_POSTFILTER_FRAGMENT_ERROR_NO_ZONE = '<div data-jpkpf-fragment-error="no-zone"></div>';
 
 
 if ( ! function_exists( function: 'jpkcom_postfilter_fragment_segment' ) ) {
@@ -106,6 +147,34 @@ if ( ! function_exists( function: 'jpkcom_postfilter_is_fragment_request' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_zone_count' ) ) {
+    /**
+     * How many zones this request has marked
+     *
+     * The difference between "this page has nothing to swap in" and "the markers
+     * were destroyed on the way out" is not decidable from the buffer — both
+     * look like a page without markers. Counting what was written makes it
+     * decidable, and the two cases get different answers.
+     *
+     * @since 1.4.4
+     *
+     * @param bool $increment Count one more zone.
+     * @return int Zones marked so far.
+     */
+    function jpkcom_postfilter_zone_count( bool $increment = false ): int {
+
+        static $count = 0;
+
+        if ( $increment ) {
+            $count++;
+        }
+
+        return $count;
+
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_zone_open' ) ) {
     /**
      * Emit the opening zone marker, but only on a fragment request
@@ -122,6 +191,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_zone_open' ) ) {
     function jpkcom_postfilter_zone_open(): void {
 
         if ( jpkcom_postfilter_is_fragment_request() ) {
+            jpkcom_postfilter_zone_count( increment: true );
             echo JPKCOM_POSTFILTER_ZONE_START; // phpcs:ignore WordPress.Security.EscapeOutput -- static literal
         }
 
@@ -164,6 +234,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_wrap_zone' ) ) {
         if ( $html === '' || ! jpkcom_postfilter_is_fragment_request() ) {
             return $html;
         }
+
+        jpkcom_postfilter_zone_count( increment: true );
 
         return JPKCOM_POSTFILTER_ZONE_START . $html . JPKCOM_POSTFILTER_ZONE_END;
 
@@ -263,6 +335,117 @@ if ( ! function_exists( function: 'jpkcom_postfilter_fragment_url' ) ) {
 
 
 // ---------------------------------------------------------------------------
+// Standing down HTML optimisers
+// ---------------------------------------------------------------------------
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_request_looks_like_fragment' ) ) {
+    /**
+     * Whether this request is a fragment request, answerable before the query runs
+     *
+     * `jpkcom_postfilter_is_fragment_request()` reads a query var, so it only
+     * answers from `parse_request` onwards — and optimisation plugins decide
+     * whether to touch a page well before that. Autoptimize freezes the decision
+     * in a static the first time anything asks, and two of its own modules ask
+     * on `wp`; with `AUTOPTIMIZE_INIT_EARLIER` defined it asks on `init`. Hence
+     * the path check: it is available from the first line of PHP that runs.
+     *
+     * The query var is still preferred where it exists, because it is the
+     * authority — the path check only has to be right about requests the
+     * rewrite rules will route here anyway.
+     *
+     * @since 1.4.4
+     *
+     * @return bool True when this request is (or will be) answered with a fragment.
+     */
+    function jpkcom_postfilter_request_looks_like_fragment(): bool {
+
+        // $wp_query does not exist yet while plugins are being loaded, and
+        // get_query_var() would call a method on null.
+        if ( isset( $GLOBALS['wp_query'] ) && jpkcom_postfilter_is_fragment_request() ) {
+            return true;
+        }
+
+        $path = (string) parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH );
+
+        if ( $path === '' ) {
+            return false;
+        }
+
+        return str_contains( rtrim( $path, '/' ) . '/', '/' . jpkcom_postfilter_fragment_segment() . '/' );
+
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_fragment_force_noptimize' ) ) {
+    /**
+     * Filter callback: leave this response alone
+     *
+     * Shaped for the boolean "do not optimise this page" filters the
+     * optimisation plugins expose. A `true` that is already there is never
+     * turned back into a `false` — something else asked for the same thing and
+     * this is not the place to overrule it.
+     *
+     * @since 1.4.4
+     *
+     * @param mixed $noptimize Current decision.
+     * @return mixed True on a fragment request, the incoming value otherwise.
+     */
+    function jpkcom_postfilter_fragment_force_noptimize( mixed $noptimize = false ): mixed {
+
+        if ( $noptimize ) {
+            return $noptimize;
+        }
+
+        return jpkcom_postfilter_request_looks_like_fragment() ? true : $noptimize;
+
+    }
+}
+
+
+/**
+ * Ask the known HTML optimisers to skip fragment requests
+ *
+ * Registered while the plugin file is being loaded, and that is not a detail:
+ * Autoptimize decides once per request and caches the answer in a static, and
+ * `autoptimizeExtra::run_on_frontend()` and `autoptimizeImages::run_on_frontend()`
+ * both ask on `wp`. A filter added in `template_redirect` — where the rest of
+ * this file's work happens — arrives after the decision has already been made.
+ *
+ * Belt and braces next to the element markers: a minifier can no longer destroy
+ * a marker, but it can still rewrite the markup inside a zone in ways that only
+ * make sense with the head and footer that a fragment does not carry (an
+ * aggregated inline `<style>` moved into `<head>`, for one). Nothing an
+ * optimiser does to a fragment is wanted, so none of it should run.
+ *
+ * The list is filterable for the vendors this plugin does not know. It runs at
+ * load time, so the only place that can usefully hook it is an mu-plugin —
+ * those are loaded before regular plugins.
+ *
+ * @since 1.4.4
+ *
+ * @param string[] $filters Names of boolean "skip this page" filters.
+ */
+foreach ( (array) apply_filters( 'jpkcom_postfilter_fragment_noptimize_filters', [ 'autoptimize_filter_noptimize' ] ) as $jpkcom_postfilter_noptimize_filter ) {
+
+    if ( is_string( $jpkcom_postfilter_noptimize_filter ) && $jpkcom_postfilter_noptimize_filter !== '' ) {
+        add_filter( $jpkcom_postfilter_noptimize_filter, 'jpkcom_postfilter_fragment_force_noptimize', PHP_INT_MAX );
+    }
+
+}
+
+unset( $jpkcom_postfilter_noptimize_filter );
+
+// The cross-vendor convention for the same request, honoured by Autoptimize
+// among others and cheap enough to set unconditionally. A constant has to be
+// defined before anyone reads it, which is why this is not on a hook either.
+if ( ! defined( 'DONOTMINIFY' ) && jpkcom_postfilter_request_looks_like_fragment() ) {
+    define( 'DONOTMINIFY', true );
+}
+
+
+// ---------------------------------------------------------------------------
 // Response handling
 // ---------------------------------------------------------------------------
 
@@ -344,20 +527,34 @@ if ( ! function_exists( function: 'jpkcom_postfilter_fragment_ob_callback' ) ) {
 
         $zones = jpkcom_postfilter_extract_zones( $buffer );
 
-        if ( $zones === '' ) {
-
-            jpkcom_postfilter_debug_log( 'fragment request produced no marked zone', [
-                'bytes' => strlen( $buffer ),
-            ] );
-
-            // No zone found means 0 results, or a URL that is not a filterable
-            // archive at all. Either way the answer is "nothing to swap in" —
-            // never the page that was just rendered.
-            return '';
-
+        if ( $zones !== '' ) {
+            return $zones;
         }
 
-        return $zones;
+        // Zero results is *not* one of the cases that land here: every list
+        // template renders its `[data-jpkpf-results]` wrapper before it looks at
+        // the query and puts the empty-state message inside it, and in
+        // auto-inject mode `render_zero_results_fallback()` exists to guarantee
+        // the same. So a zone was either never marked — a URL that is not a
+        // filterable archive — or it was marked and something removed the
+        // markers afterwards. The counter is what tells the two apart.
+        $marked = jpkcom_postfilter_zone_count();
+
+        jpkcom_postfilter_debug_log( 'fragment request produced no marked zone', [
+            'bytes'        => strlen( $buffer ),
+            'zones_marked' => $marked,
+        ] );
+
+        // Answering with an empty body was the mistake that let this go
+        // unnoticed on a live site: the script cannot tell an empty 200 from a
+        // filter that matched nothing, so it rendered "no posts found" and the
+        // filter looked like it worked while showing a wrong, empty result set
+        // on every click. A body the script recognises makes it fall back to a
+        // full page load instead — slower, but the answer the server would have
+        // given anyway.
+        return $marked > 0
+            ? JPKCOM_POSTFILTER_FRAGMENT_ERROR_STRIPPED
+            : JPKCOM_POSTFILTER_FRAGMENT_ERROR_NO_ZONE;
 
     }
 }

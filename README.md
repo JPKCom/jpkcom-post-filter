@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.4.3  
+**Version:** 1.4.4  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 7.0  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.4.3  
+**Stable tag:** 1.4.4  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -599,6 +599,12 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.4.4
+
+* **Fixed:** with an HTML-minifying optimisation plugin active, every filter click returned an empty response and the list reported "No posts found." — on a site whose posts all still matched. The AJAX fragment was cut out of the rendered page along HTML comment markers, and minifiers remove HTML comments; Autoptimize does so with its stock settings, and its output buffer runs before this plugin's. Measured on the verification install: 18 300 bytes with Autoptimize inactive, **0 bytes** with it active, 18 300 again with its HTML optimisation switched off. The markers are now empty `<template>` elements. No minifier removes elements, and the markers never reach the browser either way.
+* **Fixed:** a fragment response the script could not use was rendered as "no posts found". That is never what it means — every list template writes its results container before it looks at the query and puts the empty-state message inside it — so a damaged response was shown as a valid, empty result set and the filter looked like it was working. The script now falls back to a full page load, which is slower and always shows what the server would have rendered for the same URL.
+* **Added:** fragment requests ask the HTML optimisers to leave them alone, through Autoptimize's own filter and the shared `DONOTMINIFY` convention. Nothing an optimiser does to a fragment is useful — it has no head, no footer and no asset pipeline to optimise. Other vendors can be added from an mu-plugin through `jpkcom_postfilter_fragment_noptimize_filters`; the registration happens while the plugin is loading, because Autoptimize decides once per request and has usually decided by `wp`.
 
 ### 1.4.3
 
