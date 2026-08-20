@@ -159,6 +159,149 @@ is_same(
 	''
 );
 
+echo "\nZone markers survive an HTML minifier\n";
+
+check(
+	'neither marker is an HTML comment',
+	! str_contains( $S, '<!--' ) && ! str_contains( $E, '<!--' ),
+	'Comments are what a minifier deletes. Autoptimize ships with "Optimize HTML Code" '
+	. 'on and "Keep HTML comments" off, and its output buffer is the inner one '
+	. '(template_redirect priority 2 against fragment-response.php\'s 0), so it minified '
+	. 'the page before extract_zones() saw it: the whole response became 0 bytes on every '
+	. 'filter click. Measured on the verification install — 18 300 B without Autoptimize, '
+	. '0 B with its stock settings, 8 976 B with keepcomments switched back on.'
+);
+
+$page = "<!DOCTYPE html><html><head><title>t</title></head><body>\n<header>chrome</header>\n"
+	. $S . '<div data-jpkpf-results><article>Post</article></div>' . $E
+	. "\n<footer>chrome</footer>\n</body></html>";
+
+is_same(
+	'a comment-stripping minifier leaves the zone findable',
+	jpkcom_postfilter_extract_zones( (string) preg_replace( '/<!--.*?-->/s', '', $page ) ),
+	'<div data-jpkpf-results><article>Post</article></div>',
+	'This is the regression. Every HTML minifier in the WordPress field removes comments; '
+	. 'none of them removes elements.'
+);
+
+is_same(
+	'a whitespace-collapsing minifier leaves the zone findable',
+	jpkcom_postfilter_extract_zones( (string) preg_replace( '/\s+/', ' ', $page ) ),
+	'<div data-jpkpf-results><article>Post</article></div>',
+	'The other half of what minifiers do.'
+);
+
+echo "\nA destroyed fragment is answered as one\n";
+
+is_same(
+	'a page that marked no zone gets the no-zone answer',
+	jpkcom_postfilter_fragment_ob_callback( '<html><body>not a filterable archive</body></html>' ),
+	JPKCOM_POSTFILTER_FRAGMENT_ERROR_NO_ZONE,
+	'An empty body cannot be told apart from "the filter matched nothing", and the script '
+	. 'used to render exactly that — a wrong, empty result set that looked like a working filter.'
+);
+
+// Mark one zone the way filter-injection.php does, so the counter knows a zone
+// was written; then hand the callback a buffer it has been removed from.
+$GLOBALS['_stub_query_vars']['jpkcom_filter_fragment'] = '1';
+ob_start();
+jpkcom_postfilter_zone_open();
+jpkcom_postfilter_zone_close();
+ob_end_clean();
+
+is_same(
+	'markers written but not found again: the stripped answer',
+	jpkcom_postfilter_fragment_ob_callback( (string) preg_replace( '#<template[^>]*></template>#', '', $page ) ),
+	JPKCOM_POSTFILTER_FRAGMENT_ERROR_STRIPPED,
+	'Counting what was written is what tells "nothing to swap in" apart from "something '
+	. 'removed the markers" — the buffer looks the same in both cases.'
+);
+
+is_same(
+	'an intact buffer still answers with the zone alone',
+	jpkcom_postfilter_fragment_ob_callback( $page ),
+	'<div data-jpkpf-results><article>Post</article></div>'
+);
+
+$js_source = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/post-filter.js' );
+
+check(
+	'the script reloads instead of inventing a no-results message',
+	str_contains( $js_source, 'window.location.href = url;' )
+		&& ! str_contains( $js_source, 'jpkpf-no-results' ),
+	'A fragment without [data-jpkpf-results] is never a zero-result answer: every list '
+	. 'template renders the zone before it looks at the query and puts the empty state '
+	. 'inside it, and render_zero_results_fallback() guarantees one in auto-inject mode. '
+	. 'Writing the message in the script turns a broken response into a plausible wrong '
+	. 'one; a full page load is slower and always right.'
+);
+
+echo "\nHTML optimisers are told to skip fragment requests\n";
+
+$uri_before = $_SERVER['REQUEST_URI'] ?? null;
+
+$_SERVER['REQUEST_URI'] = '/blog/filter/web-design/';
+check(
+	'a normal filter URL is not mistaken for a fragment',
+	jpkcom_postfilter_request_looks_like_fragment() === false,
+	'A false positive would switch off the site\'s HTML optimisation on ordinary pages.'
+);
+
+$_SERVER['REQUEST_URI'] = '/blog/filter/web-design/jpkpf-fragment/';
+check(
+	'the fragment path is recognised without the query var',
+	jpkcom_postfilter_request_looks_like_fragment() === true,
+	'Autoptimize decides once per request and caches it in a static; two of its modules '
+	. 'ask on `wp`, and with AUTOPTIMIZE_INIT_EARLIER it asks on `init`. Neither has a '
+	. 'parsed query, so a check that only reads the query var answers "no" and the page '
+	. 'gets minified anyway.'
+);
+
+$_SERVER['REQUEST_URI'] = '/blog/filter/web-design/jpkpf-fragment';
+check( 'trailing slash is optional', jpkcom_postfilter_request_looks_like_fragment() === true );
+
+$_SERVER['REQUEST_URI'] = '/blog/jpkpf-fragment/?utm_source=x';
+check( 'a query string does not hide the segment', jpkcom_postfilter_request_looks_like_fragment() === true );
+
+is_same(
+	'the callback asks for noptimize on a fragment',
+	jpkcom_postfilter_fragment_force_noptimize( false ),
+	true
+);
+
+$_SERVER['REQUEST_URI'] = '/blog/';
+
+is_same(
+	'and leaves an ordinary page alone',
+	jpkcom_postfilter_fragment_force_noptimize( false ),
+	false
+);
+
+is_same(
+	'and never turns somebody else\'s yes into a no',
+	jpkcom_postfilter_fragment_force_noptimize( true ),
+	true,
+	'Something else asked for the same thing; overruling it is not this filter\'s business.'
+);
+
+if ( $uri_before === null ) {
+	unset( $_SERVER['REQUEST_URI'] );
+} else {
+	$_SERVER['REQUEST_URI'] = $uri_before;
+}
+
+$fragment_src = (string) file_get_contents( dirname( __DIR__ ) . '/includes/fragment-response.php' );
+
+check(
+	'the opt-out is registered at load time, not from template_redirect',
+	strpos( $fragment_src, 'jpkcom_postfilter_fragment_noptimize_filters' ) !== false
+		&& strpos( $fragment_src, 'jpkcom_postfilter_fragment_noptimize_filters' )
+			< strpos( $fragment_src, "add_action( 'template_redirect'" ),
+	'Autoptimize freezes its decision the first time anything calls should_buffer(), and '
+	. 'autoptimizeExtra and autoptimizeImages both call it on `wp`. A filter added in '
+	. 'template_redirect arrives after the answer has already been cached.'
+);
+
 echo "\nFragment URL construction (PHP)\n";
 
 is_same( 'bare archive', jpkcom_postfilter_fragment_url( '/blog/' ), '/blog/jpkpf-fragment/' );

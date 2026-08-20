@@ -438,14 +438,41 @@
 				const doc     = parser.parseFromString( html, 'text/html' );
 				const newZone = doc.querySelector( '[data-jpkpf-results]' );
 
-				if ( newZone ) {
-					// Swap content
-					resultZone.innerHTML = newZone.innerHTML;
-				} else {
-					// No results zone in response (0 posts) — show no-results message.
-					// Never dump the full page HTML into the results zone.
-					resultZone.innerHTML = '<p class="jpkpf-no-results">' + ( cfg.i18n.noResults || 'No posts found.' ) + '</p>';
+				if ( ! newZone ) {
+					// A response without a results zone never means "no posts".
+					// Every list template renders the zone first and puts its
+					// empty-state message inside it, and in auto-inject mode
+					// render_zero_results_fallback() guarantees one — so a zero
+					// result arrives here as a zone containing that message.
+					//
+					// This branch means the fragment did not survive the way
+					// out. An HTML minifier that strips comments used to be
+					// enough (Autoptimize, stock settings: 18 300 B became 0 B);
+					// the server names what it found in
+					// [data-jpkpf-fragment-error]. Until 1.4.4 this wrote the
+					// no-results message into the zone, which turned a broken
+					// response into a plausible wrong answer: the filter looked
+					// like it worked and reported no matches on every click.
+					//
+					// Reloading is slower than a swap and always correct — it is
+					// the server-rendered answer for the very same URL.
+					if ( cfg.debug ) {
+						const reason = doc.querySelector( '[data-jpkpf-fragment-error]' );
+						// eslint-disable-next-line no-console
+						console.warn(
+							'[jpkcom-post-filter] No results zone in fragment response' +
+							( reason ? ' (' + reason.getAttribute( 'data-jpkpf-fragment-error' ) + ')' : '' ) +
+							' — falling back to a full page load:',
+							requestUrl
+						);
+					}
+
+					window.location.href = url;
+					return;
 				}
+
+				// Swap content
+				resultZone.innerHTML = newZone.innerHTML;
 
 				// Swap standalone pagination blocks (outside [data-jpkpf-results])
 				swapPagination( doc, resultZone );

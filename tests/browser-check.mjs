@@ -105,7 +105,7 @@ try {
 	const after = await page.evaluate( () => ( {
 		articles:  document.querySelectorAll( '[data-jpkpf-results] article' ).length,
 		url:       location.pathname,
-		hasMarker: document.body.innerHTML.includes( 'jpkpf:zone' ),
+		hasMarker: document.body.innerHTML.includes( 'data-jpkpf-zone' ),
 		barExists: !! document.querySelector( '[data-jpkpf-filter-bar]' ),
 		pressed:   document.querySelectorAll( '.jpkpf-filter-btn[aria-pressed="true"]' ).length,
 	} ) );
