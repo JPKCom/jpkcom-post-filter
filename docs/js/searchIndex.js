@@ -631,6 +631,21 @@ Search.appendIndex(
             "summary": "Marker\u0020written\u0020immediately\u0020after\u0020a\u0020swappable\u0020zone",
             "url": "namespaces/default.html#constant_JPKCOM_POSTFILTER_ZONE_END"
         },                {
+            "fqsen": "\\JPKCOM_POSTFILTER_FRAGMENT_ERROR_STRIPPED",
+            "name": "JPKCOM_POSTFILTER_FRAGMENT_ERROR_STRIPPED",
+            "summary": "Answer\u0020for\u0020a\u0020fragment\u0020request\u0020whose\u0020markers\u0020were\u0020emitted\u0020but\u0020not\u0020found\u0020again",
+            "url": "namespaces/default.html#constant_JPKCOM_POSTFILTER_FRAGMENT_ERROR_STRIPPED"
+        },                {
+            "fqsen": "\\JPKCOM_POSTFILTER_FRAGMENT_ERROR_NO_ZONE",
+            "name": "JPKCOM_POSTFILTER_FRAGMENT_ERROR_NO_ZONE",
+            "summary": "Answer\u0020for\u0020a\u0020fragment\u0020request\u0020that\u0020never\u0020marked\u0020a\u0020zone\u0020in\u0020the\u0020first\u0020place",
+            "url": "namespaces/default.html#constant_JPKCOM_POSTFILTER_FRAGMENT_ERROR_NO_ZONE"
+        },                {
+            "fqsen": "\\DONOTMINIFY",
+            "name": "DONOTMINIFY",
+            "summary": "",
+            "url": "namespaces/default.html#constant_DONOTMINIFY"
+        },                {
             "fqsen": "\\jpkcom_postfilter_fragment_segment\u0028\u0029",
             "name": "jpkcom_postfilter_fragment_segment",
             "summary": "URL\u0020segment\u0020that\u0020marks\u0020a\u0020request\u0020as\u0020a\u0020fragment\u0020request",
@@ -640,6 +655,11 @@ Search.appendIndex(
             "name": "jpkcom_postfilter_is_fragment_request",
             "summary": "Whether\u0020the\u0020current\u0020request\u0020should\u0020be\u0020answered\u0020with\u0020a\u0020fragment",
             "url": "namespaces/default.html#function_jpkcom_postfilter_is_fragment_request"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_zone_count\u0028\u0029",
+            "name": "jpkcom_postfilter_zone_count",
+            "summary": "How\u0020many\u0020zones\u0020this\u0020request\u0020has\u0020marked",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_zone_count"
         },                {
             "fqsen": "\\jpkcom_postfilter_zone_open\u0028\u0029",
             "name": "jpkcom_postfilter_zone_open",
@@ -665,6 +685,16 @@ Search.appendIndex(
             "name": "jpkcom_postfilter_fragment_url",
             "summary": "Append\u0020the\u0020fragment\u0020segment\u0020to\u0020a\u0020filter\u0020URL",
             "url": "namespaces/default.html#function_jpkcom_postfilter_fragment_url"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_request_looks_like_fragment\u0028\u0029",
+            "name": "jpkcom_postfilter_request_looks_like_fragment",
+            "summary": "Whether\u0020this\u0020request\u0020is\u0020a\u0020fragment\u0020request,\u0020answerable\u0020before\u0020the\u0020query\u0020runs",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_request_looks_like_fragment"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_fragment_force_noptimize\u0028\u0029",
+            "name": "jpkcom_postfilter_fragment_force_noptimize",
+            "summary": "Filter\u0020callback\u003A\u0020leave\u0020this\u0020response\u0020alone",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_fragment_force_noptimize"
         },                {
             "fqsen": "\\jpkcom_postfilter_fragment_ob_callback\u0028\u0029",
             "name": "jpkcom_postfilter_fragment_ob_callback",
