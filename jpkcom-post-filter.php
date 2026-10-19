@@ -3,7 +3,7 @@
 Plugin Name: JPKCom Post Filter
 Plugin URI: https://github.com/JPKCom/jpkcom-post-filter
 Description: Faceted navigation and filtering for Posts, Pages and Custom Post Types via WordPress taxonomies. Supports SEO-friendly URLs, AJAX filtering with history.pushState, and No-JS fallback.
-Version: 1.4.4
+Version: 1.4.5
 Author: Jean Pierre Kolb <jpk@jpkc.com>
 Author URI: https://www.jpkc.com/
 Contributors: JPKCom
@@ -11,11 +11,12 @@ Tags: Taxonomy, Tags, Filters, Facets, Navigation
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.3
-Stable tag: 1.4.4
+Stable tag: 1.4.5
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: jpkcom-post-filter
 Domain Path: /languages
+Update URI: https://github.com/JPKCom/jpkcom-post-filter
 */
 
 declare(strict_types=1);
@@ -32,7 +33,7 @@ if ( ! defined( constant_name: 'WPINC' ) ) {
  * @since 1.0.0
  */
 if ( ! defined( 'JPKCOM_POSTFILTER_VERSION' ) ) {
-    define( 'JPKCOM_POSTFILTER_VERSION', '1.4.4' );
+    define( 'JPKCOM_POSTFILTER_VERSION', '1.4.5' );
 }
 
 if ( ! defined( 'JPKCOM_POSTFILTER_BASENAME' ) ) {

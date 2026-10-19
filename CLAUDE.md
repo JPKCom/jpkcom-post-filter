@@ -861,7 +861,7 @@ Without that, every made-up slug was an indexable, self-canonicalising thin-cont
 Validation reuses the transient-cached per-taxonomy term list, keyed by **taxonomy — never by the requested slugs** — so it costs no extra query on a warm cache and cannot itself be used to flood the cache. `hide_empty = false`: a term with no posts is still a real term and a legitimate URL.
 - Updater: SHA256 checksum verification is **mandatory** (fail closed) and the verified temp file is returned from `upgrader_pre_download`, so WordPress installs exactly the bytes that were hashed
 
-**This plugin holds the upstream copy of `includes/class-plugin-updater.php`.** The other 17 JPKCom plugins carry byte-identical downstream copies that differ only in namespace and text domain. Fix bugs here, then re-generate the copies — never patch a downstream copy in isolation.
+**This plugin holds the upstream copy of `includes/class-plugin-updater.php`.** The other JPKCom plugins carry downstream copies that differ only in namespace and text domain; `jpkcom-hide-login`'s copy additionally routes its log lines through `jpkcom_hide_login_log()`. Fix bugs here, then re-generate the copies — never patch a downstream copy in isolation. Since updater 1.4.0 the manifest cache, the failure marker and the fetch lock are **site** transients, so a multisite network fetches the manifest once rather than once per site.
 
 ---
 
