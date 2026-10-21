@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.4.5  
+**Version:** 1.4.6  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 7.0  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.4.5  
+**Stable tag:** 1.4.6  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -600,6 +600,9 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.4.6
+* Added: a plugin icon. The update manifest now points WordPress to the JPKCom logo, so the Updates screen (Dashboard → Updates) shows it next to this plugin instead of the generic pattern wordpress.org generates from the slug
 
 ### 1.4.5
 * Security: the plugin header now carries `Update URI: https://github.com/JPKCom/jpkcom-post-filter`. Without it, WordPress also asks wordpress.org for updates under this plugin's slug, so a same-named plugin published there with a higher version would be offered as an update of this one. With the header, wordpress.org answers nothing for this plugin and updates come only from this repository
