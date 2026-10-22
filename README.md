@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.4.7  
+**Version:** 1.5.0  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 7.0  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.4.7  
+**Stable tag:** 1.5.0  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -72,6 +72,21 @@ Filter any post type by taxonomy terms — SEO-friendly URLs, AJAX, and shortcod
 | Max Filter Combinations | Maximum simultaneous active filter groups (affects URL and JS) |
 | Max. Filters per Group | Maximum terms selectable within one filter group (0 = unlimited) |
 | Debug Mode | Use `debug-templates/` and write detailed logs to PHP error log |
+
+**Crawlers & SEO** (since 1.5.0). Every combination of filter terms is its own URL; these settings keep that space small without locking any crawler out of content. Each can also be pinned in `wp-config.php` (the field is then shown locked).
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| Filter Links for Crawlers | Single terms only | What a term button links to for clients without JavaScript: its own single-term page (`single`), the combination within the limits (`combo`), or nothing (`none`). Visitors with JavaScript can always combine terms. Constant `JPKCOM_POSTFILTER_LINK_MODE` |
+| Indexable Filter Pages | 1 | Filter pages with up to this many terms are `index, follow`; more terms, unknown terms or no results → `noindex, nofollow`, no canonical. Constant `JPKCOM_POSTFILTER_INDEX_MAX_TERMS` |
+| Max. Terms in Total | 0 (off) | Cap across all groups, enforced by the filter bar and the server. Constant `JPKCOM_POSTFILTER_MAX_TERMS_TOTAL` |
+| Strict Filter URLs | on | 301 every other spelling of a selection to its canonical URL; reject impossible paths before the database is queried. Constant `JPKCOM_POSTFILTER_STRICT_URLS` |
+| Invalid Combinations | 410 | Status for paths beyond the limits (410 or 404). Constant `JPKCOM_POSTFILTER_REJECT_STATUS` |
+| Unknown Terms in URLs | Redirect | `redirect` to the selection without them, `noindex`, or `reject`. Constant `JPKCOM_POSTFILTER_UNKNOWN_TERMS_ACTION` |
+| Query Strings on Filter URLs | off | 301 `/filter/x/?a=b` to `/filter/x/`; keep parameters via the `jpkcom_postfilter_strip_query_allowlist` filter. Constant `JPKCOM_POSTFILTER_STRIP_QUERY` |
+| robots.txt Rules | Disallow combinations | Rules appended to WordPress's virtual robots.txt (shown on the settings page for copying into a physical file). Constant `JPKCOM_POSTFILTER_ROBOTS_TXT` |
+
+The existing caps can be pinned too: `JPKCOM_POSTFILTER_MAX_FILTERS_PER_GROUP`, `JPKCOM_POSTFILTER_MAX_FILTER_COMBOS`.
 
 After changing the URL endpoint go to **Settings → Permalinks** and click Save, or use the **Flush Rewrite Rules** button on the General page.
 
@@ -600,6 +615,33 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.5.0
+
+What changes on a running site after the update - read this first:
+
+* **Changed (behaviour, all sites):** filter URLs have exactly one spelling. The terms of a group are sorted and de-duplicated; any other spelling (`b+a`, `a+a`, upper case, a trailing `_`, `…/page/1/`) is answered with a **301** to the canonical URL. Existing links and indexed URLs keep working through that redirect.
+* **Note (WPML):** whether a term exists is now checked against all languages, so a term of a second language is never redirected away. The robots.txt rules are written for every language prefix (`/filter/*+`, `/en/filter/*+`).
+* **Fixed (multisite):** all sites of a network shared one settings cache directory, so the site that saved last decided the URL endpoint, filter groups and limits of every other site. Each site now has its own subdirectory (`site-{id}`); the old shared files are removed on the update. Single sites are unaffected.
+* **Fixed (WPML/Polylang):** the filter bar's term list was cached once per taxonomy, so the language that loaded it first decided which terms the bar showed in every language for up to an hour. It is now cached per language.
+* **Fixed (APCu):** the query cache in APCu used the same keys on every site of a network and every WordPress installation served by the same PHP-FPM pool, so one site could be shown another site's cached posts. Keys are now scoped to the site.
+* **Fixed:** going back or forward between `#anchor` entries of a filter page could, if the background request failed, reload the page in an endless loop.
+* **Fixed (accessibility):** with auto-inject and the theme's own post loop, screen readers announced "No posts found" after every successful filter click, because the theme's posts carry none of the plugin's markers. The result count is announced now, and "No posts found" only when there really are none.
+* **Changed (behaviour, all sites):** filter URLs beyond the configured limits - more terms per group than *Max. Filters per Group*, more groups than *Max Filter Combinations*, more segments than filter groups - are answered with **410** and a short page instead of being truncated and rendered. Terms that do not exist are redirected away (to the remaining selection or the archive) instead of rendering an empty page. Both happen before the database is queried. Switch off with *Strict Filter URLs* or `JPKCOM_POSTFILTER_STRICT_URLS = false`.
+* **Changed (behaviour, all sites):** filter pages with more than one term, with unknown terms or with no results are now `noindex, nofollow` and carry no canonical (header `X-Robots-Tag` as well). Single-term filter pages stay `index, follow`. Sites whose multi-term filter pages rank today will see them leave the index over the following weeks - set *Indexable Filter Pages* higher to keep them.
+* **Changed (markup):** term buttons for clients without JavaScript link to the term's own single-term page (*Filter Links for Crawlers* = single terms). Terms that would lead nowhere useful are rendered as `<button type="button">` instead of `<a>`, styled identically. Visitors with JavaScript notice nothing: the script still combines terms freely. Without JavaScript, clicking a term now switches to that term instead of adding it; choose *Combinations within the limits* to keep the old behaviour (now capped and sorted).
+* **Changed (interface):** theme overrides of `partials/filter/*.php` keep working but also keep the old unbounded links until they call `jpkcom_postfilter_term_link_attributes()` like the shipped templates. The reset link no longer carries `rel="nofollow"`.
+* **Fixed:** two canonical tags on every filter page with Rank Math or Yoast - the SEO plugin's (pointing at the blog page) and the plugin's own. The plugin's canonical now goes through the SEO plugin, so there is exactly one. Rank Math's noindex now uses its native keys, so Rank Math also drops its canonical and prev/next links on noindex pages.
+* **Fixed:** pagination linked page 1 as `…/page/1/`, a duplicate of the page, from every paginated list.
+* **Fixed:** `?jpkcom_filter_path=…` (and the fragment and post-type variables) in a query string turned any URL into a filter or fragment response, bypassing every path-based rule. They are now taken only from the matched URL.
+* **Fixed:** with the settings cache switched off, every settings read rewrote the cache file - dozens of writes per page. Settings are now read once per request.
+* **Fixed:** a filter click the server answers with an error no longer reloads the whole page onto that error. For a rejected combination and for a 429/5xx the current results, the filter buttons and the address bar stay on the last state that worked, and a message says why (after back/forward the page loads the URL the browser moved to, as before); a quick second click cancels the first request instead of racing it.
+* **Added:** robots.txt rules for the filter combinations (*robots.txt Rules*: `Disallow: …/filter/*+`), applied to every crawler alike - no bot is locked out of content or single-term pages. Only effective when the web server passes `/robots.txt` to WordPress; the settings page shows the lines for a physical file.
+* **Fixed:** custom post type archives under a permalink front (`/blog/%postname%/` with `with_front`): the filter rewrite rule left the front out, so the filter links the plugin built for them returned 404. Takes effect with the automatic rewrite flush after the update.
+* **Changed (Abilities API):** `query-posts` no longer returns a `filter_url` when a requested term does not exist, because the website now redirects that URL to a different selection. The unknown terms are still reported.
+* **Added:** *Max. Terms in Total*, a cap across all filter groups; optional query-string stripping on filter URLs; all caps and policies as `wp-config.php` constants and filters (`jpkcom_postfilter_{setting}`, `jpkcom_postfilter_request_verdict`, `jpkcom_postfilter_robots_directives`, `jpkcom_postfilter_canonical`, `jpkcom_postfilter_term_href`, `jpkcom_postfilter_term_link_rel`, `jpkcom_postfilter_robots_txt_rules`, `jpkcom_postfilter_cache_query`, `jpkcom_postfilter_donotcache`).
+* **Performance:** the query cache only stores selections of one term (keyed on the sorted selection), the plugin's options are autoloaded, and the rewrite-flush flag no longer costs a query per request.
+* **Background:** on a production site ~840 000 filter requests a day reached WordPress, every URL unique, every one a full render. The crawlers found them by following the filter bar's own links, which pointed every term at "current selection + this term" in click order without limit. The URL space is now finite: at 10 terms in each of two groups, 20 single-term pages are crawlable instead of tens of millions of combinations.
 
 ### 1.4.7
 * Added: updates for inactive JPKCom plugins. WordPress never runs the code of a deactivated plugin, so its own updater never ran and it was never offered an update. Every JPKCom plugin now ships updater 1.5.0; one copy answers for all installed JPKCom plugins, active or not, with the update row, the icon and "View details". The SHA-256 check applies to an inactive plugin exactly as to an active one. On multisite, at least one JPKCom plugin must be network-active or active on the main site

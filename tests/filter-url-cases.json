@@ -1,0 +1,12 @@
+[
+  { "note": "nothing selected", "active": {} },
+  { "note": "one term", "active": { "category": [ "zaeune" ] } },
+  { "note": "the bot URL from the production logs, in click order", "active": { "category": [ "zaeune", "sichtschutz", "tueren-tore" ], "post_tag": [ "gewerbe-industrie", "metallcarport", "einbruchschutz" ] } },
+  { "note": "another permutation of the same selection", "active": { "category": [ "tueren-tore", "zaeune", "sichtschutz" ], "post_tag": [ "einbruchschutz", "metallcarport", "gewerbe-industrie" ] } },
+  { "note": "only the second group: leading placeholder", "active": { "post_tag": [ "privat" ] } },
+  { "note": "duplicate", "active": { "category": [ "b", "a", "b" ] } },
+  { "note": "hyphen sorts after the shorter prefix", "active": { "category": [ "a-b", "a" ] } },
+  { "note": "numeric slugs sort as strings", "active": { "category": [ "2024", "10", "9" ] } },
+  { "note": "percent-encoded slug", "active": { "category": [ "%c3%bcber", "zaun" ] } },
+  { "note": "map order differs from group order", "active": { "post_tag": [ "x" ], "category": [ "y" ] } }
+]

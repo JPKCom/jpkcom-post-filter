@@ -37,7 +37,9 @@ function jpkcom_postfilter_is_filter_request(): bool {
 	return ! empty( $GLOBALS['__active_filters'] );
 }
 
+require_once __DIR__ . '/../includes/url-policy.php';
 require_once __DIR__ . '/../includes/url-routing.php';
+require_once __DIR__ . '/../includes/crawl-guard.php';
 
 // ---------------------------------------------------------------------------
 section( 'Settings directory containment (the check used to be a tautology)' );
@@ -77,7 +79,7 @@ $args = jpkcom_postfilter_build_query_args( [ 'post_type' => 'post', 'meta_key' 
 chk( 'meta_key + meta_value survive together', 'colour' === ( $args['meta_key'] ?? '' ) && 'blue' === ( $args['meta_value'] ?? '' ) );
 
 // ---------------------------------------------------------------------------
-section( 'Filter URLs with unknown term slugs are noindex' );
+section( 'Filter URLs with unknown term slugs are noindex (1.5.0: and nofollow)' );
 
 $GLOBALS['__taxonomies'] = [ 'category', 'post_tag' ];
 $GLOBALS['__terms']      = [
@@ -102,8 +104,10 @@ function robots_for( array $filters ): array {
 $r = robots_for( [ 'category' => [ 'web-design' ] ] );
 chk( 'known slug stays indexable', empty( $r['noindex'] ) && ! empty( $r['index'] ) );
 
+// 1.5.0: a page combining more terms than seo_index_max_terms (default 1)
+// is a combination, not content - noindex. Before, it was indexable.
 $r = robots_for( [ 'category' => [ 'web-design', 'marketing' ] ] );
-chk( 'several known slugs stay indexable', empty( $r['noindex'] ) );
+chk( 'two known slugs are a combination and not indexable', ! empty( $r['noindex'] ) && ! empty( $r['nofollow'] ) );
 
 $r = robots_for( [ 'category' => [ 'does-not-exist' ] ] );
 chk( 'unknown slug becomes noindex', ! empty( $r['noindex'] ) && empty( $r['index'] ) );
@@ -111,8 +115,10 @@ chk( 'unknown slug becomes noindex', ! empty( $r['noindex'] ) && empty( $r['inde
 $r = robots_for( [ 'category' => [ 'web-design', 'does-not-exist' ] ] );
 chk( 'one unknown slug among known ones is enough', ! empty( $r['noindex'] ) );
 
+// 1.5.0: until then this asserted `follow` - every link on such a page led
+// one level deeper into the combinations.
 $r = robots_for( [ 'category' => [ 'does-not-exist' ] ] );
-chk( 'noindex still allows following links', ! empty( $r['follow'] ) );
+chk( 'a noindex filter page is nofollow as well', ! empty( $r['nofollow'] ) && empty( $r['follow'] ) );
 
 $r = robots_for( [ 'nonexistent_tax' => [ 'whatever' ] ] );
 chk( 'unknown taxonomy becomes noindex', ! empty( $r['noindex'] ) );

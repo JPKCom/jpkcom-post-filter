@@ -208,6 +208,15 @@
     line-height: 1.4;
 }
 
+/* Terms without a crawlable link render as <button> (1.5.0) and must look
+   exactly like the <a> variant. */
+button.jpkpf-filter-btn {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+    text-align: inherit;
+}
+
 .jpkpf-filter-btn:hover,
 .jpkpf-filter-btn:focus-visible {
     background-color: var(--jpkpf-filter-hover-bg);
@@ -233,6 +242,14 @@
     opacity: 0.35;
     pointer-events: none;
     cursor: not-allowed;
+}
+
+/* Shown above unchanged results when a filter request fails (429/5xx) */
+.jpkpf-fetch-error {
+    margin-block-end: var(--jpkpf-gap);
+    padding: var(--jpkpf-padding);
+    border: 1px solid currentColor;
+    border-radius: var(--jpkpf-filter-radius);
 }
 
 /* Reset Button */

@@ -39,8 +39,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_parse_filter_path' ) ) {
      * @return array<string, string[]> Taxonomy slug => list of term slugs.
      */
     function jpkcom_postfilter_parse_filter_path( string $filter_path ): array {
-        $groups = jpkcom_postfilter_get_filter_groups_enabled();
-        if ( empty( $groups ) ) {
+        $taxonomies = jpkcom_postfilter_filter_taxonomies();
+        if ( empty( $taxonomies ) ) {
             return [];
         }
 
@@ -49,39 +49,38 @@ if ( ! function_exists( function: 'jpkcom_postfilter_parse_filter_path' ) ) {
             static fn( string $s ): bool => $s !== ''
         ) );
 
-        $result = [];
+        $raw = [];
 
         foreach ( $segments as $index => $segment ) {
-            if ( ! isset( $groups[ $index ] ) ) {
+            if ( ! isset( $taxonomies[ $index ] ) ) {
                 break;
             }
 
-            if ( $segment === '_' ) {
+            if ( $segment === '_' || $taxonomies[ $index ] === '' ) {
                 continue; // Empty-position placeholder — skip
             }
 
-            $taxonomy = (string) ( $groups[ $index ]['taxonomy'] ?? '' );
-            if ( $taxonomy === '' ) {
-                continue;
-            }
+            $raw[ $taxonomies[ $index ] ] = jpkcom_postfilter_split_segment( $segment, 'jpkcom_postfilter_known_term_slugs', $taxonomies[ $index ] );
+        }
 
-            $term_slugs = array_values( array_filter(
-                array_map( 'sanitize_title', explode( '+', $segment ) ),
-                static fn( string $s ): bool => $s !== ''
-            ) );
+        // Sorted and de-duplicated, so every spelling of a selection resolves
+        // to the same filters - and the canonical URL built from them is the
+        // same for all of them (see includes/url-policy.php).
+        $result = jpkcom_postfilter_normalize_filters( $raw );
 
-            if ( ! empty( $term_slugs ) ) {
-                // Enforce max_filters_per_group
-                $max_per_group = (int) jpkcom_postfilter_settings_get( 'general', 'max_filters_per_group', 3 );
-                if ( $max_per_group > 0 && count( $term_slugs ) > $max_per_group ) {
-                    $term_slugs = array_slice( $term_slugs, 0, $max_per_group );
+        // Truncation only matters when strict URLs are off: with them on, the
+        // request guard has already rejected an over-cap path before the main
+        // query parses it (includes/crawl-guard.php).
+        $max_per_group = (int) jpkcom_postfilter_policy( 'max_filters_per_group' );
+        if ( $max_per_group > 0 ) {
+            foreach ( $result as $taxonomy => $slugs ) {
+                if ( count( $slugs ) > $max_per_group ) {
+                    $result[ $taxonomy ] = array_slice( $slugs, 0, $max_per_group );
                 }
-                $result[ $taxonomy ] = $term_slugs;
             }
         }
 
-        // Enforce max_filter_combos (max number of active taxonomy groups)
-        $max_combos = (int) jpkcom_postfilter_settings_get( 'general', 'max_filter_combos', 3 );
+        $max_combos = (int) jpkcom_postfilter_policy( 'max_filter_combos' );
         if ( $max_combos > 0 && count( $result ) > $max_combos ) {
             $result = array_slice( $result, 0, $max_combos, true );
         }
@@ -101,6 +100,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_filter_url' ) ) {
      *
      * Constructs filter URL segments respecting filter group order. Empty
      * intermediate groups use `_` placeholders; trailing empty groups are dropped.
+     * Since 1.5.0 the slugs of each group are sorted and de-duplicated, so one
+     * selection has exactly one URL whatever order it was clicked in.
      *
      * @since 1.0.0
      *
@@ -110,40 +111,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_filter_url' ) ) {
      * @return string Constructed filter URL.
      */
     function jpkcom_postfilter_get_filter_url( string $base_url, array $filters, int $page = 0 ): string {
-        $groups  = jpkcom_postfilter_get_filter_groups_enabled();
-        $filters = array_filter( $filters, static fn( array $slugs ): bool => ! empty( $slugs ) );
+        $path = jpkcom_postfilter_filter_path_from_filters( $filters, jpkcom_postfilter_filter_taxonomies() );
+        $url  = trailingslashit( $base_url );
 
-        if ( empty( $filters ) ) {
-            if ( $page > 1 ) {
-                return trailingslashit( $base_url ) . 'page/' . $page . '/';
-            }
-            return trailingslashit( $base_url );
+        if ( $path !== '' ) {
+            $endpoint = sanitize_key( jpkcom_postfilter_settings_get( 'general', 'url_endpoint', JPKCOM_POSTFILTER_URL_ENDPOINT ) );
+            $url     .= $endpoint . '/' . $path . '/';
         }
-
-        $segments = [];
-        foreach ( $groups as $group ) {
-            $taxonomy = (string) ( $group['taxonomy'] ?? '' );
-            if ( $taxonomy !== '' && ! empty( $filters[ $taxonomy ] ) ) {
-                $segments[] = implode( '+', array_map( 'sanitize_title', (array) $filters[ $taxonomy ] ) );
-            } else {
-                $segments[] = '_';
-            }
-        }
-
-        // Remove trailing placeholder segments
-        while ( ! empty( $segments ) && end( $segments ) === '_' ) {
-            array_pop( $segments );
-        }
-
-        if ( empty( $segments ) ) {
-            if ( $page > 1 ) {
-                return trailingslashit( $base_url ) . 'page/' . $page . '/';
-            }
-            return trailingslashit( $base_url );
-        }
-
-        $endpoint = sanitize_key( jpkcom_postfilter_settings_get( 'general', 'url_endpoint', JPKCOM_POSTFILTER_URL_ENDPOINT ) );
-        $url      = trailingslashit( $base_url ) . $endpoint . '/' . implode( '/', $segments ) . '/';
 
         if ( $page > 1 ) {
             $url .= 'page/' . $page . '/';
@@ -219,7 +193,21 @@ if ( ! function_exists( function: 'jpkcom_postfilter_archive_base_regex' ) ) {
             $slug = $post_type;
         }
 
-        return preg_quote( trim( $slug, '/' ), '#' );
+        // The permalink front (`/blog/` in `/blog/%postname%/`) is part of the
+        // archive URL whenever the post type keeps `with_front` - core's own
+        // archive rule and get_post_type_archive_link() both add it. Without
+        // it here the rule matched a path the plugin never links to, and the
+        // links it did build had no rule (404). Since 1.5.0 the request guard
+        // would also redirect from the working path to the broken one.
+        global $wp_rewrite;
+
+        $front = '';
+        if ( isset( $wp_rewrite ) && $wp_rewrite instanceof \WP_Rewrite && is_array( $obj->rewrite ) ) {
+            $prefix = ! empty( $obj->rewrite['with_front'] ) ? $wp_rewrite->front : $wp_rewrite->root;
+            $front  = trim( (string) $prefix, '/' );
+        }
+
+        return preg_quote( ltrim( ( $front !== '' ? $front . '/' : '' ) . trim( $slug, '/' ), '/' ), '#' );
     }
 }
 
@@ -256,25 +244,43 @@ if ( ! function_exists( function: 'jpkcom_postfilter_archive_query_string' ) ) {
  *
  * @since 1.0.0
  */
-add_action( 'init', static function (): void {
+if ( ! function_exists( function: 'jpkcom_postfilter_routable_post_types' ) ) {
+    /**
+     * Post types that get filter URL routes
+     *
+     * The globally enabled post types plus every post type a filter group
+     * names, so filter URLs work even if the post type is not in the global
+     * enabled list. Shared by the rewrite rules and the robots.txt rules.
+     *
+     * @since 1.5.0
+     *
+     * @return string[]
+     */
+    function jpkcom_postfilter_routable_post_types(): array {
+        $post_types = array_map(
+            'sanitize_key',
+            (array) jpkcom_postfilter_settings_get( 'general', 'enabled_post_types', [ 'post' ] )
+        );
 
-    $general        = jpkcom_postfilter_settings_get_group( 'general' );
-    $endpoint       = sanitize_key( $general['url_endpoint'] ?? JPKCOM_POSTFILTER_URL_ENDPOINT );
-    $post_types     = array_map( 'sanitize_key', (array) ( $general['enabled_post_types'] ?? [ 'post' ] ) );
-    $page_for_posts = (int) get_option( 'page_for_posts' );
-
-    // Also register rewrite rules for post types referenced by filter groups
-    // (so filter URLs work even if the post type is not in the global enabled list).
-    foreach ( jpkcom_postfilter_get_filter_groups_enabled() as $group ) {
-        if ( ! empty( $group['post_types'] ) && is_array( $group['post_types'] ) ) {
-            foreach ( $group['post_types'] as $pt ) {
-                $post_types[] = sanitize_key( $pt );
+        foreach ( jpkcom_postfilter_get_filter_groups_enabled() as $group ) {
+            if ( ! empty( $group['post_types'] ) && is_array( $group['post_types'] ) ) {
+                foreach ( $group['post_types'] as $pt ) {
+                    $post_types[] = sanitize_key( (string) $pt );
+                }
             }
         }
-    }
-    $post_types = array_unique( array_filter( $post_types ) );
 
-    foreach ( $post_types as $post_type ) {
+        return array_values( array_unique( array_filter( $post_types ) ) );
+    }
+}
+
+
+add_action( 'init', static function (): void {
+
+    $endpoint       = sanitize_key( jpkcom_postfilter_settings_get( 'general', 'url_endpoint', JPKCOM_POSTFILTER_URL_ENDPOINT ) );
+    $page_for_posts = (int) get_option( 'page_for_posts' );
+
+    foreach ( jpkcom_postfilter_routable_post_types() as $post_type ) {
         $base_regex = jpkcom_postfilter_archive_base_regex( $post_type, $page_for_posts );
         if ( $base_regex === null ) {
             continue; // Post type has no archive
@@ -398,7 +404,13 @@ add_action( 'parse_query', static function ( \WP_Query $query ): void {
     }
 
     $query->set( 'jpkcom_filter_segments', $segments );
-    $query->set( 'jpkcom_filter_active', '1' );
+
+    // A path that parses to nothing (`/_/`, `/+/`) is the unfiltered archive,
+    // not a filter page: marking it active gave it a self-canonical and the
+    // filter page robots policy, for a page identical to the archive.
+    if ( ! empty( $segments ) ) {
+        $query->set( 'jpkcom_filter_active', '1' );
+    }
 
     // For the front-page blog the rewrite rule sets no WP archive query vars,
     // so WP's parse_query logic would leave is_home=false. Fix that here.
@@ -419,13 +431,12 @@ add_action( 'parse_query', static function ( \WP_Query $query ): void {
 
 
 // ---------------------------------------------------------------------------
-// Canonical URL
+// Unknown term slugs
 // ---------------------------------------------------------------------------
 
-/**
- * Replace WordPress's default canonical tag with the plugin's canonical filter URL
- *
- * @since 1.0.0
+/*
+ * Robots, canonical and the request guard live in includes/crawl-guard.php
+ * since 1.5.0.
  */
 if ( ! function_exists( function: 'jpkcom_postfilter_has_unknown_terms' ) ) {
     /**
@@ -436,9 +447,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_has_unknown_terms' ) ) {
      * results. Left alone, every made-up slug is therefore an indexable,
      * self-canonicalising thin-content URL that anyone can generate and link.
      *
-     * Such requests keep returning 200 — turning them into 404s would break
-     * legitimate old links whose terms were later renamed — but they are marked
-     * `noindex` so they stay out of the index.
+     * Since 1.5.0 the request guard handles them before the main query
+     * (`unknown_terms_action`, default: redirect to the selection without the
+     * unknown slugs). This check remains for the `noindex` action, for strict
+     * URLs switched off, and for the robots/canonical decision.
      *
      * Validation reuses the transient-cached per-taxonomy term list, so this
      * costs no extra query on a warm cache and cannot itself be used to flood
@@ -449,23 +461,44 @@ if ( ! function_exists( function: 'jpkcom_postfilter_has_unknown_terms' ) ) {
      * @return bool True if at least one requested slug is unknown.
      */
     function jpkcom_postfilter_has_unknown_terms(): bool {
+        static $memo = [];
+
         $filters = jpkcom_postfilter_get_active_filters();
 
         if ( empty( $filters ) ) {
             return false;
         }
 
+        // Asked by robots, canonical, the X-Robots-Tag header and the term
+        // links on every filter page - once is enough.
+        $key = serialize( $filters );
+        if ( isset( $memo[ $key ] ) ) {
+            return $memo[ $key ];
+        }
+
+        return $memo[ $key ] = jpkcom_postfilter_filters_have_unknown_terms( $filters );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_filters_have_unknown_terms' ) ) {
+    /**
+     * Whether a filter map references term slugs that do not exist
+     *
+     * @since 1.5.0
+     *
+     * @param array<string, string[]> $filters Taxonomy => term slugs.
+     * @return bool
+     */
+    function jpkcom_postfilter_filters_have_unknown_terms( array $filters ): bool {
         foreach ( $filters as $taxonomy => $slugs ) {
             if ( ! taxonomy_exists( $taxonomy ) ) {
                 return true;
             }
 
-            // hide_empty = false: a term with no posts is still a real term and
-            // a legitimate URL, it just happens to have nothing to show.
-            $known = array_map(
-                static fn( \WP_Term $t ): string => $t->slug,
-                jpkcom_postfilter_get_terms_for_taxonomy( $taxonomy, false )
-            );
+            // Every language's slugs, terms without posts included - see
+            // jpkcom_postfilter_known_term_slugs().
+            $known = jpkcom_postfilter_known_term_slugs( $taxonomy ) ?? [];
 
             if ( ! empty( array_diff( $slugs, $known ) ) ) {
                 return true;
@@ -475,131 +508,6 @@ if ( ! function_exists( function: 'jpkcom_postfilter_has_unknown_terms' ) ) {
         return false;
     }
 }
-
-
-/**
- * Whether the current request is a filter URL referencing unknown term slugs
- *
- * @since 1.2.0
- *
- * @return bool
- */
-if ( ! function_exists( function: 'jpkcom_postfilter_should_noindex' ) ) {
-
-    function jpkcom_postfilter_should_noindex(): bool {
-
-        return jpkcom_postfilter_is_filter_request() && jpkcom_postfilter_has_unknown_terms();
-
-    }
-
-}
-
-/**
- * Mark filter URLs with unknown term slugs as noindex
- *
- * WordPress's own robots output. Present for completeness, but on most of the
- * sites this plugin runs on it never fires — see below.
- *
- * @since 1.1.7
- */
-add_filter( 'wp_robots', static function ( array $robots ): array {
-
-    if ( ! jpkcom_postfilter_should_noindex() ) {
-        return $robots;
-    }
-
-    unset( $robots['index'] );
-
-    $robots['noindex'] = true;
-    $robots['follow']  = true; // Still crawl onward links; only this URL is worthless.
-
-    jpkcom_postfilter_debug_log( 'noindex applied via wp_robots' );
-
-    return $robots;
-} );
-
-/**
- * Same rule, for SEO plugins that take the robots output away from WordPress
- *
- * WHY THIS EXISTS
- * ---------------
- * Rank Math calls `remove_all_filters( 'wp_robots' )` before emitting its own
- * tag (`includes/frontend/class-head.php`). Every callback on that hook — this
- * plugin's included — is discarded, so from 1.1.7 until now the noindex simply
- * never happened on a Rank Math site. Measured: a filter URL with a made-up
- * slug rendered `<meta name="robots" content="follow, index">`, and inspecting
- * the hook registry mid-request showed `wp_robots` with **zero** callbacks
- * while the filter itself had already run.
- *
- * That is not an edge case here: the JPKCom stack ships `jpkcom-rank-math-options`,
- * so Rank Math is the normal configuration. Yoast is handled too, on the same
- * reasoning — it also emits its own tag rather than going through `wp_robots`.
- *
- * @since 1.2.0
- */
-add_filter( 'rank_math/frontend/robots', static function ( $robots ) {
-
-    if ( ! jpkcom_postfilter_should_noindex() ) {
-        return $robots;
-    }
-
-    $robots = is_array( $robots ) ? $robots : [];
-
-    unset( $robots['index'] );
-
-    $robots['noindex'] = 'noindex';
-    $robots['follow']  = 'follow';
-
-    jpkcom_postfilter_debug_log( 'noindex applied via rank_math/frontend/robots' );
-
-    return $robots;
-} );
-
-/**
- * Same rule for Yoast SEO
- *
- * @since 1.2.0
- */
-add_filter( 'wpseo_robots_array', static function ( $robots ) {
-
-    if ( ! jpkcom_postfilter_should_noindex() ) {
-        return $robots;
-    }
-
-    $robots = is_array( $robots ) ? $robots : [];
-
-    $robots['index']  = 'noindex';
-    $robots['follow'] = 'follow';
-
-    jpkcom_postfilter_debug_log( 'noindex applied via wpseo_robots_array' );
-
-    return $robots;
-} );
-
-
-add_action( 'wp', static function (): void {
-
-    if ( ! jpkcom_postfilter_is_filter_request() ) {
-        return;
-    }
-
-    remove_action( 'wp_head', 'rel_canonical' );
-
-    add_action( 'wp_head', static function (): void {
-        $filters   = jpkcom_postfilter_get_active_filters();
-        $post_type = (string) get_query_var( 'jpkcom_filter_post_type', 'post' );
-        if ( $post_type === '' ) {
-            $post_type = 'post';
-        }
-
-        $base_url  = jpkcom_postfilter_get_archive_base_url( $post_type );
-        $page      = max( 1, (int) get_query_var( 'paged' ) );
-        $canon_url = jpkcom_postfilter_get_filter_url( $base_url, $filters, $page > 1 ? $page : 0 );
-
-        printf( '<link rel="canonical" href="%s" />' . "\n", esc_url( $canon_url ) );
-    }, 1 );
-
-}, 10 );
 
 
 // ---------------------------------------------------------------------------
@@ -671,7 +579,7 @@ add_action( 'template_redirect', static function (): void {
  */
 add_action( 'jpkcom_postfilter_settings_saved', static function ( string $group ): void {
     if ( $group === 'general' ) {
-        update_option( 'jpkcom_postfilter_flush_rewrite', '1', false );
+        update_option( 'jpkcom_postfilter_flush_rewrite', '1', true );
         jpkcom_postfilter_debug_log( 'URL routing: rewrite flush scheduled' );
     }
 } );

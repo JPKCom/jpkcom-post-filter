@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 define( 'ABSPATH', dirname( __DIR__ ) . '/' );
 define( 'JPKCOM_POSTFILTER_DEBUG', false );
+define( 'JPKCOM_POSTFILTER_CACHE_TTL', 3600 ); // defined in cache-manager.php, which this suite does not load
 
 /**
  * Whether this process is the child run that exercises the kill switch.
@@ -155,6 +156,34 @@ function jpkpf_stub_terms( string $taxonomy ): array {
 	}
 
 	return $out;
+}
+
+/**
+ * Since 1.5.0 the ability asks jpkcom_postfilter_known_term_slugs() (the real
+ * one, from url-policy.php). Its two data sources are stubbed here: the term
+ * table, and the transient - which returns $GLOBALS['_stub_raw_terms'] to
+ * simulate a damaged cached value. The per-request memo is bypassed by bumping
+ * its generation on every read, because the fixtures change between calls.
+ */
+function jpkcom_postfilter_query_term_slugs( string $taxonomy ): array {
+	$GLOBALS['_stub_term_lookups'][ $taxonomy ] = ( $GLOBALS['_stub_term_lookups'][ $taxonomy ] ?? 0 ) + 1;
+
+	return array_map( static fn( WP_Term $t ): string => $t->slug, array_filter( jpkpf_stub_terms( $taxonomy ), static fn( $t ): bool => $t instanceof WP_Term ) );
+}
+
+function jpkcom_postfilter_transient_get( string $key ): mixed {
+	$GLOBALS['_jpkpf_terms_memo_gen'] = (int) ( $GLOBALS['_jpkpf_terms_memo_gen'] ?? 0 ) + 1;
+	$taxonomy                         = substr( $key, strlen( 'slugs_' ) );
+
+	return $GLOBALS['_stub_raw_terms'][ $taxonomy ] ?? false;
+}
+
+function jpkcom_postfilter_transient_set( string $key, mixed $value, int $ttl = 0 ): bool {
+	return true;
+}
+
+function get_current_blog_id(): int {
+	return 1;
 }
 
 function jpkcom_postfilter_get_terms_for_taxonomy( string $taxonomy, bool $hide_empty = true ): array {
@@ -381,6 +410,9 @@ function jpkpf_define_ability_api_stubs(): void {
 	}
 }
 
+// The caps are decided by includes/url-policy.php (1.5.0) - loaded for real,
+// so this suite exercises the rule the front end applies, not a copy of it.
+require_once dirname( __DIR__ ) . '/includes/url-policy.php';
 require_once dirname( __DIR__ ) . '/includes/abilities.php';
 
 // --- Kill-switch child mode ------------------------------------------------
@@ -1079,11 +1111,12 @@ is_same(
 );
 
 is_same(
-	'the lookup includes terms with no posts',
+	'the lookup reads the term table, not the get_terms() list',
 	$GLOBALS['_stub_term_hide_empty'],
-	false,
-	'A term with no posts is still a real term and a legitimate filter URL. With '
-	. 'hide_empty = true it would be reported as a typo.'
+	null,
+	'1.5.0: the get_terms() list is narrowed to the current language under WPML and '
+	. 'cached per taxonomy only, so a term the front end serves was reported as a typo '
+	. 'and its filter_url withheld. The term table also includes terms with no posts.'
 );
 
 is_same(
@@ -1102,9 +1135,8 @@ is_same(
 	'a malformed cached term list does not fatal, it just matches nothing',
 	is_array( $malformed_terms ) ? $malformed_terms['unknown_terms'] : null,
 	[ 'category' => [ 'news' ] ],
-	'url-routing.php reads the same list through a \WP_Term-typed closure, which would '
-	. 'throw here. Inside an ability callback on WP 6.9 that is an uncaught fatal, so '
-	. 'this copy filters with instanceof instead.'
+	'Since 1.5.0 the cached value is a slug list; an object in it would make '
+	. 'array_diff() throw "could not be converted to string", so non-strings are dropped.'
 );
 
 $GLOBALS['_stub_raw_terms'] = [];
@@ -1560,6 +1592,12 @@ check(
 
 $GLOBALS['_stub_filter_url_calls'] = 0;
 
+// The term has to exist: since 1.5.0 an unknown slug withholds the link on its
+// own (see the next section), which would make this check pass for the wrong
+// reason - or fail it, as it did when this fixture first met 1.5.0.
+$terms_before                       = $GLOBALS['_stub_terms'];
+$GLOBALS['_stub_terms']['category'] = array_merge( $GLOBALS['_stub_terms']['category'] ?? [], [ [ 'allgemein', 'Allgemein', 1 ] ] );
+
 $unsearched_url = jpkcom_postfilter_ability_query_posts(
 	[ 'post_type' => 'post', 'filters' => [ 'category' => [ 'allgemein' ] ] ]
 );
@@ -1570,6 +1608,39 @@ check(
 	'The guard must be scoped to the search axis. Withholding the link generally '
 	. 'would remove a feature to fix a defect.'
 );
+
+section( 'filter_url is withheld for unknown slugs the front end redirects away (1.5.0)' );
+
+$unknown_url = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'filters' => [ 'category' => [ 'allgemein', 'nope' ] ] ]
+);
+
+is_same(
+	'an unknown slug withholds the link',
+	is_array( $unknown_url ) ? $unknown_url['filter_url'] : null,
+	'',
+	'The request guard answers /filter/allgemein+nope/ with a 301 to /filter/allgemein/ - '
+	. 'a different result set than the one reported (measured live: nope/seo -> _/seo).'
+);
+
+check(
+	'... and still reports it',
+	is_array( $unknown_url ) && ( (array) $unknown_url['unknown_terms'] ) === [ 'category' => [ 'nope' ] ],
+	json_encode( $unknown_url['unknown_terms'] ?? null )
+);
+
+$GLOBALS['_stub_settings']['general']['unknown_terms_action'] = 'noindex';
+$noindex_url = jpkcom_postfilter_ability_query_posts(
+	[ 'post_type' => 'post', 'filters' => [ 'category' => [ 'allgemein', 'nope' ] ] ]
+);
+check(
+	'with unknown_terms_action = noindex the URL renders the reported set, so it is handed out',
+	is_array( $noindex_url ) && $noindex_url['filter_url'] !== '',
+	'Withholding there would drop a link that works.'
+);
+unset( $GLOBALS['_stub_settings']['general']['unknown_terms_action'] );
+
+$GLOBALS['_stub_terms'] = $terms_before;
 
 section( 'an input key at the wrong nesting level must not pass as a filtered call' );
 

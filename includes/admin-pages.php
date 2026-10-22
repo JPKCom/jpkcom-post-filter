@@ -224,6 +224,37 @@ add_action( 'admin_init', static function (): void {
         section: 'jpkcom_postfilter_general_advanced'
     );
 
+    // === Crawlers & SEO (1.5.0) ===
+    add_settings_section(
+        id: 'jpkcom_postfilter_general_crawl',
+        title: __( 'Crawlers & SEO', 'jpkcom-post-filter' ),
+        callback: static function (): void {
+            echo '<p>' . esc_html__( 'Every combination of filter terms is its own URL. These settings keep that URL space small: one spelling per selection, invalid combinations rejected before any database query, and only single-term pages offered to search engines. Content stays fully crawlable.', 'jpkcom-post-filter' ) . '</p>';
+        },
+        page: 'jpkcom-post-filter'
+    );
+
+    $crawl_fields = [
+        'filter_link_mode'     => __( 'Filter Links for Crawlers', 'jpkcom-post-filter' ),
+        'seo_index_max_terms'  => __( 'Indexable Filter Pages', 'jpkcom-post-filter' ),
+        'max_terms_total'      => __( 'Max. Terms in Total', 'jpkcom-post-filter' ),
+        'strict_urls'          => __( 'Strict Filter URLs', 'jpkcom-post-filter' ),
+        'reject_status'        => __( 'Invalid Combinations', 'jpkcom-post-filter' ),
+        'unknown_terms_action' => __( 'Unknown Terms in URLs', 'jpkcom-post-filter' ),
+        'strip_query'          => __( 'Query Strings on Filter URLs', 'jpkcom-post-filter' ),
+        'robots_txt_mode'      => __( 'robots.txt Rules', 'jpkcom-post-filter' ),
+    ];
+
+    foreach ( $crawl_fields as $key => $title ) {
+        add_settings_field(
+            id: 'jpkcom_postfilter_' . $key,
+            title: $title,
+            callback: 'jpkcom_postfilter_field_' . $key,
+            page: 'jpkcom-post-filter',
+            section: 'jpkcom_postfilter_general_crawl'
+        );
+    }
+
     // Layout page uses custom tab UI – no add_settings_section/field needed here.
     // Sanitization is still handled via register_setting() in settings.php.
 
@@ -340,20 +371,21 @@ function jpkcom_postfilter_field_auto_inject(): void {
  * @since 1.0.0
  */
 function jpkcom_postfilter_field_max_filter_combos(): void {
-    $settings = jpkcom_postfilter_settings_get_group( 'general' );
-    $value    = $settings['max_filter_combos'] ?? 3;
+    $state = jpkcom_postfilter_policy_field_state( 'max_filter_combos' );
     ?>
     <input
         type="number"
         id="jpkcom_postfilter_max_filter_combos"
         name="jpkcom_postfilter_general[max_filter_combos]"
-        value="<?php echo esc_attr( (string) $value ); ?>"
+        value="<?php echo esc_attr( (string) $state['value'] ); ?>"
         min="1"
         max="10"
         class="small-text"
+        <?php disabled( $state['locked'] ); ?>
     >
     <p class="description"><?php esc_html_e( 'Maximum number of active filter groups at once. Higher values increase URL complexity.', 'jpkcom-post-filter' ); ?></p>
     <?php
+    jpkcom_postfilter_policy_lock_note( 'max_filter_combos' );
 }
 
 /**
@@ -362,22 +394,23 @@ function jpkcom_postfilter_field_max_filter_combos(): void {
  * @since 1.0.0
  */
 function jpkcom_postfilter_field_max_filters_per_group(): void {
-    $settings = jpkcom_postfilter_settings_get_group( 'general' );
-    $value    = $settings['max_filters_per_group'] ?? 3;
+    $state = jpkcom_postfilter_policy_field_state( 'max_filters_per_group' );
     ?>
     <input
         type="number"
         id="jpkcom_postfilter_max_filters_per_group"
         name="jpkcom_postfilter_general[max_filters_per_group]"
-        value="<?php echo esc_attr( (string) $value ); ?>"
+        value="<?php echo esc_attr( (string) $state['value'] ); ?>"
         min="0"
         max="20"
         class="small-text"
+        <?php disabled( $state['locked'] ); ?>
     >
     <p class="description">
         <?php esc_html_e( 'Maximum number of terms that can be selected within a single filter group. When the limit is reached, all other terms in that group are visually disabled until a selection is removed. Set to 0 for no limit.', 'jpkcom-post-filter' ); ?>
     </p>
     <?php
+    jpkcom_postfilter_policy_lock_note( 'max_filters_per_group' );
 }
 
 /**
@@ -482,6 +515,253 @@ function jpkcom_postfilter_field_debug_mode(): void {
         <?php esc_html_e( 'Enable debug logging (independent of WP_DEBUG)', 'jpkcom-post-filter' ); ?>
     </label>
     <p class="description"><?php esc_html_e( 'When enabled, detailed logs are written to the PHP error log and debug-templates/ are used instead of templates/.', 'jpkcom-post-filter' ); ?></p>
+    <?php
+}
+
+
+// ---------------------------------------------------------------------------
+// General page – Crawlers & SEO fields (1.5.0)
+// ---------------------------------------------------------------------------
+
+/**
+ * Current value of a policy setting for a form field, plus its lock state
+ *
+ * A key pinned by a wp-config.php constant is shown with the effective value
+ * and disabled, so the form never pretends a change would take effect.
+ *
+ * @since 1.5.0
+ *
+ * @param string $key Policy key.
+ * @return array{value: mixed, locked: bool}
+ */
+function jpkcom_postfilter_policy_field_state( string $key ): array {
+    $locked = jpkcom_postfilter_policy_locked( $key );
+    $value  = $locked
+        ? jpkcom_postfilter_policy( $key )
+        : jpkcom_postfilter_settings_get( 'general', $key, jpkcom_postfilter_policy_definitions()[ $key ]['default'] ?? null );
+
+    return [ 'value' => $value, 'locked' => $locked ];
+}
+
+/**
+ * Print the "set by constant" note for a locked policy field
+ *
+ * @since 1.5.0
+ *
+ * @param string $key Policy key.
+ * @return void
+ */
+function jpkcom_postfilter_policy_lock_note( string $key ): void {
+    if ( ! jpkcom_postfilter_policy_locked( $key ) ) {
+        return;
+    }
+    printf(
+        '<p class="description"><strong>%s</strong></p>',
+        sprintf(
+            /* translators: %s: PHP constant name */
+            esc_html__( 'Set by %s in wp-config.php.', 'jpkcom-post-filter' ),
+            '<code>' . esc_html( jpkcom_postfilter_policy_definitions()[ $key ]['constant'] ) . '</code>'
+        )
+    );
+}
+
+/**
+ * Render a select for a policy key
+ *
+ * @since 1.5.0
+ *
+ * @param string                $key     Policy key.
+ * @param array<string, string> $options Value => label.
+ * @return void
+ */
+function jpkcom_postfilter_policy_select( string $key, array $options ): void {
+    $state = jpkcom_postfilter_policy_field_state( $key );
+    ?>
+    <select
+        id="jpkcom_postfilter_<?php echo esc_attr( $key ); ?>"
+        name="jpkcom_postfilter_general[<?php echo esc_attr( $key ); ?>]"
+        <?php disabled( $state['locked'] ); ?>
+    >
+        <?php foreach ( $options as $val => $label ) : ?>
+            <option value="<?php echo esc_attr( (string) $val ); ?>" <?php selected( (string) $state['value'], (string) $val ); ?>>
+                <?php echo esc_html( $label ); ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+    <?php
+}
+
+/**
+ * Render a checkbox for a boolean policy key
+ *
+ * The hidden field makes "unchecked" an explicit 0: browsers do not submit an
+ * unchecked box, and the sanitizer would otherwise fall back to the default.
+ *
+ * @since 1.5.0
+ *
+ * @param string $key   Policy key.
+ * @param string $label Checkbox label.
+ * @return void
+ */
+function jpkcom_postfilter_policy_checkbox( string $key, string $label ): void {
+    $state = jpkcom_postfilter_policy_field_state( $key );
+    ?>
+    <input type="hidden" name="jpkcom_postfilter_general[<?php echo esc_attr( $key ); ?>]" value="0" <?php disabled( $state['locked'] ); ?>>
+    <label>
+        <input
+            type="checkbox"
+            id="jpkcom_postfilter_<?php echo esc_attr( $key ); ?>"
+            name="jpkcom_postfilter_general[<?php echo esc_attr( $key ); ?>]"
+            value="1"
+            <?php checked( (bool) $state['value'] ); ?>
+            <?php disabled( $state['locked'] ); ?>
+        >
+        <?php echo esc_html( $label ); ?>
+    </label>
+    <?php
+}
+
+/**
+ * Render: Filter link mode
+ *
+ * @since 1.5.0
+ */
+function jpkcom_postfilter_field_filter_link_mode(): void {
+    jpkcom_postfilter_policy_select( 'filter_link_mode', [
+        'single' => __( 'Single terms only (recommended)', 'jpkcom-post-filter' ),
+        'combo'  => __( 'Combinations within the limits', 'jpkcom-post-filter' ),
+        'none'   => __( 'No links', 'jpkcom-post-filter' ),
+    ] );
+    ?>
+    <p class="description"><?php esc_html_e( 'Which address a filter button links to. Visitors with JavaScript are not affected: the script handles every click itself and can always combine terms. The links only matter for crawlers and for browsers without JavaScript. "Single terms only" links each term to its own page, so crawlers find one page per term instead of every combination.', 'jpkcom-post-filter' ); ?></p>
+    <?php
+    jpkcom_postfilter_policy_lock_note( 'filter_link_mode' );
+}
+
+/**
+ * Render: Indexable filter pages
+ *
+ * @since 1.5.0
+ */
+function jpkcom_postfilter_field_seo_index_max_terms(): void {
+    $state = jpkcom_postfilter_policy_field_state( 'seo_index_max_terms' );
+    ?>
+    <input
+        type="number"
+        id="jpkcom_postfilter_seo_index_max_terms"
+        name="jpkcom_postfilter_general[seo_index_max_terms]"
+        value="<?php echo esc_attr( (string) $state['value'] ); ?>"
+        min="0"
+        max="10"
+        class="small-text"
+        <?php disabled( $state['locked'] ); ?>
+    >
+    <p class="description"><?php esc_html_e( 'Filter pages with up to this many selected terms may be indexed (index, follow). Pages with more terms, unknown terms or no results are sent as noindex, nofollow and have no canonical. 0 = no filter page is indexed. Default: 1.', 'jpkcom-post-filter' ); ?></p>
+    <?php
+    jpkcom_postfilter_policy_lock_note( 'seo_index_max_terms' );
+}
+
+/**
+ * Render: Max. terms in total
+ *
+ * @since 1.5.0
+ */
+function jpkcom_postfilter_field_max_terms_total(): void {
+    $state = jpkcom_postfilter_policy_field_state( 'max_terms_total' );
+    ?>
+    <input
+        type="number"
+        id="jpkcom_postfilter_max_terms_total"
+        name="jpkcom_postfilter_general[max_terms_total]"
+        value="<?php echo esc_attr( (string) $state['value'] ); ?>"
+        min="0"
+        max="50"
+        class="small-text"
+        <?php disabled( $state['locked'] ); ?>
+    >
+    <p class="description"><?php esc_html_e( 'Maximum number of selected terms across all filter groups together. The filter bar disables further terms once it is reached, and the server rejects longer combinations. 0 = no limit.', 'jpkcom-post-filter' ); ?></p>
+    <?php
+    jpkcom_postfilter_policy_lock_note( 'max_terms_total' );
+}
+
+/**
+ * Render: Strict filter URLs
+ *
+ * @since 1.5.0
+ */
+function jpkcom_postfilter_field_strict_urls(): void {
+    jpkcom_postfilter_policy_checkbox( 'strict_urls', __( 'Redirect and reject filter URLs before the database is queried', 'jpkcom-post-filter' ) );
+    ?>
+    <p class="description"><?php esc_html_e( 'Every other spelling of a selection (term order, duplicates, upper case, /page/1/) is redirected (301) to its one canonical address. Combinations beyond the limits above, and extra URL segments, are rejected with a short error page. Without this, every variant is rendered as a full page.', 'jpkcom-post-filter' ); ?></p>
+    <?php
+    jpkcom_postfilter_policy_lock_note( 'strict_urls' );
+}
+
+/**
+ * Render: Reject status
+ *
+ * @since 1.5.0
+ */
+function jpkcom_postfilter_field_reject_status(): void {
+    jpkcom_postfilter_policy_select( 'reject_status', [
+        '410' => __( '410 Gone (recommended)', 'jpkcom-post-filter' ),
+        '404' => __( '404 Not Found', 'jpkcom-post-filter' ),
+    ] );
+    ?>
+    <p class="description"><?php esc_html_e( 'HTTP status for combinations that can never be valid on this site. 410 tells crawlers not to come back.', 'jpkcom-post-filter' ); ?></p>
+    <?php
+    jpkcom_postfilter_policy_lock_note( 'reject_status' );
+}
+
+/**
+ * Render: Unknown terms action
+ *
+ * @since 1.5.0
+ */
+function jpkcom_postfilter_field_unknown_terms_action(): void {
+    jpkcom_postfilter_policy_select( 'unknown_terms_action', [
+        'redirect' => __( 'Redirect to the selection without them (recommended)', 'jpkcom-post-filter' ),
+        'noindex'  => __( 'Show the page, but noindex', 'jpkcom-post-filter' ),
+        'reject'   => __( 'Reject like an invalid combination', 'jpkcom-post-filter' ),
+    ] );
+    ?>
+    <p class="description"><?php esc_html_e( 'What to do with a term in the URL that does not exist (anymore). Redirecting keeps old links to renamed terms working.', 'jpkcom-post-filter' ); ?></p>
+    <?php
+    jpkcom_postfilter_policy_lock_note( 'unknown_terms_action' );
+}
+
+/**
+ * Render: Strip query strings
+ *
+ * @since 1.5.0
+ */
+function jpkcom_postfilter_field_strip_query(): void {
+    jpkcom_postfilter_policy_checkbox( 'strip_query', __( 'Redirect filter URLs with a query string to the address without it', 'jpkcom-post-filter' ) );
+    ?>
+    <p class="description"><?php esc_html_e( 'Each ?parameter is a new address for the same page, which page caches usually do not store. Parameters you need (for example utm_*) can be kept with the jpkcom_postfilter_strip_query_allowlist filter.', 'jpkcom-post-filter' ); ?></p>
+    <?php
+    jpkcom_postfilter_policy_lock_note( 'strip_query' );
+}
+
+/**
+ * Render: robots.txt mode, with the generated rules
+ *
+ * @since 1.5.0
+ */
+function jpkcom_postfilter_field_robots_txt_mode(): void {
+    jpkcom_postfilter_policy_select( 'robots_txt_mode', [
+        'deep' => __( 'Disallow combinations (recommended)', 'jpkcom-post-filter' ),
+        'all'  => __( 'Disallow all filter pages', 'jpkcom-post-filter' ),
+        'off'  => __( 'No rules', 'jpkcom-post-filter' ),
+    ] );
+    jpkcom_postfilter_policy_lock_note( 'robots_txt_mode' );
+
+    $rules = jpkcom_postfilter_robots_txt_rules();
+    ?>
+    <p class="description"><?php esc_html_e( 'Added to the robots.txt WordPress generates. The rules apply to every crawler alike; content and single-term pages stay allowed. A physical robots.txt file in the web root replaces the generated one - copy these lines into it:', 'jpkcom-post-filter' ); ?></p>
+    <?php if ( ! empty( $rules ) ) : ?>
+        <pre style="max-width:48em;padding:8px 12px;background:#f6f7f7;border:1px solid #dcdcde;"><?php echo esc_html( "User-agent: *\n" . implode( "\n", $rules ) ); ?></pre>
+    <?php endif; ?>
     <?php
 }
 
@@ -1294,7 +1574,7 @@ function jpkcom_postfilter_field_settings_cache_enabled(): void {
         printf(
             /* translators: %s: settings cache directory path */
             esc_html__( 'Cache files are stored in: %s', 'jpkcom-post-filter' ),
-            '<code>' . esc_html( JPKCOM_POSTFILTER_SETTINGS_DIR ) . '</code>'
+            '<code>' . esc_html( jpkcom_postfilter_settings_dir() ) . '</code>'
         );
         ?>
     </p>
@@ -2232,8 +2512,8 @@ function jpkcom_postfilter_page_cache(): void {
                 <tr>
                     <th><?php esc_html_e( 'Settings Cache Dir', 'jpkcom-post-filter' ); ?></th>
                     <td>
-                        <code><?php echo esc_html( JPKCOM_POSTFILTER_SETTINGS_DIR ); ?></code>
-                        <?php if ( is_dir( JPKCOM_POSTFILTER_SETTINGS_DIR ) ) : ?>
+                        <code><?php echo esc_html( jpkcom_postfilter_settings_dir() ); ?></code>
+                        <?php if ( is_dir( jpkcom_postfilter_settings_dir() ) ) : ?>
                             <span style="color:green"> &#10003; <?php esc_html_e( 'Exists', 'jpkcom-post-filter' ); ?></span>
                         <?php else : ?>
                             <span style="color:orange"> <?php esc_html_e( '(not created yet)', 'jpkcom-post-filter' ); ?></span>

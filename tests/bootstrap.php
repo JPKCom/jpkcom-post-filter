@@ -21,7 +21,8 @@ $GLOBALS['__filters']    = [];
 $GLOBALS['__query_vars'] = [];
 
 function sanitize_key( $k ) { return strtolower( preg_replace( '/[^a-zA-Z0-9_\-]/', '', (string) $k ) ); }
-function sanitize_title( $t ) { return strtolower( preg_replace( '/[^a-zA-Z0-9_\-]/', '', (string) $t ) ); }
+// Keeps percent escapes like the real sanitize_title_with_dashes() does.
+function sanitize_title( $t ) { return strtolower( preg_replace( '/[^a-zA-Z0-9_\-%]/', '', (string) $t ) ); }
 function sanitize_text_field( $s ) { return is_string( $s ) ? trim( strip_tags( $s ) ) : ''; }
 function absint( $v ) { return abs( (int) $v ); }
 function taxonomy_exists( $t ) { return in_array( $t, $GLOBALS['__taxonomies'], true ); }
@@ -39,13 +40,28 @@ function jpkcom_postfilter_debug_log( $msg, $ctx = [] ) {}
  */
 function jpkcom_postfilter_get_terms_for_taxonomy( string $taxonomy, bool $hide_empty = true ): array {
 	$out = [];
-	foreach ( $GLOBALS['__terms'][ $taxonomy ] ?? [] as $slug ) {
+	// $GLOBALS['__terms_lang_filter'][ $taxonomy ] narrows the list the way WPML
+	// narrows get_terms() to the current language.
+	foreach ( $GLOBALS['__terms_lang_filter'][ $taxonomy ] ?? $GLOBALS['__terms'][ $taxonomy ] ?? [] as $slug ) {
 		$term       = new WP_Term();
 		$term->slug = $slug;
 		$out[]      = $term;
 	}
 	return $out;
 }
+
+/**
+ * Stand-ins for the language-independent slug lookup (1.5.0): the term table
+ * is $GLOBALS['__terms'], the transient layer always misses.
+ */
+if ( ! function_exists( 'get_current_blog_id' ) ) {
+	function get_current_blog_id() { return 1; }
+}
+function jpkcom_postfilter_query_term_slugs( string $taxonomy ): array {
+	return array_values( $GLOBALS['__terms'][ $taxonomy ] ?? [] );
+}
+function jpkcom_postfilter_transient_get( string $key ): mixed { return false; }
+function jpkcom_postfilter_transient_set( string $key, mixed $value, int $ttl = 0 ): bool { return true; }
 
 class WP_Term {
 	public string $slug = '';

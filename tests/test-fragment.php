@@ -225,10 +225,18 @@ is_same(
 
 $js_source = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/post-filter.js' );
 
+// Scoped to the missing-zone branch: since 1.5.0 the script does render the
+// empty state - for an answer the request guard marked as a deliberate
+// rejection (X-Jpkpf-Reject), which is a real "no such selection".
+$no_zone_at     = strpos( $js_source, 'if ( ! newZone ) {' );
+$no_zone_branch = $no_zone_at === false ? '' : substr( $js_source, $no_zone_at, (int) strpos( $js_source, '// Swap content', $no_zone_at ) - $no_zone_at );
+
 check(
 	'the script reloads instead of inventing a no-results message',
-	str_contains( $js_source, 'window.location.href = url;' )
-		&& ! str_contains( $js_source, 'jpkpf-no-results' ),
+	$no_zone_branch !== ''
+		&& str_contains( $no_zone_branch, 'loadUrl( url );' )
+		&& ! str_contains( $no_zone_branch, 'jpkpf-no-results' )
+		&& ! str_contains( $no_zone_branch, 'noResults' ),
 	'A fragment without [data-jpkpf-results] is never a zero-result answer: every list '
 	. 'template renders the zone before it looks at the query and puts the empty state '
 	. 'inside it, and render_zero_results_fallback() guarantees one in auto-inject mode. '
@@ -466,7 +474,8 @@ check(
 
 echo "\nnoindex reaches the page an SEO plugin actually renders\n";
 
-$routing = (string) file_get_contents( dirname( __DIR__ ) . '/includes/url-routing.php' );
+// The robots hooks moved from url-routing.php to crawl-guard.php in 1.5.0.
+$routing = (string) file_get_contents( dirname( __DIR__ ) . '/includes/crawl-guard.php' );
 
 check(
 	'the rule is hooked into Rank Math as well as wp_robots',
@@ -485,7 +494,7 @@ check(
 
 check(
 	'all three share one condition',
-	substr_count( $routing, 'jpkcom_postfilter_should_noindex()' ) >= 3,
+	substr_count( $routing, '$directives = jpkcom_postfilter_robots_directives();' ) >= 3,
 	'Three hooks with three copies of the condition drift apart. One helper, three callers.'
 );
 

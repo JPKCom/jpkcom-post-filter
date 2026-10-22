@@ -573,17 +573,17 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_terms' ) ) 
     /**
      * Report requested term slugs that match no term
      *
-     * Not an error: the website answers such a request with HTTP 200, zero
-     * results and a noindex robots tag. Reporting them lets a caller tell a
-     * typo apart from an genuinely empty result set.
+     * Not an error. Reporting them lets a caller tell a typo apart from a
+     * genuinely empty result set. (The website redirects such a URL away since
+     * 1.5.0, which is why no filter_url is handed out alongside them - see
+     * jpkcom_postfilter_ability_query_posts().)
      *
      * Checked the same way as jpkcom_postfilter_has_unknown_terms(): one
-     * array_diff() against the transient-cached per-taxonomy term list, never
-     * one lookup per requested slug. The cache key is the taxonomy, never the
+     * array_diff() against jpkcom_postfilter_known_term_slugs(), never one
+     * lookup per requested slug. The cache key is the taxonomy, never the
      * requested slugs, so a caller cannot use this to flood the cache and a warm
-     * cache costs no query at all.
-     *
-     * `hide_empty = false`: a term with no posts is still a real term.
+     * cache costs no query at all. Terms without posts and terms of every
+     * language count as known.
      *
      * @since 1.3.0
      *
@@ -594,14 +594,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_unknown_terms' ) ) 
         $unknown = [];
 
         foreach ( $filters as $taxonomy => $slugs ) {
-            $known = [];
-
-            foreach ( jpkcom_postfilter_get_terms_for_taxonomy( (string) $taxonomy, false ) as $term ) {
-                if ( $term instanceof \WP_Term ) {
-                    $known[] = (string) $term->slug;
-                }
-            }
-
+            // The same source the request guard asks (1.5.0): every language,
+            // terms without posts included. The get_terms() list it used before
+            // is narrowed to the current language under WPML - a term the front
+            // end serves was reported as a typo, and its filter_url withheld.
+            $known   = jpkcom_postfilter_known_term_slugs( (string) $taxonomy ) ?? [];
             $missing = array_values( array_diff( $slugs, $known ) );
 
             if ( $missing !== [] ) {
@@ -738,27 +735,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_filters_are_url_exp
     /**
      * Decide whether a filter set survives a round trip through a filter URL
      *
-     * jpkcom_postfilter_get_filter_url() writes every requested slug into the
-     * path, but jpkcom_postfilter_parse_filter_path() truncates what it reads
-     * back to max_filters_per_group slugs per taxonomy and max_filter_combos
-     * taxonomies. Above either limit the built URL therefore shows a *different*
-     * result set than the one the ability just reported - measured with four
-     * category slugs against max_filters_per_group = 3, where the link resolved
-     * to the first three.
+     * Above the caps a built URL does not show the result set the ability just
+     * reported: until 1.5.0 the parser truncated it to the first slugs
+     * (measured with four category slugs against max_filters_per_group = 3,
+     * where the link resolved to the first three), since 1.5.0 the request
+     * guard rejects it with 404/410.
      *
-     * This is a second implementation of a rule that lives in
-     * `includes/url-routing.php:74-87`. That parser is the authority: it decides
-     * what a filter URL actually resolves to, and this function only predicts
-     * it. Change the truncation there and this gate goes stale without any test
-     * noticing - the suite stubs the settings getter and never loads
-     * url-routing.php - and the ability resumes emitting links to a narrower
-     * result set than it reports.
-     *
-     * Both caps treat 0 as unlimited, matching parse_filter_path(). Only
-     * max_filters_per_group can actually be set to 0 through the admin UI;
-     * settings.php clamps max_filter_combos to 1..10, so the unlimited branch of
-     * that one is unreachable on a normally configured site. It is kept because
-     * this function must mirror the parser, not the settings form.
+     * Until 1.5.0 this function was a hand-maintained copy of the parser's
+     * truncation rule, and nothing noticed when the two drifted. It now asks
+     * the one function the parser, the request guard and the term links ask.
      *
      * @since 1.3.0
      *
@@ -766,25 +751,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_filters_are_url_exp
      * @return bool True when a built URL parses back to exactly these filters.
      */
     function jpkcom_postfilter_ability_filters_are_url_expressible( array $filters ): bool {
-        $max_combos = (int) jpkcom_postfilter_settings_get( 'general', 'max_filter_combos', 3 );
-
-        if ( $max_combos > 0 && count( $filters ) > $max_combos ) {
-            return false;
-        }
-
-        $max_per_group = (int) jpkcom_postfilter_settings_get( 'general', 'max_filters_per_group', 3 );
-
-        if ( $max_per_group < 1 ) {
-            return true;
-        }
-
-        foreach ( $filters as $slugs ) {
-            if ( is_array( $slugs ) && count( $slugs ) > $max_per_group ) {
-                return false;
-            }
-        }
-
-        return true;
+        return jpkcom_postfilter_filters_within_caps( $filters );
     }
 }
 
@@ -942,10 +909,25 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
         //    which is why the ability is the only surface that can produce this
         //    pairing at all.
         //
+        // 6. A requested slug does not exist (1.5.0). The query treats it as an
+        //    IN clause that matches nothing, but the front end's request guard
+        //    redirects such a URL to the selection WITHOUT that slug (or rejects
+        //    it), so the link would show a different - usually larger - set.
+        //    Measured: filters={category:[nope], post_tag:[seo]} reported 0 and
+        //    linked /filter/nope/seo/, which answered 301 -> /filter/_/seo/.
+        //    Only with unknown_terms_action = noindex (or strict URLs off) does
+        //    the URL still render the reported, empty set.
+        //
         // The full result set is reported in every case; only the link is
         // withheld. An empty string is a better answer than a link to something
         // else, or to nothing at all.
         $archive_base_url = jpkcom_postfilter_get_archive_base_url( $post_type );
+        $unknown_terms    = jpkcom_postfilter_ability_unknown_terms( $filters );
+
+        $unknown_changes_url = $unknown_terms !== []
+            && function_exists( 'jpkcom_postfilter_policy' )
+            && jpkcom_postfilter_policy( 'strict_urls' )
+            && jpkcom_postfilter_policy( 'unknown_terms_action' ) !== 'noindex';
 
         $page_segment_matches = $page === 1 || $per_page === (int) get_option( 'posts_per_page' );
         $page_exists          = $total_pages < 1 || $page <= $total_pages;
@@ -956,6 +938,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
             || ! $page_segment_matches
             || ! $page_exists
             || isset( $atts['s'] )
+            || $unknown_changes_url
         )
             ? ''
             : jpkcom_postfilter_get_filter_url( $archive_base_url, $filters, $page );
@@ -968,9 +951,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ability_query_posts' ) ) {
             'per_page'      => $per_page,
             'total_pages'   => $total_pages,
             'filter_url'    => $filter_url,
-            'unknown_terms' => jpkcom_postfilter_ability_json_object(
-                jpkcom_postfilter_ability_unknown_terms( $filters )
-            ),
+            'unknown_terms' => jpkcom_postfilter_ability_json_object( $unknown_terms ),
             'posts'         => $posts,
         ];
     }

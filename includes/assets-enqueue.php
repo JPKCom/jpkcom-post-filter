@@ -93,15 +93,16 @@ add_action( 'wp_enqueue_scripts', static function (): void {
         'jpkcom-post-filter',
         'jpkcomPostFilter',
         [
-            'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-            'nonce'         => wp_create_nonce( 'jpkcom_postfilter_ajax' ),
             'endpoint'            => jpkcom_postfilter_settings_get( 'general', 'url_endpoint', JPKCOM_POSTFILTER_URL_ENDPOINT ),
             // Filterable, so the segment must come from PHP rather than be
             // hard-coded in the script — otherwise the two drift apart and
             // every AJAX request 404s.
             'fragmentSegment'     => jpkcom_postfilter_fragment_segment(),
-            'maxFiltersPerGroup'  => (int) jpkcom_postfilter_settings_get( 'general', 'max_filters_per_group', 3 ),
-            'maxFilterCombos'     => (int) jpkcom_postfilter_settings_get( 'general', 'max_filter_combos', 3 ),
+            // The same caps the request guard enforces (includes/url-policy.php):
+            // a selection the UI offers must never be one the server rejects.
+            'maxFiltersPerGroup'  => (int) jpkcom_postfilter_policy( 'max_filters_per_group' ),
+            'maxFilterCombos'     => (int) jpkcom_postfilter_policy( 'max_filter_combos' ),
+            'maxTermsTotal'       => (int) jpkcom_postfilter_policy( 'max_terms_total' ),
             'filterGroupOrder'    => array_values( array_map(
                 static fn( array $g ): string => (string) ( $g['taxonomy'] ?? '' ),
                 jpkcom_postfilter_get_filter_groups_enabled()
@@ -119,6 +120,8 @@ add_action( 'wp_enqueue_scripts', static function (): void {
                 'resetFilters' => __( 'Reset all filters', 'jpkcom-post-filter' ),
                 'showMore'     => __( '…', 'jpkcom-post-filter' ),
                 'showLess'     => __( '«', 'jpkcom-post-filter' ),
+                'tryAgain'     => __( 'The filter could not be applied. Please try again.', 'jpkcom-post-filter' ),
+                'notAvailable' => __( 'This filter combination is not available.', 'jpkcom-post-filter' ),
             ],
         ]
     );

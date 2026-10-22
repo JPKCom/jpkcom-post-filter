@@ -80,6 +80,33 @@ if ( ! function_exists( function: 'jpkcom_postfilter_path_is_inside' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_settings_dir' ) ) {
+    /**
+     * Settings cache directory of the current site
+     *
+     * On multisite every site gets its own subdirectory `site-{blog_id}`.
+     * Until 1.5.0 the whole network shared one directory: whichever site last
+     * wrote general.php or filter_groups.php defined the URL endpoint, the
+     * filter groups and the caps for every other site - and since 1.5.0 the
+     * request guard would answer the other sites' valid filter URLs with
+     * 301/410 on that basis. Single sites keep the directory itself.
+     *
+     * @since 1.5.0
+     *
+     * @return string Absolute path without trailing slash.
+     */
+    function jpkcom_postfilter_settings_dir(): string {
+        $dir = JPKCOM_POSTFILTER_SETTINGS_DIR;
+
+        if ( function_exists( 'is_multisite' ) && is_multisite() ) {
+            $dir .= '/site-' . (int) get_current_blog_id();
+        }
+
+        return $dir;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_ensure_settings_dir' ) ) {
     /**
      * Create the settings cache directory and write a protective .htaccess
@@ -88,7 +115,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ensure_settings_dir' ) ) {
      * @return bool True if directory exists and is writable, false otherwise.
      */
     function jpkcom_postfilter_ensure_settings_dir(): bool {
-        $dir = JPKCOM_POSTFILTER_SETTINGS_DIR;
+        $dir = jpkcom_postfilter_settings_dir();
 
         // Security: the target must resolve inside WP_CONTENT_DIR.
         //
@@ -116,6 +143,31 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ensure_settings_dir' ) ) {
             return false;
         }
 
+        // Protect the site directory and, on multisite, the network directory
+        // above it - which holds nothing but the site directories now.
+        foreach ( array_unique( [ JPKCOM_POSTFILTER_SETTINGS_DIR, $dir ] ) as $protect ) {
+            jpkcom_postfilter_protect_settings_dir( $protect );
+        }
+
+        return true;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_protect_settings_dir' ) ) {
+    /**
+     * Write the .htaccess and index.php that keep a cache directory private
+     *
+     * @since 1.5.0
+     *
+     * @param string $dir Existing directory.
+     * @return void
+     */
+    function jpkcom_postfilter_protect_settings_dir( string $dir ): void {
+        if ( ! is_dir( $dir ) || ! is_writable( $dir ) ) {
+            return;
+        }
+
         // Write .htaccess to block direct HTTP access
         $htaccess = $dir . '/.htaccess';
         if ( ! file_exists( $htaccess ) ) {
@@ -139,8 +191,6 @@ if ( ! function_exists( function: 'jpkcom_postfilter_ensure_settings_dir' ) ) {
             // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
             file_put_contents( filename: $index, data: "<?php // Silence is golden.\n" );
         }
-
-        return true;
     }
 }
 
@@ -164,7 +214,47 @@ if ( ! function_exists( function: 'jpkcom_postfilter_settings_cache_path' ) ) {
         if ( $safe_group === '' || $safe_group !== $group ) {
             return null;
         }
-        return JPKCOM_POSTFILTER_SETTINGS_DIR . '/' . $safe_group . '.php';
+        return jpkcom_postfilter_settings_dir() . '/' . $safe_group . '.php';
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_settings_file_cache_enabled' ) ) {
+    /**
+     * Whether the settings file cache is in use
+     *
+     * Reads the cache option directly via get_option() to avoid a circular
+     * dependency (jpkcom_postfilter_settings_get() reads through the cache).
+     *
+     * @since 1.5.0
+     *
+     * @return bool
+     */
+    function jpkcom_postfilter_settings_file_cache_enabled(): bool {
+        if ( ! JPKCOM_POSTFILTER_CACHE_ENABLED ) {
+            return false;
+        }
+
+        $cache_opts = get_option( 'jpkcom_postfilter_cache', [] );
+
+        return (bool) ( is_array( $cache_opts ) ? ( $cache_opts['settings_cache_enabled'] ?? true ) : true );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_settings_memo_reset' ) ) {
+    /**
+     * Invalidate the per-request settings memo
+     *
+     * Called on every settings save, cache deletion and option update, so a
+     * long-running process (WP-CLI, cron) never reads a stale group.
+     *
+     * @since 1.5.0
+     *
+     * @return void
+     */
+    function jpkcom_postfilter_settings_memo_reset(): void {
+        $GLOBALS['_jpkpf_settings_memo_gen'] = (int) ( $GLOBALS['_jpkpf_settings_memo_gen'] ?? 0 ) + 1;
     }
 }
 
@@ -179,14 +269,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_settings_read_file' ) ) {
      * @return array<string, mixed>|null Settings array, or null on cache miss.
      */
     function jpkcom_postfilter_settings_read_file( string $group ): ?array {
-        if ( ! JPKCOM_POSTFILTER_CACHE_ENABLED ) {
-            return null;
-        }
-
-        // Check settings_cache_enabled directly via get_option() to avoid circular dependency
-        // (jpkcom_postfilter_settings_get() would call this function again).
-        $cache_opts = get_option( 'jpkcom_postfilter_cache', [] );
-        if ( ! (bool) ( is_array( $cache_opts ) ? ( $cache_opts['settings_cache_enabled'] ?? true ) : true ) ) {
+        if ( ! jpkcom_postfilter_settings_file_cache_enabled() ) {
             return null;
         }
 
@@ -197,7 +280,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_settings_read_file' ) ) {
 
         // Security: ensure file is inside the settings dir
         $real_path = realpath( $path );
-        $real_dir  = realpath( JPKCOM_POSTFILTER_SETTINGS_DIR );
+        $real_dir  = realpath( jpkcom_postfilter_settings_dir() );
         if ( $real_path === false || $real_dir === false || ! str_starts_with( $real_path, $real_dir ) ) {
             jpkcom_postfilter_debug_log( 'Settings file path traversal blocked', [ 'path' => $path ] );
             return null;
@@ -339,22 +422,42 @@ if ( ! function_exists( function: 'jpkcom_postfilter_settings_get_group' ) ) {
      * @return array<string, mixed> All settings for the group.
      */
     function jpkcom_postfilter_settings_get_group( string $group ): array {
+        // Memoised per request. Before 1.5.0 every call re-read the cache file
+        // (file_exists, two realpath() calls, include) - dozens of times per
+        // filter page, twice per term link. And with the settings cache
+        // switched off, every single call rewrote the cache file below.
+        static $memo = [];
+        static $memo_gen = null;
+        static $write_failed = false;
+
+        $gen = (int) ( $GLOBALS['_jpkpf_settings_memo_gen'] ?? 0 );
+        if ( $memo_gen !== $gen ) {
+            $memo         = [];
+            $memo_gen     = $gen;
+            $write_failed = false;
+        }
+
+        if ( isset( $memo[ $group ] ) ) {
+            return $memo[ $group ];
+        }
+
         // Try file cache first
         $cached = jpkcom_postfilter_settings_read_file( $group );
         if ( $cached !== null ) {
-            return $cached;
+            return $memo[ $group ] = $cached;
         }
 
         // Fallback to wp_options
         $db_value = get_option( 'jpkcom_postfilter_' . $group, [] );
         $settings = is_array( $db_value ) ? $db_value : [];
 
-        // Warm up file cache from DB value
-        if ( ! empty( $settings ) ) {
-            jpkcom_postfilter_settings_write_file( $group, $settings );
+        // Warm up file cache from DB value - only when the file cache is in
+        // use, and not again in this request once a write has failed.
+        if ( ! empty( $settings ) && ! $write_failed && jpkcom_postfilter_settings_file_cache_enabled() ) {
+            $write_failed = ! jpkcom_postfilter_settings_write_file( $group, $settings );
         }
 
-        return $settings;
+        return $memo[ $group ] = $settings;
     }
 }
 
@@ -370,8 +473,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_settings_save' ) ) {
      * @return bool True on success.
      */
     function jpkcom_postfilter_settings_save( string $group, array $settings ): bool {
-        // Persist to DB
-        $db_result = update_option( 'jpkcom_postfilter_' . $group, $settings, false );
+        // Persist to DB. Autoloaded: the cache group is read on every request
+        // and the others whenever the file cache misses.
+        $db_result = update_option( 'jpkcom_postfilter_' . $group, $settings, true );
+
+        jpkcom_postfilter_settings_memo_reset();
 
         // Update file cache
         jpkcom_postfilter_settings_write_file( $group, $settings );
@@ -404,8 +510,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_settings_delete_cache' ) ) 
      * @return void
      */
     function jpkcom_postfilter_settings_delete_cache( string $group = '*' ): void {
+        jpkcom_postfilter_settings_memo_reset();
+
         if ( $group === '*' ) {
-            $dir = JPKCOM_POSTFILTER_SETTINGS_DIR;
+            $dir = jpkcom_postfilter_settings_dir();
             if ( is_dir( $dir ) ) {
                 foreach ( glob( $dir . '/*.php' ) ?: [] as $file ) {
                     if ( basename( $file ) !== 'index.php' ) {
@@ -448,6 +556,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_default_settings' ) ) {
                 'endpoint_empty_redirect' => '',
                 'settings_cache_path'     => JPKCOM_POSTFILTER_SETTINGS_DIR,
                 'debug_mode'              => JPKCOM_POSTFILTER_DEBUG,
+                // URL/crawl policy (1.5.0), see includes/url-policy.php
+                'max_terms_total'         => 0,
+                'filter_link_mode'        => 'single',
+                'seo_index_max_terms'     => 1,
+                'strict_urls'             => true,
+                'reject_status'           => 410,
+                'unknown_terms_action'    => 'redirect',
+                'robots_txt_mode'         => 'deep',
+                'strip_query'             => false,
             ],
             'filter_groups' => [
                 'groups' => [],
@@ -601,6 +718,26 @@ if ( ! function_exists( function: 'jpkcom_postfilter_sanitize_general_settings' 
 
         // debug_mode: boolean
         $output['debug_mode'] = (bool) ( $input['debug_mode'] ?? $defaults['debug_mode'] );
+
+        // URL/crawl policy (1.5.0). A key pinned by a wp-config.php constant is
+        // rendered as a disabled field, which the browser does not submit - so
+        // keep what was stored instead of overwriting it with "absent".
+        $stored = get_option( 'jpkcom_postfilter_general', [] );
+        $stored = is_array( $stored ) ? $stored : [];
+
+        foreach ( [ 'max_terms_total', 'filter_link_mode', 'seo_index_max_terms', 'strict_urls', 'reject_status', 'unknown_terms_action', 'robots_txt_mode', 'strip_query' ] as $policy_key ) {
+            if ( jpkcom_postfilter_policy_locked( $policy_key ) ) {
+                $output[ $policy_key ] = $stored[ $policy_key ] ?? $defaults[ $policy_key ];
+                continue;
+            }
+            $output[ $policy_key ] = jpkcom_postfilter_policy_sanitize( $policy_key, $input[ $policy_key ] ?? $defaults[ $policy_key ] );
+        }
+
+        foreach ( [ 'max_filter_combos', 'max_filters_per_group' ] as $policy_key ) {
+            if ( jpkcom_postfilter_policy_locked( $policy_key ) ) {
+                $output[ $policy_key ] = $stored[ $policy_key ] ?? $defaults[ $policy_key ];
+            }
+        }
 
         // On save: update file cache
         jpkcom_postfilter_settings_write_file( 'general', $output );
@@ -958,6 +1095,7 @@ foreach ( [ 'general', 'layout', 'cache', 'filter_groups' ] as $jpkpf_group ) {
     add_action(
         "update_option_jpkcom_postfilter_{$jpkpf_group}",
         static function ( mixed $old_value, mixed $new_value ) use ( $jpkpf_group ): void {
+            jpkcom_postfilter_settings_memo_reset();
             if ( is_array( $new_value ) ) {
                 jpkcom_postfilter_settings_write_file( $jpkpf_group, $new_value );
             }
@@ -965,5 +1103,11 @@ foreach ( [ 'general', 'layout', 'cache', 'filter_groups' ] as $jpkpf_group ) {
         10,
         2
     );
+    add_action( "add_option_jpkcom_postfilter_{$jpkpf_group}", 'jpkcom_postfilter_settings_memo_reset', 10, 0 );
+    add_action( "delete_option_jpkcom_postfilter_{$jpkpf_group}", 'jpkcom_postfilter_settings_memo_reset', 10, 0 );
 }
+
+// Multisite: every site has its own options. Without this, a request that
+// switch_to_blog()s would keep reading the first site's memoised settings.
+add_action( 'switch_blog', 'jpkcom_postfilter_settings_memo_reset', 10, 0 );
 unset( $jpkpf_group );

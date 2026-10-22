@@ -35,22 +35,20 @@ if ( ! defined( constant_name: 'ABSPATH' ) ) {
             <div class="jpkpf-filter-group" data-filter-taxonomy="<?php echo esc_attr( $group['taxonomy'] ); ?>">
                 <span class="jpkpf-filter-group-label"><?php echo esc_html( $group['label'] ); ?></span>
                 <?php foreach ( $group['terms'] as $term ) :
-                    $is_active    = isset( $active_filters[ $group['taxonomy'] ] )
+                    $is_active = isset( $active_filters[ $group['taxonomy'] ] )
                         && in_array( $term->slug, $active_filters[ $group['taxonomy'] ], true );
-                    $toggled_slugs = $is_active
-                        ? array_values( array_diff( $active_filters[ $group['taxonomy'] ] ?? [], [ $term->slug ] ) )
-                        : array_merge( $active_filters[ $group['taxonomy'] ] ?? [], [ $term->slug ] );
-                    $toggled_filters = array_merge( $active_filters, [ $group['taxonomy'] => $toggled_slugs ] );
-                    $filter_url = jpkcom_postfilter_get_filter_url( $base_url, $toggled_filters );
+                    // <a href> or <button>: see jpkcom_postfilter_term_href() for which
+                    // terms get a crawlable link. Attributes come back escaped.
+                    $term_link = jpkcom_postfilter_term_link_attributes( $base_url, $active_filters, $group['taxonomy'], $term->slug, $is_active );
                     ?>
-                    <a href="<?php echo esc_url( $filter_url ); ?>"
+                    <<?php echo $term_link['tag']; ?> <?php echo $term_link['attrs']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                        class="jpkpf-filter-btn<?php echo $is_active ? ' is-active' : ''; ?>"
                        aria-pressed="<?php echo $is_active ? 'true' : 'false'; ?>"
                        data-filter-term="<?php echo esc_attr( $term->slug ); ?>"
                        data-filter-taxonomy="<?php echo esc_attr( $group['taxonomy'] ); ?>">
                         <?php echo esc_html( $term->name ); ?>
                         <span class="jpkpf-sr-only">(<?php echo (int) $term->count; ?>)</span>
-                    </a>
+                    </<?php echo $term_link['tag']; ?>>
                 <?php endforeach; ?>
             </div>
             <?php
@@ -64,7 +62,7 @@ if ( ! defined( constant_name: 'ABSPATH' ) ) {
         <a href="<?php echo esc_url( $base_url ); ?>"
            class="jpkpf-filter-btn jpkpf-filter-reset"
            data-jpkpf-reset-mode="<?php echo esc_attr( $reset_mode ); ?>"
-           rel="nofollow"<?php echo $hide_initially ? ' hidden' : ''; ?>>
+           <?php echo $hide_initially ? ' hidden' : ''; ?>>
             <?php esc_html_e( 'Reset filters', 'jpkcom-post-filter' ); ?>
         </a>
         <?php

@@ -3,7 +3,7 @@
 Plugin Name: JPKCom Post Filter
 Plugin URI: https://github.com/JPKCom/jpkcom-post-filter
 Description: Faceted navigation and filtering for Posts, Pages and Custom Post Types via WordPress taxonomies. Supports SEO-friendly URLs, AJAX filtering with history.pushState, and No-JS fallback.
-Version: 1.4.7
+Version: 1.5.0
 Author: Jean Pierre Kolb <jpk@jpkc.com>
 Author URI: https://www.jpkc.com/
 Contributors: JPKCom
@@ -11,7 +11,7 @@ Tags: Taxonomy, Tags, Filters, Facets, Navigation
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.3
-Stable tag: 1.4.7
+Stable tag: 1.5.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: jpkcom-post-filter
@@ -33,7 +33,7 @@ if ( ! defined( constant_name: 'WPINC' ) ) {
  * @since 1.0.0
  */
 if ( ! defined( 'JPKCOM_POSTFILTER_VERSION' ) ) {
-    define( 'JPKCOM_POSTFILTER_VERSION', '1.4.7' );
+    define( 'JPKCOM_POSTFILTER_VERSION', '1.5.0' );
 }
 
 if ( ! defined( 'JPKCOM_POSTFILTER_BASENAME' ) ) {
@@ -81,7 +81,9 @@ $jpkcom_postfilter_includes = [
     'includes/settings.php',
     'includes/template-loader.php',
     'includes/taxonomies.php',
+    'includes/url-policy.php',
     'includes/url-routing.php',
+    'includes/crawl-guard.php',
     'includes/fragment-response.php',
     'includes/query-handler.php',
     'includes/abilities.php',
@@ -207,7 +209,38 @@ function jpkcom_postfilter_maybe_flush_rewrites(): void {
 
     flush_rewrite_rules();
 
-    update_option( 'jpkcom_postfilter_rewrite_version', JPKCOM_POSTFILTER_VERSION, false );
+    // Autoloaded since 1.5.0: these options are read on every request, and
+    // without a persistent object cache each non-autoloaded one costs its own
+    // SELECT. update_option() only changes the autoload flag together with the
+    // value, so existing installations are switched over explicitly, once.
+    update_option( 'jpkcom_postfilter_rewrite_version', JPKCOM_POSTFILTER_VERSION, true );
+
+    if ( get_option( 'jpkcom_postfilter_flush_rewrite', null ) === null ) {
+        update_option( 'jpkcom_postfilter_flush_rewrite', '0', true );
+    }
+
+    // Multisite, 1.5.0: the settings cache moved into one directory per site.
+    // The group files at the network level were shared by every site and
+    // belonged to whichever site wrote last; nothing reads them any more.
+    if ( is_multisite() && is_dir( JPKCOM_POSTFILTER_SETTINGS_DIR ) ) {
+        foreach ( [ 'general', 'layout', 'cache', 'filter_groups' ] as $group ) {
+            $file = JPKCOM_POSTFILTER_SETTINGS_DIR . '/' . $group . '.php';
+            if ( is_file( $file ) ) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+                @unlink( $file );
+            }
+        }
+    }
+
+    if ( function_exists( 'wp_set_option_autoload_values' ) ) {
+        wp_set_option_autoload_values( [
+            'jpkcom_postfilter_flush_rewrite' => true,
+            'jpkcom_postfilter_general'       => true,
+            'jpkcom_postfilter_layout'        => true,
+            'jpkcom_postfilter_cache'         => true,
+            'jpkcom_postfilter_filter_groups' => true,
+        ] );
+    }
 }
 
 add_action( 'init', 'jpkcom_postfilter_maybe_flush_rewrites', 99 );

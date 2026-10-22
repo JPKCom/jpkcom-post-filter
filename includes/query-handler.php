@@ -217,6 +217,30 @@ if ( ! function_exists( function: 'jpkcom_postfilter_run_query' ) ) {
         $cache_enabled = JPKCOM_POSTFILTER_CACHE_ENABLED && (bool) ( $query_args['cache'] ?? true );
         unset( $query_args['cache'] );
 
+        // Only flat selections are worth an entry. Each stored value is a
+        // complete WP_Query; under crawler load every deep combination was a
+        // write that was never read again, and the per-combination key space
+        // has no useful upper bound.
+        if ( $cache_enabled && function_exists( 'jpkcom_postfilter_count_filter_terms' ) ) {
+            $max_terms = defined( 'JPKCOM_POSTFILTER_QUERY_CACHE_MAX_TERMS' ) ? (int) JPKCOM_POSTFILTER_QUERY_CACHE_MAX_TERMS : 1;
+
+            /**
+             * Filter whether this query result is cached.
+             *
+             * @since 1.5.0
+             *
+             * @param bool                    $cache          Default: at most JPKCOM_POSTFILTER_QUERY_CACHE_MAX_TERMS
+             *                                                (1) terms and no unknown slug.
+             * @param array<string, string[]> $active_filters Active filters.
+             */
+            $cache_enabled = (bool) apply_filters(
+                'jpkcom_postfilter_cache_query',
+                jpkcom_postfilter_count_filter_terms( $active_filters ) <= $max_terms
+                    && ! ( function_exists( 'jpkcom_postfilter_filters_have_unknown_terms' ) && jpkcom_postfilter_filters_have_unknown_terms( $active_filters ) ),
+                $active_filters
+            );
+        }
+
         if ( $cache_enabled ) {
             $cache_key    = jpkcom_postfilter_query_cache_key( $query_args, $active_filters );
             $cached_query = jpkcom_postfilter_cache_get( $cache_key );

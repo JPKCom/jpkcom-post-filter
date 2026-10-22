@@ -30,21 +30,35 @@ $filter_url = ( ! empty( $active_filters ) && function_exists( 'jpkcom_postfilte
     ? jpkcom_postfilter_get_filter_url( $base_url, $active_filters )
     : trailingslashit( $base_url );
 
-$page_base = $filter_url . 'page/%#%/';
+// Core's convention: `%_%` in the base is replaced by the format for pages
+// 2+ and by nothing for page 1. Before 1.5.0 the base carried `page/%#%/`
+// with an empty format, so "1" and "« Previous" on page 2 pointed at
+// `…/page/1/` - a duplicate of page 1 linked from every paginated list.
+$page_base = trailingslashit( $filter_url ) . '%_%';
+
+// Pages that are not indexable (see jpkcom_postfilter_robots_directives())
+// pass no link equity into further combinations.
+$nofollow = function_exists( 'jpkcom_postfilter_should_noindex' ) && jpkcom_postfilter_should_noindex();
 ?>
 <nav class="jpkpf-pagination<?php echo ! empty( $extra_class ) ? ' ' . esc_attr( $extra_class ) : ''; ?>"
      data-jpkpf-pagination
      <?php if ( ! empty( $post_type ) ) : ?>data-jpkpf-post-type="<?php echo esc_attr( $post_type ); ?>"<?php endif; ?>
      aria-label="<?php esc_attr_e( 'Page navigation', 'jpkcom-post-filter' ); ?>">
     <?php
-    echo paginate_links( [
+    $links = (string) paginate_links( [
         'base'      => $page_base,
-        'format'    => '',
+        'format'    => 'page/%#%/',
         'current'   => $current,
         'total'     => $max_pages,
         'type'      => 'list',
         'prev_text' => '&laquo; ' . esc_html__( 'Previous', 'jpkcom-post-filter' ),
         'next_text' => esc_html__( 'Next', 'jpkcom-post-filter' ) . ' &raquo;',
     ] );
+
+    if ( $nofollow ) {
+        $links = str_replace( '<a ', '<a rel="nofollow" ', $links );
+    }
+
+    echo $links; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- paginate_links() output
     ?>
 </nav>

@@ -37,6 +37,37 @@ const JPKCOM_POSTFILTER_CACHE_TTL = HOUR_IN_SECONDS;
 // Layer 2 – WordPress Object Cache helpers
 // ---------------------------------------------------------------------------
 
+if ( ! function_exists( function: 'jpkcom_postfilter_apcu_key' ) ) {
+    /**
+     * APCu key for a plugin cache key, scoped to this site
+     *
+     * APCu is one memory segment per PHP-FPM pool, shared by every WordPress
+     * install the pool serves and by every site of a multisite network. Until
+     * 1.5.0 the key was `jpkpf_` + an MD5 of the query arguments only, so two
+     * sites running the same filter query read each other's cached WP_Query -
+     * one site's posts on another site's page. The WordPress object cache
+     * does not have this problem: it prefixes per blog itself.
+     *
+     * @since 1.5.0
+     *
+     * @param string $key Plugin cache key ('' for the bare prefix).
+     * @return string
+     */
+    function jpkcom_postfilter_apcu_key( string $key ): string {
+        static $prefixes = [];
+
+        $blog_id = function_exists( 'get_current_blog_id' ) ? (int) get_current_blog_id() : 0;
+
+        if ( ! isset( $prefixes[ $blog_id ] ) ) {
+            $install = ABSPATH . '|' . ( defined( 'DB_NAME' ) ? DB_NAME : '' ) . '|' . ( $GLOBALS['table_prefix'] ?? '' );
+            $prefixes[ $blog_id ] = 'jpkpf_' . substr( md5( $install . '|' . $blog_id ), 0, 12 ) . '_';
+        }
+
+        return $prefixes[ $blog_id ] . $key;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_cache_get' ) ) {
     /**
      * Get a value from the plugin's object cache group
@@ -62,7 +93,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_cache_get' ) ) {
 
         // Try APCu first when Object Cache is not persistent (avoids double-layer on Redis/Memcached)
         if ( jpkcom_postfilter_apcu_available() && ! wp_using_ext_object_cache() ) {
-            $value = apcu_fetch( 'jpkpf_' . $key, $apcu_success );
+            $value = apcu_fetch( jpkcom_postfilter_apcu_key( $key ), $apcu_success );
             if ( $apcu_success ) {
                 $found = true;
                 return $value;
@@ -98,7 +129,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_cache_set' ) ) {
         }
 
         if ( jpkcom_postfilter_apcu_available() && ! wp_using_ext_object_cache() ) {
-            apcu_store( 'jpkpf_' . $key, $value, $ttl );
+            apcu_store( jpkcom_postfilter_apcu_key( $key ), $value, $ttl );
         }
 
         return wp_cache_set( $key, $value, JPKCOM_POSTFILTER_CACHE_GROUP, $ttl );
@@ -117,7 +148,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_cache_delete' ) ) {
      */
     function jpkcom_postfilter_cache_delete( string $key ): bool {
         if ( jpkcom_postfilter_apcu_available() ) {
-            apcu_delete( 'jpkpf_' . $key );
+            apcu_delete( jpkcom_postfilter_apcu_key( $key ) );
         }
 
         return wp_cache_delete( $key, JPKCOM_POSTFILTER_CACHE_GROUP );
@@ -151,11 +182,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_cache_flush_group' ) ) {
             // the call, 20 after. Guarded by a source-text assertion in
             // tests/test-abilities.php, because apc.enable_cli is 0 and no
             // behavioural test can reach this branch under WP-CLI.
+            // Only this site's entries (1.5.0): the prefix carries the site.
+            $own  = jpkcom_postfilter_apcu_key( '' );
             $info = apcu_cache_info( false );
             if ( isset( $info['cache_list'] ) && is_array( $info['cache_list'] ) ) {
                 foreach ( $info['cache_list'] as $entry ) {
                     $entry_key = $entry['info'] ?? $entry['key'] ?? '';
-                    if ( str_starts_with( (string) $entry_key, 'jpkpf_' ) ) {
+                    if ( str_starts_with( (string) $entry_key, $own ) ) {
                         apcu_delete( (string) $entry_key );
                     }
                 }
@@ -289,7 +322,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_query_cache_key' ) ) {
     function jpkcom_postfilter_query_cache_key( array $query_args, array $active_filters = [] ): string {
         $data = [
             'args'    => $query_args,
-            'filters' => $active_filters,
+            // Normalised (1.5.0): `a+b` and `b+a` are one selection and one entry.
+            'filters' => function_exists( 'jpkcom_postfilter_normalize_filters' )
+                ? jpkcom_postfilter_normalize_filters( $active_filters )
+                : $active_filters,
         ];
         ksort( $data['args'] );
         ksort( $data['filters'] );
@@ -333,8 +369,12 @@ add_action( 'deleted_post', static function ( int $post_id ): void {
  * @param string $taxonomy Taxonomy slug.
  */
 $_jpkpf_flush_taxonomy_transients = static function ( string $taxonomy ): void {
-    jpkcom_postfilter_transient_delete( 'terms_' . $taxonomy . '_1' );
-    jpkcom_postfilter_transient_delete( 'terms_' . $taxonomy . '_0' );
+    foreach ( jpkcom_postfilter_terms_cache_languages() as $language ) {
+        jpkcom_postfilter_transient_delete( jpkcom_postfilter_terms_cache_key( $taxonomy, true, $language ) );
+        jpkcom_postfilter_transient_delete( jpkcom_postfilter_terms_cache_key( $taxonomy, false, $language ) );
+    }
+    jpkcom_postfilter_transient_delete( 'slugs_' . $taxonomy );
+    $GLOBALS['_jpkpf_terms_memo_gen'] = (int) ( $GLOBALS['_jpkpf_terms_memo_gen'] ?? 0 ) + 1;
     jpkcom_postfilter_cache_flush_group();
 };
 

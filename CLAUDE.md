@@ -50,6 +50,23 @@ All builders call the same shortcode render functions (`jpkcom_postfilter_shortc
 | `JPKCOM_POSTFILTER_URL_ENDPOINT` | `'filter'` | URL segment |
 | `JPKCOM_POSTFILTER_ABILITIES` | `true` | Abilities API registration master switch |
 
+URL/crawl policy (1.5.0, see **Crawl guard** below). Each one also exists as a General setting; a defined constant wins and locks the admin field. Every value additionally passes the filter `jpkcom_postfilter_{key}`.
+
+| Constant | Setting key | Default | Purpose |
+|----------|-------------|---------|---------|
+| `JPKCOM_POSTFILTER_MAX_FILTERS_PER_GROUP` | `max_filters_per_group` | `3` | Terms per group (0 = unlimited) |
+| `JPKCOM_POSTFILTER_MAX_FILTER_COMBOS` | `max_filter_combos` | `3` | Active groups (0 = unlimited, admin form 1–10) |
+| `JPKCOM_POSTFILTER_MAX_TERMS_TOTAL` | `max_terms_total` | `0` | Terms across all groups (0 = off) |
+| `JPKCOM_POSTFILTER_LINK_MODE` | `filter_link_mode` | `'single'` | `single` / `combo` / `none` – what term buttons link to |
+| `JPKCOM_POSTFILTER_INDEX_MAX_TERMS` | `seo_index_max_terms` | `1` | Filter pages up to N terms are `index, follow` (0 = none) |
+| `JPKCOM_POSTFILTER_STRICT_URLS` | `strict_urls` | `true` | Request guard on/off |
+| `JPKCOM_POSTFILTER_REJECT_STATUS` | `reject_status` | `410` | `404` or `410` for impossible paths |
+| `JPKCOM_POSTFILTER_UNKNOWN_TERMS_ACTION` | `unknown_terms_action` | `'redirect'` | `redirect` / `noindex` / `reject` |
+| `JPKCOM_POSTFILTER_ROBOTS_TXT` | `robots_txt_mode` | `'deep'` | `deep` / `all` / `off` |
+| `JPKCOM_POSTFILTER_STRIP_QUERY` | `strip_query` | `false` | 301 filter URLs with a query string to the bare path |
+
+Constant only: `JPKCOM_POSTFILTER_ROBOTS_HEADER` (default `true`, X-Robots-Tag on non-indexable filter pages), `JPKCOM_POSTFILTER_LINK_MAX_TERMS` (default `0`, depth limit for `combo` links), `JPKCOM_POSTFILTER_PAGECACHE_MAX_TERMS` (default `0` = off; above N terms `DONOTCACHEPAGE`), `JPKCOM_POSTFILTER_QUERY_CACHE_MAX_TERMS` (default `1`; deeper selections skip the query cache).
+
 ---
 
 ## File Structure
@@ -64,7 +81,9 @@ jpkcom-post-filter/
 │   ├── settings.php                ← Settings API + file cache system
 │   ├── template-loader.php         ← Template hierarchy + override support
 │   ├── taxonomies.php              ← Custom taxonomy registration + filter group helpers
-│   ├── url-routing.php             ← Rewrite rules + URL parsing
+│   ├── url-policy.php              ← Pure URL rules: normalisation, caps, path validation (1.5.0)
+│   ├── url-routing.php             ← Rewrite rules + URL parsing/building
+│   ├── crawl-guard.php             ← Request guard, robots, canonical, robots.txt, term links (1.5.0)
 │   ├── query-handler.php           ← WP_Query builder + caching
 │   ├── filter-injection.php        ← Auto-inject into archives
 │   ├── shortcodes.php              ← Shortcode registration + render functions
@@ -143,7 +162,9 @@ jpkcom_postfilter_settings_delete_cache( '*' )  // flush all
 | 1 | Settings file (`.ht.*`) | Plugin settings |
 | 2 | `wp_cache_*` (Object Cache) | Query results |
 | 3 | `get/set_transient` | Taxonomy term lists |
-| 4 | APCu (optional) | Settings + frequent queries |
+| 4 | APCu (optional, only without an external object cache) | Query results |
+
+Settings are **not** in APCu (earlier versions of this file said so; it was never implemented). Since 1.5.0 they are memoised per request in `jpkcom_postfilter_settings_get_group()`; `jpkcom_postfilter_settings_memo_reset()` runs on every save, cache deletion and option update. Since 1.5.0 the query cache only stores selections of at most `JPKCOM_POSTFILTER_QUERY_CACHE_MAX_TERMS` (1) terms without unknown slugs, keyed on the normalised filters.
 
 ### Key functions
 ```php
@@ -231,7 +252,7 @@ Override via admin (Layout & Design → CSS Variables) or theme CSS.
 |-----------|--------|---------|
 | `post_type` | any post type | `post` |
 | `layout` | cards / rows / minimal / theme | backend setting |
-| `limit` | integer (-1 = all) | `5` |
+| `limit` | integer (-1 = all) | `-1` (the block, Elementor and Oxygen list default to `5`) |
 | `orderby` | date / title / menu_order / modified / rand | `date` |
 | `order` | ASC / DESC | `DESC` |
 | `class` | string | – |
@@ -273,6 +294,12 @@ File: `assets/js/post-filter.js`
 - JS extracts `[data-jpkpf-results]` from response and swaps into DOM
 - `swapPagination()` updates standalone `[data-jpkpf-pagination]` elements outside the results zone
 - Auto-inject mode (`[data-jpkpf-wrapper]`) skips standalone pagination insertion to prevent duplicates
+- One request per results zone: a new click aborts the previous fetch (`AbortController`)
+- popstate onto the URL the zone already shows aborts a request still pending from an earlier back/forward step (tracked in the `popstateRequests` WeakSet), clears the live region and re-syncs the buttons - otherwise a fast double back landed the in-between entry's results under the current address (browser-check "Fast double back"). A pending **click** is never aborted there: following an in-page `#anchor` (a theme's "back to top") fires popstate for the same page while the click loads.
+- Live region: "No posts found" only when the zone contains `.jpkpf-no-results`; otherwise the count of `[data-jpkpf-post]`, or of `article` for the theme's own loop (auto-inject), which carries no plugin markers - until 1.5.0 every successful click there was announced as "No posts found". The wording "N" + `filterActive` ("Filter aktiv") is older and imprecise (it counts posts on the page); not changed in 1.5.0.
+- `shownUrls` (WeakMap zone → URL whose results it shows): popstate that only changes the `#hash` of the page the zone already shows does nothing - before 1.5.0 such a step re-fetched, and when the fetch failed, the fallback `location.href = url` was another hash navigation and another popstate: an endless loop (~60 requests/s, pre-existing since 1.2). Every fallback load goes through `loadUrl()`, which reloads instead of assigning a same-document URL.
+- Errors (1.5.0): after a **click**, a 404/410 carrying `X-Jpkpf-Reject` (the request guard's answer) and a 429/5xx both keep the current results, re-sync the buttons to the address bar (`syncButtonsToUrl()` - they were switched before the request and would otherwise claim a selection the list does not show) and show `.jpkpf-fetch-error` - unless the click superseded a back/forward request whose swap never happened (the zone does not show the address bar's URL), which loads the address bar's URL. After **back/forward** (`pushState === false`) the address bar has already moved, so any failure loads the popped URL instead - keeping the old list would contradict address bar and buttons. A network error, an unmarked 404 or a response without results zone always reloads. Before 1.5.0 every non-2xx reloaded - onto the error page, and as a second, heavier request against an overloaded server
+- `buildFilterUrlFromMap()` sorts and de-duplicates slugs exactly like PHP; `tests/test-url-policy.php` runs it through node over `tests/filter-url-cases.json` and compares with `jpkcom_postfilter_get_filter_url()`
 
 ---
 
@@ -611,6 +638,10 @@ nesting hint both gone, and localised into the site language while these message
 static lint in the WordPress `wp-abilities-verify` skill asks for it on every object schema; on these
 two schemas that recommendation is wrong, and this is the measurement that says so.
 
+### filter_url and unknown slugs (1.5.0)
+
+`query-posts` withholds `filter_url` when a requested slug does not exist and the request guard would redirect (or reject) that URL - i.e. unless `strict_urls` is off or `unknown_terms_action` is `noindex`. The query treats the slug as an IN clause matching nothing; the front end answered `/filter/nope/seo/` with `301 → /filter/_/seo/`, a different set. Sixth withholding reason beside the five in `jpkcom_postfilter_ability_query_posts()`; tested in `tests/test-abilities.php`.
+
 ### Nine things that will bite
 
 **1. The unknown-taxonomy guard is the whole point.** `jpkcom_postfilter_build_tax_query()` drops a
@@ -795,6 +826,72 @@ returns 404. Call it in-process instead.
 
 ---
 
+## Crawl guard (since 1.5.0)
+
+Files: `includes/url-policy.php` (pure functions, no hooks) and `includes/crawl-guard.php` (hooks). Tests: `tests/test-url-policy.php` (red against 1.4.7: 69 of 70 at the time of writing; the one green is the without-`with_front` negative case, true in both), `tests/browser-check.mjs` (live, 9 of the 1.5.0 checks red against 1.4.7).
+
+### Why it exists
+
+Measured on a production site (Oxygen + Rank Math + Hummingbird, 2 filter groups): ~865 000 requests a day, 97 % of them `/blog/filter/{a+b+c}/{x+y+z}/`, every URL unique, every one a full render with 200; PHP-FPM exhausted. Sources: a residential-proxy botnet (178 000 IPs/day), GPTBot, meta-externalagent. They found the URLs by following the filter bar's links. The plugin generated the maze itself:
+
+- every term was an `<a href>` to "current selection + this term" **in click order**, with no cap check - at 3 active terms each further term linked to a 4-term URL;
+- the server accepted every spelling: order, duplicates, over-cap (silently truncated), extra segments (silently ignored), `page/1` - all 200, `index,follow`, self-canonical;
+- Rank Math printed a second canonical (`/blog/`) next to the plugin's;
+- the script never reads those hrefs - they existed only for clients without JS, i.e. crawlers.
+
+At 10 terms per group that is ~34 million URL strings instead of ~31 000 distinct selections (cap 3) or 20 single-term pages. No cache helps on an unbounded key space.
+
+### What it does
+
+| Request | Answer |
+|---|---|
+| canonical, within caps | 200 |
+| other spelling (order, duplicate, case, `_` at the end, `page/1`, empty segment) | **301** to the canonical URL, query string kept (unless `strip_query`) |
+| unknown slug (`unknown_terms_action = redirect`) | **301** to the selection without it, or to the archive |
+| over a cap, more segments than groups, slug > 200 chars | **410** (or 404), minimal body, `X-Robots-Tag: noindex, nofollow`, `X-Jpkpf-Reject: <reason>` |
+| `?jpkcom_filter_path=` / `_fragment=` / `_post_type=` via GET/POST | ignored - those vars are only taken from the matched rewrite rule |
+| fragment request | never redirected (the script owns the URL); rejected like the page; served for the cleaned selection |
+
+All of this runs on the `request` filter (`jpkcom_postfilter_guard_request()`, priority 1, after `jpkcom_postfilter_restrict_internal_query_vars()` at 0) - after the rewrite match, before the main query. A redirect or reject costs the bootstrap and nothing else. The decision is `jpkcom_postfilter_request_verdict()`, a pure function; filter `jpkcom_postfilter_request_verdict` can change it.
+
+**The redirect decision is one comparison:** the request path against the path of `get_filter_url( normalize( filters ), paged )`, percent escapes compared case-insensitively. Differing only in the trailing slash is *not* redirected - a slash-less permalink structure would otherwise bounce forever. The invariant that keeps it loop-free: `parse_filter_path( path_of( get_filter_url( x ) ) ) === normalize_filters( x )` - tested.
+
+**Which slugs exist** is answered by `jpkcom_postfilter_known_term_slugs()`: every slug of the taxonomy straight from the term tables, transient `slugs_{taxonomy}`, flushed with the other term caches. **Not** `jpkcom_postfilter_get_terms_for_taxonomy()` - that goes through `get_terms()`, which WPML narrows to the current language, under a transient keyed by taxonomy only; whichever language warmed it decided which slugs "existed", and the redirect would have stripped every other language's terms from their URLs. (The filter bar itself still renders from that per-taxonomy list - a pre-existing WPML caveat, not changed here.)
+
+**`%2B` is a separator** (`jpkcom_postfilter_split_segment()`, used by validator and parser): link rewriters encode `+`, WordPress hands `%2B` through to the query var, and as part of one slug it made the selection unknown and redirected it to the archive. **Unless it is part of a real slug:** WordPress never creates one itself (`sanitize_title( 'C++' )` is `c`), but a slug typed or imported as `c%2b%2b` is kept verbatim. Pieces are joined back, longest first, wherever they form a known slug (`c%2b%2b%2Bzaeune` → `c%2b%2b`, `zaeune`). **Keep this linear.** The first version tried every span of every start with `sanitize_title()` + `in_array()` - cubic in the segment length of a path any anonymous client controls: measured live, 3 KB of `%2b` held a PHP worker for 103 s before the archive redirect, an amplification lever for exactly the bots this release is about. Now: only known slugs that contain `%2b` are join candidates (a set, `isset`), the join width is capped at the widest of them, and the validator rejects paths over 2000 characters before splitting (`length`). Guarded by a timing check in `tests/test-url-policy.php`.
+
+`jpkcom_postfilter_known_term_slugs()` lives in `url-policy.php` and is the one source for "does this slug exist" - guard, robots decision and the Abilities API (`jpkcom_postfilter_ability_unknown_terms()`) all ask it. Its per-request memo is keyed by blog id and reset when term caches are flushed; the settings memo resets on `switch_blog`.
+
+**CPT archives under a permalink front** (`/blog/%postname%/` with `with_front`): `jpkcom_postfilter_archive_base_regex()` now includes the front like core's archive rule and `get_post_type_archive_link()`. Before, the rule matched a path the plugin never linked, and the plugin's own links had no rule (404) - pre-existing, but the guard would have redirected from the working path to the broken one.
+
+### Isolation between sites and languages (1.5.0, three pre-existing leaks)
+
+Tests: `tests/test-isolation.php` (6 of 10 red against 1.4.7 without APCu; with `php -d apc.enable_cli=1` 8 of 12 - run it that way in a DDEV container, the host CLI has no APCu).
+
+- **Settings cache per site.** On multisite every site writes and reads `JPKCOM_POSTFILTER_SETTINGS_DIR/site-{blog_id}/` (`jpkcom_postfilter_settings_dir()`); single sites keep the directory itself. Until 1.5.0 the network shared one directory, so the site that wrote last defined endpoint, groups and caps for all - with the request guard that means 301/410 for other sites' valid URLs. Measured on a two-site network: cap 1 on site 1, cap 3 on site 2, `alpha+beta` → 410 / 200 in either request order. The network-level group files are deleted on the version-change migration.
+- **Term list per language.** `jpkcom_postfilter_get_terms_for_taxonomy()` caches under `terms_{tax}_{0|1}_{lang}` (WPML, Polylang, filter `jpkcom_postfilter_terms_cache_language`); without a multilingual plugin the key is unchanged. The term flush deletes every language variant (`jpkcom_postfilter_terms_cache_languages()`), hidden WPML languages included - `wpml_active_languages` omits them for anyone who may not see them (cron, editors, the front end), so they come from the `hidden_languages` setting. Until 1.5.0 the language that warmed the transient decided the filter bar of every language.
+- **APCu keys per site and install.** `jpkcom_postfilter_apcu_key()` = `jpkpf_` + hash(ABSPATH, DB_NAME, table prefix, blog id) + key; the flush deletes only its own prefix. APCu is one segment per PHP-FPM pool; until 1.5.0 two sites (or two installs on one pool) running the same filter query read each other's cached `WP_Query` - measured: site 3 was served "posts of site 2". The WP object cache prefixes per blog by itself.
+
+**Canonical order is byte order** (`sort( SORT_STRING )`), which JS's default `Array#sort` reproduces for slugs (ASCII, lower-case `%xx`). No DB needed, so nginx-level or early checks can verify it too.
+
+### Robots, canonical, robots.txt
+
+- `jpkcom_postfilter_robots_directives()` is the one decision: `noindex, nofollow` when the page has more terms than `seo_index_max_terms` (default 1), an unknown slug, or zero results on page 1. Applied via `wp_robots`, `rank_math/frontend/robots` (**native keys** `index`/`follow` - Rank Math drops its own canonical and prev/next only on `index === 'noindex'`; before 1.5.0 the plugin wrote a `noindex` key and Rank Math's canonical survived), `wpseo_robots_array`, and an `X-Robots-Tag` header on `template_redirect`.
+- Canonical: `jpkcom_postfilter_canonical_url()` - `null` not a filter page, `''` none (noindex pages), else the sorted URL incl. page. Handed to Rank Math (`rank_math/frontend/canonical`) and Yoast (`wpseo_canonical`); the plugin prints its own tag only without either. Exactly one canonical. Rank Math's adjacent rel links are disabled on filter pages.
+- `robots_txt` filter (priority 99, after Rank Math's editor at 10): `deep` = `Disallow: {base}/{endpoint}/*+`, plus `/*jpkpf-fragment` and `/*jpkcom_filter_` (no `?` - robots.txt is a prefix match and `?x` would miss the parameter in second position). The analysis also proposed `*/*/`; it is deliberately **not** emitted: it blocks `/{endpoint}/_/term/`, the second group's single-term pages, which `single` mode links and which are indexable - blocked-but-linked pages end up as "Indexed, though blocked by robots.txt". Two-segment combinations are not linked in `single` mode and are noindex anyway. With WPML the rule is written for every active language (`/filter/*+` and `/en/filter/*+` in the one root robots.txt crawlers read): `jpkcom_postfilter_archive_base_urls_all_languages()`. Measured on WPML 4.8 directory mode: `wpml_permalink` resolves pages (a posts page, translated slug included) but hands back the bare home URL and post type archive URLs unchanged, and `home_url()` does not change after `wpml_switch_language`; for those `$sitepress->language_url( $code )` replaces the home prefix - **without switching the language**: the `wpml_switch_language` action always passes the cookie flag, so switching overwrote a logged-in visitor's language cookie on a robots.txt request (and switching back with a code instead of `null` left `icl_language_switched` set). Only the front-page base was verified live. Other multilingual plugins: filter `jpkcom_postfilter_robots_txt_base_urls`. One `User-agent: *` group: **no crawler is singled out or locked out.** A physical robots.txt wins; the General page prints the lines for copying.
+
+### Term links
+
+`jpkcom_postfilter_term_link_attributes()` → `<a href>` or `<button type="button">` (all four layouts and the debug copies). Mode `single` (default): an inactive term links to its single-term page; an active term to the selection without it while at most one term remains; otherwise a button. Crawlable graph: archive + one page per term. Mode `combo`: the old toggle links, but never beyond the caps / `JPKCOM_POSTFILTER_LINK_MAX_TERMS`, and on a zero-result page not into a group without selection. Links to non-indexable targets get `rel="nofollow"`. The reset link lost its `rel="nofollow"` - it is the one way *out* of the combinations. **JS users are unaffected in every mode** - the script handles clicks from data attributes and `aria-pressed`. Theme overrides of the filter partials keep the old links until they adopt the helper.
+
+Pagination: page 1 links to the page itself (`base` with `%_%`, `format` `page/%#%/`); before 1.5.0 it linked `…/page/1/` from every paginated list. Page links on non-indexable pages are `nofollow`.
+
+### What it deliberately does not do
+
+- **Page cache exclusion** is opt-in (`JPKCOM_POSTFILTER_PAGECACHE_MAX_TERMS`). The analysis proposed `DONOTCACHEPAGE` above 1 term by default; that was not adopted: once the URL space is finite and canonical, caching deep pages is what absorbs the alias redirects (k! spellings of a selection all 301 onto one cached page). Excluding them made each of those a full render again.
+- **Server-level limits** (nginx bulkhead, grammar whitelist, static robots.txt) are not plugin code. The plugin cannot spare the WordPress bootstrap; nginx can.
+- **Updater DNS lookup per request** (`wp_http_validate_url()` in the updater constructor) is family code - fix upstream for all 19 plugins at once, never here alone.
+
 ## Security Checklist
 
 - All outputs: `esc_html()`, `esc_url()`, `esc_attr()`, `wp_kses_post()`
@@ -808,7 +905,7 @@ returns 404. Call it in-process instead.
 
 ### Filter URLs with unknown term slugs
 
-Term slugs from the URL are sanitised but never checked for existence, so `/blog/filter/does-not-exist/` renders a valid page with zero results. These requests **keep returning 200** — turning them into 404s would break legitimate old links whose terms were later renamed — but `jpkcom_postfilter_has_unknown_terms()` marks them `noindex, follow`.
+**Since 1.5.0** the request guard handles them before the main query (`unknown_terms_action`, default `redirect`: 301 to the selection without the unknown slugs, so old links to renamed terms still land somewhere useful). With `noindex`, or with strict URLs off, they render with 200 and `noindex, nofollow` (until 1.5.0: `noindex, follow`). The history below explains why the robots decision is applied through three hooks.
 
 > **`wp_robots` alone is not enough, and was not enough between 1.1.7 and 1.2.0.**
 > Rank Math calls `remove_all_filters( 'wp_robots' )` before emitting its own tag
@@ -820,7 +917,8 @@ Term slugs from the URL are sanitised but never checked for existence, so `/blog
 > `jpkcom-rank-math-options`, so Rank Math is the normal configuration — the
 > protection was inert on the sites it was written for. The same rule now also
 > hooks `rank_math/frontend/robots` and `wpseo_robots_array`, all three sharing
-> `jpkcom_postfilter_should_noindex()`. Guarded by `tests/test-fragment.php`.
+> `jpkcom_postfilter_robots_directives()` (in `includes/crawl-guard.php` since
+> 1.5.0). Guarded by `tests/test-fragment.php`.
 
 > **Where the zero-results output appears.** With posts, the filter bar and
 > results zone are injected at `loop_start` — inside the theme's content column,
@@ -852,9 +950,10 @@ Term slugs from the URL are sanitised but never checked for existence, so `/blog
 > 32193 right after the content column at 32035. Before the fix it started at
 > 40153 with the footer already closed at 39713.
 
-**Note the deliberate asymmetry:** an empty result from *existing* terms
-(`/blog/filter/web-design/wordpress/`) stays `index` — it is a legitimate URL
-that simply has no matches today. Only *unknown* slugs get `noindex`.
+**The asymmetry that existed until 1.4.x is gone.** An empty result from
+*existing* terms used to stay `index`. Since 1.5.0 page 1 of an empty
+selection is `noindex, nofollow`: an empty page is thin content whatever the
+reason, and its links only lead into further empty combinations.
 
 Without that, every made-up slug was an indexable, self-canonicalising thin-content URL that anyone could generate and link, and each one also produced its own query-cache entry (APCu included).
 

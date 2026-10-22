@@ -129,7 +129,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_terms_for_taxonomy' ) )
      * @return \WP_Term[] Array of WP_Term objects.
      */
     function jpkcom_postfilter_get_terms_for_taxonomy( string $taxonomy, bool $hide_empty = true ): array {
-        $cache_key = 'terms_' . $taxonomy . '_' . ( $hide_empty ? '1' : '0' );
+        $cache_key = jpkcom_postfilter_terms_cache_key( $taxonomy, $hide_empty, jpkcom_postfilter_terms_cache_language() );
 
         $cached = jpkcom_postfilter_transient_get( $cache_key );
         if ( $cached !== false && is_array( $cached ) ) {
@@ -157,6 +157,103 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_terms_for_taxonomy' ) )
         jpkcom_postfilter_transient_set( $cache_key, $result, $ttl );
 
         return $result;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_terms_cache_language' ) ) {
+    /**
+     * Language the term list is cached for
+     *
+     * get_terms() is narrowed to the current language by WPML and Polylang,
+     * but until 1.5.0 its result was cached per taxonomy only: the language
+     * that happened to warm the transient decided which terms the filter bar
+     * showed in every language for the next hour.
+     *
+     * @since 1.5.0
+     *
+     * @return string Language code, '' without a multilingual plugin.
+     */
+    function jpkcom_postfilter_terms_cache_language(): string {
+        $language = apply_filters( 'wpml_current_language', null );
+
+        if ( ( ! is_string( $language ) || $language === '' ) && function_exists( 'pll_current_language' ) ) {
+            $language = pll_current_language();
+        }
+
+        /**
+         * Filter the language the taxonomy term list is cached for.
+         *
+         * For multilingual plugins other than WPML and Polylang.
+         *
+         * @since 1.5.0
+         *
+         * @param string $language Language code, '' for none.
+         */
+        return sanitize_key( (string) apply_filters( 'jpkcom_postfilter_terms_cache_language', is_string( $language ) ? $language : '' ) );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_terms_cache_languages' ) ) {
+    /**
+     * Every language a term list may be cached for (for invalidation)
+     *
+     * @since 1.5.0
+     *
+     * @return string[] '' plus every active language code.
+     */
+    function jpkcom_postfilter_terms_cache_languages(): array {
+        $languages = [ '' ];
+
+        $wpml = apply_filters( 'wpml_active_languages', null, [ 'skip_missing' => 0 ] );
+        if ( is_array( $wpml ) ) {
+            $languages   = array_merge( $languages, array_map( 'strval', array_keys( $wpml ) ) );
+            $languages[] = 'all';
+
+            // wpml_active_languages leaves out hidden languages unless the
+            // current user may see them - in cron, on the front end and for
+            // editors it does. An admin previewing a hidden language still
+            // warms a list for it, which this flush must reach.
+            $hidden = apply_filters( 'wpml_setting', [], 'hidden_languages' );
+            if ( is_array( $hidden ) ) {
+                $languages = array_merge( $languages, array_map( 'strval', $hidden ) );
+            }
+        }
+
+        if ( function_exists( 'pll_languages_list' ) ) {
+            $languages = array_merge( $languages, array_map( 'strval', (array) pll_languages_list( [ 'fields' => 'slug' ] ) ) );
+        }
+
+        /**
+         * Filter the language codes whose cached term lists are flushed together.
+         *
+         * @since 1.5.0
+         *
+         * @param string[] $languages Language codes, '' for the language-less list.
+         */
+        $languages = (array) apply_filters( 'jpkcom_postfilter_terms_cache_languages', $languages );
+
+        return array_values( array_unique( array_map( static fn( mixed $l ): string => sanitize_key( (string) $l ), $languages ) ) );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_terms_cache_key' ) ) {
+    /**
+     * Transient key of a cached term list
+     *
+     * Without a multilingual plugin the key is the one used before 1.5.0.
+     *
+     * @since 1.5.0
+     *
+     * @param string $taxonomy   Taxonomy.
+     * @param bool   $hide_empty hide_empty variant.
+     * @param string $language   Language code, '' for none.
+     * @return string
+     */
+    function jpkcom_postfilter_terms_cache_key( string $taxonomy, bool $hide_empty, string $language = '' ): string {
+        return 'terms_' . $taxonomy . '_' . ( $hide_empty ? '1' : '0' ) . ( $language !== '' ? '_' . $language : '' );
     }
 }
 
@@ -314,7 +411,7 @@ add_action( 'init', static function (): void {
 add_action( 'jpkcom_postfilter_settings_saved', static function ( string $group ): void {
     if ( in_array( $group, [ 'filter_groups', 'general' ], true ) ) {
         // Schedule a flush on the next request rather than doing it inline
-        update_option( 'jpkcom_postfilter_flush_rewrite', '1', false );
+        update_option( 'jpkcom_postfilter_flush_rewrite', '1', true );
         jpkcom_postfilter_debug_log( "Rewrite flush scheduled after settings save: {$group}" );
     }
 } );
@@ -326,7 +423,9 @@ add_action( 'jpkcom_postfilter_settings_saved', static function ( string $group 
  */
 add_action( 'init', static function (): void {
     if ( get_option( 'jpkcom_postfilter_flush_rewrite' ) === '1' ) {
-        delete_option( 'jpkcom_postfilter_flush_rewrite' );
+        // Reset rather than delete: a missing option is looked up again on
+        // every request, an autoloaded '0' costs nothing.
+        update_option( 'jpkcom_postfilter_flush_rewrite', '0', true );
         flush_rewrite_rules( false );
         jpkcom_postfilter_debug_log( 'Rewrite rules flushed' );
     }
