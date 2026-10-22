@@ -5,7 +5,7 @@ https://github.com/JPKCom/jpkcom-post-filter<br />
 <strong>Description:</strong> Faceted navigation and filtering of Posts,
 Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly
 URLs, AJAX updates, and full screen reader support.<br />
-<strong>Version:</strong> 1.4.7<br />
+<strong>Version:</strong> 1.5.0<br />
 <strong>Author:</strong> Jean Pierre Kolb <a href="mailto:jpk@jpkc.com"
 class="email">jpk@jpkc.com</a><br />
 <strong>Author URI:</strong> https://www.jpkc.com/<br />
@@ -15,7 +15,7 @@ type, AJAX<br />
 <strong>Requires at least:</strong> 7.0<br />
 <strong>Tested up to:</strong> 7.1<br />
 <strong>Requires PHP:</strong> 8.3<br />
-<strong>Stable tag:</strong> 1.4.7<br />
+<strong>Stable tag:</strong> 1.5.0<br />
 <strong>License:</strong> GPL-2.0-or-later<br />
 <strong>License URI:</strong>
 https://www.gnu.org/licenses/gpl-2.0.html<br />
@@ -138,6 +138,86 @@ error log</td>
 </tr>
 </tbody>
 </table>
+<p><strong>Crawlers &amp; SEO</strong> (since 1.5.0). Every combination
+of filter terms is its own URL; these settings keep that space small
+without locking any crawler out of content. Each can also be pinned in
+<code>wp-config.php</code> (the field is then shown locked).</p>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 30%" />
+<col style="width: 43%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Filter Links for Crawlers</td>
+<td>Single terms only</td>
+<td>What a term button links to for clients without JavaScript: its own
+single-term page (<code>single</code>), the combination within the
+limits (<code>combo</code>), or nothing (<code>none</code>). Visitors
+with JavaScript can always combine terms. Constant
+<code>JPKCOM_POSTFILTER_LINK_MODE</code></td>
+</tr>
+<tr class="even">
+<td>Indexable Filter Pages</td>
+<td>1</td>
+<td>Filter pages with up to this many terms are
+<code>index, follow</code>; more terms, unknown terms or no results →
+<code>noindex, nofollow</code>, no canonical. Constant
+<code>JPKCOM_POSTFILTER_INDEX_MAX_TERMS</code></td>
+</tr>
+<tr class="odd">
+<td>Max. Terms in Total</td>
+<td>0 (off)</td>
+<td>Cap across all groups, enforced by the filter bar and the server.
+Constant <code>JPKCOM_POSTFILTER_MAX_TERMS_TOTAL</code></td>
+</tr>
+<tr class="even">
+<td>Strict Filter URLs</td>
+<td>on</td>
+<td>301 every other spelling of a selection to its canonical URL; reject
+impossible paths before the database is queried. Constant
+<code>JPKCOM_POSTFILTER_STRICT_URLS</code></td>
+</tr>
+<tr class="odd">
+<td>Invalid Combinations</td>
+<td>410</td>
+<td>Status for paths beyond the limits (410 or 404). Constant
+<code>JPKCOM_POSTFILTER_REJECT_STATUS</code></td>
+</tr>
+<tr class="even">
+<td>Unknown Terms in URLs</td>
+<td>Redirect</td>
+<td><code>redirect</code> to the selection without them,
+<code>noindex</code>, or <code>reject</code>. Constant
+<code>JPKCOM_POSTFILTER_UNKNOWN_TERMS_ACTION</code></td>
+</tr>
+<tr class="odd">
+<td>Query Strings on Filter URLs</td>
+<td>off</td>
+<td>301 <code>/filter/x/?a=b</code> to <code>/filter/x/</code>; keep
+parameters via the <code>jpkcom_postfilter_strip_query_allowlist</code>
+filter. Constant <code>JPKCOM_POSTFILTER_STRIP_QUERY</code></td>
+</tr>
+<tr class="even">
+<td>robots.txt Rules</td>
+<td>Disallow combinations</td>
+<td>Rules appended to WordPress’s virtual robots.txt (shown on the
+settings page for copying into a physical file). Constant
+<code>JPKCOM_POSTFILTER_ROBOTS_TXT</code></td>
+</tr>
+</tbody>
+</table>
+<p>The existing caps can be pinned too:
+<code>JPKCOM_POSTFILTER_MAX_FILTERS_PER_GROUP</code>,
+<code>JPKCOM_POSTFILTER_MAX_FILTER_COMBOS</code>.</p>
 <p>After changing the URL endpoint go to <strong>Settings →
 Permalinks</strong> and click Save, or use the <strong>Flush Rewrite
 Rules</strong> button on the General page.</p>
@@ -1203,7 +1283,135 @@ Layout &amp; Design → Advanced</strong>. You are then fully responsible
 for all styling.</p>
 <hr />
 <h2 id="changelog">Changelog</h2>
-<h3 id="section">1.4.7</h3>
+<h3 id="section">1.5.0</h3>
+<p>What changes on a running site after the update - read this
+first:</p>
+<ul>
+<li><strong>Changed (behaviour, all sites):</strong> filter URLs have
+exactly one spelling. The terms of a group are sorted and de-duplicated;
+any other spelling (<code>b+a</code>, <code>a+a</code>, upper case, a
+trailing <code>_</code>, <code>…/page/1/</code>) is answered with a
+<strong>301</strong> to the canonical URL. Existing links and indexed
+URLs keep working through that redirect.</li>
+<li><strong>Note (WPML):</strong> whether a term exists is now checked
+against all languages, so a term of a second language is never
+redirected away. The robots.txt rules are written for every language
+prefix (<code>/filter/*+</code>, <code>/en/filter/*+</code>).</li>
+<li><strong>Fixed (multisite):</strong> all sites of a network shared
+one settings cache directory, so the site that saved last decided the
+URL endpoint, filter groups and limits of every other site. Each site
+now has its own subdirectory (<code>site-{id}</code>); the old shared
+files are removed on the update. Single sites are unaffected.</li>
+<li><strong>Fixed (WPML/Polylang):</strong> the filter bar’s term list
+was cached once per taxonomy, so the language that loaded it first
+decided which terms the bar showed in every language for up to an hour.
+It is now cached per language.</li>
+<li><strong>Fixed (APCu):</strong> the query cache in APCu used the same
+keys on every site of a network and every WordPress installation served
+by the same PHP-FPM pool, so one site could be shown another site’s
+cached posts. Keys are now scoped to the site.</li>
+<li><strong>Fixed:</strong> going back or forward between
+<code>#anchor</code> entries of a filter page could, if the background
+request failed, reload the page in an endless loop.</li>
+<li><strong>Fixed (accessibility):</strong> with auto-inject and the
+theme’s own post loop, screen readers announced “No posts found” after
+every successful filter click, because the theme’s posts carry none of
+the plugin’s markers. The result count is announced now, and “No posts
+found” only when there really are none.</li>
+<li><strong>Changed (behaviour, all sites):</strong> filter URLs beyond
+the configured limits - more terms per group than <em>Max. Filters per
+Group</em>, more groups than <em>Max Filter Combinations</em>, more
+segments than filter groups - are answered with <strong>410</strong> and
+a short page instead of being truncated and rendered. Terms that do not
+exist are redirected away (to the remaining selection or the archive)
+instead of rendering an empty page. Both happen before the database is
+queried. Switch off with <em>Strict Filter URLs</em> or
+<code>JPKCOM_POSTFILTER_STRICT_URLS = false</code>.</li>
+<li><strong>Changed (behaviour, all sites):</strong> filter pages with
+more than one term, with unknown terms or with no results are now
+<code>noindex, nofollow</code> and carry no canonical (header
+<code>X-Robots-Tag</code> as well). Single-term filter pages stay
+<code>index, follow</code>. Sites whose multi-term filter pages rank
+today will see them leave the index over the following weeks - set
+<em>Indexable Filter Pages</em> higher to keep them.</li>
+<li><strong>Changed (markup):</strong> term buttons for clients without
+JavaScript link to the term’s own single-term page (<em>Filter Links for
+Crawlers</em> = single terms). Terms that would lead nowhere useful are
+rendered as <code>&lt;button type="button"&gt;</code> instead of
+<code>&lt;a&gt;</code>, styled identically. Visitors with JavaScript
+notice nothing: the script still combines terms freely. Without
+JavaScript, clicking a term now switches to that term instead of adding
+it; choose <em>Combinations within the limits</em> to keep the old
+behaviour (now capped and sorted).</li>
+<li><strong>Changed (interface):</strong> theme overrides of
+<code>partials/filter/*.php</code> keep working but also keep the old
+unbounded links until they call
+<code>jpkcom_postfilter_term_link_attributes()</code> like the shipped
+templates. The reset link no longer carries
+<code>rel="nofollow"</code>.</li>
+<li><strong>Fixed:</strong> two canonical tags on every filter page with
+Rank Math or Yoast - the SEO plugin’s (pointing at the blog page) and
+the plugin’s own. The plugin’s canonical now goes through the SEO
+plugin, so there is exactly one. Rank Math’s noindex now uses its native
+keys, so Rank Math also drops its canonical and prev/next links on
+noindex pages.</li>
+<li><strong>Fixed:</strong> pagination linked page 1 as
+<code>…/page/1/</code>, a duplicate of the page, from every paginated
+list.</li>
+<li><strong>Fixed:</strong> <code>?jpkcom_filter_path=…</code> (and the
+fragment and post-type variables) in a query string turned any URL into
+a filter or fragment response, bypassing every path-based rule. They are
+now taken only from the matched URL.</li>
+<li><strong>Fixed:</strong> with the settings cache switched off, every
+settings read rewrote the cache file - dozens of writes per page.
+Settings are now read once per request.</li>
+<li><strong>Fixed:</strong> a filter click the server answers with an
+error no longer reloads the whole page onto that error. For a rejected
+combination and for a 429/5xx the current results, the filter buttons
+and the address bar stay on the last state that worked, and a message
+says why (after back/forward the page loads the URL the browser moved
+to, as before); a quick second click cancels the first request instead
+of racing it.</li>
+<li><strong>Added:</strong> robots.txt rules for the filter combinations
+(<em>robots.txt Rules</em>: <code>Disallow: …/filter/*+</code>), applied
+to every crawler alike - no bot is locked out of content or single-term
+pages. Only effective when the web server passes
+<code>/robots.txt</code> to WordPress; the settings page shows the lines
+for a physical file.</li>
+<li><strong>Fixed:</strong> custom post type archives under a permalink
+front (<code>/blog/%postname%/</code> with <code>with_front</code>): the
+filter rewrite rule left the front out, so the filter links the plugin
+built for them returned 404. Takes effect with the automatic rewrite
+flush after the update.</li>
+<li><strong>Changed (Abilities API):</strong> <code>query-posts</code>
+no longer returns a <code>filter_url</code> when a requested term does
+not exist, because the website now redirects that URL to a different
+selection. The unknown terms are still reported.</li>
+<li><strong>Added:</strong> <em>Max. Terms in Total</em>, a cap across
+all filter groups; optional query-string stripping on filter URLs; all
+caps and policies as <code>wp-config.php</code> constants and filters
+(<code>jpkcom_postfilter_{setting}</code>,
+<code>jpkcom_postfilter_request_verdict</code>,
+<code>jpkcom_postfilter_robots_directives</code>,
+<code>jpkcom_postfilter_canonical</code>,
+<code>jpkcom_postfilter_term_href</code>,
+<code>jpkcom_postfilter_term_link_rel</code>,
+<code>jpkcom_postfilter_robots_txt_rules</code>,
+<code>jpkcom_postfilter_cache_query</code>,
+<code>jpkcom_postfilter_donotcache</code>).</li>
+<li><strong>Performance:</strong> the query cache only stores selections
+of one term (keyed on the sorted selection), the plugin’s options are
+autoloaded, and the rewrite-flush flag no longer costs a query per
+request.</li>
+<li><strong>Background:</strong> on a production site ~840 000 filter
+requests a day reached WordPress, every URL unique, every one a full
+render. The crawlers found them by following the filter bar’s own links,
+which pointed every term at “current selection + this term” in click
+order without limit. The URL space is now finite: at 10 terms in each of
+two groups, 20 single-term pages are crawlable instead of tens of
+millions of combinations.</li>
+</ul>
+<h3 id="section-1">1.4.7</h3>
 <ul>
 <li>Added: updates for inactive JPKCom plugins. WordPress never runs the
 code of a deactivated plugin, so its own updater never ran and it was
@@ -1226,14 +1434,14 @@ the renamed folder. Update information is fetched only for users who can
 update plugins, in WordPress’s update cron and in WP-CLI, never for
 anonymous visitors</li>
 </ul>
-<h3 id="section-1">1.4.6</h3>
+<h3 id="section-2">1.4.6</h3>
 <ul>
 <li>Added: a plugin icon. The update manifest now points WordPress to
 the JPKCom logo, so the Updates screen (Dashboard → Updates) shows it
 next to this plugin instead of the generic pattern wordpress.org
 generates from the slug</li>
 </ul>
-<h3 id="section-2">1.4.5</h3>
+<h3 id="section-3">1.4.5</h3>
 <ul>
 <li>Security: the plugin header now carries
 <code>Update URI: https://github.com/JPKCom/jpkcom-post-filter</code>.
@@ -1252,7 +1460,7 @@ GitHub release and verifies its SHA-256 before running it, instead of
 executing whatever phpdoc.org serves that day. No effect on the shipped
 plugin</li>
 </ul>
-<h3 id="section-3">1.4.4</h3>
+<h3 id="section-4">1.4.4</h3>
 <ul>
 <li><strong>Fixed:</strong> with an HTML-minifying optimisation plugin
 active, every filter click returned an empty response and the list
@@ -1283,7 +1491,7 @@ registration happens while the plugin is loading, because Autoptimize
 decides once per request and has usually decided by
 <code>wp</code>.</li>
 </ul>
-<h3 id="section-4">1.4.3</h3>
+<h3 id="section-5">1.4.3</h3>
 <ul>
 <li><strong>Fixed:</strong> the 1.4.1 release note said the German
 translation had fallen behind “for three releases”. The actual figure is
@@ -1295,7 +1503,7 @@ point of the note. The 1.4.1 entry has been corrected and marked. No
 code is affected — this release exists so the corrected note reaches the
 sites that read the published changelog.</li>
 </ul>
-<h3 id="section-5">1.4.2</h3>
+<h3 id="section-6">1.4.2</h3>
 <ul>
 <li><strong>Added:</strong> 46 German translations that were missing.
 Affected were the three block titles and their descriptions and search
@@ -1316,7 +1524,7 @@ and keywords, sixteen in total — as missing from the compiled catalogue,
 although they were present. It now reads the context the way WordPress
 stores it.</li>
 </ul>
-<h3 id="section-6">1.4.1</h3>
+<h3 id="section-7">1.4.1</h3>
 <ul>
 <li><strong>Fixed:</strong> the German translation had not kept up with
 the plugin for twelve releases. The translation catalogue was last
@@ -1333,7 +1541,7 @@ catalogue falls behind the code. Regenerating it was never an automated
 step and was not on the release checklist, which is how it went
 unnoticed for twelve releases. It is now both.</li>
 </ul>
-<h3 id="section-7">1.4.0</h3>
+<h3 id="section-8">1.4.0</h3>
 <ul>
 <li><strong>Changed:</strong> WordPress 7.0 is now the minimum. Up to
 6.9 an unexpected error inside an ability callback ended the whole
@@ -1353,7 +1561,7 @@ abilities is now written directly as an empty object instead of being
 produced by a helper. What clients receive is unchanged, and it stays an
 object rather than an empty list.</li>
 </ul>
-<h3 id="section-8">1.3.1</h3>
+<h3 id="section-9">1.3.1</h3>
 <ul>
 <li><strong>Fixed:</strong> the query ability is declared read-only, but
 reading a post’s excerpt made WordPress’ embed handler run — and with no
@@ -1394,7 +1602,7 @@ restriction lives in the query the plugin builds, and another plugin can
 change that query before it runs. The behaviour is unchanged; the
 description of it now matches.</li>
 </ul>
-<h3 id="section-9">1.3.0</h3>
+<h3 id="section-10">1.3.0</h3>
 <ul>
 <li><strong>Added:</strong> the plugin now registers two read-only
 WordPress Abilities, <code>jpkcom-post-filter/list-filters</code> and
@@ -1479,7 +1687,7 @@ to be accepted on the strength of the configuration alone and then
 answered with the complete unfiltered corpus; it now returns the
 unknown-taxonomy error naming the taxonomies that really exist.</li>
 </ul>
-<h3 id="section-10">1.2.3</h3>
+<h3 id="section-11">1.2.3</h3>
 <ul>
 <li>CI: the lint and guard workflow now also runs on pushes to
 <code>main</code>. It only covered pull requests, so a direct push with
@@ -1489,7 +1697,7 @@ repository are now English throughout, and the developer notes in
 <code>CLAUDE.md</code> were translated and trimmed. No effect on the
 shipped plugin</li>
 </ul>
-<h3 id="section-11">1.2.2</h3>
+<h3 id="section-12">1.2.2</h3>
 <ul>
 <li>Changed: <code>Tested up to</code> raised to WordPress 7.1</li>
 <li>Changed: the bundled updater’s runtime floor now matches the
@@ -1501,7 +1709,7 @@ and <code>tested</code> now say 6.9 and 7.1. They only apply when the
 README metadata cannot be read, but a stale fallback would have
 published a minimum the plugin no longer supports</li>
 </ul>
-<h3 id="section-12">1.2.1</h3>
+<h3 id="section-13">1.2.1</h3>
 <ul>
 <li>Added: plugin banners (<code>assets/banner-1544x500.avif</code>,
 <code>assets/banner-772x250.avif</code>) — a plain <code>#3c4955</code>
@@ -1509,7 +1717,7 @@ surface with no lettering. The update manifest already advertised these
 two URLs, but nothing was published under them, so the plugin card in
 wp-admin had a broken banner</li>
 </ul>
-<h3 id="section-13">1.2.0</h3>
+<h3 id="section-14">1.2.0</h3>
 <ul>
 <li>Added: filter requests are answered with just the swappable zones
 instead of a complete page. The theme header, nav menus, sidebar widgets
@@ -1546,7 +1754,7 @@ rules would otherwise never reach the database</li>
 <li>Added: <code>tests/browser-check.mjs</code> drives a real filter
 click in headless Chromium</li>
 </ul>
-<h3 id="section-14">1.1.7</h3>
+<h3 id="section-15">1.1.7</h3>
 <ul>
 <li><strong>Fixed:</strong> the settings-directory containment check was
 a tautology — it compared <code>realpath( WP_CONTENT_DIR )</code> with
@@ -1575,7 +1783,7 @@ never by the requested slugs</li>
 regression tests for all of the above, each written to fail against the
 previous implementation. Run in CI on every pull request</li>
 </ul>
-<h3 id="section-15">1.1.6</h3>
+<h3 id="section-16">1.1.6</h3>
 <ul>
 <li>Security: update packages are now verified <em>before</em>
 installation — the verified file is handed to WordPress instead of being
@@ -1602,13 +1810,13 @@ check, YAML validation, action-pinning guard)</li>
 <li>Housekeeping: removed stray editor backups and an unused
 <code>messages.mo</code> from the release package</li>
 </ul>
-<h3 id="section-16">1.1.5</h3>
+<h3 id="section-17">1.1.5</h3>
 <ul>
 <li>Raised “Tested up to” to WordPress 7.0</li>
 <li>Normalized license fallback defaults (updater and release workflow)
 to <code>GPL-2.0-or-later</code> with the HTTPS license URI</li>
 </ul>
-<h3 id="section-17">1.1.4</h3>
+<h3 id="section-18">1.1.4</h3>
 <ul>
 <li>Security: updater prefers an exact match against the manifest
 <code>download_url</code> over the slug heuristic, so a tampered
@@ -1625,7 +1833,7 @@ completing the <code>no_update</code> transient entry
 (<code>new_version</code>, <code>package</code>, <code>tested</code>,
 <code>requires_php</code>)</li>
 </ul>
-<h3 id="section-18">1.1.3</h3>
+<h3 id="section-19">1.1.3</h3>
 <ul>
 <li><strong>Plus/Minus Icon styling</strong> — New CSS variables
 (<code>--jpkpf-pm-color</code>, <code>--jpkpf-pm-font-size</code>,
@@ -1640,7 +1848,7 @@ icons, fixing themes that force underlines on links</li>
 <li><strong>Translations</strong> — Updated de_DE and de_DE_formal
 translations for all new strings</li>
 </ul>
-<h3 id="section-19">1.1.2</h3>
+<h3 id="section-20">1.1.2</h3>
 <ul>
 <li><strong>Plugin Updater</strong> — Fixed manual ZIP upload failing
 with “invalid URL” error by adding <code>wp_http_validate_url()</code>
@@ -1649,12 +1857,12 @@ check in <code>verify_download_checksum()</code></li>
 top-level directory; WordPress now correctly recognises the update by
 using a staging directory with the plugin slug</li>
 </ul>
-<h3 id="section-20">1.1.1</h3>
+<h3 id="section-21">1.1.1</h3>
 <ul>
 <li><strong>.github/workflows/release.yml</strong> — “Build Gutenberg
 blocks” npm ci bugfix</li>
 </ul>
-<h3 id="section-21">1.1.0</h3>
+<h3 id="section-22">1.1.0</h3>
 <ul>
 <li><strong>Gutenberg Blocks</strong> — Three native blocks (Post
 Filter, Post List, Post Pagination) with live server-side preview,
@@ -1680,7 +1888,7 @@ to multiple pages</li>
 <li><strong>Auto-inject guard</strong> — Prevents duplicate pagination
 insertion in auto-inject mode during AJAX swaps</li>
 </ul>
-<h3 id="section-22">1.0.0</h3>
+<h3 id="section-23">1.0.0</h3>
 <ul>
 <li>Initial release</li>
 <li>Faceted filtering for any post type and taxonomy</li>

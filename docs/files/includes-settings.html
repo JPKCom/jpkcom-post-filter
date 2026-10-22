@@ -189,6 +189,13 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
 <dd>Check whether a path resolves inside a base directory</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_settings_dir">jpkcom_postfilter_settings_dir()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Settings cache directory of the current site</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_ensure_settings_dir">jpkcom_postfilter_ensure_settings_dir()</a>
     <span>
                                 &nbsp;: bool    </span>
@@ -196,11 +203,32 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
 <dd>Create the settings cache directory and write a protective .htaccess</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_protect_settings_dir">jpkcom_postfilter_protect_settings_dir()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>Write the .htaccess and index.php that keep a cache directory private</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_settings_cache_path">jpkcom_postfilter_settings_cache_path()</a>
     <span>
                                 &nbsp;: string|null    </span>
 </dt>
 <dd>Build the file path for a settings cache file</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_settings_file_cache_enabled">jpkcom_postfilter_settings_file_cache_enabled()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether the settings file cache is in use</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_settings_memo_reset">jpkcom_postfilter_settings_memo_reset()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>Invalidate the per-request settings memo</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_settings_read_file">jpkcom_postfilter_settings_read_file()</a>
@@ -394,6 +422,61 @@ the directory itself to be missing.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_settings_dir">
+        jpkcom_postfilter_settings_dir()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_settings_dir" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">98</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Settings cache directory of the current site</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_settings_dir</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>On multisite every site gets its own subdirectory <code class="prettyprint">site-{blog_id}</code>.
+Until 1.5.0 the whole network shared one directory: whichever site last
+wrote general.php or filter_groups.php defined the URL endpoint, the
+filter groups and the caps for every other site - and since 1.5.0 the
+request guard would answer the other sites' valid filter URLs with
+301/410 on that basis. Single sites keep the directory itself.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_settings_dir_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_settings_dir_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.5.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Absolute path without trailing slash.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_ensure_settings_dir">
         jpkcom_postfilter_ensure_settings_dir()
         <a href="namespaces/default.html#function_jpkcom_postfilter_ensure_settings_dir" class="headerlink"><i class="fas fa-link"></i></a>
@@ -402,7 +485,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">90</span>
+    <span class="phpdocumentor-element-found-in__line">117</span>
 
     </aside>
 
@@ -442,6 +525,58 @@ the directory itself to be missing.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_protect_settings_dir">
+        jpkcom_postfilter_protect_settings_dir()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_protect_settings_dir" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">166</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Write the .htaccess and index.php that keep a cache directory private</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_protect_settings_dir</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$dir</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$dir</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Existing directory.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_protect_settings_dir_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_protect_settings_dir_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.5.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_settings_cache_path">
         jpkcom_postfilter_settings_cache_path()
         <a href="namespaces/default.html#function_jpkcom_postfilter_settings_cache_path" class="headerlink"><i class="fas fa-link"></i></a>
@@ -450,7 +585,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">161</span>
+    <span class="phpdocumentor-element-found-in__line">211</span>
 
     </aside>
 
@@ -502,6 +637,96 @@ the directory itself to be missing.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_settings_file_cache_enabled">
+        jpkcom_postfilter_settings_file_cache_enabled()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_settings_file_cache_enabled" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">233</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether the settings file cache is in use</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_settings_file_cache_enabled</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>Reads the cache option directly via get_option() to avoid a circular
+dependency (jpkcom_postfilter_settings_get() reads through the cache).</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_settings_file_cache_enabled_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_settings_file_cache_enabled_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.5.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_settings_memo_reset">
+        jpkcom_postfilter_settings_memo_reset()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_settings_memo_reset" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">256</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Invalidate the per-request settings memo</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_settings_memo_reset</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+        <section class="phpdocumentor-description"><p>Called on every settings save, cache deletion and option update, so a
+long-running process (WP-CLI, cron) never reads a stale group.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_settings_memo_reset_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_settings_memo_reset_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.5.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_settings_read_file">
         jpkcom_postfilter_settings_read_file()
         <a href="namespaces/default.html#function_jpkcom_postfilter_settings_read_file" class="headerlink"><i class="fas fa-link"></i></a>
@@ -510,7 +735,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">181</span>
+    <span class="phpdocumentor-element-found-in__line">271</span>
 
     </aside>
 
@@ -570,7 +795,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">231</span>
+    <span class="phpdocumentor-element-found-in__line">314</span>
 
     </aside>
 
@@ -639,7 +864,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">294</span>
+    <span class="phpdocumentor-element-found-in__line">377</span>
 
     </aside>
 
@@ -699,7 +924,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">325</span>
+    <span class="phpdocumentor-element-found-in__line">408</span>
 
     </aside>
 
@@ -777,7 +1002,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">341</span>
+    <span class="phpdocumentor-element-found-in__line">424</span>
 
     </aside>
 
@@ -837,7 +1062,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">372</span>
+    <span class="phpdocumentor-element-found-in__line">475</span>
 
     </aside>
 
@@ -906,7 +1131,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">406</span>
+    <span class="phpdocumentor-element-found-in__line">512</span>
 
     </aside>
 
@@ -958,7 +1183,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">439</span>
+    <span class="phpdocumentor-element-found-in__line">547</span>
 
     </aside>
 
@@ -1006,7 +1231,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">546</span>
+    <span class="phpdocumentor-element-found-in__line">663</span>
 
     </aside>
 
@@ -1066,7 +1291,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">622</span>
+    <span class="phpdocumentor-element-found-in__line">759</span>
 
     </aside>
 
@@ -1126,7 +1351,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">700</span>
+    <span class="phpdocumentor-element-found-in__line">837</span>
 
     </aside>
 
@@ -1186,7 +1411,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">727</span>
+    <span class="phpdocumentor-element-found-in__line">864</span>
 
     </aside>
 
@@ -1246,7 +1471,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">784</span>
+    <span class="phpdocumentor-element-found-in__line">921</span>
 
     </aside>
 
@@ -1294,7 +1519,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">858</span>
+    <span class="phpdocumentor-element-found-in__line">995</span>
 
     </aside>
 
@@ -1354,7 +1579,7 @@ the directory itself to be missing.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">932</span>
+    <span class="phpdocumentor-element-found-in__line">1069</span>
 
     </aside>
 
@@ -1437,6 +1662,7 @@ For 'vars_only' mode, all defaults are included.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_css_var_defaults">jpkcom_postfilter_get_css_var_defaults()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_merged_css_vars">jpkcom_postfilter_get_merged_css_vars()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_path_is_inside">jpkcom_postfilter_path_is_inside()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_protect_settings_dir">jpkcom_postfilter_protect_settings_dir()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_cache_settings">jpkcom_postfilter_sanitize_cache_settings()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_filter_groups_settings">jpkcom_postfilter_sanitize_filter_groups_settings()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_general_settings">jpkcom_postfilter_sanitize_general_settings()</a></li>
@@ -1444,8 +1670,11 @@ For 'vars_only' mode, all defaults are included.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_settings_cache_path">jpkcom_postfilter_settings_cache_path()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_settings_delete_cache">jpkcom_postfilter_settings_delete_cache()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_settings_delete_file">jpkcom_postfilter_settings_delete_file()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_settings_dir">jpkcom_postfilter_settings_dir()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_settings_file_cache_enabled">jpkcom_postfilter_settings_file_cache_enabled()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_settings_get">jpkcom_postfilter_settings_get()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_settings_get_group">jpkcom_postfilter_settings_get_group()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_settings_memo_reset">jpkcom_postfilter_settings_memo_reset()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_settings_read_file">jpkcom_postfilter_settings_read_file()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_settings_save">jpkcom_postfilter_settings_save()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_settings_write_file">jpkcom_postfilter_settings_write_file()</a></li>

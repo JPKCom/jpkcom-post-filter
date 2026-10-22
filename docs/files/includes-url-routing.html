@@ -208,6 +208,13 @@ that later groups can still be addressed without creating ambiguous URLs.</p>
 <dd>Get the WP query string fragment that establishes the correct archive context</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_routable_post_types">jpkcom_postfilter_routable_post_types()</a>
+    <span>
+                                &nbsp;: array&lt;string|int, string&gt;    </span>
+</dt>
+<dd>Post types that get filter URL routes</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_has_unknown_terms">jpkcom_postfilter_has_unknown_terms()</a>
     <span>
                                 &nbsp;: bool    </span>
@@ -215,10 +222,11 @@ that later groups can still be addressed without creating ambiguous URLs.</p>
 <dd>Whether the active filters reference term slugs that do not exist</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
-    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_should_noindex">jpkcom_postfilter_should_noindex()</a>
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_filters_have_unknown_terms">jpkcom_postfilter_filters_have_unknown_terms()</a>
     <span>
                                 &nbsp;: bool    </span>
 </dt>
+<dd>Whether a filter map references term slugs that do not exist</dd>
 
     </dl>
 
@@ -305,7 +313,7 @@ containing only <code class="prettyprint">_</code> is skipped.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-routing.php"><a href="files/includes-url-routing.html"><abbr title="includes/url-routing.php">url-routing.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">112</span>
+    <span class="phpdocumentor-element-found-in__line">113</span>
 
     </aside>
 
@@ -317,7 +325,9 @@ containing only <code class="prettyprint">_</code> is skipped.</p>
                     <span class="phpdocumentor-signature__name">jpkcom_postfilter_get_filter_url</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$base_url</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$filters</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">int&nbsp;</span><span class="phpdocumentor-signature__argument__name">$page</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">0</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
 
         <section class="phpdocumentor-description"><p>Constructs filter URL segments respecting filter group order. Empty
-intermediate groups use <code class="prettyprint">_</code> placeholders; trailing empty groups are dropped.</p>
+intermediate groups use <code class="prettyprint">_</code> placeholders; trailing empty groups are dropped.
+Since 1.5.0 the slugs of each group are sorted and de-duplicated, so one
+selection has exactly one URL whatever order it was clicked in.</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -386,7 +396,7 @@ intermediate groups use <code class="prettyprint">_</code> placeholders; trailin
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-routing.php"><a href="files/includes-url-routing.html"><abbr title="includes/url-routing.php">url-routing.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">170</span>
+    <span class="phpdocumentor-element-found-in__line">144</span>
 
     </aside>
 
@@ -446,7 +456,7 @@ intermediate groups use <code class="prettyprint">_</code> placeholders; trailin
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-routing.php"><a href="files/includes-url-routing.html"><abbr title="includes/url-routing.php">url-routing.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">200</span>
+    <span class="phpdocumentor-element-found-in__line">174</span>
 
     </aside>
 
@@ -519,7 +529,7 @@ post type has no archive.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-routing.php"><a href="files/includes-url-routing.html"><abbr title="includes/url-routing.php">url-routing.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">237</span>
+    <span class="phpdocumentor-element-found-in__line">225</span>
 
     </aside>
 
@@ -580,6 +590,54 @@ post type has no archive.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_routable_post_types">
+        jpkcom_postfilter_routable_post_types()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_routable_post_types" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/url-routing.php"><a href="files/includes-url-routing.html"><abbr title="includes/url-routing.php">url-routing.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">259</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Post types that get filter URL routes</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_routable_post_types</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string|int, string&gt;</span></code>
+
+        <section class="phpdocumentor-description"><p>The globally enabled post types plus every post type a filter group
+names, so filter URLs work even if the post type is not in the global
+enabled list. Shared by the rewrite rules and the robots.txt rules.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_routable_post_types_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_routable_post_types_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.5.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string|int, string&gt;</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_has_unknown_terms">
         jpkcom_postfilter_has_unknown_terms()
         <a href="namespaces/default.html#function_jpkcom_postfilter_has_unknown_terms" class="headerlink"><i class="fas fa-link"></i></a>
@@ -588,7 +646,7 @@ post type has no archive.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-routing.php"><a href="files/includes-url-routing.html"><abbr title="includes/url-routing.php">url-routing.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">451</span>
+    <span class="phpdocumentor-element-found-in__line">463</span>
 
     </aside>
 
@@ -603,9 +661,10 @@ post type has no archive.</p>
 <code class="prettyprint">/blog/filter/does-not-exist/</code> renders a perfectly valid page with zero
 results. Left alone, every made-up slug is therefore an indexable,
 self-canonicalising thin-content URL that anyone can generate and link.</p>
-<p>Such requests keep returning 200 — turning them into 404s would break
-legitimate old links whose terms were later renamed — but they are marked
-<code class="prettyprint">noindex</code> so they stay out of the index.</p>
+<p>Since 1.5.0 the request guard handles them before the main query
+(<code class="prettyprint">unknown_terms_action</code>, default: redirect to the selection without the
+unknown slugs). This check remains for the <code class="prettyprint">noindex</code> action, for strict
+URLs switched off, and for the robots/canonical decision.</p>
 <p>Validation reuses the transient-cached per-taxonomy term list, so this
 costs no extra query on a warm cache and cannot itself be used to flood
 the cache: the cache key is the taxonomy, never the requested slugs.</p>
@@ -639,27 +698,54 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
-    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_should_noindex">
-        jpkcom_postfilter_should_noindex()
-        <a href="namespaces/default.html#function_jpkcom_postfilter_should_noindex" class="headerlink"><i class="fas fa-link"></i></a>
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_filters_have_unknown_terms">
+        jpkcom_postfilter_filters_have_unknown_terms()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_filters_have_unknown_terms" class="headerlink"><i class="fas fa-link"></i></a>
 
     </h4>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-routing.php"><a href="files/includes-url-routing.html"><abbr title="includes/url-routing.php">url-routing.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">489</span>
+    <span class="phpdocumentor-element-found-in__line">493</span>
 
     </aside>
 
-    
+        <p class="phpdocumentor-summary">Whether a filter map references term slugs that do not exist</p>
+
     
     <code class="phpdocumentor-code phpdocumentor-signature ">
     <span class="phpdocumentor-signature__visibility"></span>
-                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_should_noindex</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_filters_have_unknown_terms</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$filters</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
 
     
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$filters</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Taxonomy =&gt; term slugs.</p>
+</section>
+
+            </dd>
+            </dl>
+
     
-    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_filters_have_unknown_terms_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_filters_have_unknown_terms_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.5.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
 
             <section>
         <h5 class="phpdocumentor-return-value__heading">Return values</h5>
@@ -691,11 +777,12 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                     <ul class="phpdocumentor-list -clean">
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_archive_base_regex">jpkcom_postfilter_archive_base_regex()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_archive_query_string">jpkcom_postfilter_archive_query_string()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_filters_have_unknown_terms">jpkcom_postfilter_filters_have_unknown_terms()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_archive_base_url">jpkcom_postfilter_get_archive_base_url()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_filter_url">jpkcom_postfilter_get_filter_url()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_has_unknown_terms">jpkcom_postfilter_has_unknown_terms()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_parse_filter_path">jpkcom_postfilter_parse_filter_path()</a></li>
-                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_should_noindex">jpkcom_postfilter_should_noindex()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_routable_post_types">jpkcom_postfilter_routable_post_types()</a></li>
                                             </ul>
                 </li>
                     </ul>

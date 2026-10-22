@@ -1439,15 +1439,16 @@ access in the case that carries data.</p>
     <span class="phpdocumentor-signature__visibility"></span>
                     <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_unknown_terms</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$filters</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string, array&lt;string|int, string&gt;&gt;</span></code>
 
-        <section class="phpdocumentor-description"><p>Not an error: the website answers such a request with HTTP 200, zero
-results and a noindex robots tag. Reporting them lets a caller tell a
-typo apart from an genuinely empty result set.</p>
+        <section class="phpdocumentor-description"><p>Not an error. Reporting them lets a caller tell a typo apart from a
+genuinely empty result set. (The website redirects such a URL away since
+1.5.0, which is why no filter_url is handed out alongside them - see
+jpkcom_postfilter_ability_query_posts().)</p>
 <p>Checked the same way as jpkcom_postfilter_has_unknown_terms(): one
-array_diff() against the transient-cached per-taxonomy term list, never
-one lookup per requested slug. The cache key is the taxonomy, never the
+array_diff() against jpkcom_postfilter_known_term_slugs(), never one
+lookup per requested slug. The cache key is the taxonomy, never the
 requested slugs, so a caller cannot use this to flood the cache and a warm
-cache costs no query at all.</p>
-<p><code class="prettyprint">hide_empty = false</code>: a term with no posts is still a real term.</p>
+cache costs no query at all. Terms without posts and terms of every
+language count as known.</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -1498,7 +1499,7 @@ cache costs no query at all.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">658</span>
+    <span class="phpdocumentor-element-found-in__line">655</span>
 
     </aside>
 
@@ -1587,7 +1588,7 @@ CLAUDE.md, and <code class="prettyprint">get_permalink()</code>, <code class="pr
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">697</span>
+    <span class="phpdocumentor-element-found-in__line">694</span>
 
     </aside>
 
@@ -1656,7 +1657,7 @@ CLAUDE.md, and <code class="prettyprint">get_permalink()</code>, <code class="pr
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">768</span>
+    <span class="phpdocumentor-element-found-in__line">753</span>
 
     </aside>
 
@@ -1667,25 +1668,14 @@ CLAUDE.md, and <code class="prettyprint">get_permalink()</code>, <code class="pr
     <span class="phpdocumentor-signature__visibility"></span>
                     <span class="phpdocumentor-signature__name">jpkcom_postfilter_ability_filters_are_url_expressible</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$filters</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
 
-        <section class="phpdocumentor-description"><p>jpkcom_postfilter_get_filter_url() writes every requested slug into the
-path, but jpkcom_postfilter_parse_filter_path() truncates what it reads
-back to max_filters_per_group slugs per taxonomy and max_filter_combos
-taxonomies. Above either limit the built URL therefore shows a <em>different</em>
-result set than the one the ability just reported - measured with four
-category slugs against max_filters_per_group = 3, where the link resolved
-to the first three.</p>
-<p>This is a second implementation of a rule that lives in
-<code class="prettyprint">includes/url-routing.php:74-87</code>. That parser is the authority: it decides
-what a filter URL actually resolves to, and this function only predicts
-it. Change the truncation there and this gate goes stale without any test
-noticing - the suite stubs the settings getter and never loads
-url-routing.php - and the ability resumes emitting links to a narrower
-result set than it reports.</p>
-<p>Both caps treat 0 as unlimited, matching parse_filter_path(). Only
-max_filters_per_group can actually be set to 0 through the admin UI;
-settings.php clamps max_filter_combos to 1..10, so the unlimited branch of
-that one is unreachable on a normally configured site. It is kept because
-this function must mirror the parser, not the settings form.</p>
+        <section class="phpdocumentor-description"><p>Above the caps a built URL does not show the result set the ability just
+reported: until 1.5.0 the parser truncated it to the first slugs
+(measured with four category slugs against max_filters_per_group = 3,
+where the link resolved to the first three), since 1.5.0 the request
+guard rejects it with 404/410.</p>
+<p>Until 1.5.0 this function was a hand-maintained copy of the parser's
+truncation rule, and nothing noticed when the two drifted. It now asks
+the one function the parser, the request guard and the term links ask.</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -1736,7 +1726,7 @@ this function must mirror the parser, not the settings form.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">801</span>
+    <span class="phpdocumentor-element-found-in__line">768</span>
 
     </aside>
 
@@ -1796,7 +1786,7 @@ this function must mirror the parser, not the settings form.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">993</span>
+    <span class="phpdocumentor-element-found-in__line">974</span>
 
     </aside>
 
@@ -1860,7 +1850,7 @@ key is the MCP Adapter's own gate and is ignored by core.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1035</span>
+    <span class="phpdocumentor-element-found-in__line">1016</span>
 
     </aside>
 
@@ -1924,7 +1914,7 @@ access, which a site may want to restrict further.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1060</span>
+    <span class="phpdocumentor-element-found-in__line">1041</span>
 
     </aside>
 
@@ -1984,7 +1974,7 @@ access, which a site may want to restrict further.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1075</span>
+    <span class="phpdocumentor-element-found-in__line">1056</span>
 
     </aside>
 
@@ -2044,7 +2034,7 @@ access, which a site may want to restrict further.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1095</span>
+    <span class="phpdocumentor-element-found-in__line">1076</span>
 
     </aside>
 
@@ -2098,7 +2088,7 @@ third-party callbacks run whenever this is called.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1303</span>
+    <span class="phpdocumentor-element-found-in__line">1284</span>
 
     </aside>
 
@@ -2146,7 +2136,7 @@ third-party callbacks run whenever this is called.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1327</span>
+    <span class="phpdocumentor-element-found-in__line">1308</span>
 
     </aside>
 
@@ -2190,7 +2180,7 @@ this call fail silently.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/abilities.php"><a href="files/includes-abilities.html"><abbr title="includes/abilities.php">abilities.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1366</span>
+    <span class="phpdocumentor-element-found-in__line">1347</span>
 
     </aside>
 

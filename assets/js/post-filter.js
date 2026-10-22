@@ -4,7 +4,8 @@
  * Handles:
  * - AJAX filter requests with DOM-swap
  * - URL updates via history.pushState (no full page reload)
- * - No-JS fallback: filter links work as normal anchor navigation
+ * - No-JS fallback: terms that carry an href work as normal anchor navigation
+ *   (which terms do is decided server-side, see jpkcom_postfilter_term_href())
  * - Accessibility: aria-live region, aria-pressed, focus management
  * - prefers-reduced-motion: disables animations
  *
@@ -28,6 +29,16 @@
 	}
 
 	const cfg = window.jpkcomPostFilter;
+
+	// Result zone => AbortController of its in-flight request.
+	const pendingRequests = new WeakMap();
+
+	// Controllers of requests started by back/forward (not by a click).
+	const popstateRequests = new WeakSet();
+
+	// Result zone => the URL whose results it currently shows. Not always the
+	// address bar: back/forward moves the address bar before the zone follows.
+	const shownUrls = new WeakMap();
 
 	/**
 	 * Initialize all filter UIs on the page.
@@ -158,11 +169,44 @@
 		// filter buttons stayed pressed. Falling back to location.href re-fetches
 		// whatever URL the entry actually points at, which is correct for both
 		// the initial entry and any entry pushed by another script.
+		shownUrls.set( resultZone, absoluteUrl( location.href ) );
+
 		window.addEventListener( 'popstate', function ( e ) {
 			const url = ( e.state && e.state.jpkpf ) ? e.state.url : location.href;
 
+			// An in-page anchor or a back step between two #hash entries of the
+			// same page fires popstate too. The zone already shows that page;
+			// fetching it again was pointless, and when the fetch failed the
+			// reload onto the same URL was another hash navigation - another
+			// popstate, an endless loop (measured: ~60 requests a second).
+			if ( withoutHash( url ) === withoutHash( shownUrls.get( resultZone ) || '' ) ) {
+				// Back where the zone already is - but a request started by an
+				// earlier back/forward step may still be on its way, and its
+				// answer (or its failure) belongs to an entry the user has
+				// already left. Cancel it and put the buttons back on this one.
+				//
+				// Only such a request: a click still loading when the user
+				// follows an in-page #anchor (a theme's "back to top") fires
+				// popstate for the same page too, and must not be undone.
+				const pending = pendingRequests.get( resultZone );
+				if ( pending && popstateRequests.has( pending ) ) {
+					pending.abort();
+					pendingRequests.delete( resultZone );
+					resultZone.classList.remove( 'jpkpf-loading' );
+					resultZone.setAttribute( 'aria-busy', 'false' );
+					if ( liveRegion ) {
+						liveRegion.textContent = '';
+					}
+					syncButtonsToUrl( filterBar, baseUrl );
+					if ( cfg.plusMinusMode ) {
+						updatePlusMinusIcons( filterBar );
+					}
+				}
+				return;
+			}
+
 			syncButtonsToUrl( filterBar, baseUrl );
-			fetchResults( url, resultZone, liveRegion, false );
+			fetchResults( url, resultZone, liveRegion, false, filterBar, baseUrl );
 		} );
 
 		// Feature: +/- mode — inject icons after all listeners are set
@@ -201,7 +245,7 @@
 		updateDropdownTriggers( filterBar );
 
 		const url = buildFilterUrl( filterBar, baseUrl );
-		fetchResults( url, resultZone, liveRegion, true );
+		fetchResults( url, resultZone, liveRegion, true, filterBar, baseUrl );
 	}
 
 	/**
@@ -268,7 +312,7 @@
 		updateResetButton( filterBar );
 		updateDropdownTriggers( filterBar );
 
-		fetchResults( baseUrl, resultZone, liveRegion, true );
+		fetchResults( baseUrl, resultZone, liveRegion, true, filterBar, baseUrl );
 	}
 
 	/**
@@ -334,8 +378,6 @@
 	 * @returns {string}
 	 */
 	function buildFilterUrl( filterBar, baseUrl ) {
-		const endpoint = cfg.endpoint || 'filter';
-
 		// Collect active filters grouped by taxonomy
 		const active = {};
 		filterBar.querySelectorAll( '.jpkpf-filter-btn[aria-pressed="true"]' ).forEach( function ( btn ) {
@@ -349,23 +391,63 @@
 			}
 		} );
 
-		if ( Object.keys( active ).length === 0 ) {
-			return ensureTrailingSlash( baseUrl );
+		return buildFilterUrlFromMap( active, cfg, baseUrl );
+	}
+
+	/**
+	 * Build a filter URL from a taxonomy => slugs map.
+	 *
+	 * Mirrors jpkcom_postfilter_get_filter_url() in includes/url-routing.php,
+	 * and tests/test-filter-url.php holds the two to the same case list. Slugs
+	 * are de-duplicated and sorted with the default sort, which for slugs is
+	 * the byte order PHP's sort( SORT_STRING ) uses. The server answers any
+	 * other spelling of a selection with a redirect (or, for a fragment, as
+	 * the same selection), so a drift here costs every visitor a redirect.
+	 *
+	 * Kept free of the DOM so it can be lifted out and tested.
+	 *
+	 * @param {Object<string, string[]>} active  Taxonomy => term slugs.
+	 * @param {Object}                   config  The localised config (endpoint, maxFilterCombos, filterGroupOrder).
+	 * @param {string}                   baseUrl Archive base URL.
+	 * @returns {string}
+	 */
+	function buildFilterUrlFromMap( active, config, baseUrl ) {
+		const endpoint = config.endpoint || 'filter';
+		const base     = baseUrl.endsWith( '/' ) ? baseUrl : baseUrl + '/';
+
+		const map = {};
+		Object.keys( active ).forEach( function ( taxonomy ) {
+			const seen  = {};
+			const slugs = ( active[ taxonomy ] || [] ).filter( function ( slug ) {
+				if ( ! slug || seen[ slug ] ) {
+					return false;
+				}
+				seen[ slug ] = true;
+				return true;
+			} );
+			if ( slugs.length > 0 ) {
+				map[ taxonomy ] = slugs.sort();
+			}
+		} );
+
+		if ( Object.keys( map ).length === 0 ) {
+			return base;
 		}
 
+		const groupOrder = ( config.filterGroupOrder && config.filterGroupOrder.length )
+			? config.filterGroupOrder
+			: Object.keys( map );
+
 		// Enforce max_filter_combos: limit number of active taxonomy groups
-		const maxCombos = parseInt( String( cfg.maxFilterCombos || 0 ), 10 );
-		if ( maxCombos > 0 && Object.keys( active ).length > maxCombos ) {
-			const order = ( cfg.filterGroupOrder && cfg.filterGroupOrder.length )
-				? cfg.filterGroupOrder
-				: Object.keys( active );
+		const maxCombos = parseInt( String( config.maxFilterCombos || 0 ), 10 );
+		if ( maxCombos > 0 && Object.keys( map ).length > maxCombos ) {
 			let kept = 0;
-			order.forEach( function ( taxonomy ) {
-				if ( active[ taxonomy ] && active[ taxonomy ].length > 0 ) {
+			groupOrder.forEach( function ( taxonomy ) {
+				if ( map[ taxonomy ] ) {
 					if ( kept < maxCombos ) {
 						kept++;
 					} else {
-						delete active[ taxonomy ];
+						delete map[ taxonomy ];
 					}
 				}
 			} );
@@ -373,16 +455,12 @@
 
 		// Build segments positionally, matching the configured group order.
 		// Empty positions get a '_' placeholder (same logic as PHP's get_filter_url).
-		const groupOrder = ( cfg.filterGroupOrder && cfg.filterGroupOrder.length )
-			? cfg.filterGroupOrder
-			: Object.keys( active );
-
 		const segments = [];
 		let lastNonEmpty = -1;
 
 		groupOrder.forEach( function ( taxonomy, index ) {
-			if ( active[ taxonomy ] && active[ taxonomy ].length > 0 ) {
-				segments.push( active[ taxonomy ].join( '+' ) );
+			if ( map[ taxonomy ] ) {
+				segments.push( map[ taxonomy ].join( '+' ) );
 				lastNonEmpty = index;
 			} else {
 				segments.push( '_' );
@@ -393,10 +471,10 @@
 		const trimmed = segments.slice( 0, lastNonEmpty + 1 );
 
 		if ( trimmed.length === 0 ) {
-			return ensureTrailingSlash( baseUrl );
+			return base;
 		}
 
-		return ensureTrailingSlash( baseUrl ) + endpoint + '/' + trimmed.join( '/' ) + '/';
+		return base + endpoint + '/' + trimmed.join( '/' ) + '/';
 	}
 
 	/**
@@ -406,8 +484,24 @@
 	 * @param {HTMLElement}      resultZone
 	 * @param {HTMLElement|null} liveRegion
 	 * @param {boolean}          pushState Whether to update browser history.
+	 * @param {HTMLElement}      [filterBar] Bar to re-sync when the request fails.
+	 * @param {string}           [baseUrl]   Its archive base URL.
 	 */
-	function fetchResults( url, resultZone, liveRegion, pushState ) {
+	function fetchResults( url, resultZone, liveRegion, pushState, filterBar, baseUrl ) {
+		// A newer click supersedes an unfinished request for the same zone.
+		// Without this, two quick clicks raced and the slower answer won.
+		const previous = pendingRequests.get( resultZone );
+		if ( previous ) {
+			previous.abort();
+		}
+		const controller = typeof AbortController === 'function' ? new AbortController() : null;
+		if ( controller ) {
+			pendingRequests.set( resultZone, controller );
+			if ( ! pushState ) {
+				popstateRequests.add( controller );
+			}
+		}
+
 		// Show loading state
 		resultZone.classList.add( 'jpkpf-loading' );
 		resultZone.setAttribute( 'aria-busy', 'true' );
@@ -422,13 +516,16 @@
 			method: 'GET',
 			headers: {
 				'X-Requested-With': 'XMLHttpRequest',
-				'X-WP-Nonce':       cfg.nonce || '',
 			},
 			credentials: 'same-origin',
+			signal: controller ? controller.signal : undefined,
 		} )
 			.then( function ( response ) {
 				if ( ! response.ok ) {
-					throw new Error( 'Network response was not ok: ' + response.status );
+					const error      = new Error( 'Network response was not ok: ' + response.status );
+					error.httpStatus = response.status;
+					error.rejected   = response.headers.has( 'X-Jpkpf-Reject' );
+					throw error;
 				}
 				return response.text();
 			} )
@@ -467,12 +564,14 @@
 						);
 					}
 
-					window.location.href = url;
+					loadUrl( url );
 					return;
 				}
 
 				// Swap content
 				resultZone.innerHTML = newZone.innerHTML;
+				shownUrls.set( resultZone, absoluteUrl( url ) );
+				clearFetchError( resultZone );
 
 				// Swap standalone pagination blocks (outside [data-jpkpf-results])
 				swapPagination( doc, resultZone );
@@ -482,12 +581,19 @@
 					history.pushState( { jpkpf: true, url }, document.title, url );
 				}
 
-				// Announce to screen readers
+				// Announce to screen readers. "No posts found" only when the
+				// zone says so: the theme's own loop (auto-inject) renders
+				// articles without data-jpkpf-post, and until 1.5.0 every
+				// successful click there was announced as "No posts found".
 				if ( liveRegion ) {
-					const count = resultZone.querySelectorAll( '[data-jpkpf-post]' ).length;
-					liveRegion.textContent = count > 0
-						? count + ' ' + ( cfg.i18n.filterActive || 'results' )
-						: ( cfg.i18n.noResults || 'No posts found.' );
+					const empty = !! resultZone.querySelector( '.jpkpf-no-results' );
+					const count = resultZone.querySelectorAll( '[data-jpkpf-post]' ).length
+						|| resultZone.querySelectorAll( 'article' ).length;
+					liveRegion.textContent = empty
+						? ( cfg.i18n.noResults || 'No posts found.' )
+						: ( count > 0
+							? count + ' ' + ( cfg.i18n.filterActive || 'results' )
+							: ( cfg.i18n.filterActive || 'Filter active' ) );
 				}
 
 				// Move focus to results for screen reader users
@@ -495,18 +601,157 @@
 				resultZone.focus( { preventScroll: true } );
 			} )
 			.catch( function ( error ) {
+				// Superseded by a newer click - that request owns the zone now.
+				if ( error && error.name === 'AbortError' ) {
+					return;
+				}
+
 				if ( cfg.debug ) {
 					// eslint-disable-next-line no-console
 					console.error( '[jpkcom-post-filter] Fetch error:', error );
 				}
 
-				// Graceful degradation: reload page at filter URL
-				window.location.href = url;
+				const status = ( error && error.httpStatus ) ? error.httpStatus : 0;
+
+				// Back/forward has already moved the address bar, so there is
+				// no "last state that worked" to stay on: load the popped URL,
+				// as every error did before 1.5.0. Keeping the old list under
+				// the new address and buttons would contradict both.
+				if ( ! pushState ) {
+					loadUrl( url );
+					return;
+				}
+
+				// A click can also land here after superseding a back/forward
+				// request whose swap never happened: the address bar then names
+				// a page the zone does not show. Load that page.
+				if ( withoutHash( shownUrls.get( resultZone ) || '' ) !== withoutHash( location.href ) ) {
+					loadUrl( location.href );
+					return;
+				}
+
+				// For a click, two answers keep the page as it is - results,
+				// buttons and address bar all back on the last state that
+				// worked - and say why. Before 1.5.0 any non-2xx reloaded the
+				// page.
+				//
+				//  - The request guard rejected this selection (combinations
+				//    beyond the configured limits answer 404/410, marked with
+				//    X-Jpkpf-Reject). A reload would land on that error page.
+				//    Only the marked answer: a plain 404 still means a broken
+				//    fragment route and keeps the reload below.
+				//  - Rate-limited or failing server: a reload would be a
+				//    second, heavier request against a server already
+				//    struggling.
+				//
+				// The buttons were switched before the request; left alone they
+				// would claim a selection the list does not show, and the next
+				// click would build its URL from it.
+				if ( ( error && error.rejected ) || status === 429 || status >= 500 ) {
+					if ( filterBar ) {
+						syncButtonsToUrl( filterBar, baseUrl );
+						if ( cfg.plusMinusMode ) {
+							updatePlusMinusIcons( filterBar );
+						}
+					}
+					showFetchError(
+						resultZone,
+						liveRegion,
+						error.rejected
+							? ( cfg.i18n.notAvailable || 'This filter combination is not available.' )
+							: ( cfg.i18n.tryAgain || 'The filter could not be applied. Please try again.' )
+					);
+					return;
+				}
+
+				// Network failure or anything unexpected: the server-rendered
+				// page for the same URL is slower but always correct.
+				loadUrl( url );
 			} )
 			.finally( function () {
+				if ( controller && pendingRequests.get( resultZone ) !== controller ) {
+					return; // A newer request is still loading.
+				}
+				pendingRequests.delete( resultZone );
 				resultZone.classList.remove( 'jpkpf-loading' );
 				resultZone.setAttribute( 'aria-busy', 'false' );
 			} );
+	}
+
+	/**
+	 * Resolve a URL against the current page.
+	 *
+	 * @param {string} url
+	 * @returns {string}
+	 */
+	function absoluteUrl( url ) {
+		try {
+			return new URL( url, location.href ).href;
+		} catch ( err ) {
+			return url;
+		}
+	}
+
+	/**
+	 * A URL without its #fragment, resolved against the current page.
+	 *
+	 * @param {string} url
+	 * @returns {string}
+	 */
+	function withoutHash( url ) {
+		return absoluteUrl( url ).split( '#' )[ 0 ];
+	}
+
+	/**
+	 * Fall back to a full page load of a URL.
+	 *
+	 * Assigning location.href a URL that differs from the current one only in
+	 * its #fragment is a same-document navigation, not a load - so for the
+	 * current page, reload instead.
+	 *
+	 * @param {string} url
+	 */
+	function loadUrl( url ) {
+		if ( withoutHash( url ) === withoutHash( location.href ) ) {
+			window.location.reload();
+		} else {
+			window.location.href = url;
+		}
+	}
+
+	/**
+	 * Show a visible, announced error above the (unchanged) results.
+	 *
+	 * @param {HTMLElement}      resultZone
+	 * @param {HTMLElement|null} liveRegion
+	 * @param {string}           message
+	 */
+	function showFetchError( resultZone, liveRegion, message ) {
+		let notice = resultZone.querySelector( '.jpkpf-fetch-error' );
+
+		if ( ! notice ) {
+			notice           = document.createElement( 'p' );
+			notice.className = 'jpkpf-fetch-error';
+			notice.setAttribute( 'role', 'alert' );
+			resultZone.insertBefore( notice, resultZone.firstChild );
+		}
+		notice.textContent = message;
+
+		if ( liveRegion ) {
+			liveRegion.textContent = '';
+		}
+	}
+
+	/**
+	 * Remove a previous fetch error notice.
+	 *
+	 * @param {HTMLElement} resultZone
+	 */
+	function clearFetchError( resultZone ) {
+		const notice = resultZone.querySelector( '.jpkpf-fetch-error' );
+		if ( notice ) {
+			notice.remove();
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -595,7 +840,7 @@
 		updateDropdownTriggers( filterBar );
 
 		const url = buildFilterUrl( filterBar, baseUrl );
-		fetchResults( url, resultZone, liveRegion, true );
+		fetchResults( url, resultZone, liveRegion, true, filterBar, baseUrl );
 	}
 
 
@@ -609,8 +854,39 @@
 	 * @param {HTMLElement} filterBar
 	 */
 	function enforceLimits( filterBar ) {
+		// Start from a clean slate: each step below only disables, and a step
+		// that is switched off (limit 0) would otherwise never re-enable what
+		// another step disabled earlier.
+		filterBar.querySelectorAll( '.jpkpf-filter-btn[data-filter-term]' ).forEach( function ( btn ) {
+			btn.removeAttribute( 'aria-disabled' );
+		} );
+
 		enforceGroupLimits( filterBar );
 		enforceComboLimit( filterBar );
+		enforceTotalLimit( filterBar );
+	}
+
+	/**
+	 * Disable every unselected term once the total number of selected terms
+	 * reaches cfg.maxTermsTotal (0 = no limit). The server rejects a selection
+	 * above it, so the UI must not offer one.
+	 *
+	 * @param {HTMLElement} filterBar
+	 */
+	function enforceTotalLimit( filterBar ) {
+		const max = parseInt( String( cfg.maxTermsTotal || 0 ), 10 );
+		if ( ! max || max <= 0 ) { return; }
+
+		const btns   = filterBar.querySelectorAll( '.jpkpf-filter-btn[data-filter-term]' );
+		const active = filterBar.querySelectorAll( '.jpkpf-filter-btn[data-filter-term][aria-pressed="true"]' ).length;
+
+		if ( active < max ) { return; }
+
+		btns.forEach( function ( btn ) {
+			if ( btn.getAttribute( 'aria-pressed' ) !== 'true' ) {
+				btn.setAttribute( 'aria-disabled', 'true' );
+			}
+		} );
 	}
 
 	/**
@@ -839,16 +1115,6 @@
 			}
 		}
 		return true;
-	}
-
-	/**
-	 * Ensure a URL ends with a trailing slash.
-	 *
-	 * @param {string} url
-	 * @returns {string}
-	 */
-	function ensureTrailingSlash( url ) {
-		return url.endsWith( '/' ) ? url : url + '/';
 	}
 
 	/**

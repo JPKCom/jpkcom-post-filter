@@ -198,6 +198,13 @@ When available: settings and frequent queries in shared memory.</p>
 </h4>
 <dl class="phpdocumentor-table-of-contents">
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_apcu_key">jpkcom_postfilter_apcu_key()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>APCu key for a plugin cache key, scoped to this site</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_cache_get">jpkcom_postfilter_cache_get()</a>
     <span>
                                 &nbsp;: mixed    </span>
@@ -348,6 +355,69 @@ When available: settings and frequent queries in shared memory.</p>
 
         </h3>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_apcu_key">
+        jpkcom_postfilter_apcu_key()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_apcu_key" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">56</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">APCu key for a plugin cache key, scoped to this site</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_apcu_key</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$key</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>APCu is one memory segment per PHP-FPM pool, shared by every WordPress
+install the pool serves and by every site of a multisite network. Until
+1.5.0 the key was <code class="prettyprint">jpkpf_</code> + an MD5 of the query arguments only, so two
+sites running the same filter query read each other's cached WP_Query -
+one site's posts on another site's page. The WordPress object cache
+does not have this problem: it prefixes per blog itself.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$key</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Plugin cache key ('' for the bare prefix).</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_apcu_key_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_apcu_key_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.5.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_cache_get">
         jpkcom_postfilter_cache_get()
         <a href="namespaces/default.html#function_jpkcom_postfilter_cache_get" class="headerlink"><i class="fas fa-link"></i></a>
@@ -356,7 +426,7 @@ When available: settings and frequent queries in shared memory.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">52</span>
+    <span class="phpdocumentor-element-found-in__line">83</span>
 
     </aside>
 
@@ -427,7 +497,7 @@ When available: settings and frequent queries in shared memory.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">91</span>
+    <span class="phpdocumentor-element-found-in__line">122</span>
 
     </aside>
 
@@ -507,7 +577,7 @@ When available: settings and frequent queries in shared memory.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">118</span>
+    <span class="phpdocumentor-element-found-in__line">149</span>
 
     </aside>
 
@@ -567,7 +637,7 @@ When available: settings and frequent queries in shared memory.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">137</span>
+    <span class="phpdocumentor-element-found-in__line">168</span>
 
     </aside>
 
@@ -609,7 +679,7 @@ When available: settings and frequent queries in shared memory.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">181</span>
+    <span class="phpdocumentor-element-found-in__line">214</span>
 
     </aside>
 
@@ -669,7 +739,7 @@ When available: settings and frequent queries in shared memory.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">206</span>
+    <span class="phpdocumentor-element-found-in__line">239</span>
 
     </aside>
 
@@ -747,7 +817,7 @@ When available: settings and frequent queries in shared memory.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">229</span>
+    <span class="phpdocumentor-element-found-in__line">262</span>
 
     </aside>
 
@@ -807,7 +877,7 @@ When available: settings and frequent queries in shared memory.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">247</span>
+    <span class="phpdocumentor-element-found-in__line">280</span>
 
     </aside>
 
@@ -855,7 +925,7 @@ When available: settings and frequent queries in shared memory.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">289</span>
+    <span class="phpdocumentor-element-found-in__line">322</span>
 
     </aside>
 
@@ -924,7 +994,7 @@ When available: settings and frequent queries in shared memory.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/cache-manager.php"><a href="files/includes-cache-manager.html"><abbr title="includes/cache-manager.php">cache-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">371</span>
+    <span class="phpdocumentor-element-found-in__line">411</span>
 
     </aside>
 
@@ -994,6 +1064,7 @@ When available: settings and frequent queries in shared memory.</p>
                 <li>
                     <ul class="phpdocumentor-list -clean">
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_apcu_available">jpkcom_postfilter_apcu_available()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_apcu_key">jpkcom_postfilter_apcu_key()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_cache_delete">jpkcom_postfilter_cache_delete()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_cache_flush_group">jpkcom_postfilter_cache_flush_group()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_cache_get">jpkcom_postfilter_cache_get()</a></li>

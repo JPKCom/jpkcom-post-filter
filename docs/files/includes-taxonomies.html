@@ -217,6 +217,27 @@ post_types – post types this taxonomy is registered for</p>
 <dd>Get all terms for a taxonomy with transient caching</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_terms_cache_language">jpkcom_postfilter_terms_cache_language()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Language the term list is cached for</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_terms_cache_languages">jpkcom_postfilter_terms_cache_languages()</a>
+    <span>
+                                &nbsp;: array&lt;string|int, string&gt;    </span>
+</dt>
+<dd>Every language a term list may be cached for (for invalidation)</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_terms_cache_key">jpkcom_postfilter_terms_cache_key()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Transient key of a cached term list</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_get_terms_for_group">jpkcom_postfilter_get_terms_for_group()</a>
     <span>
                                 &nbsp;: array&lt;int, <abbr title="array{term: \WP_Term, is_active: bool}">WP_Term, is_active: bool}</abbr>&gt;    </span>
@@ -522,6 +543,183 @@ post_types – post types this taxonomy is registered for</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_terms_cache_language">
+        jpkcom_postfilter_terms_cache_language()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_terms_cache_language" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/taxonomies.php"><a href="files/includes-taxonomies.html"><abbr title="includes/taxonomies.php">taxonomies.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">177</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Language the term list is cached for</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_terms_cache_language</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>get_terms() is narrowed to the current language by WPML and Polylang,
+but until 1.5.0 its result was cached per taxonomy only: the language
+that happened to warm the transient decided which terms the filter bar
+showed in every language for the next hour.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_terms_cache_language_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_terms_cache_language_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.5.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Language code, '' without a multilingual plugin.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_terms_cache_languages">
+        jpkcom_postfilter_terms_cache_languages()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_terms_cache_languages" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/taxonomies.php"><a href="files/includes-taxonomies.html"><abbr title="includes/taxonomies.php">taxonomies.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">206</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Every language a term list may be cached for (for invalidation)</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_terms_cache_languages</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string|int, string&gt;</span></code>
+
+    
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_terms_cache_languages_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_terms_cache_languages_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.5.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string|int, string&gt;</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>'' plus every active language code.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_terms_cache_key">
+        jpkcom_postfilter_terms_cache_key()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_terms_cache_key" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/taxonomies.php"><a href="files/includes-taxonomies.html"><abbr title="includes/taxonomies.php">taxonomies.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">255</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Transient key of a cached term list</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_terms_cache_key</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$taxonomy</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">bool&nbsp;</span><span class="phpdocumentor-signature__argument__name">$hide_empty</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$language</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">''</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>Without a multilingual plugin the key is the one used before 1.5.0.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$taxonomy</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Taxonomy.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$hide_empty</span>
+                : <span class="phpdocumentor-argument-list__argument__type">bool</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>hide_empty variant.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$language</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">''</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Language code, '' for none.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_terms_cache_key_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_terms_cache_key_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.5.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_get_terms_for_group">
         jpkcom_postfilter_get_terms_for_group()
         <a href="namespaces/default.html#function_jpkcom_postfilter_get_terms_for_group" class="headerlink"><i class="fas fa-link"></i></a>
@@ -530,7 +728,7 @@ post_types – post types this taxonomy is registered for</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/taxonomies.php"><a href="files/includes-taxonomies.html"><abbr title="includes/taxonomies.php">taxonomies.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">176</span>
+    <span class="phpdocumentor-element-found-in__line">273</span>
 
     </aside>
 
@@ -620,6 +818,9 @@ post_types – post types this taxonomy is registered for</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_filter_groups_enabled">jpkcom_postfilter_get_filter_groups_enabled()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_terms_for_group">jpkcom_postfilter_get_terms_for_group()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_terms_for_taxonomy">jpkcom_postfilter_get_terms_for_taxonomy()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_terms_cache_key">jpkcom_postfilter_terms_cache_key()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_terms_cache_language">jpkcom_postfilter_terms_cache_language()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_terms_cache_languages">jpkcom_postfilter_terms_cache_languages()</a></li>
                                             </ul>
                 </li>
                     </ul>
