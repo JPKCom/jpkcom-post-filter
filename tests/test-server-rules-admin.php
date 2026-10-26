@@ -410,6 +410,19 @@ $w = warning( warnings( inputs( [ 'bases' => [ '/blog/', '/my news/' ] ] ) ), 'u
 chk( 'warning: unsafe bases are named (jpkcom_postfilter_server_unsafe_bases)', ( $w['level'] ?? '' ) === 'warning' && str_contains( $w['text'], '/my news/' ) );
 chk( 'safe bases: no unsafe-bases warning', warning( $base, 'unsafe-bases' ) === null );
 
+// 1.6.1: a reject pattern no server could load is dropped - and named.
+$w = warning( warnings( inputs( [ 'max_per_group' => 20, 'groups' => 71 ] ) ), 'patterns-dropped' );
+chk( 'warning 1.6.1: per-group rule dropped (PCRE cannot compile it) is named with its reason',
+	( $w['level'] ?? '' ) === 'warning' && str_contains( $w['text'] ?? '', 'terms per group' ) && str_contains( $w['text'] ?? '', 'PCRE' )
+	&& ! str_contains( $w['text'] ?? '', 'segment count' ), $w['text'] ?? '' );
+$odd40 = array_values( array_filter( range( 0, 39 ), static fn( int $p ): bool => $p % 2 === 1 ) );
+$w     = warning( warnings( inputs( [ 'max_per_group' => 20, 'groups' => 40, 'skip_positions' => $odd40 ] ) ), 'patterns-dropped' );
+chk( 'warning 1.6.1: an oversized rule names the length limit', str_contains( $w['text'] ?? '', '4000' ), $w['text'] ?? '' );
+$w = warning( warnings( inputs( [ 'groups' => 1000 ] ) ), 'patterns-dropped' );
+chk( 'warning 1.6.1: both rules dropped: one warning, both named', $w !== null && str_contains( $w['text'], 'terms per group' ) && str_contains( $w['text'], 'segment count' )
+	&& count( array_filter( warnings( inputs( [ 'groups' => 1000 ] ) ), static fn( array $x ): bool => $x['id'] === 'patterns-dropped' ) ) === 1, $w['text'] ?? '' );
+chk( 'normal layout: no patterns-dropped warning', warning( $base, 'patterns-dropped' ) === null );
+
 $w = warning( (array) call( 'jpkcom_postfilter_server_rules_warnings', inputs( [ 'groups' => 3 ] ), [ 'category', 'post_tag', 'category' ] ), 'duplicate-taxonomies' );
 chk( 'info: two groups on one taxonomy (taxonomies passed in)', ( $w['level'] ?? '' ) === 'info' && str_contains( $w['text'], 'category' ) && ! str_contains( $w['text'], 'post_tag' ) );
 chk( 'two groups without taxonomy are not duplicates',

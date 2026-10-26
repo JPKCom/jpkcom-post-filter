@@ -240,9 +240,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_regex_quote' ) ) {
 }
 
 
-if ( ! function_exists( function: 'jpkcom_postfilter_server_reject_patterns' ) ) {
+if ( ! function_exists( function: 'jpkcom_postfilter_server_reject_patterns_unchecked' ) ) {
     /**
-     * The two patterns a server may reject a filter URL on
+     * The two patterns a server may reject a filter URL on, before the size
+     * and compile guard
+     *
+     * Every caller that hands a pattern to a server goes through
+     * jpkcom_postfilter_server_reject_patterns(), which drops what a server
+     * could not load. This builder is public for tests and diagnostics only.
      *
      * Regexes without delimiters, for the raw request URI (path plus optional
      * query). With B = the bases without their leading `/`, E = endpoint,
@@ -288,14 +293,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_reject_patterns' ) )
      * in a request line, so on every real request both forms decide the same.
      * This form is PCRE-only (`\s`, `\S`); only the URI form is for RE2/Rust.
      *
-     * @since 1.6.0
+     * @since 1.6.0 as jpkcom_postfilter_server_reject_patterns(); 1.6.1 unchecked builder
      *
      * @param array<string, mixed> $inputs  As returned by jpkcom_postfilter_server_rule_inputs().
      * @param string               $subject `uri` (raw request URI, default) or
      *                                      `request_line` (THE_REQUEST).
      * @return array{per_group: ?string, segments: ?string}
      */
-    function jpkcom_postfilter_server_reject_patterns( array $inputs, string $subject = 'uri' ): array {
+    function jpkcom_postfilter_server_reject_patterns_unchecked( array $inputs, string $subject = 'uri' ): array {
         $none = [ 'per_group' => null, 'segments' => null ];
 
         $groups   = (int) ( $inputs['groups'] ?? 0 );
@@ -406,5 +411,299 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_reject_patterns' ) )
             . '(?:(?:\+|/)[^?%' . $ws . ']*)?' . $query . $end;
 
         return [ 'per_group' => $per_group, 'segments' => $segments ];
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// Size and compile guard (1.6.1)
+// ---------------------------------------------------------------------------
+
+if ( ! function_exists( function: 'jpkcom_postfilter_server_pattern_limits' ) ) {
+    /**
+     * What a reject pattern must stay within to load on every server
+     *
+     * The bounded per_group form grows with G and N. A 1.6.0 review found
+     * layouts (many filter groups, a high cap, positions without taxonomy)
+     * whose pattern a server cannot load - and a server that cannot load a
+     * rule fails loudly (nginx -t, a 500 for the whole tree from .htaccess)
+     * or silently (Ferron 3 never matches). Measured for 1.6.1:
+     *
+     *  - `length` 4000 characters, for the longer of the two forms (the
+     *    THE_REQUEST form; the URI form is always shorter). nginx reads a
+     *    quoted parameter of at most 4094 characters (NGX_CONF_BUFFER 4096;
+     *    nginx 1.30: 4094 accepted, 4095 "too long parameter") - the nginx
+     *    and ISPConfig snippets put the URI form into one such parameter.
+     *    Apache 2.4 answers 500 for the whole directory tree once an
+     *    .htaccess line reaches 8192 bytes (8191 accepted); the request-line
+     *    form sits in `RewriteCond %{THE_REQUEST} "…"`, so 4000 leaves half
+     *    of that unused. Caddy doubles every backslash inside its CEL
+     *    string; the Caddyfile has no token length limit.
+     *  - `repeat` 1000: Go's regexp (Caddy) refuses a repetition count over
+     *    1000 and nested counted repetitions whose product exceeds 1000.
+     *  - `depth` 200: Rust's regex (Ferron 3) refuses nesting deeper than 250
+     *    (Ferron 3.0.0-rc.10: 124 nested `(?:…)?` matched, 125 never did -
+     *    without any error). 50 of margin for constructs not calibrated one
+     *    by one; Go's own nesting limit (1000) is further away.
+     *
+     * @since 1.6.1
+     *
+     * @return array{length: int, repeat: int, depth: int}
+     */
+    function jpkcom_postfilter_server_pattern_limits(): array {
+        return [ 'length' => 4000, 'repeat' => 1000, 'depth' => 200 ];
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_server_regex_shape' ) ) {
+    /**
+     * Nesting depth and repetition validity of a pattern in the server grammar
+     *
+     * Parses the subset jpkcom_postfilter_server_reject_patterns_unchecked()
+     * emits (literals, escapes, bracket classes, groups, alternation,
+     * `* + ?` and `{n}`, `{n,}`, `{n,m}`) into a tree and reports:
+     *
+     *  - `depth`: the nesting depth as Rust's regex-syntax counts it against
+     *    its nest limit - every group, repetition, bracket class, class with
+     *    more than one item, alternation and concatenation of two or more
+     *    items is one level; literals, escapes and assertions are none.
+     *  - `repeat_ok`: Go's regexp rule (regexp/syntax repeatIsValid): no
+     *    count above 1000, and along every path the counted repetitions
+     *    (`*`, `+`, `?` do not count) multiply to at most 1000.
+     *
+     * @since 1.6.1
+     *
+     * @param string $re Pattern without delimiters.
+     * @return array{depth: int, repeat_ok: bool}
+     */
+    function jpkcom_postfilter_server_regex_shape( string $re ): array {
+        $i   = 0;
+        $len = strlen( $re );
+        $max = jpkcom_postfilter_server_pattern_limits()['repeat'];
+
+        $alternation = null;
+        $alternation = static function () use ( &$alternation, &$i, $len, $re ): array {
+            $branches = [];
+            $items    = [];
+            while ( $i < $len && $re[ $i ] !== ')' ) {
+                $ch = $re[ $i ];
+                if ( $ch === '|' ) {
+                    $branches[] = $items;
+                    $items      = [];
+                    $i++;
+                    continue;
+                }
+                if ( $ch === '(' ) {
+                    $i += substr( $re, $i + 1, 2 ) === '?:' ? 3 : 1;
+                    $atom = [ 'k' => 'group', 'items' => [ $alternation() ] ];
+                    $i++; // the closing parenthesis
+                } elseif ( $ch === '[' ) {
+                    $i++;
+                    $count = 0;
+                    if ( $i < $len && $re[ $i ] === '^' ) {
+                        $i++;
+                    }
+                    if ( $i < $len && $re[ $i ] === ']' ) {
+                        $count++;
+                        $i++;
+                    }
+                    while ( $i < $len && $re[ $i ] !== ']' ) {
+                        $i += $re[ $i ] === '\\' ? 2 : 1;
+                        $count++;
+                    }
+                    $i++;
+                    $atom = [ 'k' => 'class', 'n' => $count ];
+                } else {
+                    $i   += $ch === '\\' ? 2 : 1;
+                    $atom = [ 'k' => 'leaf' ];
+                }
+                while ( $i < $len ) {
+                    if ( in_array( $re[ $i ], [ '*', '+', '?' ], true ) ) {
+                        $i++;
+                        $atom = [ 'k' => 'rep', 'counted' => false, 'items' => [ $atom ] ];
+                        continue;
+                    }
+                    if ( $re[ $i ] === '{' && preg_match( '/\G\{([0-9]+)(,([0-9]*))?\}/', $re, $m, 0, $i ) === 1 ) {
+                        $i   += strlen( $m[0] );
+                        $min  = (int) $m[1];
+                        $high = ! isset( $m[2] ) || $m[2] === '' ? $min : ( ( $m[3] ?? '' ) === '' ? null : (int) $m[3] );
+                        $atom = [ 'k' => 'rep', 'counted' => true, 'min' => $min, 'max' => $high, 'items' => [ $atom ] ];
+                        continue;
+                    }
+                    break;
+                }
+                $items[] = $atom;
+            }
+            $branches[] = $items;
+
+            $nodes = array_map(
+                static fn( array $list ): array => count( $list ) === 1 ? $list[0] : [ 'k' => $list === [] ? 'leaf' : 'concat', 'items' => $list ],
+                $branches
+            );
+
+            return count( $nodes ) === 1 ? $nodes[0] : [ 'k' => 'alt', 'items' => $nodes ];
+        };
+
+        $tree = $alternation();
+
+        $depth = null;
+        $depth = static function ( array $node ) use ( &$depth ): int {
+            return match ( $node['k'] ) {
+                'leaf'  => 0,
+                'class' => $node['n'] > 1 ? 2 : 1,
+                default => 1 + max( array_map( $depth, $node['items'] ) ),
+            };
+        };
+
+        $valid = null;
+        $valid = static function ( array $node, int $budget ) use ( &$valid, $max ): bool {
+            if ( $node['k'] === 'rep' && $node['counted'] ) {
+                if ( $node['min'] > $max || ( $node['max'] !== null && $node['max'] > $max ) ) {
+                    return false;
+                }
+                $m = $node['max'] ?? -1;
+                if ( $m === 0 ) {
+                    return true;
+                }
+                if ( $m < 0 ) {
+                    $m = $node['min'];
+                }
+                if ( $m > $budget ) {
+                    return false;
+                }
+                if ( $m > 0 ) {
+                    $budget = intdiv( $budget, $m );
+                }
+            }
+            foreach ( $node['items'] ?? [] as $child ) {
+                if ( ! $valid( $child, $budget ) ) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        return [ 'depth' => $depth( $tree ), 'repeat_ok' => $valid( $tree, $max ) ];
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_server_pattern_problem' ) ) {
+    /**
+     * Why a server could not load this pattern, if it could not
+     *
+     * Checked in this order: `length` (either form over the length limit),
+     * `pcre` (PHP's PCRE2 cannot compile one of the forms - nginx, Apache
+     * and OpenLiteSpeed use the same library, normally with the same link
+     * size), `repeat` and `nesting` (the URI form, the only one Go's and
+     * Rust's engines get, against jpkcom_postfilter_server_pattern_limits()).
+     *
+     * @since 1.6.1
+     *
+     * @param string $uri  The pattern in the URI form.
+     * @param string $line The same pattern in the THE_REQUEST form.
+     * @return string|null `length`, `pcre`, `repeat`, `nesting`, or null when it loads everywhere.
+     */
+    function jpkcom_postfilter_server_pattern_problem( string $uri, string $line ): ?string {
+        $limits = jpkcom_postfilter_server_pattern_limits();
+
+        if ( max( strlen( $uri ), strlen( $line ) ) > $limits['length'] ) {
+            return 'length';
+        }
+
+        foreach ( [ $uri, $line ] as $re ) {
+            // \x01 as delimiter: no base or endpoint in a pattern contains it
+            // (and if one did, the compile error would drop the pattern -
+            // looser, never stricter).
+            if ( @preg_match( "\x01" . $re . "\x01", '' ) === false ) {
+                return 'pcre';
+            }
+        }
+
+        $shape = jpkcom_postfilter_server_regex_shape( re: $uri );
+        if ( ! $shape['repeat_ok'] ) {
+            return 'repeat';
+        }
+        if ( $shape['depth'] > $limits['depth'] ) {
+            return 'nesting';
+        }
+
+        return null;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_server_patterns_dropped' ) ) {
+    /**
+     * The reject patterns left out because a server could not load them
+     *
+     * Decided over both forms at once, so every server tab, the curl
+     * commands, the status check and the managed .htaccess block agree on
+     * which rule exists. A pattern that is dropped is looser, never
+     * stricter: the plugin still rejects those URLs in PHP. per_group is
+     * also dropped when segments is, so a URL over both caps never gets
+     * another reason from the server than from PHP.
+     *
+     * @since 1.6.1
+     *
+     * @param array<string, mixed> $inputs As returned by jpkcom_postfilter_server_rule_inputs().
+     * @return array<string, string> Pattern key (`per_group`, `segments`) => reason
+     *                               (see jpkcom_postfilter_server_pattern_problem()); empty when nothing is dropped.
+     */
+    function jpkcom_postfilter_server_patterns_dropped( array $inputs ): array {
+        $uri  = jpkcom_postfilter_server_reject_patterns_unchecked( inputs: $inputs );
+        $line = jpkcom_postfilter_server_reject_patterns_unchecked( inputs: $inputs, subject: 'request_line' );
+        $out  = [];
+
+        foreach ( [ 'segments', 'per_group' ] as $key ) {
+            if ( $uri[ $key ] === null || $line[ $key ] === null ) {
+                continue;
+            }
+            $problem = jpkcom_postfilter_server_pattern_problem( uri: $uri[ $key ], line: $line[ $key ] );
+            if ( $problem === null && $key === 'per_group' && isset( $out['segments'] ) ) {
+                $problem = $out['segments'];
+            }
+            if ( $problem !== null ) {
+                $out[ $key ] = $problem;
+            }
+        }
+
+        return $out;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_server_reject_patterns' ) ) {
+    /**
+     * The two patterns a server may reject a filter URL on
+     *
+     * jpkcom_postfilter_server_reject_patterns_unchecked() (where the
+     * grammar and why it is never stricter than the plugin are documented),
+     * minus every pattern jpkcom_postfilter_server_patterns_dropped() names:
+     * one that a server could not load is null, as if the settings produced
+     * none. Every snippet, curl command, status check and the managed
+     * .htaccess block take their patterns from here.
+     *
+     * @since 1.6.0
+     * @since 1.6.1 Drops patterns no server could load (size, PCRE compile, RE2 repetition, nesting).
+     *
+     * @param array<string, mixed> $inputs  As returned by jpkcom_postfilter_server_rule_inputs().
+     * @param string               $subject `uri` (raw request URI, default) or
+     *                                      `request_line` (THE_REQUEST).
+     * @return array{per_group: ?string, segments: ?string}
+     */
+    function jpkcom_postfilter_server_reject_patterns( array $inputs, string $subject = 'uri' ): array {
+        $patterns = jpkcom_postfilter_server_reject_patterns_unchecked( inputs: $inputs, subject: $subject );
+
+        if ( $patterns['per_group'] === null && $patterns['segments'] === null ) {
+            return $patterns;
+        }
+
+        foreach ( array_keys( jpkcom_postfilter_server_patterns_dropped( inputs: $inputs ) ) as $key ) {
+            $patterns[ $key ] = null;
+        }
+
+        return $patterns;
     }
 }

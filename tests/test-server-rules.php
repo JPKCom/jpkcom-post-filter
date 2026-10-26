@@ -1877,6 +1877,180 @@ chk( 'ferron3: host context says the pool is keyed by the literal URL string (rc
 chk( 'ferron2/3: context explains the 429 without Cache-Control (not cached by default, RFC 9111)',
 	str_contains( $f3_ctx_host, 'RFC 9111' ) && str_contains( context_of( $cf['ferron2'], 'ferron2-rate' ), 'RFC 9111' ) );
 
+// =====================================================================================
+section( 'size and compile guard (1.6.1)' );
+// =====================================================================================
+// A 1.6.0 review measured: with many groups and a high cap the bounded
+// per_group pattern stops compiling in PCRE (link size 2) at G >= 71 (N 20) or
+// G >= 37 with the last position skipped; with alternating skips the
+// THE_REQUEST form passes 8000 characters at G >= 40. Measured for 1.6.1:
+// nginx refuses a quoted parameter of 4095 characters ("too long parameter",
+// NGX_CONF_BUFFER 4096; 4094 is accepted), Apache answers 500 for the whole
+// tree once an .htaccess line reaches 8192 bytes (8191 is accepted), Go's
+// regexp (Caddy) refuses repetition counts over 1000 and nested products
+// over 1000, and Rust's regex (Ferron 3) refuses nesting deeper than 250 -
+// silently: the rule just never matches. Such a pattern is dropped (null),
+// which is looser; PHP still rejects.
+
+$guard_ok = function_exists( 'jpkcom_postfilter_server_patterns_dropped' ) && function_exists( 'jpkcom_postfilter_server_reject_patterns_unchecked' );
+chk( 'guard functions exist (patterns_dropped, reject_patterns_unchecked, regex_shape)', $guard_ok && function_exists( 'jpkcom_postfilter_server_regex_shape' ) );
+
+$odd = static fn( int $g ): array => array_values( array_filter( range( 0, $g - 1 ), static fn( int $p ): bool => $p % 2 === 1 ) );
+
+/** Patterns, unchecked patterns and reasons for one layout (blog+news). */
+function guard_case( int $n, int $g, array $skip ): array {
+	$in = layout_inputs( $n, $g, $skip, [ '/blog/', '/news/' ] );
+	return [
+		'in'      => $in,
+		'uri'     => jpkcom_postfilter_server_reject_patterns( $in ),
+		'line'    => jpkcom_postfilter_server_reject_patterns( $in, 'request_line' ),
+		'raw'     => function_exists( 'jpkcom_postfilter_server_reject_patterns_unchecked' ) ? jpkcom_postfilter_server_reject_patterns_unchecked( $in, 'request_line' ) : null,
+		'dropped' => (array) call( 'jpkcom_postfilter_server_patterns_dropped', $in ),
+	];
+}
+
+// --- the layouts the review found ---
+$c71 = guard_case( 20, 71, [] );
+chk( 'N20 G71: per_group (does not compile in PCRE) is null in both forms, reason pcre; segments kept',
+	$c71['uri']['per_group'] === null && $c71['line']['per_group'] === null && ( $c71['dropped']['per_group'] ?? '' ) === 'pcre'
+	&& is_string( $c71['uri']['segments'] ) && ! isset( $c71['dropped']['segments'] ), show( $c71['dropped'] ) );
+chk( 'N20 G71: the unchecked pattern really does not compile', $guard_ok && @preg_match( "\x01" . (string) $c71['raw']['per_group'] . "\x01", '' ) === false );
+
+$c37 = guard_case( 20, 37, [ 36 ] );
+chk( 'N20 G37, last position skipped: per_group null, reason pcre', $c37['uri']['per_group'] === null && ( $c37['dropped']['per_group'] ?? '' ) === 'pcre', show( $c37['dropped'] ) );
+
+$c40 = guard_case( 20, 40, $odd( 40 ) );
+chk( 'N20 G40, alternating skips: THE_REQUEST form was over 8000 characters; now null, reason length',
+	$guard_ok && strlen( (string) $c40['raw']['per_group'] ) > 8000 && $c40['line']['per_group'] === null && $c40['uri']['per_group'] === null
+	&& ( $c40['dropped']['per_group'] ?? '' ) === 'length', show( $c40['dropped'] ) );
+
+$c1000 = guard_case( 2, 1000, [] );
+// PCRE replicates a bounded repetition, so 1003 copies of a segment are also
+// too large for it - and PCRE is checked first.
+chk( 'N2 G1000: segments repeats 1003 times (over Go\'s 1000, too large for PCRE), both patterns null, reason pcre',
+	$c1000['uri']['segments'] === null && ( $c1000['dropped']['segments'] ?? '' ) === 'pcre' && $c1000['uri']['per_group'] === null, show( $c1000['dropped'] ) );
+// Under 4000 characters and fine for PCRE, but too deep for Rust's regex:
+// Ferron 3.0.0-rc.10 rejected /blog/filter/a+b/ (410) with the unchecked N1
+// G160 pattern (depth 250) and let it through (404, no error) at G162 (253).
+$c162 = guard_case( 1, 162, $odd( 162 ) );
+$c126 = guard_case( 1, 126, $odd( 126 ) );
+chk( 'N1 G162 alternating: per_group under 4000 characters but nested 253 deep, null with reason nesting; G126 (depth 199) kept',
+	$guard_ok && strlen( (string) $c162['raw']['per_group'] ) < 4000 && $c162['uri']['per_group'] === null && ( $c162['dropped']['per_group'] ?? '' ) === 'nesting'
+	&& is_string( $c126['uri']['per_group'] ) && $c126['dropped'] === [], show( [ $c162['dropped'], $c126['dropped'] ] ) );
+// What PCRE still compiles but Go or Rust would not.
+chk( 'pattern_problem: repeat (a{1001} compiles in PCRE, not in Go), nesting (101 nested (?:…)?: depth 203 > 200), length (4000 ok, 4001 not)',
+	call( 'jpkcom_postfilter_server_pattern_problem', '^/(?:a){1001}$', '^[A-Z]+ /(?:a){1001}(?:\\s|$)' ) === 'repeat'
+	&& call( 'jpkcom_postfilter_server_pattern_problem', '^/x' . str_repeat( '(?:', 101 ) . 'a' . str_repeat( ')?', 101 ) . '$', '^/x' ) === 'nesting'
+	&& call( 'jpkcom_postfilter_server_pattern_problem', '^/x' . str_repeat( '(?:', 99 ) . 'a' . str_repeat( ')?', 99 ) . '$', '^/x' ) === null
+	&& call( 'jpkcom_postfilter_server_pattern_problem', '^/' . str_repeat( 'a', 3998 ), '^/' ) === null
+	&& call( 'jpkcom_postfilter_server_pattern_problem', '^/a', '^/' . str_repeat( 'a', 3999 ) ) === 'length' );
+
+$c_n = guard_case( 1001, 2, [] );
+chk( 'N1001 (filtered cap): per_group null (repeat or nesting), segments kept', $c_n['uri']['per_group'] === null && isset( $c_n['dropped']['per_group'] ) && is_string( $c_n['uri']['segments'] ), show( $c_n['dropped'] ) );
+
+// --- the managed .htaccess and every snippet carry no oversized rule ---
+$big_ok = true;
+foreach ( [ $c71, $c37, $c40, guard_case( 20, 21, $odd( 21 ) ), guard_case( 10, 60, $odd( 60 ) ) ] as $case ) {
+	$block  = (string) jpkcom_postfilter_server_htaccess_marked( inputs: $case['in'], label: 'JPKCom Post Filter' );
+	$big_ok = $big_ok && max( array_map( 'strlen', explode( "\n", $block ) ) ) < 8192;
+	foreach ( [ 'nginx', 'apache', 'htaccess', 'ols', 'caddy', 'ferron3' ] as $server ) {
+		foreach ( jpkcom_postfilter_server_snippets( $server, $case['in'], jpkcom_postfilter_rate_limits( 8, 0.4 ) ) as $snippet ) {
+			// nginx reads a quoted parameter of at most 4094 characters.
+			if ( preg_match_all( '/"((?:[^"\\\\]|\\\\.)*)"/', $snippet['code'], $m ) ) {
+				foreach ( $m[1] as $quoted ) {
+					$big_ok = $big_ok && strlen( $quoted ) <= 4094;
+				}
+			}
+			$big_ok = $big_ok && max( array_map( 'strlen', explode( "\n", $snippet['code'] ) ) ) < 8192;
+		}
+	}
+}
+chk( 'oversized layouts: managed .htaccess block and every snippet stay under 8192 bytes per line and 4094 per quoted pattern', $big_ok );
+chk( 'N20 G40 alternating: managed .htaccess keeps the segments rule, has no per-group rule',
+	str_contains( (string) jpkcom_postfilter_server_htaccess_marked( inputs: $c40['in'], label: 'JPKCom Post Filter' ), 'server-segments' )
+	&& ! str_contains( (string) jpkcom_postfilter_server_htaccess_marked( inputs: $c40['in'], label: 'JPKCom Post Filter' ), 'server-per-group' ) );
+
+// --- sweep: whatever comes out compiles, fits, and null <=> reason ---
+$sweep_ok    = $guard_ok;
+$sweep_drops = 0;
+$sweep_seen  = 0;
+foreach ( [ 1, 2, 5, 10, 20 ] as $n ) {
+	foreach ( array_merge( range( 1, 40 ), range( 47, 130, 9 ), [ 996, 997, 998 ] ) as $g ) {
+		foreach ( [ [], [ $g - 1 ], $odd( $g ) ] as $skip ) {
+			if ( ! $sweep_ok ) {
+				break 3;
+			}
+			$in      = layout_inputs( $n, $g, $skip, [ '/blog/', '/news/' ] );
+			$dropped = jpkcom_postfilter_server_patterns_dropped( $in );
+			$raw     = jpkcom_postfilter_server_reject_patterns_unchecked( $in );
+			foreach ( [ 'uri', 'request_line' ] as $subject ) {
+				$p = jpkcom_postfilter_server_reject_patterns( $in, $subject );
+				foreach ( [ 'per_group', 'segments' ] as $k ) {
+					$sweep_seen++;
+					if ( $raw[ $k ] === null ) {
+						$sweep_ok = $sweep_ok && $p[ $k ] === null && ! isset( $dropped[ $k ] );
+						continue;
+					}
+					if ( isset( $dropped[ $k ] ) ) {
+						$sweep_drops++;
+						$sweep_ok = $sweep_ok && $p[ $k ] === null;
+						continue;
+					}
+					$shape    = jpkcom_postfilter_server_regex_shape( (string) $p[ $k ] );
+					$sweep_ok = $sweep_ok && is_string( $p[ $k ] ) && strlen( $p[ $k ] ) <= 4000
+						&& @preg_match( "\x01" . $p[ $k ] . "\x01", '' ) !== false && $shape['repeat_ok'] && $shape['depth'] <= 200;
+				}
+			}
+			if ( ! $sweep_ok ) {
+				echo "        guard mismatch at N{$n} G{$g} skip[" . implode( ',', $skip ) . ']: ' . show( $dropped ) . "\n";
+			}
+		}
+	}
+}
+chk( 'sweep N 1-20, G 1-998: every pattern left compiles, is at most 4000 characters, RE2- and nesting-safe; null exactly where a reason is given', $sweep_ok && $sweep_drops > 0, $sweep_seen . ' patterns, ' . $sweep_drops . ' dropped' );
+
+// --- normal layouts: unchanged byte for byte ---
+/** Normal layouts: N 1-5, G 1-8, four skip shapes, four base sets. */
+function guard_layouts(): array {
+	$out = [];
+	foreach ( [ 1, 2, 3, 4, 5 ] as $n ) {
+		for ( $g = 1; $g <= 8; $g++ ) {
+			$skips = [ [], [ 0 ], [ $g - 1 ], array_values( array_filter( range( 0, $g - 1 ), static fn( int $p ): bool => $p % 2 === 1 ) ) ];
+			foreach ( array_unique( array_map( 'serialize', $skips ) ) as $skip ) {
+				foreach ( [ [ '/blog/' ], [ '/blog/', '/news/' ], [ '/' ], [ '/blog/', '/en/blog/' ] ] as $bases ) {
+					$out[] = [ $n, $g, unserialize( $skip ), $bases ];
+				}
+			}
+		}
+	}
+	return $out;
+}
+$normal     = [];
+$normal_ok  = $guard_ok;
+foreach ( guard_layouts() as [ $n, $g, $skip, $bases ] ) {
+	$in       = layout_inputs( $n, $g, $skip, $bases );
+	$pair     = [ jpkcom_postfilter_server_reject_patterns( $in ), jpkcom_postfilter_server_reject_patterns( $in, 'request_line' ) ];
+	$normal[] = $pair;
+	$normal_ok = $normal_ok && jpkcom_postfilter_server_patterns_dropped( $in ) === []
+		&& $pair === [ jpkcom_postfilter_server_reject_patterns_unchecked( $in ), jpkcom_postfilter_server_reject_patterns_unchecked( $in, 'request_line' ) ];
+}
+chk( 'normal layouts (N 1-5, G 1-8, 580 layouts): nothing dropped, guarded === unchecked', $normal_ok );
+// sha256 of the same list built by the v1.6.0 code (be1cf39).
+chk( 'normal layouts: both pattern forms byte-identical to v1.6.0', hash( 'sha256', (string) json_encode( $normal ) ) === 'c7ccec8ee9dece6dade60e0800a1853b8354f5047391f78308c104739933b4e4' && count( $normal ) === 580 );
+
+// --- the shape check, calibrated against the engines ---
+$shape = static fn( string $re ): array => (array) call( 'jpkcom_postfilter_server_regex_shape', $re );
+$nest  = static fn( int $k ): string => '^/x' . str_repeat( '(?:', $k ) . 'a' . str_repeat( ')?', $k ) . '$';
+// Ferron 3.0.0-rc.10 (Rust regex): k = 124 matched (410), k = 125 never matched.
+chk( 'regex_shape: nesting depth as Rust regex counts it (Ferron 3: 124 nested (?:…)? = 249 compile, 125 = 251 do not)',
+	( $shape( $nest( 124 ) )['depth'] ?? 0 ) === 249 && ( $shape( $nest( 125 ) )['depth'] ?? 0 ) === 251, show( [ $shape( $nest( 124 ) ), $shape( $nest( 125 ) ) ] ) );
+// Go 1.27 regexp: {1000} ok, {1001} not; (?:(?:a){10}){100} ok, {101} not; a{2,} counts its minimum.
+chk( 'regex_shape: Go\'s repetition rule (count and nested product at most 1000)',
+	( $shape( '^a{1000}$' )['repeat_ok'] ?? false ) === true && ( $shape( '^a{1001}$' )['repeat_ok'] ?? true ) === false
+	&& ( $shape( '^(?:(?:a){10}){100}$' )['repeat_ok'] ?? false ) === true && ( $shape( '^(?:(?:a){10}){101}$' )['repeat_ok'] ?? true ) === false
+	&& ( $shape( '^(?:a{2,}){500}$' )['repeat_ok'] ?? false ) === true && ( $shape( '^(?:a{2,}){501}$' )['repeat_ok'] ?? true ) === false
+	&& ( $shape( '^(?:a+){1000}$' )['repeat_ok'] ?? false ) === true && ( $shape( '^[^{}]{0,3}\{x\}$' )['repeat_ok'] ?? false ) === true );
+
 jpkpf_test_rm_tree( WP_CONTENT_DIR );
 chk( 'temp directory removed', ! is_dir( WP_CONTENT_DIR ) );
 

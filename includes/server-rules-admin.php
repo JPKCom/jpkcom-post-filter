@@ -236,6 +236,45 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_warnings' ) ) 
             ) );
         }
 
+        // A pattern no server could load (too long, too large for PCRE, too
+        // many repetitions for Go, nested too deep for Rust) is left out of
+        // every snippet, the check and the managed .htaccess block (1.6.1).
+        $dropped = function_exists( function: 'jpkcom_postfilter_server_patterns_dropped' )
+            ? jpkcom_postfilter_server_patterns_dropped( inputs: $inputs )
+            : [];
+        if ( $dropped !== [] ) {
+            $limits  = jpkcom_postfilter_server_pattern_limits();
+            $rules   = [
+                'per_group' => __( 'terms per group', 'jpkcom-post-filter' ),
+                'segments'  => __( 'segment count', 'jpkcom-post-filter' ),
+            ];
+            $reasons = [
+                'length'  => sprintf(
+                    /* translators: %d: maximum number of characters, e.g. 4000 */
+                    __( 'its pattern would be longer than %d characters, more than nginx reads in one parameter', 'jpkcom-post-filter' ),
+                    $limits['length']
+                ),
+                'pcre'    => __( 'PCRE (nginx, Apache, OpenLiteSpeed) cannot compile its pattern, it is too large', 'jpkcom-post-filter' ),
+                'repeat'  => sprintf(
+                    /* translators: %d: maximum repetition count, e.g. 1000 */
+                    __( 'it repeats a part more than %d times, which the regular expressions of Caddy refuse', 'jpkcom-post-filter' ),
+                    $limits['repeat']
+                ),
+                'nesting' => __( 'it is nested deeper than the regular expressions of Ferron 3 allow', 'jpkcom-post-filter' ),
+            ];
+            $parts = [];
+            foreach ( [ 'per_group', 'segments' ] as $key ) {
+                if ( isset( $dropped[ $key ] ) ) {
+                    $parts[] = $rules[ $key ] . ': ' . ( $reasons[ $dropped[ $key ] ] ?? $dropped[ $key ] );
+                }
+            }
+            $add( 'patterns-dropped', 'warning', sprintf(
+                /* translators: %s: the rules left out and why, e.g. "terms per group: PCRE (nginx, Apache, OpenLiteSpeed) cannot compile its pattern, it is too large" */
+                __( 'A server could not load every reject rule for these settings, so these are left out of every snippet, the check and a managed .htaccess block: %s. The plugin still rejects those URLs itself; the server only passes them on to PHP. Fewer filter groups, fewer positions without taxonomy or a lower number of terms per group bring the rule back.', 'jpkcom-post-filter' ),
+                implode( '; ', $parts )
+            ) );
+        }
+
         $policy_filtered = array_values( array_filter( array_map( 'strval', (array) ( $inputs['policy_filtered'] ?? [] ) ) ) );
         if ( $policy_filtered !== [] ) {
             $hooks = array_map( static fn( string $key ): string => 'jpkcom_postfilter_' . $key, $policy_filtered );
