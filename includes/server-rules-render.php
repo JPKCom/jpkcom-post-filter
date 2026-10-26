@@ -807,8 +807,17 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
      * set expirevar on every hit, which re-arms it - steady traffic then never
      * resets a site-wide counter, and a visitor clicking every few seconds is
      * blocked for good. Every deny rule is chained to its own class (cookie-
-     * less visitor or search engine), so a collection another rule set
-     * initialised (OWASP CRS uses `ip` and `global`) cannot trigger it.
+     * less visitor or search engine), so a counter another rule set keeps
+     * cannot trigger it.
+     *
+     * The counters live in RESOURCE (key `jpkpf_ip_<addr>`) and USER (key
+     * `jpkpf_site_<server name>`, via setuid), not in IP and GLOBAL: OWASP CRS
+     * 3.3 opens `ip` as `<addr>_<UA hash>` and `global` as `global` in phase 1,
+     * and ModSecurity 2 ignores a later initcol of an open collection. Measured
+     * on Debian 13 (CRS 3.3.7, modsecurity.conf active): a new User-Agent per
+     * request walked past the per-IP limit, and one VirtualHost's site-wide
+     * counter answered 429 on another. Custom collection names are not
+     * addressable in ModSecurity 2 ("Unknown variable").
      *
      * @since 1.6.0
      *
@@ -880,23 +889,24 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
                 '    ' . $anon . '4710003,phase:2,pass,nolog,chain"',
                 '        SecRule REQUEST_HEADERS:User-Agent "@rx (?i)(?:' . jpkcom_postfilter_server_searchbots() . ')" "setvar:tx.jpkpf_anon=0,setvar:tx.jpkpf_bot=1"',
                 '    # Fixed windows: the counter expires ' . $window . ' s (per IP) / 10 s (site) after its first request.',
-                '    ' . $anon . '4710004,phase:2,pass,nolog,initcol:ip=%{REMOTE_ADDR},initcol:global=jpkpf_%{SERVER_NAME}"',
+                '    # RESOURCE and USER, not IP and GLOBAL: OWASP CRS opens those with its own keys first.',
+                '    ' . $anon . '4710004,phase:2,pass,nolog,initcol:resource=jpkpf_ip_%{REMOTE_ADDR},setuid:jpkpf_site_%{SERVER_NAME}"',
                 '    ' . $anon . '4710005,phase:2,pass,nolog,chain"',
-                '        SecRule &IP:JPKPF_HITS "@eq 0" "setvar:ip.jpkpf_hits=0,expirevar:ip.jpkpf_hits=' . $window . '"',
+                '        SecRule &RESOURCE:JPKPF_HITS "@eq 0" "setvar:resource.jpkpf_hits=0,expirevar:resource.jpkpf_hits=' . $window . '"',
                 '    ' . $anon . '4710006,phase:2,pass,nolog,chain"',
-                '        SecRule &GLOBAL:JPKPF_HITS "@eq 0" "setvar:global.jpkpf_hits=0,expirevar:global.jpkpf_hits=10"',
-                '    ' . $anon . '4710007,phase:2,pass,nolog,setvar:ip.jpkpf_hits=+1,setvar:global.jpkpf_hits=+1"',
+                '        SecRule &USER:JPKPF_HITS "@eq 0" "setvar:user.jpkpf_hits=0,expirevar:user.jpkpf_hits=10"',
+                '    ' . $anon . '4710007,phase:2,pass,nolog,setvar:resource.jpkpf_hits=+1,setvar:user.jpkpf_hits=+1"',
                 '    ' . $anon . "4710008,phase:2,deny,status:429,log,msg:'jpkpf: per-IP filter limit',chain\"",
-                '        SecRule IP:JPKPF_HITS "@gt ' . $limits['ip_burst'] . '"',
+                '        SecRule RESOURCE:JPKPF_HITS "@gt ' . $limits['ip_burst'] . '"',
                 '    ' . $anon . "4710009,phase:2,deny,status:429,log,msg:'jpkpf: site-wide filter limit',chain\"",
-                '        SecRule GLOBAL:JPKPF_HITS "@gt ' . $site . '"',
+                '        SecRule USER:JPKPF_HITS "@gt ' . $site . '"',
                 '    # Search engines: their own site-wide counter.',
-                '    ' . $bot . '4710010,phase:2,pass,nolog,initcol:global=jpkpf_%{SERVER_NAME}"',
+                '    ' . $bot . '4710010,phase:2,pass,nolog,setuid:jpkpf_site_%{SERVER_NAME}"',
                 '    ' . $bot . '4710011,phase:2,pass,nolog,chain"',
-                '        SecRule &GLOBAL:JPKPF_BOT_HITS "@eq 0" "setvar:global.jpkpf_bot_hits=0,expirevar:global.jpkpf_bot_hits=10"',
-                '    ' . $bot . '4710012,phase:2,pass,nolog,setvar:global.jpkpf_bot_hits=+1"',
+                '        SecRule &USER:JPKPF_BOT_HITS "@eq 0" "setvar:user.jpkpf_bot_hits=0,expirevar:user.jpkpf_bot_hits=10"',
+                '    ' . $bot . '4710012,phase:2,pass,nolog,setvar:user.jpkpf_bot_hits=+1"',
                 '    ' . $bot . "4710013,phase:2,deny,status:429,log,msg:'jpkpf: search engine filter limit',chain\"",
-                '        SecRule GLOBAL:JPKPF_BOT_HITS "@gt ' . $bots . '"',
+                '        SecRule USER:JPKPF_BOT_HITS "@gt ' . $bots . '"',
                 '</LocationMatch>',
                 '</IfModule>',
                 '<IfModule mod_headers.c>',

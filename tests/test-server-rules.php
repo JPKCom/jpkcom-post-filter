@@ -1330,10 +1330,20 @@ chk( 'apache: ModSecurity engine and every rule inside <LocationMatch> over the 
 chk( 'apache: ModSecurity rules run in phase 2 (Location is mapped after phase 1)', substr_count( $modsec, 'phase:2' ) === 13 && ! str_contains( $modsec, 'phase:1' ) );
 chk( 'apache: ModSecurity per IP (10 / 20 s), site-wide (30 / 10 s), search engines own counter (20 / 10 s)',
 	str_contains( $modsec, '&REQUEST_HEADERS:Cookie "@gt 0"' )
-	&& str_contains( $modsec, 'expirevar:ip.jpkpf_hits=20' ) && str_contains( $modsec, 'SecRule IP:JPKPF_HITS "@gt 10"' )
-	&& str_contains( $modsec, 'expirevar:global.jpkpf_hits=10' ) && str_contains( $modsec, 'SecRule GLOBAL:JPKPF_HITS "@gt 30"' )
-	&& str_contains( $modsec, 'expirevar:global.jpkpf_bot_hits=10' ) && str_contains( $modsec, 'SecRule GLOBAL:JPKPF_BOT_HITS "@gt 20"' )
+	&& str_contains( $modsec, 'expirevar:resource.jpkpf_hits=20' ) && str_contains( $modsec, 'SecRule RESOURCE:JPKPF_HITS "@gt 10"' )
+	&& str_contains( $modsec, 'expirevar:user.jpkpf_hits=10' ) && str_contains( $modsec, 'SecRule USER:JPKPF_HITS "@gt 30"' )
+	&& str_contains( $modsec, 'expirevar:user.jpkpf_bot_hits=10' ) && str_contains( $modsec, 'SecRule USER:JPKPF_BOT_HITS "@gt 20"' )
 	&& str_contains( $modsec, 'googlebot|bingbot|applebot|duckduckbot|yandexbot' ) && substr_count( $modsec, 'deny,status:429' ) === 3, $modsec );
+// OWASP CRS 3.3 (Debian 13: modsecurity-crs 3.3.7) runs initcol:ip=<addr>_<UA hash>
+// and initcol:global=global in phase 1, and ModSecurity 2 ignores a later initcol
+// of a collection that is already open. Measured with Debian's modsecurity.conf:
+// 14 requests from one IP with a new User-Agent each all passed the per-IP limit,
+// and the site-wide counter of one VirtualHost answered 429 on another. Own
+// counters therefore live in RESOURCE (per IP) and USER (per site), which CRS
+// does not open; custom collection names are not addressable in ModSecurity 2.
+chk( 'apache: ModSecurity counters in collections OWASP CRS does not open (RESOURCE per IP, USER per site)',
+	str_contains( $modsec, 'initcol:resource=jpkpf_ip_%{REMOTE_ADDR}' ) && substr_count( $modsec, 'setuid:jpkpf_site_%{SERVER_NAME}' ) === 2
+	&& ! preg_match( '/initcol:(?:ip|global)\b|\b(?:ip|global)\.jpkpf|\b(?:IP|GLOBAL):JPKPF/i', $modsec ), $modsec );
 chk( 'apache: Retry-After on every 429, inside <IfModule mod_headers.c>, context names mod_headers',
 	str_contains( $modsec, "<IfModule mod_headers.c>\n    Header always set Retry-After \"10\" \"expr=%{REQUEST_STATUS} == 429\"\n</IfModule>" )
 	&& str_contains( $qos, "<IfModule mod_headers.c>\n    Header always set Retry-After \"10\" \"expr=%{REQUEST_STATUS} == 429\"\n</IfModule>" )
