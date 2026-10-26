@@ -1806,6 +1806,31 @@ Search.appendIndex(
             "summary": "Escape\u0020a\u0020literal\u0020for\u0020the\u0020server\u0020patterns",
             "url": "namespaces/default.html#function_jpkcom_postfilter_server_regex_quote"
         },                {
+            "fqsen": "\\jpkcom_postfilter_server_reject_patterns_unchecked\u0028\u0029",
+            "name": "jpkcom_postfilter_server_reject_patterns_unchecked",
+            "summary": "The\u0020two\u0020patterns\u0020a\u0020server\u0020may\u0020reject\u0020a\u0020filter\u0020URL\u0020on,\u0020before\u0020the\u0020size\nand\u0020compile\u0020guard",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns_unchecked"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_server_pattern_limits\u0028\u0029",
+            "name": "jpkcom_postfilter_server_pattern_limits",
+            "summary": "What\u0020a\u0020reject\u0020pattern\u0020must\u0020stay\u0020within\u0020to\u0020load\u0020on\u0020every\u0020server",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_server_pattern_limits"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_server_regex_shape\u0028\u0029",
+            "name": "jpkcom_postfilter_server_regex_shape",
+            "summary": "Nesting\u0020depth\u0020and\u0020repetition\u0020validity\u0020of\u0020a\u0020pattern\u0020in\u0020the\u0020server\u0020grammar",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_server_regex_shape"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_server_pattern_problem\u0028\u0029",
+            "name": "jpkcom_postfilter_server_pattern_problem",
+            "summary": "Why\u0020a\u0020server\u0020could\u0020not\u0020load\u0020this\u0020pattern,\u0020if\u0020it\u0020could\u0020not",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_server_pattern_problem"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_server_patterns_dropped\u0028\u0029",
+            "name": "jpkcom_postfilter_server_patterns_dropped",
+            "summary": "The\u0020reject\u0020patterns\u0020left\u0020out\u0020because\u0020a\u0020server\u0020could\u0020not\u0020load\u0020them",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_server_patterns_dropped"
+        },                {
             "fqsen": "\\jpkcom_postfilter_server_reject_patterns\u0028\u0029",
             "name": "jpkcom_postfilter_server_reject_patterns",
             "summary": "The\u0020two\u0020patterns\u0020a\u0020server\u0020may\u0020reject\u0020a\u0020filter\u0020URL\u0020on",

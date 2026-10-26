@@ -283,7 +283,7 @@
             <dt class="phpdocumentor-table-of-contents__entry -constant -public">
     <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_VERSION">JPKCOM_POSTFILTER_VERSION</a>
     <span>
-        &nbsp;: mixed&nbsp;= &#039;1.6.0&#039;                            </span>
+        &nbsp;: mixed&nbsp;= &#039;1.6.1&#039;                            </span>
 </dt>
 
             <dt class="phpdocumentor-table-of-contents__entry -constant -public">
@@ -1973,6 +1973,42 @@ user can change their selection on a zero-results page reload.</dd>
 <dd>Escape a literal for the server patterns</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns_unchecked">jpkcom_postfilter_server_reject_patterns_unchecked()</a>
+    <span>
+                                &nbsp;: array{per_group: ?string, segments: ?string}    </span>
+</dt>
+<dd>The two patterns a server may reject a filter URL on, before the size
+and compile guard</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_pattern_limits">jpkcom_postfilter_server_pattern_limits()</a>
+    <span>
+                                &nbsp;: array{length: int, repeat: int, depth: int}    </span>
+</dt>
+<dd>What a reject pattern must stay within to load on every server</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_regex_shape">jpkcom_postfilter_server_regex_shape()</a>
+    <span>
+                                &nbsp;: array{depth: int, repeat_ok: bool}    </span>
+</dt>
+<dd>Nesting depth and repetition validity of a pattern in the server grammar</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_pattern_problem">jpkcom_postfilter_server_pattern_problem()</a>
+    <span>
+                                &nbsp;: string|null    </span>
+</dt>
+<dd>Why a server could not load this pattern, if it could not</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_patterns_dropped">jpkcom_postfilter_server_patterns_dropped()</a>
+    <span>
+                                &nbsp;: array&lt;string, string&gt;    </span>
+</dt>
+<dd>The reject patterns left out because a server could not load them</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns">jpkcom_postfilter_server_reject_patterns()</a>
     <span>
                                 &nbsp;: array{per_group: ?string, segments: ?string}    </span>
@@ -3086,7 +3122,7 @@ so instead of being empty, because an empty 200 is indistinguishable from
     <span class="phpdocumentor-signature__visibility">public</span>
         <span class="phpdocumentor-signature__type">mixed</span>
     <span class="phpdocumentor-signature__name">JPKCOM_POSTFILTER_VERSION</span>
-    = <span class="phpdocumentor-signature__default-value">&#039;1.6.0&#039;</span>
+    = <span class="phpdocumentor-signature__default-value">&#039;1.6.1&#039;</span>
 </code>
 
 
@@ -13248,7 +13284,7 @@ jpkcom_postfilter_filter_taxonomies() returns them.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">348</span>
+    <span class="phpdocumentor-element-found-in__line">387</span>
 
     </aside>
 
@@ -13308,7 +13344,7 @@ jpkcom_postfilter_filter_taxonomies() returns them.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">377</span>
+    <span class="phpdocumentor-element-found-in__line">416</span>
 
     </aside>
 
@@ -13364,7 +13400,7 @@ jpkcom_postfilter_filter_taxonomies() returns them.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">415</span>
+    <span class="phpdocumentor-element-found-in__line">454</span>
 
     </aside>
 
@@ -13444,7 +13480,7 @@ stays guarded.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">473</span>
+    <span class="phpdocumentor-element-found-in__line">512</span>
 
     </aside>
 
@@ -13505,7 +13541,7 @@ through, null when there is no rule.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">533</span>
+    <span class="phpdocumentor-element-found-in__line">572</span>
 
     </aside>
 
@@ -13569,7 +13605,7 @@ copies the element's textContent, which is the unescaped text again.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">559</span>
+    <span class="phpdocumentor-element-found-in__line">598</span>
 
     </aside>
 
@@ -13639,7 +13675,7 @@ copies the element's textContent, which is the unescaped text again.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">584</span>
+    <span class="phpdocumentor-element-found-in__line">623</span>
 
     </aside>
 
@@ -13684,7 +13720,7 @@ rule is the admin's job.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">605</span>
+    <span class="phpdocumentor-element-found-in__line">644</span>
 
     </aside>
 
@@ -13763,7 +13799,7 @@ rule is the admin's job.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">809</span>
+    <span class="phpdocumentor-element-found-in__line">848</span>
 
     </aside>
 
@@ -13815,7 +13851,7 @@ rule is the admin's job.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">882</span>
+    <span class="phpdocumentor-element-found-in__line">921</span>
 
     </aside>
 
@@ -13894,7 +13930,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">915</span>
+    <span class="phpdocumentor-element-found-in__line">954</span>
 
     </aside>
 
@@ -13946,7 +13982,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1047</span>
+    <span class="phpdocumentor-element-found-in__line">1086</span>
 
     </aside>
 
@@ -14025,7 +14061,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1124</span>
+    <span class="phpdocumentor-element-found-in__line">1163</span>
 
     </aside>
 
@@ -14065,7 +14101,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1199</span>
+    <span class="phpdocumentor-element-found-in__line">1238</span>
 
     </aside>
 
@@ -14130,7 +14166,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1223</span>
+    <span class="phpdocumentor-element-found-in__line">1262</span>
 
     </aside>
 
@@ -14170,7 +14206,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1244</span>
+    <span class="phpdocumentor-element-found-in__line">1283</span>
 
     </aside>
 
@@ -14210,7 +14246,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1269</span>
+    <span class="phpdocumentor-element-found-in__line">1308</span>
 
     </aside>
 
@@ -14269,7 +14305,7 @@ notice does not come back on a reload or with the next form's referer.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1289</span>
+    <span class="phpdocumentor-element-found-in__line">1328</span>
 
     </aside>
 
@@ -17736,26 +17772,30 @@ error or mean something else in RE2 or Rust's <code class="prettyprint">regex</c
 
 </article>
                     <article class="phpdocumentor-element -function - ">
-    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_reject_patterns">
-        jpkcom_postfilter_server_reject_patterns()
-        <a href="namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns" class="headerlink"><i class="fas fa-link"></i></a>
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_reject_patterns_unchecked">
+        jpkcom_postfilter_server_reject_patterns_unchecked()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns_unchecked" class="headerlink"><i class="fas fa-link"></i></a>
 
     </h4>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">298</span>
+    <span class="phpdocumentor-element-found-in__line">303</span>
 
     </aside>
 
-        <p class="phpdocumentor-summary">The two patterns a server may reject a filter URL on</p>
+        <p class="phpdocumentor-summary">The two patterns a server may reject a filter URL on, before the size
+and compile guard</p>
 
     
     <code class="phpdocumentor-code phpdocumentor-signature ">
     <span class="phpdocumentor-signature__visibility"></span>
-                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_reject_patterns</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$inputs</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$subject</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">'uri'</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{per_group: ?string, segments: ?string}</span></code>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_reject_patterns_unchecked</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$inputs</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$subject</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">'uri'</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{per_group: ?string, segments: ?string}</span></code>
 
-        <section class="phpdocumentor-description"><p>Regexes without delimiters, for the raw request URI (path plus optional
+        <section class="phpdocumentor-description"><p>Every caller that hands a pattern to a server goes through
+jpkcom_postfilter_server_reject_patterns(), which drops what a server
+could not load. This builder is public for tests and diagnostics only.</p>
+<p>Regexes without delimiters, for the raw request URI (path plus optional
 query). With B = the bases without their leading <code class="prettyprint">/</code>, E = endpoint,
 N = terms per group, G = filter groups:</p>
 <p>per_group: a segment below {B}{E}/ with N+1 or more non-empty pieces
@@ -17822,6 +17862,361 @@ This form is PCRE-only (<code class="prettyprint">\s</code>, <code class="pretty
             </dl>
 
     
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_server_reject_patterns_unchecked_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns_unchecked_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.0</span>
+                                                                                                            <section class="phpdocumentor-description"><p>as jpkcom_postfilter_server_reject_patterns(); 1.6.1 unchecked builder</p>
+</section>
+
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array{per_group: ?string, segments: ?string}</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_pattern_limits">
+        jpkcom_postfilter_server_pattern_limits()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_pattern_limits" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">453</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">What a reject pattern must stay within to load on every server</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_pattern_limits</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{length: int, repeat: int, depth: int}</span></code>
+
+        <section class="phpdocumentor-description"><p>The bounded per_group form grows with G and N. A 1.6.0 review found
+layouts (many filter groups, a high cap, positions without taxonomy)
+whose pattern a server cannot load - and a server that cannot load a
+rule fails loudly (nginx -t, a 500 for the whole tree from .htaccess)
+or silently (Ferron 3 never matches). Measured for 1.6.1:</p>
+<ul>
+<li><code class="prettyprint">length</code> 4000 characters, for the longer of the two forms (the
+THE_REQUEST form; the URI form is always shorter). nginx reads a
+quoted parameter of at most 4094 characters (NGX_CONF_BUFFER 4096;
+nginx 1.30: 4094 accepted, 4095 &quot;too long parameter&quot;) - the nginx
+and ISPConfig snippets put the URI form into one such parameter.
+Apache 2.4 answers 500 for the whole directory tree once an
+.htaccess line reaches 8192 bytes (8191 accepted); the request-line
+form sits in <code class="prettyprint">RewriteCond %{THE_REQUEST} &quot;…&quot;</code>, so 4000 leaves half
+of that unused. Caddy doubles every backslash inside its CEL
+string; the Caddyfile has no token length limit.</li>
+<li><code class="prettyprint">repeat</code> 1000: Go's regexp (Caddy) refuses a repetition count over
+1000 and nested counted repetitions whose product exceeds 1000.</li>
+<li><code class="prettyprint">depth</code> 200: Rust's regex (Ferron 3) refuses nesting deeper than 250
+(Ferron 3.0.0-rc.10: 124 nested <code class="prettyprint">(?:…)?</code> matched, 125 never did -
+without any error). 50 of margin for constructs not calibrated one
+by one; Go's own nesting limit (1000) is further away.</li>
+</ul>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_server_pattern_limits_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_pattern_limits_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array{length: int, repeat: int, depth: int}</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_regex_shape">
+        jpkcom_postfilter_server_regex_shape()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_regex_shape" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">480</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Nesting depth and repetition validity of a pattern in the server grammar</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_regex_shape</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$re</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{depth: int, repeat_ok: bool}</span></code>
+
+        <section class="phpdocumentor-description"><p>Parses the subset jpkcom_postfilter_server_reject_patterns_unchecked()
+emits (literals, escapes, bracket classes, groups, alternation,
+<code class="prettyprint">* + ?</code> and <code class="prettyprint">{n}</code>, <code class="prettyprint">{n,}</code>, <code class="prettyprint">{n,m}</code>) into a tree and reports:</p>
+<ul>
+<li><code class="prettyprint">depth</code>: the nesting depth as Rust's regex-syntax counts it against
+its nest limit - every group, repetition, bracket class, class with
+more than one item, alternation and concatenation of two or more
+items is one level; literals, escapes and assertions are none.</li>
+<li><code class="prettyprint">repeat_ok</code>: Go's regexp rule (regexp/syntax repeatIsValid): no
+count above 1000, and along every path the counted repetitions
+(<code class="prettyprint">*</code>, <code class="prettyprint">+</code>, <code class="prettyprint">?</code> do not count) multiply to at most 1000.</li>
+</ul>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$re</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Pattern without delimiters.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_server_regex_shape_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_regex_shape_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array{depth: int, repeat_ok: bool}</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_pattern_problem">
+        jpkcom_postfilter_server_pattern_problem()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_pattern_problem" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">608</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Why a server could not load this pattern, if it could not</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_pattern_problem</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$uri</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$line</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string|null</span></code>
+
+        <section class="phpdocumentor-description"><p>Checked in this order: <code class="prettyprint">length</code> (either form over the length limit),
+<code class="prettyprint">pcre</code> (PHP's PCRE2 cannot compile one of the forms - nginx, Apache
+and OpenLiteSpeed use the same library, normally with the same link
+size), <code class="prettyprint">repeat</code> and <code class="prettyprint">nesting</code> (the URI form, the only one Go's and
+Rust's engines get, against jpkcom_postfilter_server_pattern_limits()).</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$uri</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>The pattern in the URI form.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$line</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>The same pattern in the THE_REQUEST form.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_server_pattern_problem_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_pattern_problem_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string|null</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p><code class="prettyprint">length</code>, <code class="prettyprint">pcre</code>, <code class="prettyprint">repeat</code>, <code class="prettyprint">nesting</code>, or null when it loads everywhere.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_patterns_dropped">
+        jpkcom_postfilter_server_patterns_dropped()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_patterns_dropped" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">654</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">The reject patterns left out because a server could not load them</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_patterns_dropped</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$inputs</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string, string&gt;</span></code>
+
+        <section class="phpdocumentor-description"><p>Decided over both forms at once, so every server tab, the curl
+commands, the status check and the managed .htaccess block agree on
+which rule exists. A pattern that is dropped is looser, never
+stricter: the plugin still rejects those URLs in PHP. per_group is
+also dropped when segments is, so a URL over both caps never gets
+another reason from the server than from PHP.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$inputs</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, mixed&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>As returned by jpkcom_postfilter_server_rule_inputs().</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_server_patterns_dropped_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_patterns_dropped_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string, string&gt;</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Pattern key (<code class="prettyprint">per_group</code>, <code class="prettyprint">segments</code>) =&gt; reason
+(see jpkcom_postfilter_server_pattern_problem()); empty when nothing is dropped.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_reject_patterns">
+        jpkcom_postfilter_server_reject_patterns()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">696</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">The two patterns a server may reject a filter URL on</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_reject_patterns</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$inputs</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$subject</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">'uri'</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{per_group: ?string, segments: ?string}</span></code>
+
+        <section class="phpdocumentor-description"><p>jpkcom_postfilter_server_reject_patterns_unchecked() (where the
+grammar and why it is never stricter than the plugin are documented),
+minus every pattern jpkcom_postfilter_server_patterns_dropped() names:
+one that a server could not load is null, as if the settings produced
+none. Every snippet, curl command, status check and the managed
+.htaccess block take their patterns from here.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$inputs</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, mixed&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>As returned by jpkcom_postfilter_server_rule_inputs().</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$subject</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">'uri'</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p><code class="prettyprint">uri</code> (raw request URI, default) or
+<code class="prettyprint">request_line</code> (THE_REQUEST).</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
     <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_server_reject_patterns_tags">
         Tags
         <a href="namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns_tags" class="headerlink"><i class="fas fa-link"></i></a>
@@ -17834,6 +18229,12 @@ This form is PCRE-only (<code class="prettyprint">\s</code>, <code class="pretty
                             <dd class="phpdocumentor-tag-list__definition">
                                             <span class="phpdocumentor-tag-link">1.6.0</span>
                                                                                                         
+                                    </dd>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.1</span>
+                                                                                                            <section class="phpdocumentor-description"><p>Drops patterns no server could load (size, PCRE compile, RE2 repetition, nesting).</p>
+</section>
+
                                     </dd>
                         </dl>
 
