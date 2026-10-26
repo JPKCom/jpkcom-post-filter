@@ -70,6 +70,49 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rule_base_path' ) ) 
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_server_rule_bases' ) ) {
+    /**
+     * The base paths a server rule covers for the given post types
+     *
+     * Every post type that gets rewrite rules, in every language
+     * jpkcom_postfilter_archive_base_urls_all_languages() knows, as paths
+     * including the home path, sorted and without duplicates. Separate from
+     * jpkcom_postfilter_server_rule_inputs() so the .htaccess sync can work
+     * out the bases of a post type list that is not saved yet.
+     *
+     * @since 1.6.0
+     *
+     * @param string[] $post_types Post type slugs, as jpkcom_postfilter_routable_post_types() returns them.
+     * @return string[]
+     */
+    function jpkcom_postfilter_server_rule_bases( array $post_types ): array {
+        $page_for_posts = (int) get_option( 'page_for_posts' );
+        $bases          = [];
+
+        foreach ( $post_types as $post_type ) {
+            $post_type = (string) $post_type;
+
+            // Same gate as the rewrite rules in url-routing.php.
+            if ( jpkcom_postfilter_archive_base_regex( $post_type, $page_for_posts ) === null ) {
+                continue;
+            }
+
+            foreach ( jpkcom_postfilter_archive_base_urls_all_languages( $post_type ) as $url ) {
+                $path = jpkcom_postfilter_server_rule_base_path( $url );
+                if ( $path !== null ) {
+                    $bases[] = $path;
+                }
+            }
+        }
+
+        $bases = array_values( array_unique( $bases ) );
+        sort( $bases, SORT_STRING );
+
+        return $bases;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_server_rule_inputs' ) ) {
     /**
      * The effective values a server rule is generated from
@@ -99,25 +142,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rule_inputs' ) ) {
             }
         }
 
-        $page_for_posts = (int) get_option( 'page_for_posts' );
-        $bases          = [];
-
-        foreach ( jpkcom_postfilter_routable_post_types() as $post_type ) {
-            // Same gate as the rewrite rules in url-routing.php.
-            if ( jpkcom_postfilter_archive_base_regex( $post_type, $page_for_posts ) === null ) {
-                continue;
-            }
-
-            foreach ( jpkcom_postfilter_archive_base_urls_all_languages( $post_type ) as $url ) {
-                $path = jpkcom_postfilter_server_rule_base_path( $url );
-                if ( $path !== null ) {
-                    $bases[] = $path;
-                }
-            }
-        }
-
-        $bases = array_values( array_unique( $bases ) );
-        sort( $bases, SORT_STRING );
+        $bases = jpkcom_postfilter_server_rule_bases( post_types: jpkcom_postfilter_routable_post_types() );
 
         // The policy keys a server rule is built from.
         $policy_filtered = [];

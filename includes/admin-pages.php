@@ -1617,6 +1617,28 @@ function jpkcom_postfilter_field_cache_ttl(): void {
 // Page rendering callbacks
 // ---------------------------------------------------------------------------
 
+if ( ! function_exists( function: 'jpkcom_postfilter_settings_has_error' ) ) {
+    /**
+     * Did options.php hand back an error for this settings slug?
+     *
+     * get_settings_errors() moves the errors from the redirect transient into
+     * the global list, so settings_errors() still prints them afterwards.
+     *
+     * @since 1.6.0
+     *
+     * @param string $setting Settings error slug.
+     * @return bool
+     */
+    function jpkcom_postfilter_settings_has_error( string $setting ): bool {
+        foreach ( get_settings_errors( $setting ) as $error ) {
+            if ( ( $error['type'] ?? '' ) === 'error' ) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
 /**
  * Render: General Settings page
  *
@@ -1634,7 +1656,8 @@ function jpkcom_postfilter_page_general(): void {
         add_settings_error( 'jpkcom_postfilter_general_messages', 'flushed', __( 'Rewrite rules flushed.', 'jpkcom-post-filter' ), 'success' );
     }
 
-    if ( isset( $_GET['settings-updated'] ) ) {
+    // Not when the save was refused (managed .htaccess, includes/htaccess-sync.php).
+    if ( isset( $_GET['settings-updated'] ) && ! jpkcom_postfilter_settings_has_error( 'jpkcom_postfilter_general_messages' ) ) {
         add_settings_error( 'jpkcom_postfilter_general_messages', 'saved', __( 'Settings saved.', 'jpkcom-post-filter' ), 'success' );
     }
 
@@ -1673,7 +1696,7 @@ function jpkcom_postfilter_page_filter_groups(): void {
         return;
     }
 
-    if ( isset( $_GET['settings-updated'] ) ) {
+    if ( isset( $_GET['settings-updated'] ) && ! jpkcom_postfilter_settings_has_error( 'jpkcom_postfilter_filter_groups_messages' ) ) {
         add_settings_error( 'jpkcom_postfilter_filter_groups_messages', 'saved', __( 'Filter groups saved.', 'jpkcom-post-filter' ), 'success' );
     }
 
@@ -2595,6 +2618,12 @@ function jpkcom_postfilter_page_import_export(): void {
 
                 foreach ( $valid_groups as $group ) {
                     if ( isset( $data[ $group ] ) && is_array( $data[ $group ] ) ) {
+                        // 1.6.0: the sanitizer below writes the settings cache file, so a
+                        // managed .htaccess block is loosened first - or the group skipped.
+                        if ( function_exists( 'jpkcom_postfilter_htaccess_prepare_save' )
+                            && ! jpkcom_postfilter_htaccess_prepare_save( option: 'jpkcom_postfilter_' . $group, raw: $data[ $group ], setting: 'jpkcom_postfilter_import_messages' ) ) {
+                            continue;
+                        }
                         $cb        = $sanitize_callbacks[ $group ] ?? null;
                         $sanitized = ( $cb && function_exists( $cb ) ) ? $cb( $data[ $group ] ) : $data[ $group ];
                         jpkcom_postfilter_settings_save( $group, $sanitized );

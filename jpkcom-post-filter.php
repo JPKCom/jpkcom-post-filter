@@ -87,6 +87,7 @@ $jpkcom_postfilter_includes = [
     'includes/server-rules.php',
     'includes/server-rules-render.php',
     'includes/htaccess-manager.php',
+    'includes/htaccess-sync.php',
     'includes/fragment-response.php',
     'includes/query-handler.php',
     'includes/abilities.php',
@@ -168,6 +169,12 @@ function jpkcom_postfilter_activate(): void {
     }
     // Flush rewrite rules after activation
     flush_rewrite_rules();
+
+    // 1.6.0: a managed .htaccess block left from an earlier installation is
+    // synced (option still set) or removed (option gone). Nothing is set up.
+    if ( function_exists( 'jpkcom_postfilter_htaccess_lifecycle' ) ) {
+        jpkcom_postfilter_htaccess_lifecycle();
+    }
 }
 
 register_activation_hook( __FILE__, 'jpkcom_postfilter_activate' );
@@ -176,12 +183,17 @@ register_activation_hook( __FILE__, 'jpkcom_postfilter_activate' );
 /**
  * Plugin deactivation hook
  *
- * Flushes rewrite rules on deactivation.
+ * Flushes rewrite rules on deactivation. Since 1.6.0 it also removes the
+ * managed .htaccess block and its option: with the plugin gone, a server rule
+ * built from its settings would only be in the way.
  *
  * @since 1.0.0
  * @return void
  */
 function jpkcom_postfilter_deactivate(): void {
+    if ( function_exists( 'jpkcom_postfilter_htaccess_deactivate' ) ) {
+        jpkcom_postfilter_htaccess_deactivate();
+    }
     flush_rewrite_rules();
 }
 
@@ -212,10 +224,21 @@ function jpkcom_postfilter_maybe_flush_rewrites(): void {
 
     // 1.6.0: the default of max_filters_per_group is 2. Existing installations
     // keep 3. Runs while $stored still holds the old marker - a fresh install
-    // has '' there - and before update_option() below overwrites it.
-    jpkcom_postfilter_migrate_pin_per_group_cap();
+    // has '' there - and before update_option() below overwrites it. Never
+    // refused for an unwritable .htaccess: the marker below means it would not
+    // run again (the block is still loosened when it can be).
+    if ( function_exists( 'jpkcom_postfilter_htaccess_without_refusal' ) ) {
+        jpkcom_postfilter_htaccess_without_refusal( 'jpkcom_postfilter_migrate_pin_per_group_cap' );
+    } else {
+        jpkcom_postfilter_migrate_pin_per_group_cap();
+    }
 
     flush_rewrite_rules();
+
+    // 1.6.0: a new version may build other rules from the same settings.
+    if ( function_exists( 'jpkcom_postfilter_htaccess_lifecycle' ) ) {
+        jpkcom_postfilter_htaccess_lifecycle();
+    }
 
     // Autoloaded since 1.5.0: these options are read on every request, and
     // without a persistent object cache each non-autoloaded one costs its own
