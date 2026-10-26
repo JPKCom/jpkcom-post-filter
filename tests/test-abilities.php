@@ -118,7 +118,7 @@ class WP_Term {
 	public int    $count = 0;
 }
 
-$GLOBALS['_stub_settings']         = [ 'general' => [ 'enabled_post_types' => [ 'post' ] ] ];
+$GLOBALS['_stub_settings']         = [ 'general' => [ 'enabled_post_types' => [ 'post' ], 'max_filters_per_group' => 3 ] ];
 $GLOBALS['_stub_groups']           = [];
 $GLOBALS['_stub_terms']            = [];   // taxonomy => [ [slug, name, count], ... ]
 $GLOBALS['_stub_raw_terms']        = [];   // taxonomy => term list returned verbatim (malformed-data tests)
@@ -1219,10 +1219,9 @@ is_same(
 	. 'suppressing the URL there would withhold a link that works.'
 );
 
-unset(
-	$GLOBALS['_stub_settings']['general']['max_filters_per_group'],
-	$GLOBALS['_stub_settings']['general']['max_filter_combos']
-);
+// Back to the suite's pinned 3 per group (1.6.0 default is 2).
+$GLOBALS['_stub_settings']['general']['max_filters_per_group'] = 3;
+unset( $GLOBALS['_stub_settings']['general']['max_filter_combos'] );
 
 $GLOBALS['_stub_filter_url_calls'] = 0;
 

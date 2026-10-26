@@ -55,7 +55,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_policy_definitions' ) ) {
      */
     function jpkcom_postfilter_policy_definitions(): array {
         return [
-            'max_filters_per_group' => [ 'constant' => 'JPKCOM_POSTFILTER_MAX_FILTERS_PER_GROUP', 'default' => 3 ],
+            'max_filters_per_group' => [ 'constant' => 'JPKCOM_POSTFILTER_MAX_FILTERS_PER_GROUP', 'default' => 2 ],
             'max_filter_combos'     => [ 'constant' => 'JPKCOM_POSTFILTER_MAX_FILTER_COMBOS', 'default' => 3 ],
             'max_terms_total'       => [ 'constant' => 'JPKCOM_POSTFILTER_MAX_TERMS_TOTAL', 'default' => 0 ],
             'filter_link_mode'      => [ 'constant' => 'JPKCOM_POSTFILTER_LINK_MODE', 'default' => 'single' ],

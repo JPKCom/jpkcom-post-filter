@@ -98,7 +98,8 @@ $GLOBALS['__terms']                               = [
 // away - which is what happens to the second language on a WPML site.
 $GLOBALS['__terms_lang_filter'] = [ 'post_tag' => [ 'privat' ] ];
 
-set_general( [] );
+// 1.6.0 changed the default to 2; the sections below test the 3-per-group behaviour, so they pin it.
+set_general( [ 'max_filters_per_group' => 3 ] );
 
 $base = 'https://example.test/blog/';
 $bot  = [
@@ -172,10 +173,10 @@ chk( 'a third segment with two filter groups', ( $v['reason'] ?? '' ) === 'segme
 $v = call( 'jpkcom_postfilter_validate_filter_path', 'a+b+c/x+y+z', $tax, null );
 chk( '3+3 is valid at the default caps', ( $v['action'] ?? '' ) === 'ok' );
 
-set_general( [ 'max_terms_total' => 4 ] );
+set_general( [ 'max_terms_total' => 4, 'max_filters_per_group' => 3 ] );
 $v = call( 'jpkcom_postfilter_validate_filter_path', 'a+b+c/x+y', $tax, null );
 chk( 'max_terms_total caps the whole selection', ( $v['reason'] ?? '' ) === 'total', json_encode( $v ) );
-set_general( [] );
+set_general( [ 'max_filters_per_group' => 3 ] );
 
 $known = static fn( string $t ): ?array => $GLOBALS['__terms'][ $t ] ?? null;
 
@@ -219,7 +220,7 @@ chk(
 	( $validate( 'a/a+b', null, [ 'category', 'category' ] )['reason'] ?? '' ) === 'per-group'
 );
 
-set_general( [] );
+set_general( [ 'max_filters_per_group' => 3 ] );
 
 // ---------------------------------------------------------------------------
 section( 'The request guard answers before the main query' );

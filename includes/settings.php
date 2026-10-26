@@ -550,7 +550,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_default_settings' ) ) {
                 'enabled_post_types'      => [ 'post' ],
                 'auto_inject'             => [ 'post' ],
                 'max_filter_combos'       => 3,
-                'max_filters_per_group'   => 3,
+                'max_filters_per_group'   => 2,
                 'url_endpoint'            => JPKCOM_POSTFILTER_URL_ENDPOINT,
                 'endpoint_empty_action'   => '404',
                 'endpoint_empty_redirect' => '',
@@ -590,6 +590,56 @@ if ( ! function_exists( function: 'jpkcom_postfilter_default_settings' ) ) {
                 'cache_ttl'              => HOUR_IN_SECONDS,
             ],
         ];
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_migrate_pin_per_group_cap' ) ) {
+    /**
+     * Keep existing installations at 3 terms per group
+     *
+     * 1.6.0 lowers the default of max_filters_per_group from 3 to 2, for new
+     * installations only. The effective value of a key that was never stored is
+     * the default, so an installation that never saved the key (or never saved
+     * the General page at all) would silently drop to 2. This pins 3 for those.
+     *
+     * An installation counts as existing when the filter groups option exists
+     * or the rewrite version marker is non-empty (a fresh install has neither).
+     * Call before jpkcom_postfilter_maybe_flush_rewrites() updates the marker.
+     *
+     * The write goes through update_option(), which runs the registered
+     * sanitizer, and that treats a missing key as "none selected". So the
+     * stored values are merged over the complete defaults first: the sanitizer
+     * then returns every other value unchanged and only the pinned key differs.
+     *
+     * @since 1.6.0
+     *
+     * @return bool True when the pin was written.
+     */
+    function jpkcom_postfilter_migrate_pin_per_group_cap(): bool {
+        $stored = get_option( 'jpkcom_postfilter_general', [] );
+        $stored = is_array( $stored ) ? $stored : [];
+
+        if ( array_key_exists( 'max_filters_per_group', $stored ) ) {
+            return false;
+        }
+
+        $has_groups  = get_option( 'jpkcom_postfilter_filter_groups', null ) !== null;
+        $has_version = (string) get_option( 'jpkcom_postfilter_rewrite_version', '' ) !== '';
+
+        if ( ! $has_groups && ! $has_version ) {
+            return false;
+        }
+
+        $merged = array_merge(
+            jpkcom_postfilter_default_settings()['general'],
+            $stored,
+            [ 'max_filters_per_group' => 3 ]
+        );
+
+        update_option( 'jpkcom_postfilter_general', $merged );
+
+        return true;
     }
 }
 

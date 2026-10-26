@@ -207,6 +207,11 @@ function jpkcom_postfilter_maybe_flush_rewrites(): void {
         return;
     }
 
+    // 1.6.0: the default of max_filters_per_group is 2. Existing installations
+    // keep 3. Runs while $stored still holds the old marker - a fresh install
+    // has '' there - and before update_option() below overwrites it.
+    jpkcom_postfilter_migrate_pin_per_group_cap();
+
     flush_rewrite_rules();
 
     // Autoloaded since 1.5.0: these options are read on every request, and
