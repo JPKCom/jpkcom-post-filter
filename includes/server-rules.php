@@ -397,6 +397,33 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_render_inputs' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_server_unsafe_bases' ) ) {
+    /**
+     * The bases left out of every snippet
+     *
+     * Those jpkcom_postfilter_server_safe_bases() refuses. Neither the reject
+     * rule nor the rate limit covers them, so the admin page names them.
+     *
+     * @since 1.6.0
+     *
+     * @param array<string, mixed> $inputs As returned by jpkcom_postfilter_server_rule_inputs().
+     * @return string[]
+     */
+    function jpkcom_postfilter_server_unsafe_bases( array $inputs ): array {
+        $bases = [];
+        foreach ( (array) ( $inputs['bases'] ?? [] ) as $base ) {
+            $bases[] = is_scalar( $base ) ? (string) $base : '';
+        }
+        $safe = jpkcom_postfilter_server_safe_bases( bases: $bases );
+
+        return array_values( array_unique( array_filter(
+            $bases,
+            static fn( string $base ): bool => ! in_array( $base, $safe, true )
+        ) ) );
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_server_render_patterns' ) ) {
     /**
      * The reject patterns a snippet contains
@@ -926,7 +953,6 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_nginx' ) ) 
             $rate[] = '    default_type text/plain;';
             $rate[] = '    charset utf-8;';
             $rate[] = '    add_header Retry-After ' . $limits['retry_after'] . ' always;';
-            $rate[] = '    add_header X-Robots-Tag "noindex, nofollow" always;';
             $rate[] = '    add_header Cache-Control "no-store" always;';
             $rate[] = "    return 429 '" . jpkcom_postfilter_server_plain_text( text: __( 'Too many filter requests, please retry in a moment.', 'jpkcom-post-filter' ) ) . "';";
             $rate[] = '}';
@@ -1062,7 +1088,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
      * `QS_ClientEventLimitCount`: measured, it bans the client IP for every
      * URL, cookie users included.
      *
-     * ModSecurity (§3b): fixed-window counters. The window starts with the
+     * mod_qos has no bucket of its own for search engines: exempting their
+     * User-Agent would let anyone who fakes one past the only concurrency cap,
+     * so they share it (spec 6).
+     *
+     * ModSecurity (§3b): everything inside a `<LocationMatch>` over the filter
+     * prefixes (decoded path - fine for a rate limit), including `SecRuleEngine
+     * On`, so OWASP CRS is not switched to blocking for the rest of the site.
+     * Phase 2, because Apache maps a request to its Location only after phase 1
+     * rules ran (post_read_request). Fixed-window counters. The window starts with the
      * first request (`expirevar` only when the counter is created); research
      * set expirevar on every hit, which re-arms it - steady traffic then never
      * resets a site-wide counter, and a visitor clicking every few seconds is
@@ -1102,7 +1136,6 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
                 '<IfModule qos_module>',
                 '    SetEnvIf Request_URI "' . $scope . '" JPKPF_FILTER=1',
                 '    SetEnvIf Cookie "." JPKPF_EXEMPT=1',
-                '    SetEnvIfNoCase User-Agent "' . jpkcom_postfilter_server_searchbots() . '" JPKPF_EXEMPT=1',
                 '    QS_SetEnvIf JPKPF_FILTER !JPKPF_EXEMPT JPKPF_ANON=1',
                 '    QS_EventRequestLimit JPKPF_ANON ' . $limits['conn'],
                 '    QS_ErrorResponseCode 429',
@@ -1117,7 +1150,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
                 title: __( 'Concurrency cap (mod_qos, server configuration)', 'jpkcom-post-filter' ),
                 context: sprintf(
                     /* translators: %d: concurrent requests */
-                    __( 'Global server configuration, outside every <VirtualHost> (root). Needs mod_qos (Debian: libapache2-mod-qos; check apachectl -M | grep qos). At most %d cookie-less filter requests at once, one cap for all sites on this server; any cookie and the big search engines are exempt, mod_qos answers 429. QS_ClientEventLimitCount is deliberately not used: it bans the whole IP for every URL.', 'jpkcom-post-filter' ),
+                    __( 'Global server configuration, outside every <VirtualHost> (root). Needs mod_qos (Debian: libapache2-mod-qos; check apachectl -M | grep qos). At most %d cookie-less filter requests at once, one cap for all sites on this server; any cookie exempts a request, mod_qos answers 429. Search engines share this cap: a User-Agent exemption would let anyone who fakes one bypass it. QS_ClientEventLimitCount is deliberately not used: it bans the whole IP for every URL.', 'jpkcom-post-filter' ),
                     $limits['conn']
                 ),
                 code: jpkcom_postfilter_server_wrap( inputs: $inputs, lines: $qos )
@@ -1131,32 +1164,38 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
 
             $modsec = [
                 '<IfModule security2_module>',
+                // R9: never a vhost-wide SecRuleEngine - it would make OWASP
+                // CRS enforce on every URL, wp-admin included.
+                '<LocationMatch "' . $scope . '">',
                 '    SecRuleEngine On',
                 '    # Cookie-less filter request; any Cookie header or a search engine takes it out.',
-                '    SecRule REQUEST_URI "@rx ' . $scope . '" "id:4710001,phase:1,pass,nolog,setvar:tx.jpkpf_anon=1"',
-                '    SecRule &REQUEST_HEADERS:Cookie "@gt 0" "id:4710002,phase:1,pass,nolog,setvar:tx.jpkpf_anon=0"',
-                '    ' . $anon . '4710003,phase:1,pass,nolog,chain"',
+                '    SecAction "id:4710001,phase:2,pass,nolog,setvar:tx.jpkpf_anon=1"',
+                '    SecRule &REQUEST_HEADERS:Cookie "@gt 0" "id:4710002,phase:2,pass,nolog,setvar:tx.jpkpf_anon=0"',
+                '    ' . $anon . '4710003,phase:2,pass,nolog,chain"',
                 '        SecRule REQUEST_HEADERS:User-Agent "@rx (?i)(?:' . jpkcom_postfilter_server_searchbots() . ')" "setvar:tx.jpkpf_anon=0,setvar:tx.jpkpf_bot=1"',
                 '    # Fixed windows: the counter expires ' . $window . ' s (per IP) / 10 s (site) after its first request.',
-                '    ' . $anon . '4710004,phase:1,pass,nolog,initcol:ip=%{REMOTE_ADDR},initcol:global=jpkpf_%{SERVER_NAME}"',
-                '    ' . $anon . '4710005,phase:1,pass,nolog,chain"',
+                '    ' . $anon . '4710004,phase:2,pass,nolog,initcol:ip=%{REMOTE_ADDR},initcol:global=jpkpf_%{SERVER_NAME}"',
+                '    ' . $anon . '4710005,phase:2,pass,nolog,chain"',
                 '        SecRule &IP:JPKPF_HITS "@eq 0" "setvar:ip.jpkpf_hits=0,expirevar:ip.jpkpf_hits=' . $window . '"',
-                '    ' . $anon . '4710006,phase:1,pass,nolog,chain"',
+                '    ' . $anon . '4710006,phase:2,pass,nolog,chain"',
                 '        SecRule &GLOBAL:JPKPF_HITS "@eq 0" "setvar:global.jpkpf_hits=0,expirevar:global.jpkpf_hits=10"',
-                '    ' . $anon . '4710007,phase:1,pass,nolog,setvar:ip.jpkpf_hits=+1,setvar:global.jpkpf_hits=+1"',
-                '    ' . $anon . "4710008,phase:1,deny,status:429,log,msg:'jpkpf: per-IP filter limit',chain\"",
+                '    ' . $anon . '4710007,phase:2,pass,nolog,setvar:ip.jpkpf_hits=+1,setvar:global.jpkpf_hits=+1"',
+                '    ' . $anon . "4710008,phase:2,deny,status:429,log,msg:'jpkpf: per-IP filter limit',chain\"",
                 '        SecRule IP:JPKPF_HITS "@gt ' . $limits['ip_burst'] . '"',
-                '    ' . $anon . "4710009,phase:1,deny,status:429,log,msg:'jpkpf: site-wide filter limit',chain\"",
+                '    ' . $anon . "4710009,phase:2,deny,status:429,log,msg:'jpkpf: site-wide filter limit',chain\"",
                 '        SecRule GLOBAL:JPKPF_HITS "@gt ' . $site . '"',
                 '    # Search engines: their own site-wide counter.',
-                '    ' . $bot . '4710010,phase:1,pass,nolog,initcol:global=jpkpf_%{SERVER_NAME}"',
-                '    ' . $bot . '4710011,phase:1,pass,nolog,chain"',
+                '    ' . $bot . '4710010,phase:2,pass,nolog,initcol:global=jpkpf_%{SERVER_NAME}"',
+                '    ' . $bot . '4710011,phase:2,pass,nolog,chain"',
                 '        SecRule &GLOBAL:JPKPF_BOT_HITS "@eq 0" "setvar:global.jpkpf_bot_hits=0,expirevar:global.jpkpf_bot_hits=10"',
-                '    ' . $bot . '4710012,phase:1,pass,nolog,setvar:global.jpkpf_bot_hits=+1"',
-                '    ' . $bot . "4710013,phase:1,deny,status:429,log,msg:'jpkpf: search engine filter limit',chain\"",
+                '    ' . $bot . '4710012,phase:2,pass,nolog,setvar:global.jpkpf_bot_hits=+1"',
+                '    ' . $bot . "4710013,phase:2,deny,status:429,log,msg:'jpkpf: search engine filter limit',chain\"",
                 '        SecRule GLOBAL:JPKPF_BOT_HITS "@gt ' . $bots . '"',
+                '</LocationMatch>',
                 '</IfModule>',
-                $retry_after,
+                '<IfModule mod_headers.c>',
+                '    ' . $retry_after,
+                '</IfModule>',
             ];
 
             $out[] = jpkcom_postfilter_server_snippet(
@@ -1164,7 +1203,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
                 title: __( 'Rate limits per IP and site-wide (ModSecurity, VirtualHost)', 'jpkcom-post-filter' ),
                 context: sprintf(
                     /* translators: 1: requests, 2: seconds, 3: requests, 4: requests */
-                    __( 'Inside the site\'s <VirtualHost>. Needs ModSecurity 2 (security2_module) with a SecDataDir for its counters. Cookie-less filter requests get 429 with Retry-After beyond %1$d per IP in %2$d seconds or %3$d site-wide in 10 seconds; search engines have their own limit of %4$d in 10 seconds. SecRuleEngine On switches ModSecurity on for this host - if OWASP CRS is loaded, CRS then blocks too; drop that line if the engine is already on. mod_evasive is not recommended: it bans whole IPs and knows no path or cookie.', 'jpkcom-post-filter' ),
+                    __( 'Inside the site\'s <VirtualHost>. Needs ModSecurity 2 (security2_module) with a SecDataDir for its counters, and mod_headers for Retry-After. Cookie-less filter requests get 429 beyond %1$d per IP in %2$d seconds or %3$d site-wide in 10 seconds; search engines have their own limit of %4$d in 10 seconds. Everything sits in a LocationMatch for the filter URLs: SecRuleEngine On applies there only. If OWASP CRS is loaded, it then also enforces on these filter URLs (and only there) - try it on a staging copy first. mod_evasive is not recommended: it bans whole IPs and knows no path or cookie.', 'jpkcom-post-filter' ),
                     $limits['ip_burst'],
                     $window,
                     $site,
@@ -1206,7 +1245,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_htaccess' )
             $out[] = jpkcom_postfilter_server_snippet(
                 id: 'htaccess-reject',
                 title: __( 'Reject before PHP (.htaccess)', 'jpkcom-post-filter' ),
-                context: __( 'Paste it into the .htaccess of the WordPress directory, before the line # BEGIN WordPress - after WordPress\'s block it never takes effect. Needs AllowOverride FileInfo. The plugin never edits a block with these (manual) markers.', 'jpkcom-post-filter' ),
+                context: sprintf(
+                    /* translators: %d: HTTP status code */
+                    __( 'Paste it into the .htaccess of the WordPress directory, before the line # BEGIN WordPress - after WordPress\'s block it never takes effect. Needs AllowOverride FileInfo. The ErrorDocument line sets the body of every %d that Apache itself sends in this directory tree; WordPress answers its own 404 pages through index.php. The plugin never edits a block with these (manual) markers.', 'jpkcom-post-filter' ),
+                    jpkcom_postfilter_server_reject_status( inputs: $inputs )
+                ),
                 code: implode( "\n", [
                     '# BEGIN JPKCom Post Filter (manual)',
                     '# rule ' . jpkcom_postfilter_server_hash_of( inputs: $inputs ),
@@ -1418,14 +1461,30 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
         $out[] = 'curl -s ' . $url( '/robots.txt' ) . " | grep -A8 '^# jpkcom-post-filter'";
 
         if ( $rate ) {
-            $target = $url( $probes['within'][1] . '?rl=' );
+            $base   = $probes['within'][1];
+            $target = $url( $base . '?rl=' );
+            $seq    = 'for i in $(seq 1 25); do curl -s -o /dev/null -w \'%{http_code} \' ';
+            $par    = 'seq 1 8 | xargs -P 8 -I{} curl -s -o /dev/null -w \'%{http_code} \' ';
             $out[]  = '';
             $out[]  = '# ' . ( ++$n ) . ') Rate limit. This uses up the shared budget of cookie-less visitors: run it off-peak.';
-            $out[]  = '#    Expect 429 after the burst, with Retry-After:';
-            $out[]  = 'for i in $(seq 1 25); do curl -s -o /dev/null -w \'%{http_code} \' ' . $target . '"$i"; done; echo';
-            $out[]  = 'curl -s -o /dev/null -D - ' . $url( $probes['within'][1] ) . " | grep -iE '^(HTTP|retry-after)'";
-            $out[]  = '#    Any cookie exempts a request: expect no 429.';
-            $out[]  = 'for i in $(seq 1 25); do curl -s -o /dev/null -w \'%{http_code} \' -H \'Cookie: jpkpf-check=1\' ' . $target . '"$i"; done; echo';
+            if ( $server === 'nginx' ) {
+                $out[] = '#    Sequential requests (limit_req): expect 429 after the burst, then Retry-After on the next one.';
+                $out[] = $seq . $target . '"$i"; done; echo';
+                $out[] = 'curl -s -o /dev/null -D - ' . $url( $base ) . " | grep -iE '^(HTTP|retry-after)'";
+                $out[] = '#    Any cookie exempts a request: expect no 429.';
+                $out[] = $seq . '-H \'Cookie: jpkpf-check=1\' ' . $target . '"$i"; done; echo';
+            } else {
+                $out[] = '#    a) mod_qos caps CONCURRENT requests: send 8 at once. Expect some 429 when more';
+                $out[] = '#       than the cap overlap (they only overlap while PHP is busy rendering).';
+                $out[] = $par . $url( $base . '?rl=p{}' ) . '; echo';
+                $out[] = '#    b) ModSecurity counts per IP over time: wait 30 s after a), then sequential requests.';
+                $out[] = '#       Expect 429 after the per-IP limit, then Retry-After on the next one.';
+                $out[] = $seq . $target . '"$i"; done; echo';
+                $out[] = 'curl -s -o /dev/null -D - ' . $url( $base ) . " | grep -iE '^(HTTP|retry-after)'";
+                $out[] = '#    Any cookie exempts a request from both: expect no 429 (wait 30 s first).';
+                $out[] = $par . '-H \'Cookie: jpkpf-check=1\' ' . $url( $base . '?rl=p{}' ) . '; echo';
+                $out[] = $seq . '-H \'Cookie: jpkpf-check=1\' ' . $target . '"$i"; done; echo';
+            }
         }
 
         return implode( "\n", $out );

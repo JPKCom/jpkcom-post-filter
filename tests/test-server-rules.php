@@ -1231,6 +1231,11 @@ chk( 'nginx: rate location carries the limits, 429, @jpkpf_busy and try_files',
 	&& str_contains( $nginx_rl, 'limit_conn_status 429;' ) && str_contains( $nginx_rl, 'error_page 429 = @jpkpf_busy;' )
 	&& str_contains( $nginx_rl, 'try_files $uri $uri/ /index.php?$args;' ) && substr_count( $nginx_rl, 'location @jpkpf_busy {' ) === 1
 	&& str_contains( $nginx_rl, 'add_header Retry-After 10 always;' ) && str_contains( $nginx_rl, 'return 429 ' ), $nginx_rl );
+$busy = substr( $nginx_rl, (int) strpos( $nginx_rl, 'location @jpkpf_busy {' ) );
+$busy = substr( $busy, 0, (int) strpos( $busy, "\n}" ) );
+// R11: a 429 for a valid URL must not tell search engines to drop it.
+chk( 'nginx: @jpkpf_busy sends Retry-After and no-store, but no X-Robots-Tag',
+	str_contains( $busy, 'add_header Retry-After 10 always;' ) && str_contains( $busy, 'add_header Cache-Control "no-store" always;' ) && ! str_contains( $busy, 'X-Robots-Tag' ) && str_contains( $busy, 'return 429 ' ), $busy );
 chk( 'nginx: commented dry-run switch per limit module and location', substr_count( $nginx_rl, '# limit_req_dry_run on;' ) === 2 && substr_count( $nginx_rl, '# limit_conn_dry_run on;' ) === 2 );
 chk( 'nginx: http context maps, three limit_req_zone, one limit_conn_zone',
 	str_contains( $nginx_ht, 'map $http_user_agent $jpkpf_searchbot {' ) && substr_count( $nginx_ht, 'map "$jpkpf_searchbot:$http_cookie"' ) === 3
@@ -1292,21 +1297,37 @@ chk( 'apache: string ErrorDocument with the body, quotes escaped', str_contains(
 chk( 'apache: vhost form, no <IfModule> around the reject', ! str_contains( $apache_rj, '<IfModule' ) && str_starts_with( $apache_rj, $open . "\n" ) && str_ends_with( $apache_rj, "\n" . $close ) );
 chk( 'apache: no QS_ClientEventLimitCount', $apache !== '' && ! str_contains( $apache, 'QS_ClientEventLimitCount' ) );
 $qos = code_of( $all['apache'], 'apache-qos' );
-chk( 'apache: mod_qos concurrency cap = conn, any cookie and search engines exempt',
+chk( 'apache: mod_qos concurrency cap = conn, any cookie exempt',
 	str_contains( $qos, 'QS_EventRequestLimit JPKPF_ANON 3' ) && str_contains( $qos, 'QS_ErrorResponseCode 429' )
 	&& str_contains( $qos, 'SetEnvIf Request_URI "^/(?:blog/|news/)filter/" JPKPF_FILTER=1' ) && str_contains( $qos, 'SetEnvIf Cookie "." JPKPF_EXEMPT=1' )
-	&& str_contains( $qos, 'SetEnvIfNoCase User-Agent "googlebot|bingbot|applebot|duckduckbot|yandexbot" JPKPF_EXEMPT=1' )
 	&& str_contains( $qos, 'QS_SetEnvIf JPKPF_FILTER !JPKPF_EXEMPT JPKPF_ANON=1' ), $qos );
+// R10: a faked search-engine User-Agent must not get past the only concurrency cap.
+chk( 'apache: mod_qos has no User-Agent exemption, context says search engines share the cap',
+	$qos !== '' && stripos( $qos, 'User-Agent' ) === false && stripos( $qos, 'bot' ) === false
+	&& str_contains( context_of( $all['apache'], 'apache-qos' ), 'Search engines share this cap' ) );
 $modsec = code_of( $all['apache'], 'apache-modsec' );
 preg_match_all( '/\bid:(\d+)/', $modsec, $m );
 chk( 'apache: ModSecurity ids 4710001+ and unique', $m[1] !== [] && $m[1][0] === '4710001' && count( array_unique( $m[1] ) ) === count( $m[1] ) && min( $m[1] ) === '4710001' );
+// R9: SecRuleEngine On only inside the LocationMatch over the filter
+// prefixes - a vhost-wide one would make OWASP CRS block wp-admin too.
+$lm_open  = strpos( $modsec, '<LocationMatch "^/(?:blog/|news/)filter/">' );
+$lm_close = strpos( $modsec, '</LocationMatch>' );
+$scoped   = $lm_open !== false && $lm_close !== false && substr_count( $modsec, 'SecRuleEngine' ) === 1 && substr_count( $modsec, '<LocationMatch' ) === 1;
+foreach ( [ 'SecRuleEngine', 'SecRule ', 'SecAction' ] as $needle ) {
+	$scoped = $scoped && strpos( $modsec, $needle ) > $lm_open && strrpos( $modsec, $needle ) < $lm_close;
+}
+chk( 'apache: ModSecurity engine and every rule inside <LocationMatch> over the filter bases, nothing vhost-wide', $scoped, $modsec );
+chk( 'apache: ModSecurity rules run in phase 2 (Location is mapped after phase 1)', substr_count( $modsec, 'phase:2' ) === 13 && ! str_contains( $modsec, 'phase:1' ) );
 chk( 'apache: ModSecurity per IP (10 / 20 s), site-wide (30 / 10 s), search engines own counter (20 / 10 s)',
-	str_contains( $modsec, '&REQUEST_HEADERS:Cookie "@gt 0"' ) && str_contains( $modsec, 'REQUEST_URI "@rx ^/(?:blog/|news/)filter/"' )
+	str_contains( $modsec, '&REQUEST_HEADERS:Cookie "@gt 0"' )
 	&& str_contains( $modsec, 'expirevar:ip.jpkpf_hits=20' ) && str_contains( $modsec, 'SecRule IP:JPKPF_HITS "@gt 10"' )
 	&& str_contains( $modsec, 'expirevar:global.jpkpf_hits=10' ) && str_contains( $modsec, 'SecRule GLOBAL:JPKPF_HITS "@gt 30"' )
 	&& str_contains( $modsec, 'expirevar:global.jpkpf_bot_hits=10' ) && str_contains( $modsec, 'SecRule GLOBAL:JPKPF_BOT_HITS "@gt 20"' )
 	&& str_contains( $modsec, 'googlebot|bingbot|applebot|duckduckbot|yandexbot' ) && substr_count( $modsec, 'deny,status:429' ) === 3, $modsec );
-chk( 'apache: Retry-After on every 429', str_contains( $modsec, 'Header always set Retry-After "10" "expr=%{REQUEST_STATUS} == 429"' ) );
+chk( 'apache: Retry-After on every 429, inside <IfModule mod_headers.c>, context names mod_headers',
+	str_contains( $modsec, "<IfModule mod_headers.c>\n    Header always set Retry-After \"10\" \"expr=%{REQUEST_STATUS} == 429\"\n</IfModule>" )
+	&& str_contains( $qos, "<IfModule mod_headers.c>\n    Header always set Retry-After \"10\" \"expr=%{REQUEST_STATUS} == 429\"\n</IfModule>" )
+	&& str_contains( context_of( $all['apache'], 'apache-modsec' ), 'mod_headers' ) );
 chk( 'apache: context names apachectl -M', str_contains( context_of( $all['apache'] ), 'apachectl -M' ) );
 
 // --- .htaccess -------------------------------------------------------------------
@@ -1323,6 +1344,7 @@ chk( 'htaccess: rewrite and headers inside <IfModule>',
 	&& substr_count( $ht_rules, 'Header always set' ) === 8 && str_contains( $ht_rules, 'ErrorDocument 410 "' ) );
 chk( 'htaccess: no rate-limit code, only a sentence', ! preg_match( '/QS_|SecRule|limit_/', code_of( $all['htaccess'] ) ) && code_of( $all['htaccess'], 'htaccess-rate' ) === '' && context_of( $all['htaccess'], 'htaccess-rate' ) !== '' );
 chk( 'htaccess: context says before # BEGIN WordPress', str_contains( context_of( $all['htaccess'], 'htaccess-reject' ), '# BEGIN WordPress' ) );
+chk( 'htaccess: context says the ErrorDocument covers the directory tree', str_contains( context_of( $all['htaccess'], 'htaccess-reject' ), 'every 410 that Apache itself sends in this directory tree' ) );
 
 // --- OpenLiteSpeed ---------------------------------------------------------------
 $ols = code_of( $all['ols'], 'ols-reject' );
@@ -1362,6 +1384,9 @@ chk( 'N = 0: segments rule only (R7)', str_contains( $n0c, 'server-segments' ) &
 
 $weird = layout_inputs( 2, 2, [], [ '/blog/', '/we"ird/', '/a b/', '/x{y}/', '/q;r/', "/n\nl/", '/d$/' ] );
 $wc    = code_of( snips( 'nginx', $weird ) ) . code_of( snips( 'nginx', $weird, 'ispconfig' ) ) . code_of( snips( 'apache', $weird ) ) . code_of( snips( 'htaccess', $weird ) ) . code_of( snips( 'ols', $weird ) );
+$unsafe = call( 'jpkcom_postfilter_server_unsafe_bases', $weird );
+chk( 'unsafe_bases names exactly the bases left out', $unsafe === [ '/we"ird/', '/a b/', '/x{y}/', '/q;r/', "/n\nl/", '/d$/' ], show( $unsafe ) );
+chk( 'unsafe_bases is empty for ordinary bases', call( 'jpkcom_postfilter_server_unsafe_bases', $inputs ) === [] );
 chk( 'a base that could break a config is left out, the others stay',
 	$wc !== '' && str_contains( $wc, 'location /blog/filter/' ) && ! preg_match( '/we"ird|a b|x\{y|q;r|n\nl|d\$/', $wc ) );
 
@@ -1424,6 +1449,11 @@ chk( 'check commands: expectation by header value server-<reason> and the rule h
 chk( 'check commands: OLS judged by status, rate limit only where a snippet exists',
 	str_contains( $cc['ols'], '410' ) && ! str_contains( $cc['ols'], 'X-Jpkpf-Rule: ' ) && str_contains( $cc['nginx'], 'Cookie:' ) && str_contains( $cc['apache'], 'Cookie:' )
 	&& ! str_contains( $cc['htaccess'], 'Cookie:' ) && ! str_contains( $cc['ols'], 'Cookie:' ) );
+// mod_qos caps concurrency: only parallel requests can show its 429.
+// ModSecurity counts per IP over time: sequential requests.
+chk( 'check commands: Apache tests mod_qos in parallel and ModSecurity sequentially, nginx sequentially',
+	substr_count( $cc['apache'], 'xargs -P 8' ) === 2 && str_contains( $cc['apache'], 'CONCURRENT' ) && substr_count( $cc['apache'], 'for i in $(seq 1 25)' ) === 2
+	&& ! str_contains( $cc['nginx'], 'xargs' ) && substr_count( $cc['nginx'], 'for i in $(seq 1 25)' ) === 2 );
 chk( 'check commands: no reject probes without a reject rule', ! str_contains( (string) call( 'jpkcom_postfilter_server_check_commands', 'nginx', $off ), 'server-per-group' ) && str_contains( (string) call( 'jpkcom_postfilter_server_check_commands', 'nginx', $off ), 'robots.txt' ) );
 
 exit( summary() );
