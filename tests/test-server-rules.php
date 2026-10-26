@@ -147,7 +147,7 @@ class WP_Term {
 require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/settings.php';
 
-foreach ( [ 'url-policy.php', 'url-routing.php', 'crawl-guard.php', 'server-rules.php' ] as $file ) {
+foreach ( [ 'url-policy.php', 'url-routing.php', 'crawl-guard.php', 'server-rules.php', 'server-rules-render.php' ] as $file ) {
 	if ( is_file( __DIR__ . '/../includes/' . $file ) ) {
 		require_once __DIR__ . '/../includes/' . $file;
 	}
