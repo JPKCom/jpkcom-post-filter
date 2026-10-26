@@ -1153,7 +1153,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_caddy' ) ) 
 
             $lines = array_merge( [ 'route {' ], $route, [ '}' ], $errors );
 
-            $context = __( 'Inside the site block of the Caddyfile (FrankenPHP: the same block), anywhere before php_fastcgi or php_server, then caddy validate and caddy reload. Rejects and rate limit sit in one route on purpose: a rejected request is answered before rate_limit and never uses up the budget of real visitors. Both parts read the original request URI ({http.request.orig_uri}), so a try_files or rewrite of the site block does not change what they see. If the site wraps php_fastcgi in a handle block, put this route inside that handle, before php_fastcgi: handle sorts before route and ends the request, so a route outside it never runs.', 'jpkcom-post-filter' );
+            $context = __( 'Inside the site block of the Caddyfile (FrankenPHP: the same block), anywhere before php_fastcgi or php_server, then caddy validate and caddy reload. Rejects and rate limit sit in one route on purpose: a rejected request is answered before rate_limit and never uses up the budget of real visitors. Both parts read the original request URI ({http.request.orig_uri}), so a try_files or rewrite of the site block does not change what they see. If the site wraps php_fastcgi in a handle block, put the route block inside that handle, before php_fastcgi, and keep handle_errors outside it at the site level (Caddy refuses handle_errors inside handle): handle sorts before route and ends the request, so a route outside it never runs.', 'jpkcom-post-filter' );
             if ( $scope !== null ) {
                 $context .= ' ' . sprintf(
                     /* translators: 1: requests, 2: seconds, 3: requests, 4: requests, 5: shell command */
@@ -1190,8 +1190,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ferron3' ) 
     /**
      * Ferron 3 snippets: top-level `match` blocks and host-level `if` blocks
      *
-     * Research report 2 §3.1 (3.0.0-rc.10, `.conf` format). `match` exists
-     * only at the top level, `if` only inside a host, hence two blocks. The
+     * Research report 2 §3.1 (3.0.0-rc.10, `.conf` format). `match` goes at
+     * the top level, where every host can use it (rc.10 also takes it inside
+     * a host), `if` only inside a host, hence two blocks. The
      * reject matches `request.uri` (raw; `request.uri.path` is decoded) in a
      * raw string `r"…"`, so the pattern goes in unchanged; a root base's empty
      * alternative `(?:|news/)` is valid in Rust's regex since 1.8. The `if`
@@ -1205,7 +1206,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ferron3' ) 
      * engines. Instead a FastCGI bulkhead: a second `fcgi_php` with its own
      * connection pool, keyed by the URL string - it must differ from the main
      * URL - and `limit` connections; further requests wait. The plugin does
-     * not know the backend URL: `<php-backend-url>` is a placeholder.
+     * not know the backend URL: `<php-backend-url>` is a placeholder. A Unix
+     * socket cannot take the `/jpkpf` suffix (Ferron connects to the URL's
+     * whole path, so every request failed with 500 in the lab); a second
+     * spelling of the same path (`/./`) is the separate pool there.
      *
      * @since 1.6.0
      *
@@ -1259,6 +1263,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ferron3' ) 
             $host[] = '        deny_status 429';
             $host[] = '    }';
             $host[] = '    # Bulkhead: replace <php-backend-url> with the URL of the main fcgi_php, keep /jpkpf.';
+            $host[] = '    # Unix socket: no /jpkpf suffix, spell the same path differently (unix:///run/php/./php-fpm.sock).';
             $host[] = '    fcgi_php <php-backend-url>/jpkpf {';
             $host[] = '        limit ' . $limits['conn'];
             $host[] = '    }';
@@ -1271,7 +1276,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ferron3' ) 
             $out[] = jpkcom_postfilter_server_snippet(
                 id: 'ferron3-match',
                 title: __( 'Matchers (ferron.conf, top level)', 'jpkcom-post-filter' ),
-                context: $rc . ' ' . __( 'At the top level of ferron.conf, outside every host block: match blocks cannot sit inside a host. request.uri is the raw request URI, so the reject leaves every percent-encoded path to PHP.', 'jpkcom-post-filter' ),
+                context: $rc . ' ' . __( 'At the top level of ferron.conf, outside every host block, so every host can use the matchers (3.0.0-rc.10 also accepts them inside the host block). request.uri is the raw request URI, so the reject leaves every percent-encoded path to PHP.', 'jpkcom-post-filter' ),
                 code: jpkcom_postfilter_server_wrap( inputs: $inputs, lines: $match )
             );
 
@@ -1279,7 +1284,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ferron3' ) 
             if ( $scope !== null ) {
                 $context .= ' ' . sprintf(
                     /* translators: 1: burst, 2: requests per minute, 3: concurrent requests */
-                    __( 'Rate limit for cookie-less filter requests: per IP a burst of %1$d, then 1 per second (Ferron\'s smallest rate; the plugin\'s %2$d per minute cannot be expressed), beyond that 429 with Retry-After. Ferron has no constant rate-limit key, so there is no site-wide rate and search engines cannot get a bucket of their own: they share the per-IP limit. Instead a FastCGI bulkhead lets at most %3$d cookie-less filter requests reach PHP at once; further requests wait for a free connection, they get no 429. Replace <php-backend-url> with the URL of the main fcgi_php (for example tcp://127.0.0.1:9000) and keep the /jpkpf suffix: the bulkhead URL must differ from the main fcgi_php URL, otherwise the limit applies to every PHP request. A Unix socket URL with a suffix is untested: test it or use TCP. Behind a proxy or CDN set client_ip_from_header with trusted_proxy, otherwise the per-IP limit counts the proxy.', 'jpkcom-post-filter' ),
+                    __( 'Rate limit for cookie-less filter requests: per IP a burst of %1$d, then 1 per second (Ferron\'s smallest rate; the plugin\'s %2$d per minute cannot be expressed), beyond that 429 with Retry-After. Ferron has no constant rate-limit key, so there is no site-wide rate and search engines cannot get a bucket of their own: they share the per-IP limit. Instead a FastCGI bulkhead lets at most %3$d cookie-less filter requests reach PHP at once; further requests wait for a free connection, they get no 429. Replace <php-backend-url> with the URL of the main fcgi_php (for example tcp://127.0.0.1:9000) and keep the /jpkpf suffix: the bulkhead URL must differ from the main fcgi_php URL, otherwise the limit applies to every PHP request. With a Unix socket the suffix becomes part of the socket path and every cookie-less filter request fails with 500: leave out /jpkpf and spell the same path differently instead, for example unix:///run/php/./php-fpm.sock for unix:///run/php/php-fpm.sock. Behind a proxy or CDN set client_ip_from_header with trusted_proxy, otherwise the per-IP limit counts the proxy.', 'jpkcom-post-filter' ),
                     $limits['ip_burst'],
                     $limits['ip_per_minute'],
                     $limits['conn']
@@ -1539,6 +1544,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
                     $out[] = '#       send 8 at once. Expect no 429, and times rising in steps of one PHP request.';
                     $out[] = str_replace( "'%{http_code} '", "'%{http_code}:%{time_total} '", $par ) . $url( $base . '?rl=p{}' ) . '; echo';
                     $out[] = '#    b) The per-IP limit, 15 s after a): sequential requests.';
+                    $out[] = 'sleep 15';
                 }
                 $out[] = '#    Sequential requests: expect 429 after the per-IP burst, with Retry-After where the server sends one.';
                 $out[] = $seq . $target . '"$i"; done; echo';
@@ -1551,9 +1557,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
                 $out[] = $par . $url( $base . '?rl=p{}' ) . '; echo';
                 $out[] = '#    b) ModSecurity counts per IP over time: wait 30 s after a), then sequential requests.';
                 $out[] = '#       Expect 429 after the per-IP limit, then Retry-After on the next one.';
+                $out[] = 'sleep 30';
                 $out[] = $seq . $target . '"$i"; done; echo';
                 $out[] = 'curl -s -o /dev/null -D - ' . $url( $base ) . " | grep -iE '^(HTTP|retry-after)'";
                 $out[] = '#    Any cookie exempts a request from both: expect no 429 (wait 30 s first).';
+                $out[] = 'sleep 30';
                 $out[] = $par . '-H \'Cookie: jpkpf-check=1\' ' . $url( $base . '?rl=p{}' ) . '; echo';
                 $out[] = $seq . '-H \'Cookie: jpkpf-check=1\' ' . $target . '"$i"; done; echo';
             }

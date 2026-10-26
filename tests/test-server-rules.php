@@ -1668,4 +1668,29 @@ chk( 'check commands ferron2: no reject probes, says why',
 	! str_contains( $cc['ferron2'], 'server-per-group' ) && ! str_contains( $cc['ferron2'], 'jpkpf-probe-1+jpkpf-probe-2+jpkpf-probe-3' ) && str_contains( $cc['ferron2'], '{path}' ) );
 chk( 'check commands ferron3: bulkhead shown with parallel requests and their times', str_contains( $cc['ferron3'], 'xargs -P 8' ) && str_contains( $cc['ferron3'], 'time_total' ) && ! str_contains( $cc['caddy'], 'xargs' ) );
 
+// =====================================================================================
+section( 'container findings: caddy/ferron' );
+// =====================================================================================
+// Caddy 2.11.7 refuses the whole snippet inside a handle block: "directive
+// 'handle_errors' is not an ordered HTTP handler". Only the route goes in.
+chk( 'caddy: context puts only the route inside a handle, handle_errors stays at the site level',
+	str_contains( $caddy_ctx, 'put the route block inside that handle, before php_fastcgi' )
+	&& str_contains( $caddy_ctx, 'keep handle_errors outside it at the site level' ), $caddy_ctx );
+// Ferron 3.0.0-rc.10 connects to url.path() of a unix:// URL: the /jpkpf suffix
+// became part of the socket path and every cookie-less filter request got 500.
+// A second spelling of the same path (/./) is a separate pool and works.
+$f3_ctx_host = context_of( $cf['ferron3'], 'ferron3-host' );
+chk( 'ferron3: Unix socket - no suffix, a different spelling of the same path (code comment and context)',
+	str_contains( $f3_host, '# Unix socket: no /jpkpf suffix' ) && str_contains( $f3_host, 'unix:///run/php/./php-fpm.sock' )
+	&& str_contains( $f3_ctx_host, 'unix:///run/php/./php-fpm.sock' ) && str_contains( $f3_ctx_host, '500' ) && ! str_contains( $f3_ctx_host, 'untested' ), $f3_host . "\n----\n" . $f3_ctx_host );
+// Ferron 3.0.0-rc.10 accepts and applies match blocks inside a host block too.
+$f3_ctx_match = context_of( $cf['ferron3'], 'ferron3-match' );
+chk( 'ferron3: matcher context does not claim match blocks cannot sit inside a host',
+	! str_contains( $f3_ctx_match, 'cannot sit inside a host' ) && str_contains( $f3_ctx_match, 'top level' ), $f3_ctx_match );
+// The printed check commands are run as one block: the "wait" the comments ask
+// for must be a command, or the second part measures the first part's budget.
+chk( 'check commands ferron3/apache: the waits between the rate-limit parts are sleep commands',
+	str_contains( $cc['ferron3'], "#    b) The per-IP limit, 15 s after a): sequential requests.\nsleep 15\n" )
+	&& substr_count( $cc['apache'], "\nsleep 30\n" ) === 2, $cc['ferron3'] . "\n----\n" . $cc['apache'] );
+
 exit( summary() );
