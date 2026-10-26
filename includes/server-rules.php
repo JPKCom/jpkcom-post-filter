@@ -124,9 +124,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rule_inputs' ) ) {
      *
      * Bases: every routable post type that gets rewrite rules, in every
      * language jpkcom_postfilter_archive_base_urls_all_languages() knows,
-     * as paths including the home path. A base the plugin does not actually
-     * route only makes the rule cover a path WordPress would 404 anyway; a
-     * missing one only makes the rule looser.
+     * as paths including the home path. A missing base only makes the rule
+     * looser. For a base the plugin derives itself (post type archive, posts
+     * page, WPML language directory) a path it does not route is one
+     * WordPress would 404 anyway. That is NOT proven for bases a callback on
+     * `jpkcom_postfilter_robots_txt_base_urls` adds (multilingual plugins
+     * other than WPML): the filter feeds the server rejects too, so if other
+     * code serves `{base}{endpoint}/a+b+c/` below such a base, the server
+     * would reject it. A callback must return only bases the plugin routes.
      *
      * @since 1.6.0
      *

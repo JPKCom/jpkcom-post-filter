@@ -41,6 +41,22 @@ define( 'JPKCOM_POSTFILTER_SETTINGS_DIR', WP_CONTENT_DIR . '/.ht.jpkcom-post-fil
 
 @mkdir( WP_CONTENT_DIR, 0755, true );
 
+/** Remove the temp tree, also when a check fails or the run ends early (fix wave item 17). */
+function jpkpf_test_rm_tree( string $dir ): void {
+	if ( ! is_dir( $dir ) ) {
+		return;
+	}
+	$it = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ),
+		RecursiveIteratorIterator::CHILD_FIRST
+	);
+	foreach ( $it as $f ) {
+		$f->isDir() ? @rmdir( $f->getPathname() ) : @unlink( $f->getPathname() );
+	}
+	@rmdir( $dir );
+}
+register_shutdown_function( static fn() => jpkpf_test_rm_tree( WP_CONTENT_DIR ) );
+
 $GLOBALS['__options']    = [];
 $GLOBALS['__filters']    = [];   // hook => callables (dispatched by apply_filters below)
 $GLOBALS['__taxonomies'] = [ 'category', 'post_tag', 'colour' ];
@@ -1787,5 +1803,8 @@ chk( 'ferron3: host context says the pool is keyed by the literal URL string (rc
 // Ferron 2 and 3 answer 429 with their default page and no Cache-Control.
 chk( 'ferron2/3: context explains the 429 without Cache-Control (not cached by default, RFC 9111)',
 	str_contains( $f3_ctx_host, 'RFC 9111' ) && str_contains( context_of( $cf['ferron2'], 'ferron2-rate' ), 'RFC 9111' ) );
+
+jpkpf_test_rm_tree( WP_CONTENT_DIR );
+chk( 'temp directory removed', ! is_dir( WP_CONTENT_DIR ) );
 
 exit( summary() );

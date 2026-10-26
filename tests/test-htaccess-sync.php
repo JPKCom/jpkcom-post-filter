@@ -847,6 +847,13 @@ if ( $have ) {
 	site( general() );
 	$cap = static fn( $v ) => 4;
 	add_filter( 'jpkcom_postfilter_max_filters_per_group', $cap );
+	// R18 extended (fix wave item 12): admin_init also runs on admin-post.php
+	// for anonymous visitors (core runs it before the login check) - no write
+	// for anyone who could not manage the options.
+	$GLOBALS['__can'] = false;
+	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
+	chk( 'admin_init without a user who can manage_options (logged out on admin-post.php): no write', n_of( bytes( htaccess() ) ) === 'N2' );
+	$GLOBALS['__can'] = true;
 	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
 	chk( 'admin_init: hash differs -> synced to the effective N=4', n_of( bytes( htaccess() ) ) === 'N4' );
 	remove_filter( 'jpkcom_postfilter_max_filters_per_group', $cap );

@@ -28,9 +28,10 @@
  *   lines, so the managed marker - a prefix of the manual one - never matches
  *   the manual line.
  * - Writes happen under flock(LOCK_EX) on the file itself, in place (fopen
- *   'c+', ftruncate, fwrite) - no temp file and rename, so owner, group and
- *   mode of the .htaccess survive. Nothing is written when the content would
- *   not change.
+ *   'r+', fwrite, ftruncate) - no temp file and rename, so owner, group and
+ *   mode of the .htaccess survive. A shrinking write is padded with comment
+ *   lines to the old length first, so Apache never reads a remnant of the
+ *   old content. Nothing is written when the content would not change.
  * - Line endings (LF or CRLF, taken from the file's first line break), a
  *   UTF-8 BOM and a missing trailing newline are kept; every byte outside the
  *   managed block stays as it was.
@@ -291,11 +292,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_modify' ) ) {
     function jpkcom_postfilter_htaccess_modify( string $file, callable $change ): bool {
         clearstatcache( true, $file );
         if ( ! is_file( $file ) ) {
-            return false;   // 'c+' would create it; a missing .htaccess is not ours to create.
+            return false;   // a missing .htaccess is not ours to create
         }
 
+        // 'r+', not 'c+': should the file go away between is_file() and here,
+        // fopen() fails instead of creating an empty .htaccess.
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
-        $fh = @fopen( $file, 'c+' );
+        $fh = @fopen( $file, 'r+' );
         if ( $fh === false ) {
             return false;
         }
@@ -326,16 +329,53 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_modify' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_padded' ) ) {
+    /**
+     * Content padded with comment lines to a given length
+     *
+     * For a write that shrinks the file: the new content is written over the
+     * old one first and the rest is cut afterwards, so for that instant the
+     * old tail would follow the new content - possibly half a directive, and
+     * Apache answers 500 for a .htaccess it cannot parse. Padded to the old
+     * length with `#` lines (at most 80 bytes each), every state of the file
+     * in between is the new content plus comments. Content that does not end
+     * with a newline gets one first, so the padding starts on its own line.
+     *
+     * @since 1.6.0
+     *
+     * @param string $content New content.
+     * @param int    $length  Length to pad to (the current file size).
+     * @return string `$content` itself when it is not shorter.
+     */
+    function jpkcom_postfilter_htaccess_padded( string $content, int $length ): string {
+        $missing = $length - strlen( $content );
+        if ( $missing <= 0 ) {
+            return $content;
+        }
+
+        $pad = ( $content === '' || str_ends_with( $content, "\n" ) ) ? '' : "\n";
+        while ( strlen( $pad ) < $missing ) {
+            $room = min( $missing - strlen( $pad ), 80 );
+            $pad .= $room === 1 ? "\n" : str_repeat( '#', $room - 1 ) . "\n";
+        }
+
+        return $content . $pad;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_put' ) ) {
     /**
      * Replace the content of an open, locked file
      *
      * Writes from offset 0 first and cuts the rest afterwards, so the file is
-     * never empty in between.
+     * never empty in between. A shorter content goes out padded with comment
+     * lines to the current size in one write (jpkcom_postfilter_htaccess_padded()),
+     * so no reader ever sees a remnant of the old content before the cut.
      *
      * @since 1.6.0
      *
-     * @param resource $fh      Handle opened with 'c+' and locked.
+     * @param resource $fh      Handle opened with 'r+' and locked.
      * @param string   $content New content.
      * @return bool
      */
@@ -343,17 +383,20 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_put' ) ) {
         if ( ! rewind( $fh ) ) {
             return false;
         }
-        $length  = strlen( $content );
+        $stat    = fstat( $fh );
+        $size    = is_array( $stat ) ? (int) ( $stat['size'] ?? 0 ) : 0;
+        $data    = jpkcom_postfilter_htaccess_padded( content: $content, length: $size );
+        $total   = strlen( $data );
         $written = 0;
-        while ( $written < $length ) {
+        while ( $written < $total ) {
             // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
-            $n = fwrite( $fh, substr( $content, $written ) );
+            $n = fwrite( $fh, substr( $data, $written ) );
             if ( $n === false || $n === 0 ) {
                 return false;
             }
             $written += $n;
         }
-        return fflush( $fh ) && ftruncate( $fh, $length );
+        return fflush( $fh ) && ftruncate( $fh, strlen( $content ) );
     }
 }
 

@@ -777,7 +777,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_maybe_resync' ) ) 
      * Constants and filters change effective values without an option event.
      * A block below WordPress's (it never takes effect) is moved, too. Only on
      * admin page loads - not on admin-ajax (heartbeat), REST or cron requests
-     * (ruling R18). Known limit: a constant that loosens between two requests
+     * (ruling R18), and only for a user who can manage_options (not for an
+     * anonymous request to admin-post.php). Known limit: a constant that loosens between two requests
      * leaves the block stricter until the next admin page load.
      *
      * @since 1.6.0
@@ -790,6 +791,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_maybe_resync' ) ) 
             || ( defined( constant_name: 'DOING_CRON' ) && DOING_CRON );
 
         if ( $background ) {
+            return;
+        }
+
+        // admin_init also runs on admin-post.php for anonymous requests (core
+        // fires it before its login check): only for someone who could change
+        // the settings anyway.
+        if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
 

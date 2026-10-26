@@ -393,6 +393,102 @@ call( 'jpkcom_postfilter_htaccess_remove', $f );
 chk( 'two managed blocks: remove takes both', bytes( $f ) === $head . $wp_block . $tail, bytes( $f ) );
 
 // =====================================================================================
+section( 'write: what Apache can read in between (fix wave items 11, 15)' );
+// =====================================================================================
+
+/**
+ * A file in memory that records the content after every write() and
+ * ftruncate(), and the mode it was opened with - what a concurrent Apache
+ * request could read at that moment.
+ */
+final class Jpkpf_Recording_Stream {
+	public static array $files = [];
+	public static array $snaps = [];
+	public static array $modes = [];
+	public $context;
+	private string $path = '';
+	private int $pos = 0;
+
+	public function stream_open( $path, $mode, $options, &$opened ): bool {
+		self::$modes[] = $mode;
+		if ( ! isset( self::$files[ $path ] ) && ! str_contains( $mode, 'c' ) && ! str_contains( $mode, 'w' ) ) {
+			return false;
+		}
+		self::$files[ $path ] ??= '';
+		$this->path = $path;
+		$this->pos  = 0;
+		return true;
+	}
+	public function stream_read( $count ) {
+		$out        = substr( self::$files[ $this->path ], $this->pos, $count );
+		$this->pos += strlen( $out );
+		return $out;
+	}
+	public function stream_write( $data ): int {
+		$f                         = self::$files[ $this->path ];
+		$f                         = str_pad( substr( $f, 0, $this->pos ), $this->pos, "\0" ) . $data . (string) substr( $f, $this->pos + strlen( $data ) );
+		self::$files[ $this->path ] = $f;
+		$this->pos                += strlen( $data );
+		self::$snaps[]             = $f;
+		return strlen( $data );
+	}
+	public function stream_truncate( int $size ): bool {
+		self::$files[ $this->path ] = substr( self::$files[ $this->path ], 0, $size );
+		self::$snaps[]             = self::$files[ $this->path ];
+		return true;
+	}
+	public function stream_eof(): bool { return $this->pos >= strlen( self::$files[ $this->path ] ); }
+	public function stream_tell(): int { return $this->pos; }
+	public function stream_seek( $offset, $whence ): bool { $this->pos = $whence === SEEK_SET ? (int) $offset : $this->pos; return true; }
+	public function stream_flush(): bool { return true; }
+	public function stream_lock( $operation ): bool { return true; }
+	public function stream_close(): void {}
+	public function stream_stat(): array { return [ 'mode' => 0100644, 'size' => strlen( self::$files[ $this->path ] ) ]; }
+	public function url_stat( $path, $flags ) { return isset( self::$files[ $path ] ) ? [ 'mode' => 0100644, 'size' => strlen( self::$files[ $path ] ) ] : false; }
+	public function stream_metadata( $path, $option, $value ): bool { return false; }
+	public function stream_set_option( $option, $arg1, $arg2 ): bool { return false; }
+}
+stream_wrapper_register( 'jpkpfmem', Jpkpf_Recording_Stream::class );
+
+/** Every byte after $new is a '#' comment line or a blank line: nothing Apache could misread. */
+function only_comments_after( string $snap, string $new ): bool {
+	return str_starts_with( $snap, $new ) && preg_match( '/\A(?:#[^\n]*)?(?:\n(?:#[^\n]*)?)*\z/', substr( $snap, strlen( $new ) ) ) === 1;
+}
+
+// Shrinking: a long managed block is replaced by a short one (N 5 -> 3 here,
+// plus a long custom line in the old block's place to make the old tail long).
+$long_old = $head . $block_b . "\n" . $wp_block . $tail . str_repeat( "RewriteRule ^old-tail-$ - [F]\n", 40 );
+foreach ( [ 'with trailing newline' => '', 'without trailing newline' => 'x' ] as $label => $cut ) {
+	$old = $cut === '' ? $long_old : rtrim( $long_old, "\n" );
+	Jpkpf_Recording_Stream::$files = [ 'jpkpfmem://ht' => $old ];
+	Jpkpf_Recording_Stream::$snaps = [];
+	Jpkpf_Recording_Stream::$modes = [];
+	$new   = $cut === '' ? $head . $block . "\n" . $wp_block : rtrim( $head . $block . "\n" . $wp_block, "\n" );
+	$ok    = call( 'jpkcom_postfilter_htaccess_modify', 'jpkpfmem://ht', static fn( string $c ): string => $new );
+	$snaps = Jpkpf_Recording_Stream::$snaps;
+	$valid = $snaps !== [];
+	foreach ( $snaps as $snap ) {
+		$valid = $valid && only_comments_after( $snap, $new ) && ! str_contains( $snap, 'old-tail' );
+	}
+	chk( "shrinking write ({$label}): every intermediate state is the new content plus comment lines - no old tail, no partial directive",
+		$ok === true && $valid, json_encode( array_map( static fn( $s ) => substr( $s, -60 ), $snaps ) ) );
+	chk( "shrinking write ({$label}): the file ends as exactly the new content", ( Jpkpf_Recording_Stream::$files['jpkpfmem://ht'] ?? '' ) === $new );
+	chk( "shrinking write ({$label}): the file was opened with 'r+' (never creates it)", Jpkpf_Recording_Stream::$modes === [ 'r+' ], json_encode( Jpkpf_Recording_Stream::$modes ) );
+}
+
+$p = (string) call( 'jpkcom_postfilter_htaccess_padded', "a\nb\n", 200 );
+chk( 'padded(): exactly the old length, comment lines of at most 80 bytes',
+	strlen( $p ) === 200 && only_comments_after( $p, "a\nb\n" ) && max( array_map( 'strlen', explode( "\n", $p ) ) ) <= 80, json_encode( $p ) );
+chk( 'padded(): no trailing newline - the padding starts on a new line', only_comments_after( (string) call( 'jpkcom_postfilter_htaccess_padded', "a\nb", 7 ), "a\nb" ) && strlen( (string) call( 'jpkcom_postfilter_htaccess_padded', "a\nb", 7 ) ) === 7 && str_starts_with( substr( (string) call( 'jpkcom_postfilter_htaccess_padded', "a\nb", 7 ), 3 ), "\n" ) );
+chk( 'padded(): one byte short, and growing or equal content stays as it is',
+	call( 'jpkcom_postfilter_htaccess_padded', "a\n", 3 ) === "a\n\n" && call( 'jpkcom_postfilter_htaccess_padded', "a", 2 ) === "a\n"
+	&& call( 'jpkcom_postfilter_htaccess_padded', "abc\n", 2 ) === "abc\n" && call( 'jpkcom_postfilter_htaccess_padded', "abc\n", 4 ) === "abc\n" );
+
+Jpkpf_Recording_Stream::$files = [];
+Jpkpf_Recording_Stream::$modes = [];
+chk( 'missing file: nothing created', call( 'jpkcom_postfilter_htaccess_modify', 'jpkpfmem://none', static fn( string $c ): string => 'x' ) === false && Jpkpf_Recording_Stream::$files === [] );
+
+// =====================================================================================
 section( 'available(): gates' );
 // =====================================================================================
 

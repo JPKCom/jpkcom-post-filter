@@ -684,4 +684,79 @@ chk( 'htaccess actions: forms are not wrapped in a <p>', ! str_contains( $out, '
 $_SERVER['SERVER_SOFTWARE'] = 'Apache/2.4.66 (Debian)';
 file_put_contents( htaccess(), $GLOBALS['__wp_block'] );
 
+
+// =============================================================================
+section( 'Box status: the real reason a stale block stays stale (fix wave items 8, D2, D3)' );
+// =============================================================================
+
+// admin_init (jpkcom_postfilter_htaccess_maybe_resync) runs before the page:
+// a block that is still stale when the box renders is stale for a reason the
+// next page load does not change either.
+$stale = "# BEGIN JPKCom Post Filter\n# rule 0123456789ab\nRewriteEngine On\n# END JPKCom Post Filter\n" . $GLOBALS['__wp_block'];
+$next  = 'It is updated on the next admin page load';
+
+$_SERVER['SERVER_SOFTWARE'] = 'nginx/1.26.3';
+file_put_contents( htaccess(), $stale );
+update_option( 'jpkcom_postfilter_htaccess_managed', htaccess(), false );
+$out = render( 'jpkcom_postfilter_server_rules_render_htaccess_box', $fixed );
+chk( 'stale block on nginx (managed): "this server ignores .htaccess, remove it", not "next admin page load"',
+	str_contains( $out, 'ignores .htaccess' ) && str_contains( $out, 'Remove' ) && ! str_contains( $out, $next ) );
+delete_option( 'jpkcom_postfilter_htaccess_managed' );
+$out = render( 'jpkcom_postfilter_server_rules_render_htaccess_box', $fixed );
+chk( 'stale block on nginx, option gone: same, not "next admin page load"', str_contains( $out, 'ignores .htaccess' ) && ! str_contains( $out, $next ) );
+$_SERVER['SERVER_SOFTWARE'] = 'Apache/2.4.66 (Debian)';
+
+$out = render( 'jpkcom_postfilter_server_rules_render_htaccess_box', $fixed );
+chk( 'stale block on Apache without the option (orphan): not set up, so not updated', str_contains( $out, 'not set up' ) && ! str_contains( $out, $next ) );
+
+update_option( 'jpkcom_postfilter_htaccess_managed', htaccess(), false );
+if ( function_exists( 'posix_geteuid' ) && posix_geteuid() === 0 ) {
+	echo "  SKIP  stale block, read-only (running as root)\n";
+} else {
+	chmod( htaccess(), 0444 );
+	$out = render( 'jpkcom_postfilter_server_rules_render_htaccess_box', $fixed );
+	chk( 'stale block, read-only file: says the plugin cannot update it, not "next admin page load"',
+		str_contains( $out, 'cannot update it' ) && ! str_contains( $out, $next ) );
+	chmod( htaccess(), 0644 );
+}
+
+file_put_contents( htaccess(), "# BEGIN JPKCom Post Filter (manual)\n# END JPKCom Post Filter (manual)\n" . $stale );
+$out = render( 'jpkcom_postfilter_server_rules_render_htaccess_box', $fixed );
+chk( 'stale block next to a manual block: says why it is not updated', str_contains( $out, 'inserted by hand, so the plugin does not update' ) && ! str_contains( $out, $next ) );
+
+file_put_contents( htaccess(), $stale );
+$out = render( 'jpkcom_postfilter_server_rules_render_htaccess_box', $fixed );
+chk( 'stale block on Apache, managed and writable: the next admin page load updates it', str_contains( $out, $next ) );
+
+// D3: damaged markers - the status line agrees with the error box.
+file_put_contents( htaccess(), "# BEGIN JPKCom Post Filter\n# rule 0123456789ab\nRewriteEngine On\n" . $GLOBALS['__wp_block'] );
+$out = render( 'jpkcom_postfilter_server_rules_render_htaccess_box', $fixed );
+chk( 'damaged markers: own status line, not "Set up, but there is no block in the file"',
+	str_contains( $out, 'markers do not pair up, see below' ) && ! str_contains( $out, 'Set up, but there is no block in the file' ) );
+delete_option( 'jpkcom_postfilter_htaccess_managed' );
+file_put_contents( htaccess(), $GLOBALS['__wp_block'] );
+
+// Item 10: the string ErrorDocument is not limited to filter URLs.
+$out = render( 'jpkcom_postfilter_server_rules_render_htaccess_box', $fixed );
+chk( 'Set up box: the ErrorDocument line applies to every 410 Apache itself sends in that directory tree',
+	str_contains( $out, 'ErrorDocument' ) && str_contains( $out, 'every 410' ) && str_contains( $out, 'directory tree' ) );
+$out = render( 'jpkcom_postfilter_server_rules_render_htaccess_box', inputs( [ 'reject_status' => 404 ] ) );
+chk( 'Set up box: the status follows the settings (404)', str_contains( $out, 'every 404' ) );
+
+
+// =============================================================================
+section( 'Front-end-only filters, plural forms (fix wave items 13, 14)' );
+// =============================================================================
+
+$w = warning( warnings( inputs() ), 'frontend-filters' );
+chk( 'warning: filters registered only on the front end are invisible here (always shown)',
+	$w !== null && str_contains( $w['text'], 'front end' ) && str_contains( $w['text'], 'jpkcom_postfilter_' ) );
+
+$head = render( 'jpkcom_postfilter_server_rules_render_head', $fixed, [ 'workers' => 1, 'render_seconds' => 10.0, 'nginx_variant' => '' ], 'nginx/1.26.3' );
+chk( 'rate-limit summary with 1: singular forms (D4)',
+	str_contains( $head, 'At most 1 filter page rendering' ) && str_contains( $head, 'Site-wide 1 request per second' )
+	&& str_contains( $head, 'own budget: 1 request per second' ) && ! str_contains( $head, ' 1 requests' ) && ! str_contains( $head, '1 filter pages' ) );
+$head = render( 'jpkcom_postfilter_server_rules_render_head', $fixed, $opts, 'nginx/1.26.3' );
+chk( 'rate-limit summary with more: plural forms', str_contains( $head, 'At most 3 filter pages rendering' ) && str_contains( $head, 'Site-wide 3 requests per second' ) );
+
 exit( summary() );

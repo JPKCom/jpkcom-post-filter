@@ -322,6 +322,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_warnings' ) ) 
             $add( 'multisite', 'warning', __( 'This is a multisite network. The rules on this page cover this site only. Generate them on the Server Rules page of every site whose filter URLs the server should check. Where several sites share one server block, combine their rules by hand (nginx, for example, allows each location only once), and never apply one site\'s rule to another site\'s addresses.', 'jpkcom-post-filter' ) );
         }
 
+        // Shown always: has_filter() only sees what this admin request registered.
+        $add( 'frontend-filters', 'info', __( 'The rules use the values this admin request sees. Code that filters jpkcom_postfilter_request_verdict or a jpkcom_postfilter_ setting only on the front end (behind is_admin(), a template or a request check) is invisible here, so the rules may be stricter than what the plugin then does on the front end. Check such code before you deploy the rules.', 'jpkcom-post-filter' ) );
+
         $add( 'proxy', 'info', __( 'Behind a reverse proxy or CDN the web server sees the proxy\'s address: per-IP limits then count all visitors as one, unless the server takes the client address from the forwarded header (nginx realip, Apache mod_remoteip, Caddy trusted_proxies). A CDN may also cache responses or drop the X-Jpkpf headers.', 'jpkcom-post-filter' ) );
         $add( 'top-rewrite', 'info', __( 'The server decides by the URL alone. If another plugin adds its own rewrite rule that serves such a filter URL before this plugin does, the server does not know that and rejects it anyway. Check after installing plugins that add their own URLs below the archive.', 'jpkcom-post-filter' ) );
 
@@ -732,41 +735,49 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_head' )
         <ul class="jpkpf-sr-limits">
             <li>
                 <?php
-                printf(
-                    /* translators: %d: number of requests */
-                    esc_html__( 'At most %d filter pages rendering at the same time (3/8 of the workers, at least 1). The other workers stay free for the rest of the site.', 'jpkcom-post-filter' ),
-                    (int) $limits['conn']
+                $conn = (int) $limits['conn'];
+                $text = sprintf(
+                    /* translators: %d: number of filter pages */
+                    _n( 'At most %d filter page rendering at the same time (3/8 of the workers, at least 1). The other workers stay free for the rest of the site.', 'At most %d filter pages rendering at the same time (3/8 of the workers, at least 1). The other workers stay free for the rest of the site.', $conn, 'jpkcom-post-filter' ),
+                    $conn
                 );
+                echo esc_html( $text );
                 ?>
             </li>
             <li>
                 <?php
-                printf(
+                $rate = (int) $limits['rate'];
+                $text = sprintf(
                     /* translators: 1: requests per second, 2: burst size */
-                    esc_html__( 'Site-wide %1$d requests per second, burst %2$d (0.4 x the concurrent pages / render time: those workers are busy 40%% of the time on average).', 'jpkcom-post-filter' ),
-                    (int) $limits['rate'],
+                    _n( 'Site-wide %1$d request per second, burst %2$d (0.4 x the concurrent pages / render time: those workers are busy 40%% of the time on average).', 'Site-wide %1$d requests per second, burst %2$d (0.4 x the concurrent pages / render time: those workers are busy 40%% of the time on average).', $rate, 'jpkcom-post-filter' ),
+                    $rate,
                     (int) $limits['burst']
                 );
+                echo esc_html( $text );
                 ?>
             </li>
             <li>
                 <?php
-                printf(
+                $per_minute = (int) $limits['ip_per_minute'];
+                $text       = sprintf(
                     /* translators: 1: requests per minute, 2: burst size */
-                    esc_html__( 'Per visitor IP %1$d requests per minute, burst %2$d.', 'jpkcom-post-filter' ),
-                    (int) $limits['ip_per_minute'],
+                    _n( 'Per visitor IP %1$d request per minute, burst %2$d.', 'Per visitor IP %1$d requests per minute, burst %2$d.', $per_minute, 'jpkcom-post-filter' ),
+                    $per_minute,
                     (int) $limits['ip_burst']
                 );
+                echo esc_html( $text );
                 ?>
             </li>
             <li>
                 <?php
-                printf(
+                $bot_rate = (int) $limits['bot_rate'];
+                $text     = sprintf(
                     /* translators: 1: requests per second, 2: burst size */
-                    esc_html__( 'Search engines in their own budget: %1$d requests per second, burst %2$d (two thirds of the site-wide rate).', 'jpkcom-post-filter' ),
-                    (int) $limits['bot_rate'],
+                    _n( 'Search engines in their own budget: %1$d request per second, burst %2$d (two thirds of the site-wide rate).', 'Search engines in their own budget: %1$d requests per second, burst %2$d (two thirds of the site-wide rate).', $bot_rate, 'jpkcom-post-filter' ),
+                    $bot_rate,
                     (int) $limits['bot_burst']
                 );
+                echo esc_html( $text );
                 ?>
             </li>
             <li>
@@ -852,6 +863,46 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_status'
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_htaccess_stale_reason' ) ) {
+    /**
+     * Why a managed block built from other settings is still in the file
+     *
+     * The admin_init resync (jpkcom_postfilter_htaccess_maybe_resync()) runs
+     * before the page renders, so a block that is still stale here stays
+     * stale for a reason the next page load does not change - unless the
+     * plugin may manage the file and only this write failed.
+     *
+     * @since 1.6.0
+     *
+     * @param bool                            $managed   The managed option is set.
+     * @param array<string, mixed>            $state     As returned by jpkcom_postfilter_htaccess_state().
+     * @param array{ok: bool, reason: string} $available As returned by jpkcom_postfilter_htaccess_available().
+     * @return string
+     */
+    function jpkcom_postfilter_server_rules_htaccess_stale_reason( bool $managed, array $state, array $available ): string {
+        $server_reads = ! function_exists( function: 'jpkcom_postfilter_htaccess_server_reads' ) || jpkcom_postfilter_htaccess_server_reads();
+
+        if ( ! $server_reads ) {
+            return __( 'This server ignores .htaccess, so the block has no effect here; remove it.', 'jpkcom-post-filter' );
+        }
+        if ( ! $managed ) {
+            return __( 'It is not set up, so the plugin does not update it; remove it, or set it up again.', 'jpkcom-post-filter' );
+        }
+        if ( $state['manual'] ) {
+            return __( 'The file also contains a block inserted by hand, so the plugin does not update this one; delete one of the two.', 'jpkcom-post-filter' );
+        }
+        if ( ! $state['writable'] ) {
+            return __( 'The file is not writable, so the plugin cannot update it; make it writable.', 'jpkcom-post-filter' );
+        }
+        if ( $available['ok'] ) {
+            return __( 'It is updated on the next admin page load.', 'jpkcom-post-filter' );
+        }
+
+        return __( 'The plugin cannot update it on this site (see below); update or remove it by hand.', 'jpkcom-post-filter' );
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_htaccess_box' ) ) {
     /**
      * The .htaccess management box of the `htaccess` tab (spec 7)
@@ -883,6 +934,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_htacces
         <div class="jpkpf-sr-htaccess">
             <h3><?php esc_html_e( 'Let the plugin manage the block', 'jpkcom-post-filter' ); ?></h3>
             <p><?php esc_html_e( 'Set up writes the reject block between # BEGIN JPKCom Post Filter and # END JPKCom Post Filter directly before WordPress\'s own block, and from then on the plugin keeps it in step with the settings. A save that would loosen the settings is refused while the block cannot be updated, so the block is never stricter than the plugin. Remove, or deactivating the plugin, deletes the block again.', 'jpkcom-post-filter' ); ?></p>
+            <p class="description">
+                <?php
+                printf(
+                    /* translators: %d: HTTP status of the reject (404 or 410) */
+                    esc_html__( 'The block contains an ErrorDocument line: Apache sends its text for every %d it answers itself in this directory tree, not only for filter URLs. WordPress answers its own 404 pages through index.php.', 'jpkcom-post-filter' ),
+                    (int) ( $inputs['reject_status'] ?? 410 )
+                );
+                ?>
+            </p>
             <ul class="jpkpf-sr-htaccess-state">
                 <li>
                     <?php
@@ -907,10 +967,16 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_htacces
                         /* translators: %s: rule hash */
                         $block_state = sprintf( __( 'Managed block present, current (rule %s).', 'jpkcom-post-filter' ), $state['hash'] );
                     } elseif ( $state['managed'] && $state['hash'] !== null ) {
-                        /* translators: 1: rule hash in the file, 2: rule hash of the current settings */
-                        $block_state = sprintf( __( 'Managed block present, built from other settings (rule %1$s, current %2$s). It is updated on the next admin page load.', 'jpkcom-post-filter' ), $state['hash'], $hash );
+                        $block_state = sprintf(
+                            /* translators: 1: rule hash in the file, 2: rule hash of the current settings */
+                            __( 'Managed block present, built from other settings (rule %1$s, current %2$s).', 'jpkcom-post-filter' ),
+                            $state['hash'],
+                            $hash
+                        ) . ' ' . jpkcom_postfilter_server_rules_htaccess_stale_reason( managed: $managed, state: $state, available: $available );
                     } elseif ( $state['managed'] ) {
                         $block_state = __( 'Managed block present.', 'jpkcom-post-filter' );
+                    } elseif ( $state['damaged'] ) {
+                        $block_state = __( 'The block\'s markers do not pair up, see below.', 'jpkcom-post-filter' );
                     } elseif ( $managed ) {
                         $block_state = __( 'Set up, but there is no block in the file: the current settings produce no reject rule, or the block was deleted by hand.', 'jpkcom-post-filter' );
                     } else {

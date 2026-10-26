@@ -33,6 +33,22 @@ define( 'HOUR_IN_SECONDS', 3600 );
 
 @mkdir( WP_CONTENT_DIR, 0755, true );
 
+/** Remove the temp tree, also when a check fails or the run ends early (fix wave item 17). */
+function jpkpf_test_rm_tree( string $dir ): void {
+	if ( ! is_dir( $dir ) ) {
+		return;
+	}
+	$it = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ),
+		RecursiveIteratorIterator::CHILD_FIRST
+	);
+	foreach ( $it as $f ) {
+		$f->isDir() ? @rmdir( $f->getPathname() ) : @unlink( $f->getPathname() );
+	}
+	@rmdir( $dir );
+}
+register_shutdown_function( static fn() => jpkpf_test_rm_tree( WP_CONTENT_DIR ) );
+
 // --- WordPress stand-ins beyond bootstrap.php ----------------------------------
 
 function trailingslashit( $s ) { return rtrim( (string) $s, '/\\' ) . '/'; }
@@ -259,12 +275,7 @@ foreach ( [ 'add' => null, 'update' => [ 'auto_inject' => [ 'post' ] ] ] as $cas
 }
 
 // Clean up the cache files the sanitizer wrote.
-foreach ( glob( JPKCOM_POSTFILTER_SETTINGS_DIR . '/{,.}*', GLOB_BRACE ) ?: [] as $f ) {
-	if ( is_file( $f ) ) {
-		@unlink( $f );
-	}
-}
-@rmdir( JPKCOM_POSTFILTER_SETTINGS_DIR );
-@rmdir( WP_CONTENT_DIR );
+jpkpf_test_rm_tree( WP_CONTENT_DIR );
+chk( 'temp directory removed', ! is_dir( WP_CONTENT_DIR ) );
 
 exit( summary() );
