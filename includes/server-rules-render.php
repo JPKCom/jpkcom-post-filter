@@ -516,6 +516,33 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_probe_paths' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_server_probe_origin' ) ) {
+    /**
+     * Scheme, host and port of home_url(), the origin every probe goes to
+     *
+     * The probe paths already include the home path (they are built from the
+     * archive bases). Shared by the printed curl commands and the status
+     * check (includes/server-rules-check.php), so both probe the same URLs.
+     *
+     * @since 1.6.0
+     *
+     * @return string|null `https://example.com[:port]`, or null when home_url() has no host.
+     */
+    function jpkcom_postfilter_server_probe_origin(): ?string {
+        $home = wp_parse_url( home_url( '/' ) );
+        $home = is_array( $home ) ? $home : [];
+
+        if ( ! isset( $home['host'] ) || ! is_string( $home['host'] ) || $home['host'] === '' ) {
+            return null;
+        }
+
+        $port = isset( $home['port'] ) ? ':' . (int) $home['port'] : '';
+
+        return ( $home['scheme'] ?? 'https' ) . '://' . $home['host'] . $port;
+    }
+}
+
+
 // ---------------------------------------------------------------------------
 // Snippets: nginx, Apache, .htaccess, OpenLiteSpeed (PCRE)
 // ---------------------------------------------------------------------------
@@ -1492,10 +1519,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
         $headers  = $server !== 'ols';
         $rate     = in_array( $server, [ 'nginx', 'apache', 'caddy', 'ferron3', 'ferron2' ], true ) && jpkcom_postfilter_server_scope_regex( inputs: $inputs ) !== null;
 
-        $home   = wp_parse_url( home_url( '/' ) );
-        $home   = is_array( $home ) ? $home : [];
-        $port   = isset( $home['port'] ) ? ':' . (int) $home['port'] : '';
-        $origin = ( $home['scheme'] ?? 'https' ) . '://' . ( $home['host'] ?? 'example.com' ) . $port;
+        $origin = jpkcom_postfilter_server_probe_origin() ?? 'https://example.com';
         $url    = static fn( string $path ): string => jpkcom_postfilter_server_shell_quote( s: $origin . $path );
         $show   = " | grep -iE '^(HTTP|x-jpkpf-|x-robots-tag|cache-control)'";
 
