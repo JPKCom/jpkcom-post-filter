@@ -146,7 +146,12 @@ add_action( 'admin_enqueue_scripts', static function ( string $hook ): void {
         'post-filter_page_jpkcom-postfilter-import-export',
     ];
 
-    if ( ! in_array( $hook, $plugin_pages, true ) ) {
+    // Server Rules (1.6.0): the hook suffix add_submenu_page() returned - it
+    // depends on the translated menu title, so it is not hard-coded.
+    $server_rules_hook = $GLOBALS['jpkcom_postfilter_server_rules_hook'] ?? '';
+    $is_server_rules   = is_string( $server_rules_hook ) && $server_rules_hook !== '' && $hook === $server_rules_hook;
+
+    if ( ! $is_server_rules && ! in_array( $hook, $plugin_pages, true ) ) {
         return;
     }
 
@@ -178,6 +183,25 @@ add_action( 'admin_enqueue_scripts', static function ( string $hook ): void {
             [],
             JPKCOM_POSTFILTER_VERSION,
             true
+        );
+    }
+
+    // Server Rules JS – tabs and copy buttons
+    if ( $is_server_rules ) {
+        wp_enqueue_script(
+            'jpkcom-post-filter-admin-server-rules',
+            JPKCOM_POSTFILTER_PLUGIN_URL . 'assets/js/admin-server-rules.js',
+            [],
+            JPKCOM_POSTFILTER_VERSION,
+            true
+        );
+        wp_localize_script(
+            'jpkcom-post-filter-admin-server-rules',
+            'jpkpfServerRules',
+            [
+                'copied'     => __( 'Copied.', 'jpkcom-post-filter' ),
+                'copyFailed' => __( 'Copying failed - the text is selected, copy it with Ctrl+C.', 'jpkcom-post-filter' ),
+            ]
         );
     }
 
