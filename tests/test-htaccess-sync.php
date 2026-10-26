@@ -868,6 +868,45 @@ if ( $have ) {
 	chk( 'deactivate: block and option gone',
 		bytes( htaccess() ) === $GLOBALS['__wp_block'] && ! array_key_exists( 'jpkcom_postfilter_htaccess_managed', $GLOBALS['__options'] ) );
 
+	// A block that cannot be removed stays guarded (fix round 1).
+	site( general() );
+	chmod( htaccess(), 0444 );
+	$was = bytes( htaccess() );
+	call( 'jpkcom_postfilter_htaccess_deactivate' );
+	chk( 'deactivate, read-only file: block and option stay',
+		bytes( htaccess() ) === $was && ( $GLOBALS['__options']['jpkcom_postfilter_htaccess_managed'] ?? '' ) === '1' );
+	call( 'jpkcom_postfilter_htaccess_lifecycle' );
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	chk( 'deactivate (read-only) -> reactivate -> loosening save on Apache: refused',
+		$ok === false && ( $GLOBALS['__errors'][0]['type'] ?? '' ) === 'error' && bytes( htaccess() ) === $was );
+
+	site( general() );
+	call( 'jpkcom_postfilter_htaccess_deactivate' );
+	call( 'jpkcom_postfilter_htaccess_lifecycle' );
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	chk( 'deactivate (removable) -> reactivate -> loosening save: option gone, saved, nothing written',
+		$ok === true && $GLOBALS['__errors'] === [] && ! isset( $GLOBALS['__options']['jpkcom_postfilter_htaccess_managed'] )
+		&& bytes( htaccess() ) === $GLOBALS['__wp_block'] );
+
+	// An orphan: managed markers in the file, the option gone.
+	site( general(), null, false, true );
+	chmod( htaccess(), 0444 );
+	$was = bytes( htaccess() );
+	$ok  = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	chk( 'orphaned block, read-only, loosening save on Apache: refused', $ok === false && bytes( htaccess() ) === $was && ( $GLOBALS['__errors'][0]['type'] ?? '' ) === 'error' );
+
+	site( general(), null, false, true );
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	chk( 'orphaned block, writable: removed before the commit, saved',
+		$ok === true && ! str_contains( $GLOBALS['__commits'][0]['htaccess'] ?? 'R=410', 'R=410' ) && bytes( htaccess() ) === $GLOBALS['__wp_block'] );
+
+	site( general(), null, false, true );
+	chmod( htaccess(), 0444 );
+	$_SERVER['SERVER_SOFTWARE'] = 'nginx/1.26.3';
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	chk( 'orphaned block, read-only, nginx: saved (R17)', $ok === true && $GLOBALS['__errors'] === [] );
+	$_SERVER['SERVER_SOFTWARE'] = 'Apache/2.4.66 (Debian)';
+
 	site( general(), null, false, false, $manual );
 	call( 'jpkcom_postfilter_htaccess_deactivate' );
 	chk( 'deactivate: a manual block stays', bytes( htaccess() ) === $manual . $GLOBALS['__wp_block'] );

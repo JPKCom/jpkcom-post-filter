@@ -423,16 +423,26 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_loosen' ) ) {
      * Remove action and deactivation). False when a managed block (or markers
      * that no longer pair up) stays as it is on Apache or LiteSpeed.
      *
+     * An orphaned block (managed markers in the file, option gone - e.g. a
+     * deactivation that could not remove it) is not brought to the inputs but
+     * removed: nothing would keep it in step afterwards. Removing only ever
+     * loosens, so it does not wait for jpkcom_postfilter_htaccess_available().
+     *
      * @since 1.6.0
      *
      * @param array<string, mixed> $inputs Rule inputs (usually a union).
+     * @param bool                 $orphan The block is in the file without the managed option.
      * @return array{ok: bool, reason: string}
      */
-    function jpkcom_postfilter_htaccess_loosen( array $inputs ): array {
+    function jpkcom_postfilter_htaccess_loosen( array $inputs, bool $orphan = false ): array {
         $file      = jpkcom_postfilter_htaccess_file();
         $available = jpkcom_postfilter_htaccess_available();
 
-        if ( $available['ok'] && jpkcom_postfilter_htaccess_apply( file: $file, inputs: $inputs ) ) {
+        if ( $orphan ) {
+            if ( jpkcom_postfilter_htaccess_remove( file: $file ) ) {
+                return [ 'ok' => true, 'reason' => '' ];
+            }
+        } elseif ( $available['ok'] && jpkcom_postfilter_htaccess_apply( file: $file, inputs: $inputs ) ) {
             return [ 'ok' => true, 'reason' => '' ];
         }
 
@@ -455,6 +465,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_loosen' ) ) {
         }
 
         $reason = $available['ok'] ? 'write-failed' : $available['reason'];
+        if ( $orphan && ! is_writable( $file ) ) {
+            $reason = 'not-writable';
+        }
 
         return [ 'ok' => false, 'reason' => $reason ];
     }
@@ -485,7 +498,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_refusal_message' )
 
         return sprintf(
             /* translators: %s: why the .htaccess could not be changed, e.g. "the file is not writable" */
-            __( 'Settings not saved: they allow more filter URLs than the rules in .htaccess, and the .htaccess could not be updated first (%s). The server would otherwise reject pages the plugin serves. Make the .htaccess writable, or remove the managed block on the Server Rules page, then save again.', 'jpkcom-post-filter' ),
+            __( 'Settings not saved: the JPKCom Post Filter rules in .htaccess could not be updated to match the new settings (%s), and with the old rules the server could reject filter pages the plugin serves. Make the .htaccess writable, or remove the JPKCom Post Filter block from it, then save again.', 'jpkcom-post-filter' ),
             $why
         );
     }
@@ -496,11 +509,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_prepare_save' ) ) 
     /**
      * Loosen the block for a submitted option value, before it is committed
      *
-     * Writes union( current, prospective ) when the block is managed. On
-     * failure adds a settings error for `$setting` (default: the messages of
-     * the option's admin page) and returns false - the caller must then not
-     * save. Inside jpkcom_postfilter_htaccess_without_refusal() it never
-     * returns false.
+     * Writes union( current, prospective ) when the block is managed, and
+     * removes an orphaned managed block (markers in the file without the
+     * option). On failure adds a settings error for `$setting` (default: the
+     * messages of the option's admin page) - or, outside wp-admin, a debug log
+     * line - and returns false: the caller must then not save. Inside
+     * jpkcom_postfilter_htaccess_without_refusal() it never returns false.
      *
      * @since 1.6.0
      *
@@ -514,8 +528,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_prepare_save' ) ) 
         if ( ! in_array( $option, [ 'jpkcom_postfilter_general', 'jpkcom_postfilter_filter_groups' ], true ) ) {
             return true;
         }
-        if ( ! jpkcom_postfilter_htaccess_is_managed() ) {
-            return true;
+        // Managed: the option, or managed markers in the file without it (a
+        // removal that failed must not leave a block nothing guards).
+        $managed = jpkcom_postfilter_htaccess_is_managed();
+        if ( ! $managed ) {
+            $state = jpkcom_postfilter_htaccess_state( file: jpkcom_postfilter_htaccess_file() );
+            if ( ! $state['managed'] && ! $state['damaged'] ) {
+                return true;
+            }
         }
 
         // "Current" three times over: what the plugin runs with (the settings
@@ -532,15 +552,18 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_prepare_save' ) ) 
             old: $current,
             new: jpkcom_postfilter_server_inputs_from_raw( option: $option, raw: $raw )
         );
-        $result  = jpkcom_postfilter_htaccess_loosen( inputs: $union );
+        $result  = jpkcom_postfilter_htaccess_loosen( inputs: $union, orphan: ! $managed );
 
         if ( $result['ok'] || jpkcom_postfilter_htaccess_without_refusal() ) {
             return true;
         }
 
+        $message = jpkcom_postfilter_htaccess_refusal_message( reason: $result['reason'] );
         if ( function_exists( function: 'add_settings_error' ) ) {
             $slug = $setting !== '' ? $setting : $option . '_messages';
-            add_settings_error( $slug, 'jpkcom_postfilter_htaccess', jpkcom_postfilter_htaccess_refusal_message( reason: $result['reason'] ), 'error' );
+            add_settings_error( $slug, 'jpkcom_postfilter_htaccess', $message, 'error' );
+        } elseif ( function_exists( function: 'jpkcom_postfilter_debug_log' ) ) {
+            jpkcom_postfilter_debug_log( $message, [ 'option' => $option, 'reason' => $result['reason'] ] );
         }
 
         return false;
@@ -748,7 +771,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_deactivate' ) ) {
      *
      * Reactivating sets nothing up again (spec 12, decision 7). Removing only
      * loosens, so it runs whenever the file is writable, whatever
-     * jpkcom_postfilter_htaccess_available() says.
+     * jpkcom_postfilter_htaccess_available() says. When the block cannot be
+     * removed (read-only file, damaged markers) the option stays, so the block
+     * is still guarded after a reactivation.
      *
      * @since 1.6.0
      *
@@ -760,7 +785,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_deactivate' ) ) {
             jpkcom_postfilter_htaccess_remove( file: $file );
         }
 
-        delete_option( 'jpkcom_postfilter_htaccess_managed' );
+        // Forget it only when it is gone: a block that could not be removed
+        // stays managed, so a later loosening save is still refused for it.
+        $state = jpkcom_postfilter_htaccess_state( file: $file );
+        if ( ! $state['managed'] && ! $state['damaged'] ) {
+            delete_option( 'jpkcom_postfilter_htaccess_managed' );
+        }
     }
 }
 
