@@ -25,7 +25,7 @@
  *
  * They use only what PCRE (nginx, Apache, OpenLiteSpeed), RE2 (Caddy) and
  * Rust's `regex` (Ferron) share: literals, negated classes, non-capturing
- * groups, `* + ? {n} {n,}`, alternation and anchors. No lookaround, no
+ * groups, `* + ? {n} {n,} {n,m}`, alternation and anchors. No lookaround, no
  * backreferences - one grammar, one fuzz test for every server.
  *
  * @package   JPKCom_Post_Filter
@@ -263,6 +263,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_reject_patterns' ) )
      *  - A position whose group has no taxonomy is not counted by the guard,
      *    so per_group then only looks at the other positions - or at a
      *    position past G, which is a `segments` reject anyway.
+     *  - per_group looks for the over-cap segment up to position G+3 only
+     *    (bounded repetition, no JIT stack per segment); past that, and
+     *    without `%`, `segments` matches anyway - with `%`, nothing does.
      *
      * Both null when strict URLs are off, the guard's verdict is filtered
      * (code may decide per request), there are no groups, no bases or no
@@ -342,24 +345,53 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_reject_patterns' ) )
         // segment: quadratic, 12 ms for 2000 characters without a JIT.
         $within = '';
         for ( $i = 1; $i < $max; $i++ ) {
-            $within = '(?:\++' . $piece . $within . ')?';
+            $within = '(?:\\++' . $piece . $within . ')?';
         }
-        $skip_within = '(?:(?:\++|\+*' . $piece . $within . '\+*)/+)*';
+        $w = '(?:\\++|\\+*' . $piece . $within . '\\+*)/+';
 
+        // Every repetition of a segment is bounded (attack A4): with nginx's
+        // `pcre_jit on` an unbounded `(?:...)*` used JIT stack per segment and
+        // overflowed PCRE2's default 32 KiB at ~1.65 KB of '+/' - a 500 instead
+        // of the reject. The over-cap segment is looked for up to position
+        // G+3; a URL with more segments is a `segments` reject anyway, and
+        // where a `%` prevents that, the bounded pattern simply does not match
+        // (looser).
         $skip = array_map( 'intval', (array) ( $inputs['skip_positions'] ?? [] ) );
 
         if ( $skip === [] ) {
-            $positions = $skip_within;
+            $positions = '(?:' . $w . '){0,' . ( $groups + 3 ) . '}';
         } else {
-            $alts = [];
-            for ( $position = 0; $position < $groups; $position++ ) {
-                if ( ! in_array( $position, $skip, true ) ) {
-                    $alts[] = '(?:' . $seg . '){' . $position . '}';
+            // Position-exact, built from the end, one run of positions with a
+            // taxonomy at a time. In a run of k such positions the over-cap
+            // segment may come at any of them - after 0 to k-1 segments within
+            // the cap - or all k are within the cap and the next position
+            // follows. A position without taxonomy is passed whatever it
+            // holds. Each segment has exactly one way through, so a `%` near
+            // the end costs one tail scan however many groups there are; one
+            // alternative per position scanned the tail G times (attack A5).
+            // Past G up to three more segments within the cap: here when the
+            // last position has no taxonomy, else as part of the last run.
+            $positions = in_array( $groups - 1, $skip, true ) ? '(?:' . $w . '){0,3}' : '';
+            $position  = $groups;
+            while ( $position > 0 ) {
+                if ( in_array( $position - 1, $skip, true ) ) {
+                    $positions = $seg . $positions;
+                    $position--;
+                    continue;
                 }
+                $k = 0;
+                while ( $position - $k > 0 && ! in_array( $position - $k - 1, $skip, true ) ) {
+                    $k++;
+                }
+                if ( $position === $groups ) {
+                    $positions = '(?:' . $w . '){0,' . ( $k + 3 ) . '}';
+                } elseif ( $k === 1 ) {
+                    $positions = '(?:' . $w . $positions . ')?';
+                } else {
+                    $positions = '(?:(?:' . $w . '){' . $k . '}' . $positions . '|(?:' . $w . '){0,' . ( $k - 1 ) . '})';
+                }
+                $position -= $k;
             }
-            // Past G every segment is a `segments` reject anyway.
-            $alts[]    = '(?:' . $seg . '){' . $groups . '}' . $skip_within;
-            $positions = '(?:' . implode( '|', $alts ) . ')';
         }
 
         // N+1 pieces; the last one runs to a `+`, `/`, `?` or the end, so the

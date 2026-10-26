@@ -19,9 +19,9 @@
  *     JPKPF_WPCORE=/path/to/wordpress php tests/test-server-rules.php
  *         # real wp-includes/formatting.php instead of the sanitize_title stub
  *
- * JPKPF_FUZZ is the number of fuzz cases per layout (120 layouts), split over
- * seeds 1-3. The default is 9000 to keep CI near 15 s; 30 000 per layout
- * takes about 50 s on a desktop machine.
+ * JPKPF_FUZZ is the number of fuzz cases per layout (180 layouts), split over
+ * seeds 1-3. The default is 9000 to keep CI near 25 s; 30 000 per layout
+ * takes about 75 s on a desktop machine.
  *
  * @package JPKCom_Post_Filter
  * @since 1.6.0
@@ -394,9 +394,9 @@ section( 'reject patterns' );
 
 $p = call( 'jpkcom_postfilter_server_reject_patterns', layout_inputs( 2, 2, [], [ '/blog/' ] ) );
 chk(
-	'grammar pinned for N 2, G 2, /blog/ (linear form)',
+	'grammar pinned for N 2, G 2, /blog/ (linear form, segment repetition bounded at G+3)',
 	is_array( $p )
-	&& $p['per_group'] === '^/+(?:blog/)filter/+(?:(?:\\++|\\+*[^/?%+]+(?:\\++[^/?%+]+)?\\+*)/+)*\\+*[^/?%+]+(?:\\++[^/?%+]+){2}(?:(?:\\+|/)[^?%]*)?(?:\\?.*)?$'
+	&& $p['per_group'] === '^/+(?:blog/)filter/+(?:(?:\\++|\\+*[^/?%+]+(?:\\++[^/?%+]+)?\\+*)/+){0,5}\\+*[^/?%+]+(?:\\++[^/?%+]+){2}(?:(?:\\+|/)[^?%]*)?(?:\\?.*)?$'
 	&& $p['segments'] === '^/+(?:blog/)filter/+(?:(?:[^/?%]+/+){2}[^/?%+]*\\+|(?:[^/?%]+/+){5}[^/?%])[^?%]*(?:\\?.*)?$',
 	show( $p )
 );
@@ -404,7 +404,25 @@ $p = call( 'jpkcom_postfilter_server_reject_patterns', layout_inputs( 3, 3, [ 0 
 chk(
 	'skip position 0: per-group only at positions 1, 2 or past G; bases quoted',
 	is_array( $p )
-	&& $p['per_group'] === '^/+(?:|en/my\\.blog/)filter/+(?:(?:[^/?%]+/+){1}|(?:[^/?%]+/+){2}|(?:[^/?%]+/+){3}(?:(?:\\++|\\+*[^/?%+]+(?:\\++[^/?%+]+(?:\\++[^/?%+]+)?)?\\+*)/+)*)\\+*[^/?%+]+(?:\\++[^/?%+]+){3}(?:(?:\\+|/)[^?%]*)?(?:\\?.*)?$',
+	&& $p['per_group'] === '^/+(?:|en/my\\.blog/)filter/+[^/?%]+/+(?:(?:\\++|\\+*[^/?%+]+(?:\\++[^/?%+]+(?:\\++[^/?%+]+)?)?\\+*)/+){0,5}\\+*[^/?%+]+(?:\\++[^/?%+]+){3}(?:(?:\\+|/)[^?%]*)?(?:\\?.*)?$',
+	show( $p, 'per_group' )
+);
+// A position without taxonomy in the middle: runs of positions with a taxonomy,
+// each segment with exactly one way through (attack A5: one alternative per
+// position scanned the tail once per position).
+$w = '(?:\\++|\\+*[^/?%+]+\\+*)/+';
+$p = call( 'jpkcom_postfilter_server_reject_patterns', layout_inputs( 1, 5, [ 2 ], [ '/blog/' ] ) );
+chk(
+	'skip position 2 of 5: over-cap segment at 0-1 or 3-8, position 2 passed whatever it holds',
+	is_array( $p )
+	&& $p['per_group'] === '^/+(?:blog/)filter/+(?:(?:' . $w . '){2}[^/?%]+/+(?:' . $w . '){0,5}|(?:' . $w . '){0,1})\\+*[^/?%+]+(?:\\++[^/?%+]+){1}(?:(?:\\+|/)[^?%]*)?(?:\\?.*)?$',
+	show( $p, 'per_group' )
+);
+$p = call( 'jpkcom_postfilter_server_reject_patterns', layout_inputs( 1, 2, [ 1 ], [ '/blog/' ] ) );
+chk(
+	'skip the last position: past G inside the optional run',
+	is_array( $p )
+	&& $p['per_group'] === '^/+(?:blog/)filter/+(?:' . $w . '[^/?%]+/+(?:' . $w . '){0,3})?\\+*[^/?%+]+(?:\\++[^/?%+]+){1}(?:(?:\\+|/)[^?%]*)?(?:\\?.*)?$',
 	show( $p, 'per_group' )
 );
 
@@ -427,7 +445,7 @@ chk( 'patterns null when one base lies under another base\'s endpoint', is_array
 
 /**
  * Only the constructs every target engine shares: literals, the escapes the
- * quote helper emits, negated classes, (?:...), * + ? {n} {n,}, |, ^, $ and the
+ * quote helper emits, negated classes, (?:...), * + ? {n} {n,} {n,m}, |, ^, $ and the
  * dot - no lookaround, backreferences, lazy, possessive or atomic forms.
  */
 function syntax_ok( string $re ): bool {
@@ -475,7 +493,7 @@ function syntax_ok( string $re ): bool {
 				return false; // lazy/possessive form, or nothing to repeat
 			}
 			if ( $c === '{' ) {
-				if ( preg_match( '/\G\{[0-9]+,?\}/', $re, $m, 0, $i ) !== 1 ) {
+				if ( preg_match( '/\G\{[0-9]+(?:,[0-9]*)?\}/', $re, $m, 0, $i ) !== 1 ) {
 					return false;
 				}
 				$i += strlen( $m[0] );
@@ -498,8 +516,8 @@ $compile = $have;
 $noback  = $have;
 if ( $have ) {
 	foreach ( [ 1, 2, 3, 5 ] as $n ) {
-		foreach ( [ 1, 2, 3 ] as $g ) {
-			foreach ( [ [], [ 0 ] ] as $skip ) {
+		foreach ( [ 1, 2, 3, 8 ] as $g ) {
+			foreach ( [ [], [ 0 ], [ 1 ], [ 0, 2 ] ] as $skip ) {
 				foreach ( [ [ '/blog/' ], [ '/blog/', '/news/' ], [ '/sub/blog/' ], [ '/' ] ] as $bases ) {
 					$pp = jpkcom_postfilter_server_reject_patterns( layout_inputs( $n, $g, $skip, $bases ) );
 					foreach ( $pp as $re ) {
@@ -538,9 +556,18 @@ function fuzz_layouts(): array {
 	$out = [];
 	foreach ( [ 1, 2, 3, 5 ] as $n ) {
 		foreach ( [ 1, 2, 3 ] as $g ) {
-			foreach ( [ [], [ 0 ] ] as $skip ) {
+			// A position without taxonomy first, in the middle, and around one
+			// (the per-group form is built per run of positions with a taxonomy).
+			$skips = [ [], [ 0 ] ];
+			if ( $g >= 2 ) {
+				$skips[] = [ 1 ];
+			}
+			if ( $g === 3 ) {
+				$skips[] = [ 0, 2 ];
+			}
+			foreach ( $skips as $skip ) {
 				foreach ( $base_sets as $bn => $bs ) {
-					$skip_name = $skip ? '[0]' : '[]';
+					$skip_name = '[' . implode( ',', $skip ) . ']';
 					$out[]     = $bs + [ 'name' => sprintf( 'N%d G%d skip%s %s', $n, $g, $skip_name, $bn ), 'N' => $n, 'G' => $g, 'skip' => $skip ];
 				}
 			}
@@ -551,7 +578,7 @@ function fuzz_layouts(): array {
 
 /** Taxonomies in position order for a layout. */
 function layout_taxonomies( array $layout ): array {
-	$taxes = [ 'category', 'post_tag', 'colour' ];
+	$taxes = [ 'category', 'post_tag', 'colour', 'size', 'brand', 'shape', 'season', 'stock' ];
 	$out   = [];
 	for ( $i = 0; $i < $layout['G']; $i++ ) {
 		$out[] = in_array( $i, $layout['skip'], true ) ? '' : $taxes[ $i ];
@@ -877,7 +904,8 @@ section( 'timing' );
 // =====================================================================================
 
 /**
- * Slowest pattern/URI pair over adversarial 2000-character URIs, best of 3
+ * Slowest pattern/URI pair over adversarial 2000-character URIs (up to 30
+ * groups, with and without positions without taxonomy), best of 3
  * per pair so a scheduler hiccup does not count, with the JIT on and off
  * (nginx needs `pcre_jit on`, Apache does not JIT).
  */
@@ -888,8 +916,12 @@ function worst_case_ms( bool $jit ): float {
 	// per mode makes the no-JIT run compile without JIT instead of reusing.
 	$d      = $jit ? '~' : '`';
 	$max    = 0.0;
-	$bodies = [ 'a/', 'a+', '+', '/', 'a', 'ab+a/', 'a+/', '+/', 'a++', 'a/+', '_/', 'page/', 'a+b+c/x/', 'a+b+c+d+e/', '+a+b+c+d+e+/', 'a+b+c+d+e+f/', 'a//', 'ab' ];
-	foreach ( [ [ 5, 3, [ 0 ], [ '/blog/', '/en/blog/', '/news/' ] ], [ 2, 2, [], [ '/blog/' ] ], [ 1, 3, [], [ '/' ] ] ] as [ $n, $g, $skip, $bases ] ) {
+	$bodies = [ 'a/', 'a+', '+', '/', 'a', 'ab+a/', 'a+/', '+/', 'a++', 'a/+', '_/', 'page/', 'a+b/', 'a+b+c/x/', 'a+b+c+d+e/', '+a+b+c+d+e+/', 'a+b+c+d+e+f/', 'a//', 'ab' ];
+	// The last four: many groups with positions without taxonomy (attack A5:
+	// every position used to scan the tail on its own, O(G x length)).
+	$layouts = [ [ 5, 3, [ 0 ], [ '/blog/', '/en/blog/', '/news/' ] ], [ 2, 2, [], [ '/blog/' ] ], [ 1, 3, [], [ '/' ] ],
+		[ 1, 12, [ 0 ], [ '/blog/' ] ], [ 1, 20, [ 0 ], [ '/blog/' ] ], [ 1, 30, [ 0 ], [ '/blog/' ] ], [ 3, 30, [ 2, 9, 17 ], [ '/blog/' ] ] ];
+	foreach ( $layouts as [ $n, $g, $skip, $bases ] ) {
 		$pp = jpkcom_postfilter_server_reject_patterns( layout_inputs( $n, $g, $skip, $bases ) );
 		// The THE_REQUEST form (Apache, OpenLiteSpeed) on the same URI as a request line.
 		$pl = function_exists( 'jpkcom_postfilter_server_reject_patterns' ) && ( new ReflectionFunction( 'jpkcom_postfilter_server_reject_patterns' ) )->getNumberOfParameters() >= 2
@@ -933,6 +965,54 @@ chk( 'timing: 2000-char worst case < 1 ms', $max_ms < 1.0, sprintf( '%.3f ms', $
 chk( 'timing: 2000-char worst case < 1 ms without JIT', $max_ms_int < 1.0, sprintf( '%.3f ms', $max_ms_int ) );
 
 // =====================================================================================
+section( 'JIT stack: bounded segment repetition (attack A4, nginx pcre_jit on)' );
+// =====================================================================================
+
+/*
+ * nginx calls pcre2_match() without a match context, so with `pcre_jit on` the
+ * JIT runs on PCRE2's default 32 KiB stack. An unbounded `(?:segment)*` used
+ * stack per segment: '/blog/filter/' + '+/' x 820 + '%41' (1656 chars, the
+ * %41 keeps the segments rule from matching first) returned -46
+ * (PCRE2_ERROR_JIT_STACKLIMIT) - HTTP 500 plus an alert log line per request.
+ * PHP's preg_* is the same engine with a 192 KiB JIT stack (6x), so the same
+ * shapes run up to 6x as long here; a bounded repetition needs no more stack
+ * however long the URI is.
+ */
+$jit_was    = (string) ini_get( 'pcre.jit' );
+$jit_errors = [];
+$jit_runs   = 0;
+ini_set( 'pcre.jit', '1' );
+if ( $have ) {
+	foreach ( [ 1, 2, 3, 4, 5, 6, 7, 8 ] as $g ) {
+		foreach ( [ 1, 2, 3 ] as $n ) {
+			$skips = $g >= 2 ? [ [], [ 0 ], [ 1 ] ] : [ [] ];
+			foreach ( $skips as $skip ) {
+				foreach ( [ 'uri', 'request_line' ] as $subject ) {
+					$pp = jpkcom_postfilter_server_reject_patterns( layout_inputs( $n, $g, $skip, [ '/blog/' ] ), $subject );
+					foreach ( [ [ '+/', 820 ], [ '+/', 6000 ], [ 'a+b/', 3000 ], [ 'a/', 6000 ], [ '/', 12000 ], [ '+', 12000 ], [ 'a+b+c+d/', 2000 ] ] as [ $unit, $reps ] ) {
+						$uri = '/blog/filter/' . str_repeat( $unit, $reps ) . '%41';
+						$sub = $subject === 'request_line' ? 'GET ' . $uri . ' HTTP/1.1' : $uri;
+						foreach ( $pp as $name => $re ) {
+							if ( ! is_string( $re ) ) {
+								continue;
+							}
+							$jit_runs++;
+							$r = @preg_match( '~' . $re . '~', $sub );
+							if ( $r === false || preg_last_error() !== PREG_NO_ERROR ) {
+								$jit_errors[] = sprintf( 'G%d N%d skip[%s] %s %s %s x%d: %s', $g, $n, implode( ',', $skip ), $subject, $name, $unit, $reps, preg_last_error_msg() );
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+ini_set( 'pcre.jit', $jit_was );
+printf( "        %d pattern/URI runs with the JIT, %d errors\n", $jit_runs, count( $jit_errors ) );
+chk( 'no JIT stack exhaustion for G 1-8 (A4 URI, up to 6x its length)', $have && $jit_runs > 0 && $jit_errors === [], implode( '; ', array_slice( $jit_errors, 0, 3 ) ) );
+
+// =====================================================================================
 section( 'THE_REQUEST variant (Apache, .htaccess, OpenLiteSpeed)' );
 // =====================================================================================
 
@@ -960,8 +1040,8 @@ $conv_count = 0;
 $conv_line  = $have_line;
 if ( $have_line ) {
 	foreach ( [ 0, 1, 2, 3, 5 ] as $n ) {
-		foreach ( [ 1, 2, 3 ] as $g ) {
-			foreach ( [ [], [ 0 ] ] as $skip ) {
+		foreach ( [ 1, 2, 3, 8 ] as $g ) {
+			foreach ( [ [], [ 0 ], [ 1 ], [ 0, 2 ] ] as $skip ) {
 				foreach ( [ [ '/blog/' ], [ '/blog/', '/news/' ], [ '/sub/blog/' ], [ '/' ] ] as $bases ) {
 					$in = layout_inputs( $n, $g, $skip, $bases );
 					$pu = jpkcom_postfilter_server_reject_patterns( $in );
