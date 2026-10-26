@@ -952,6 +952,31 @@ if ( $have ) {
 	$GLOBALS['__options']['jpkcom_postfilter_htaccess_managed'] = $GLOBALS['__tmp'] . '/moved-away/.htaccess';
 	chk( 'stored path whose file is gone (site moved): derived path instead', call( 'jpkcom_postfilter_htaccess_file' ) === htaccess() );
 
+	// A stored path is only trusted in the site's own directories (WordPress
+	// directory, its parent, the derived home path) - a tampered option must
+	// not point the writes at another .htaccess on the host.
+	foreach ( [
+		'outside the site'          => $GLOBALS['__tmp'] . '/elsewhere/.htaccess',
+		'inside a subdirectory'     => ABSPATH . 'wp-content/uploads/.htaccess',
+		'traversal back out'        => ABSPATH . '../../elsewhere/.htaccess',
+	] as $label => $foreign ) {
+		@mkdir( dirname( $foreign ), 0777, true );
+		file_put_contents( $foreign, "# foreign\n" );
+		$GLOBALS['__options']['jpkcom_postfilter_htaccess_managed'] = $foreign;
+		chk( 'stored path ' . $label . ': ignored, derived path instead', call( 'jpkcom_postfilter_htaccess_file' ) === htaccess(), (string) call( 'jpkcom_postfilter_htaccess_file' ) );
+		@unlink( $foreign );
+	}
+	$GLOBALS['__options']['jpkcom_postfilter_htaccess_managed'] = ABSPATH . '.htaccess';
+	if ( ! is_file( ABSPATH . '.htaccess' ) ) {
+		file_put_contents( ABSPATH . '.htaccess', "# wp dir\n" );
+		$made_wp_dir_file = true;
+	}
+	chk( 'stored path in the WordPress directory itself: used', call( 'jpkcom_postfilter_htaccess_file' ) === ABSPATH . '.htaccess' );
+	if ( ! empty( $made_wp_dir_file ) ) {
+		@unlink( ABSPATH . '.htaccess' );
+	}
+	$GLOBALS['__options']['jpkcom_postfilter_htaccess_managed'] = htaccess();
+
 	// Empty SERVER_SOFTWARE (WP-CLI on an Apache site), managed and writable block.
 	site( general() );
 	$ok = as_cli( static fn() => save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => 5 ] ) ) );

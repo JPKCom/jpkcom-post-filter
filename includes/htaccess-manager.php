@@ -560,18 +560,38 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_file' ) ) {
      * the site moved and the stored file is gone)
      * jpkcom_postfilter_htaccess_home_file().
      *
+     * The stored path is only trusted when its directory is one of the site's
+     * own: the WordPress directory, its parent (WordPress in a subdirectory)
+     * or the derived home path. A tampered option must not point the writes
+     * at another .htaccess on the host, and a subdirectory such as
+     * wp-content/uploads is never the right file either.
+     *
      * @since 1.6.0
      *
      * @return string
      */
     function jpkcom_postfilter_htaccess_file(): string {
-        $stored = get_option( 'jpkcom_postfilter_htaccess_managed', '' );
+        $derived = jpkcom_postfilter_htaccess_home_file();
+        $stored  = get_option( 'jpkcom_postfilter_htaccess_managed', '' );
 
-        if ( is_string( $stored ) && str_ends_with( $stored, '/.htaccess' ) && is_file( $stored ) ) {
-            return $stored;
+        if ( ! is_string( $stored ) || ! str_ends_with( $stored, '/.htaccess' ) || ! is_file( $stored ) ) {
+            return $derived;
         }
 
-        return jpkcom_postfilter_htaccess_home_file();
+        $dir = realpath( dirname( $stored ) );
+        if ( $dir === false ) {
+            return $derived;
+        }
+
+        $allowed = [];
+        foreach ( [ ABSPATH, dirname( ABSPATH ), dirname( $derived ) ] as $candidate ) {
+            $real = realpath( $candidate );
+            if ( $real !== false ) {
+                $allowed[] = $real;
+            }
+        }
+
+        return in_array( $dir, $allowed, true ) ? $stored : $derived;
     }
 }
 
