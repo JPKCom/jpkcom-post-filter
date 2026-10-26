@@ -35,6 +35,7 @@ define( 'JPKCOM_POSTFILTER_CACHE_ENABLED', true );
 define( 'JPKCOM_POSTFILTER_CACHE_TTL', 300 );
 define( 'JPKCOM_POSTFILTER_URL_ENDPOINT', 'filter' );
 define( 'JPKCOM_POSTFILTER_DEBUG', false );
+define( 'JPKCOM_POSTFILTER_VERSION', '1.6.0-test' );
 define( 'WP_CONTENT_DIR', sys_get_temp_dir() . '/jpkpf-server-rules-' . getmypid() );
 define( 'JPKCOM_POSTFILTER_SETTINGS_DIR', WP_CONTENT_DIR . '/.ht.jpkcom-post-filter-settings' );
 
@@ -72,7 +73,7 @@ if ( $wpcore !== '' ) {
 	function get_locale() { return 'en_US'; }
 	function _deprecated_function( ...$a ) {}
 	function _doing_it_wrong( ...$a ) {}
-	function __( $s, $d = '' ) { return $s; }
+	function __( $s, $d = '' ) { return $GLOBALS['__gettext'][ $s ] ?? $s; }
 	function _x( $s, $c, $d = '' ) { return $s; }
 	function mbstring_binary_safe_encoding( $r = false ) {}
 	function reset_mbstring_encoding() {}
@@ -85,6 +86,11 @@ if ( $wpcore !== '' ) {
 	echo 'Using real formatting.php from ' . $wpcore . "\n";
 }
 
+if ( ! function_exists( '__' ) ) {
+	// $GLOBALS['__gettext'] stands in for a translation catalogue.
+	function __( $s, $d = '' ) { return $GLOBALS['__gettext'][ $s ] ?? $s; }
+}
+function get_bloginfo( $show = '' ) { return $show === 'language' ? (string) ( $GLOBALS['__language'] ?? 'en-US' ) : ''; }
 if ( ! function_exists( 'sanitize_key' ) ) {
 	function sanitize_key( $k ) { return strtolower( preg_replace( '/[^a-zA-Z0-9_\-]/', '', (string) $k ) ); }
 }
@@ -885,11 +891,22 @@ function worst_case_ms( bool $jit ): float {
 	$bodies = [ 'a/', 'a+', '+', '/', 'a', 'ab+a/', 'a+/', '+/', 'a++', 'a/+', '_/', 'page/', 'a+b+c/x/', 'a+b+c+d+e/', '+a+b+c+d+e+/', 'a+b+c+d+e+f/', 'a//', 'ab' ];
 	foreach ( [ [ 5, 3, [ 0 ], [ '/blog/', '/en/blog/', '/news/' ] ], [ 2, 2, [], [ '/blog/' ] ], [ 1, 3, [], [ '/' ] ] ] as [ $n, $g, $skip, $bases ] ) {
 		$pp = jpkcom_postfilter_server_reject_patterns( layout_inputs( $n, $g, $skip, $bases ) );
+		// The THE_REQUEST form (Apache, OpenLiteSpeed) on the same URI as a request line.
+		$pl = function_exists( 'jpkcom_postfilter_server_reject_patterns' ) && ( new ReflectionFunction( 'jpkcom_postfilter_server_reject_patterns' ) )->getNumberOfParameters() >= 2
+			? jpkcom_postfilter_server_reject_patterns( layout_inputs( $n, $g, $skip, $bases ), 'request_line' )
+			: [];
 		foreach ( $bodies as $body ) {
 			foreach ( [ '%', '?', '', '%/', '/%' ] as $end ) {
 				$lead = $bases[0] . 'filter/';
 				$uri  = $lead . substr( str_repeat( $body, 2000 ), 0, 2000 - strlen( $lead ) - strlen( $end ) ) . $end;
+				$runs = [];
 				foreach ( $pp as $re ) {
+					$runs[] = [ $re, $uri ];
+				}
+				foreach ( $pl as $re ) {
+					$runs[] = [ $re, 'GET ' . $uri . ' HTTP/1.1' ];
+				}
+				foreach ( $runs as [ $re, $subject ] ) {
 					if ( ! is_string( $re ) ) {
 						continue;
 					}
@@ -897,7 +914,7 @@ function worst_case_ms( bool $jit ): float {
 					$best = INF;
 					for ( $r = 0; $r < 3; $r++ ) {
 						$t = hrtime( true );
-						preg_match( $rx, $uri );
+						preg_match( $rx, $subject );
 						$best = min( $best, ( hrtime( true ) - $t ) / 1e6 );
 					}
 					$max = max( $max, $best );
@@ -914,5 +931,499 @@ $max_ms_int = $have ? worst_case_ms( false ) : INF;
 printf( "        worst case 2000 chars: %.4f ms with JIT, %.4f ms without\n", $max_ms, $max_ms_int );
 chk( 'timing: 2000-char worst case < 1 ms', $max_ms < 1.0, sprintf( '%.3f ms', $max_ms ) );
 chk( 'timing: 2000-char worst case < 1 ms without JIT', $max_ms_int < 1.0, sprintf( '%.3f ms', $max_ms_int ) );
+
+// =====================================================================================
+section( 'THE_REQUEST variant (Apache, .htaccess, OpenLiteSpeed)' );
+// =====================================================================================
+
+/*
+ * Apache and OpenLiteSpeed match %{THE_REQUEST}: "METHOD URI PROTOCOL". The
+ * protocol "HTTP/1.1" contains a `/`, so a class that may cross a space would
+ * count "jpkpf-fragment HTTP/" as one more segment: /blog/filter/a/b/page/2/
+ * jpkpf-fragment would then be rejected although the plugin serves it. Every
+ * class of the request-line form therefore also excludes whitespace.
+ */
+
+$have_line = $have && ( new ReflectionFunction( 'jpkcom_postfilter_server_reject_patterns' ) )->getNumberOfParameters() >= 2;
+
+/** The request-line form reduced back to the URI form: must give the URI pattern byte for byte. */
+function line_to_uri( string $re ): string {
+	if ( ! str_starts_with( $re, '^[A-Z]+ ' ) ) {
+		return '__no request-line anchor__';
+	}
+	$re = '^' . substr( $re, strlen( '^[A-Z]+ ' ) );
+	return str_replace( [ '\\s]', '(?:\\?\\S*)?', '(?:\\s|$)' ], [ ']', '(?:\\?.*)?', '$' ], $re );
+}
+
+$conv_ok    = $have_line;
+$conv_count = 0;
+$conv_line  = $have_line;
+if ( $have_line ) {
+	foreach ( [ 0, 1, 2, 3, 5 ] as $n ) {
+		foreach ( [ 1, 2, 3 ] as $g ) {
+			foreach ( [ [], [ 0 ] ] as $skip ) {
+				foreach ( [ [ '/blog/' ], [ '/blog/', '/news/' ], [ '/sub/blog/' ], [ '/' ] ] as $bases ) {
+					$in = layout_inputs( $n, $g, $skip, $bases );
+					$pu = jpkcom_postfilter_server_reject_patterns( $in );
+					$pl = jpkcom_postfilter_server_reject_patterns( $in, 'request_line' );
+					foreach ( [ 'per_group', 'segments' ] as $k ) {
+						if ( $pu[ $k ] === null || $pl[ $k ] === null ) {
+							$conv_ok = $conv_ok && $pu[ $k ] === $pl[ $k ];
+							continue;
+						}
+						$conv_count++;
+						$conv_ok = $conv_ok
+							&& line_to_uri( $pl[ $k ] ) === $pu[ $k ]
+							// every negated class converted, and nothing else may cross a space
+							&& substr_count( $pl[ $k ], '[^' ) === substr_count( $pl[ $k ], '\\s]' )
+							&& ! str_contains( $pl[ $k ], '.*' )
+							&& @preg_match( '~' . $pl[ $k ] . '~', '' ) !== false;
+						$conv_line = $conv_line && str_ends_with( $pl[ $k ], '(?:\\s|$)' );
+					}
+				}
+			}
+		}
+	}
+}
+chk( 'request line: every class excludes \\s, query \\S*, same grammar otherwise (' . $conv_count . ' patterns)', $conv_ok && $conv_count > 0 );
+chk( 'request line: anchored ^[A-Z]+ … (?:\\s|$)', $conv_line && $conv_count > 0 );
+$pu = $have ? jpkcom_postfilter_server_reject_patterns( layout_inputs( 2, 2, [], [ '/blog/' ] ) ) : [];
+$pr = $have ? jpkcom_postfilter_server_reject_patterns( layout_inputs( 2, 2, [], [ '/blog/' ] ), 'uri' ) : [ 1 ];
+chk( 'request line: the URI form is unchanged and stays the default', $have && $pu === $pr );
+
+// Whitespace-free URIs: the request-line form on "GET <uri> HTTP/1.1" must
+// decide exactly like the URI form on <uri>. With the fuzz above that carries
+// the 0-violations result over; the fuzz below checks it once more directly.
+$equiv_cases = 0;
+$equiv_bad   = [];
+$suffixed    = 0;
+if ( $have_line ) {
+	foreach ( fuzz_layouts() as $layout ) {
+		$in = layout_inputs( $layout['N'], $layout['G'], $layout['skip'], $layout['bases'] );
+		$pu = array_filter( jpkcom_postfilter_server_reject_patterns( $in ), 'is_string' );
+		$pl = array_filter( jpkcom_postfilter_server_reject_patterns( $in, 'request_line' ), 'is_string' );
+		mt_srand( 11 );
+		for ( $i = 0; $i < 1000; $i++ ) {
+			$uri = fuzz_uri( $layout );
+			if ( preg_match( '/\s/', $uri ) ) {
+				continue;
+			}
+			$equiv_cases++;
+			$suffixed += (int) ( str_contains( $uri, 'jpkpf-fragment' ) || str_contains( $uri, '/page' ) );
+			foreach ( $pu as $k => $re ) {
+				foreach ( [ 'GET ' . $uri . ' HTTP/1.1', 'HEAD ' . $uri . ' HTTP/2.0', 'GET ' . $uri ] as $line ) {
+					if ( ( preg_match( '~' . $re . '~', $uri ) === 1 ) !== ( preg_match( '~' . $pl[ $k ] . '~', $line ) === 1 ) ) {
+						$equiv_bad[] = $layout['name'] . ' ' . $k . ': ' . $line;
+					}
+				}
+			}
+		}
+	}
+}
+printf( "        %d whitespace-free URIs (%d with a page or fragment suffix), each as GET/HTTP1.1, HEAD/HTTP2.0 and a bare request line: %d mismatches\n", $equiv_cases, $suffixed, count( $equiv_bad ) );
+foreach ( array_slice( $equiv_bad, 0, 5 ) as $ex ) {
+	echo "        mismatch: $ex\n";
+}
+chk( 'request line decides like the URI form on every whitespace-free URI', $have_line && $equiv_cases > 0 && $equiv_bad === [] );
+
+// The differential fuzz again, the server matching "GET <uri> HTTP/1.1". A
+// fuzz URI with raw whitespace (the noise atom 'a b') cannot be sent in a
+// request line - the server would split it there - so it becomes an empty
+// subject, which no pattern matches.
+$as_line = static fn( string $uri ): string => preg_match( '/\s/', $uri ) ? '' : 'GET ' . $uri . ' HTTP/1.1';
+$line_total = [ 'cases' => 0, 'hits' => 0, 'violations' => 0 ];
+$line_examples = [];
+$t0 = microtime( true );
+if ( $have_line ) {
+	foreach ( fuzz_layouts() as $layout ) {
+		$pl      = jpkcom_postfilter_server_reject_patterns( layout_inputs( $layout['N'], $layout['G'], $layout['skip'], $layout['bases'] ), 'request_line' );
+		$regexes = array_map( static fn( string $re ): string => '~' . $re . '~', array_filter( $pl, 'is_string' ) );
+		$r       = fuzz_layout( $layout, $regexes, max( 1, intdiv( $per_layout, 3 ) ), 4, $as_line );
+		$line_total['cases']      += $r['cases'];
+		$line_total['hits']       += $r['hits'];
+		$line_total['violations'] += count( $r['violations'] );
+		$line_examples             = array_merge( $line_examples, array_slice( $r['violations'], 0, 3 ) );
+	}
+}
+printf( "        THE_REQUEST fuzz: %d layouts, %d cases (seed 4) in %.1f s: server rejects %d, violations %d\n",
+	count( fuzz_layouts() ), $line_total['cases'], microtime( true ) - $t0, $line_total['hits'], $line_total['violations'] );
+foreach ( array_slice( $line_examples, 0, 5 ) as $ex ) {
+	echo "        violation: $ex\n";
+}
+$violations_request_line = $have_line ? $line_total['violations'] : -1;
+chk( 'THE_REQUEST variant: fuzz 0 violations', $violations_request_line === 0 && $line_total['hits'] > 0, (string) $violations_request_line );
+
+// Named request lines: page and fragment suffixes must pass, over-cap shapes
+// with the same suffixes must still be caught.
+$named_line_ok = $have_line;
+if ( $have_line ) {
+	$layout = [ 'name' => 'named', 'N' => 2, 'G' => 2, 'skip' => [], 'bases' => [ '/blog/' ], 'homes' => [ '' ], 'prefixes' => [ 'blog' ] ];
+	apply_layout( $layout );
+	$pl   = array_filter( jpkcom_postfilter_server_reject_patterns( layout_inputs( 2, 2, [], [ '/blog/' ] ), 'request_line' ), 'is_string' );
+	$hits = static function ( string $line ) use ( $pl ): bool {
+		foreach ( $pl as $re ) {
+			if ( preg_match( '~' . $re . '~', $line ) === 1 ) {
+				return true;
+			}
+		}
+		return false;
+	};
+	foreach ( [ '/blog/filter/a/b/page/2/jpkpf-fragment', '/blog/filter/a/b/page/2/jpkpf-fragment/', '/blog/filter/a/b/jpkpf-fragment', '/blog/filter/a+b/c+d/page/2',
+		'/blog/filter/a+b/c/page/2/?x=1', '/blog/filter/a/b/', '/blog/filter/a/b' ] as $uri ) {
+		foreach ( [ 'GET ' . $uri . ' HTTP/1.1', 'GET ' . $uri . ' HTTP/1.0', 'GET ' . $uri ] as $line ) {
+			if ( $hits( $line ) ) {
+				$named_line_ok = false;
+				echo "        rejected although served: $line (plugin " . plugin_answer( $uri, $layout ) . ")\n";
+			}
+		}
+	}
+	foreach ( [ '/blog/filter/a+b+c/page/2/jpkpf-fragment', '/blog/filter/a/b/c+d/', '/blog/filter/a+b+c/?utm=1', '/blog/filter/x/y+z+w/page/3' ] as $uri ) {
+		if ( ! $hits( 'GET ' . $uri . ' HTTP/1.1' ) || plugin_answer( $uri, $layout ) !== 'reject' ) {
+			$named_line_ok = false;
+			echo "        not caught: $uri\n";
+		}
+	}
+}
+chk( 'request line: page/fragment suffixes pass, over-cap shapes with suffixes are caught', $named_line_ok );
+
+// Teeth: the literal conversion (anchors and query only, classes unchanged)
+// must fail the same fuzz - otherwise the run above proves nothing about R1.
+$literal_caught = 0;
+if ( $have ) {
+	$layout  = array_values( array_filter( fuzz_layouts(), static fn( array $l ): bool => $l['N'] === 2 && $l['G'] === 2 && $l['skip'] === [] && $l['name'] === 'N2 G2 skip[] blog' ) )[0];
+	$pu      = array_filter( jpkcom_postfilter_server_reject_patterns( layout_inputs( 2, 2, [], [ '/blog/' ] ) ), 'is_string' );
+	$literal = array_map( static fn( string $re ): string => '~^[A-Z]+ ' . str_replace( '(?:\\?.*)?$', '(?:\\?\\S*)?(?:\\s|$)', substr( $re, 1 ) ) . '~', $pu );
+	$r       = fuzz_layout( $layout, $literal, 3000, 4, $as_line );
+	$literal_caught = count( $r['violations'] );
+	apply_layout( $layout );
+}
+printf( "        literal conversion (classes without \\s), same fuzz, N 2 G 2 /blog/, 3000 cases: %d violations\n", $literal_caught );
+chk( 'fuzz detects the literal conversion that lets classes cross into " HTTP/1.1"', $literal_caught > 0, $literal_caught . ' violations' );
+
+// =====================================================================================
+section( 'rate limits and reject body' );
+// =====================================================================================
+
+/** rate_limits() or [] while it does not exist. */
+function lim( int $w, float $t ): array {
+	$r = call( 'jpkcom_postfilter_rate_limits', $w, $t );
+	return is_array( $r ) ? $r : [];
+}
+
+$anchor = [ 'conn' => 3, 'rate' => 3, 'burst' => 6, 'ip_per_minute' => 30, 'ip_burst' => 10, 'bot_rate' => 2, 'bot_burst' => 20, 'retry_after' => 10 ];
+chk( 'limits 8/0.4 match the anchor', lim( 8, 0.4 ) === $anchor, show( lim( 8, 0.4 ) ) );
+chk( 'limits clamp workers 0 -> 1', ( lim( 0, 0.4 )['conn'] ?? 0 ) === 1 );
+chk( 'limits clamp workers 1000 -> 256 and seconds 0 -> 0.05', ( lim( 1000, 0.0 )['conn'] ?? 0 ) === 96 && ( lim( 1000, 0.0 )['rate'] ?? 0 ) === 768, show( lim( 1000, 0.0 ) ) );
+chk( 'limits clamp seconds 99 -> 10 (rate never below 1)', ( lim( 8, 99.0 )['rate'] ?? 0 ) === 1 && ( lim( 8, 99.0 )['bot_rate'] ?? 0 ) === 1 );
+chk( 'limits 64/1.0: conn 24, rate 10, burst 20, bot 7', array_intersect_key( lim( 64, 1.0 ), [ 'conn' => 0, 'rate' => 0, 'burst' => 0, 'bot_rate' => 0 ] ) === [ 'conn' => 24, 'rate' => 10, 'burst' => 20, 'bot_rate' => 7 ], show( lim( 64, 1.0 ) ) );
+chk( 'limits: NaN seconds fall back to 0.4', lim( 8, NAN ) === $anchor );
+$mono = lim( 1, 0.4 ) !== [];
+for ( $w = 1; $w < 256 && $mono; $w++ ) {
+	$mono = lim( $w + 1, 0.4 )['conn'] >= lim( $w, 0.4 )['conn'] && lim( 8, 0.05 * $w )['rate'] >= lim( 8, 0.05 * ( $w + 1 ) )['rate'];
+}
+chk( 'limits: conn grows with workers, rate falls with render time', $mono );
+
+reset_site();
+$GLOBALS['__language'] = 'de-DE';
+$inputs = layout_inputs( 2, 2, [], [ '/blog/', '/news/' ] );
+$body   = (string) call( 'jpkcom_postfilter_server_reject_body', $inputs );
+chk( 'body: lang, noindex, status title, text, link on bases[0]',
+	str_starts_with( $body, '<!doctype html><html lang="de-DE">' ) && str_contains( $body, '<meta name="robots" content="noindex, nofollow">' )
+	&& str_contains( $body, '<title>410</title>' ) && str_contains( $body, '>This filter combination is not available.<' ) && str_contains( $body, '<a href="/blog/">Show all posts</a>' ), $body );
+chk( 'body has no braces or single quotes', str_starts_with( $body, '<!doctype html>' ) && ! preg_match( "/[{}']/", $body ) );
+chk( 'body is one line', str_starts_with( $body, '<!doctype html>' ) && ! preg_match( '/[\r\n\t]/', $body ) );
+$GLOBALS['__gettext']  = [ 'This filter combination is not available.' => "L'offre {x} \$y \\ 100% <b> \"q\"\n;", 'Show all posts' => 'Alle {Beiträge}' ];
+$GLOBALS['__language'] = 'de"DE{x}';
+$hostile = (string) call( 'jpkcom_postfilter_server_reject_body', layout_inputs( 2, 2, [], [ '/blog/' ], [ 'reject_status' => 404 ] ) );
+$GLOBALS['__gettext']  = [];
+$GLOBALS['__language'] = 'en-US';
+chk( 'body: a hostile translation cannot reach the config syntax ({ } \' $ \\ % newline)',
+	$hostile !== '' && ! preg_match( '/[{}\'$\\\\%\r\n]/', $hostile ) && str_contains( $hostile, 'L&#039;offre' ) && str_contains( $hostile, '&lt;b&gt;' )
+	&& str_contains( $hostile, 'lang="deDEx"' ) && str_contains( $hostile, '<title>404</title>' ), $hostile );
+
+// =====================================================================================
+section( 'renderers: pcre family' );
+// =====================================================================================
+
+/** Snippets for a server, [] while the function does not exist. */
+function snips( string $server, array $inputs, string $variant = '' ): array {
+	$r = call( 'jpkcom_postfilter_server_snippets', $server, $inputs, lim( 8, 0.4 ) ?: [], $variant );
+	return is_array( $r ) ? $r : [];
+}
+/** All code of a snippet list, or of one snippet id. */
+function code_of( array $snippets, string $id = '' ): string {
+	$out = [];
+	foreach ( $snippets as $s ) {
+		if ( $id === '' || ( $s['id'] ?? '' ) === $id ) {
+			$out[] = (string) ( $s['code'] ?? '' );
+		}
+	}
+	return implode( "\n", $out );
+}
+function context_of( array $snippets, string $id = '' ): string {
+	$out = [];
+	foreach ( $snippets as $s ) {
+		if ( $id === '' || ( $s['id'] ?? '' ) === $id ) {
+			$out[] = (string) ( $s['context'] ?? '' );
+		}
+	}
+	return implode( "\n", $out );
+}
+function ids_of( array $snippets ): array {
+	return array_map( static fn( array $s ): string => (string) ( $s['id'] ?? '' ), $snippets );
+}
+
+reset_site();
+$inputs = layout_inputs( 2, 2, [], [ '/blog/', '/news/' ] );
+$hash   = $inputs['hash'];
+$pat    = $have ? jpkcom_postfilter_server_reject_patterns( $inputs ) : [ 'per_group' => '-', 'segments' => '-' ];
+$pline  = $have_line ? jpkcom_postfilter_server_reject_patterns( $inputs, 'request_line' ) : [ 'per_group' => '-', 'segments' => '-' ];
+$body   = (string) call( 'jpkcom_postfilter_server_reject_body', $inputs );
+$open   = '# >>> jpkcom-post-filter 1.6.0-test rule ' . $hash;
+$close  = '# <<< jpkcom-post-filter';
+
+$all = [
+	'nginx'     => snips( 'nginx', $inputs ),
+	'ispconfig' => snips( 'nginx', $inputs, 'ispconfig' ),
+	'apache'    => snips( 'apache', $inputs ),
+	'htaccess'  => snips( 'htaccess', $inputs ),
+	'ols'       => snips( 'ols', $inputs ),
+];
+$shape = true;
+foreach ( $all as $name => $list ) {
+	$shape = $shape && $list !== [] && count( array_unique( ids_of( $list ) ) ) === count( $list );
+	$prefix = $name === 'ispconfig' ? 'nginx-' : $name . '-';
+	foreach ( $list as $s ) {
+		$shape = $shape && is_array( $s ) && array_keys( $s ) === [ 'id', 'title', 'context', 'code' ]
+			&& is_string( $s['code'] ) && $s['title'] !== '' && $s['context'] !== '' && str_starts_with( $s['id'], $prefix );
+	}
+}
+chk( 'snippets: list of {id, title, context, code}, ids unique and prefixed by server', $shape );
+chk( 'unknown server or variant: no snippets / standard nginx', $all['nginx'] !== [] && snips( 'iis', $inputs ) === [] && snips( 'nginx', $inputs, 'plesk' ) === $all['nginx'] );
+
+// --- nginx standard --------------------------------------------------------------
+$nginx    = code_of( $all['nginx'] );
+$nginx_rj = code_of( $all['nginx'], 'nginx-reject' );
+$nginx_rl = code_of( $all['nginx'], 'nginx-rate' );
+$nginx_ht = code_of( $all['nginx'], 'nginx-http' );
+chk( 'nginx: both reasons, hash, no-store', str_contains( $nginx, 'server-per-group' ) && str_contains( $nginx, 'server-segments' ) && str_contains( $nginx, $inputs['hash'] ) && str_contains( $nginx, 'no-store' ) );
+chk( 'nginx: snippet ids reject, http, rate, robots', ids_of( $all['nginx'] ) === [ 'nginx-reject', 'nginx-http', 'nginx-rate', 'nginx-robots' ], implode( ',', ids_of( $all['nginx'] ) ) );
+chk( 'nginx: server-level if on $request_uri with the exact patterns, segments first',
+	str_contains( $nginx_rj, "if (\$request_uri ~ \"" . $pat['segments'] . "\") {\n    rewrite ^ /jpkpf-edge-segments? last;\n}" )
+	&& str_contains( $nginx_rj, "if (\$request_uri ~ \"" . $pat['per_group'] . "\") {\n    rewrite ^ /jpkpf-edge-per-group? last;\n}" )
+	&& strpos( $nginx_rj, 'jpkpf-edge-segments?' ) < strpos( $nginx_rj, 'jpkpf-edge-per-group?' ) );
+$loc = "location = /jpkpf-edge-per-group {\n    internal;\n    default_type text/html;\n    charset utf-8;\n"
+	. "    add_header X-Robots-Tag \"noindex, nofollow\" always;\n    add_header X-Jpkpf-Reject \"server-per-group\" always;\n"
+	. "    add_header X-Jpkpf-Rule \"$hash\" always;\n    add_header Cache-Control \"no-store\" always;\n    return 410 '$body';\n}";
+chk( 'nginx: internal location per reason with all four headers and the body', str_contains( $nginx_rj, $loc ) && substr_count( $nginx_rj, 'internal;' ) === 2, $nginx_rj );
+$marked = count( array_filter( array_column( $all['nginx'], 'code' ) ) ) === 3;
+foreach ( $all['nginx'] as $s ) {
+	if ( $s['code'] !== '' ) {
+		$marked = $marked && str_starts_with( $s['code'], $open . "\n" ) && str_ends_with( $s['code'], "\n" . $close );
+	}
+}
+chk( 'nginx: every code block between the >>> rule <hash> / <<< comment lines', $marked );
+chk( 'nginx: one rate location per base', $nginx_rl !== '' && substr_count( $nginx_rl, 'limit_req_status 429' ) === count( $inputs['bases'] )
+	&& str_contains( $nginx_rl, "location /blog/filter/ {\n" ) && str_contains( $nginx_rl, "location /news/filter/ {\n" ) );
+chk( 'nginx: rate location carries the limits, 429, @jpkpf_busy and try_files',
+	str_contains( $nginx_rl, 'limit_req  zone=jpkpf_site burst=6 nodelay;' ) && str_contains( $nginx_rl, 'limit_req  zone=jpkpf_ip burst=10 nodelay;' )
+	&& str_contains( $nginx_rl, 'limit_req  zone=jpkpf_bots burst=20 nodelay;' ) && str_contains( $nginx_rl, 'limit_conn jpkpf_conn 3;' )
+	&& str_contains( $nginx_rl, 'limit_conn_status 429;' ) && str_contains( $nginx_rl, 'error_page 429 = @jpkpf_busy;' )
+	&& str_contains( $nginx_rl, 'try_files $uri $uri/ /index.php?$args;' ) && substr_count( $nginx_rl, 'location @jpkpf_busy {' ) === 1
+	&& str_contains( $nginx_rl, 'add_header Retry-After 10 always;' ) && str_contains( $nginx_rl, 'return 429 ' ), $nginx_rl );
+chk( 'nginx: commented dry-run switch per limit module and location', substr_count( $nginx_rl, '# limit_req_dry_run on;' ) === 2 && substr_count( $nginx_rl, '# limit_conn_dry_run on;' ) === 2 );
+chk( 'nginx: http context maps, three limit_req_zone, one limit_conn_zone',
+	str_contains( $nginx_ht, 'map $http_user_agent $jpkpf_searchbot {' ) && substr_count( $nginx_ht, 'map "$jpkpf_searchbot:$http_cookie"' ) === 3
+	&& substr_count( $nginx_ht, 'limit_req_zone ' ) === 3 && substr_count( $nginx_ht, 'limit_conn_zone ' ) === 1
+	&& str_contains( $nginx_ht, 'rate=30r/m' ) && str_contains( $nginx_ht, 'rate=3r/s' ) && str_contains( $nginx_ht, 'rate=2r/s' )
+	&& str_contains( $nginx_ht, '"0:" $binary_remote_addr' ) && str_contains( $nginx_ht, '"1:" $server_name' ), $nginx_ht );
+chk( 'nginx: rejected requests never reach the rate location (internal exact location)', str_contains( $nginx_rj, 'internal;' ) && ! str_contains( $nginx_rj, 'limit_' ) );
+chk( 'nginx: http part says root, nginx-light/nginx -V', stripos( context_of( $all['nginx'], 'nginx-http' ), 'root' ) !== false && str_contains( context_of( $all['nginx'], 'nginx-http' ), 'nginx -V' ) && str_contains( context_of( $all['nginx'], 'nginx-http' ), 'nginx-light' ) );
+chk( 'nginx: robots is a hint without code', code_of( $all['nginx'], 'nginx-robots' ) === '' && str_contains( context_of( $all['nginx'], 'nginx-robots' ), 'try_files $uri /index.php?$args;' ) );
+
+// --- nginx ISPConfig -------------------------------------------------------------
+$isp    = code_of( $all['ispconfig'] );
+$isp_rj = code_of( $all['ispconfig'], 'nginx-reject' );
+chk( 'nginx ispconfig: ##merge## last token', preg_match( '~location = /robots\.txt \{ ##merge##\n~', $isp ) === 1 );
+chk( 'nginx ispconfig: robots merge carries try_files', str_starts_with( $isp_rj, "location = /robots.txt { ##merge##\n    try_files \$uri /index.php?\$args;\n}\n" ) );
+chk( 'nginx ispconfig: no location /', $isp !== '' && ! preg_match( '~location /\s*\{~', $isp ) );
+// The http context file is installed by root, not pasted into the field.
+$isp_field     = code_of( $all['ispconfig'], 'nginx-reject' ) . "\n" . code_of( $all['ispconfig'], 'nginx-rate' );
+$no_hash_lines = $isp_rj !== '';
+foreach ( explode( "\n", $isp_field ) as $l ) {
+	$no_hash_lines = $no_hash_lines && ! str_starts_with( ltrim( $l ), '#' );
+}
+chk( 'nginx ispconfig: no line of the field text starts with # (ISPConfig strips them)', $no_hash_lines );
+chk( 'nginx ispconfig: same reject and rate content as standard nginx',
+	str_contains( $isp_rj, $loc ) && str_contains( $isp_rj, $pat['per_group'] ) && substr_count( code_of( $all['ispconfig'], 'nginx-rate' ), 'limit_req_status 429' ) === 2
+	&& code_of( $all['ispconfig'], 'nginx-http' ) === $nginx_ht );
+chk( 'nginx ispconfig: dry-run switches as trailing comments', substr_count( code_of( $all['ispconfig'], 'nginx-rate' ), '; # limit_req_dry_run on;' ) === 2 && substr_count( code_of( $all['ispconfig'], 'nginx-rate' ), '; # limit_conn_dry_run on;' ) === 2 );
+// ISPConfig tracks location blocks by counting braces per line: a brace inside
+// a directive line (the return body) would end or open a block early.
+$braces_ok = $isp !== '';
+foreach ( explode( "\n", $isp ) as $l ) {
+	if ( str_contains( $l, 'return ' ) || str_contains( $l, 'add_header' ) ) {
+		$braces_ok = $braces_ok && ! preg_match( '/[{}]/', $l );
+	}
+}
+chk( 'nginx ispconfig: no brace inside a return/add_header line', $braces_ok );
+chk( 'nginx ispconfig: context names {DOMAIN} log path, no comments in the field, no double paste',
+	str_contains( context_of( $all['ispconfig'] ), '/var/log/ispconfig/httpd/{DOMAIN}/' ) && str_contains( context_of( $all['ispconfig'], 'nginx-reject' ), '##merge##' ) );
+
+// --- Apache vhost ----------------------------------------------------------------
+$apache    = code_of( $all['apache'] );
+$apache_rj = code_of( $all['apache'], 'apache-reject' );
+chk( 'apache: snippet ids reject, qos, modsec, robots', ids_of( $all['apache'] ) === [ 'apache-reject', 'apache-qos', 'apache-modsec', 'apache-robots' ], implode( ',', ids_of( $all['apache'] ) ) );
+chk( 'apache: THE_REQUEST, REDIRECT guard',
+	str_contains( $apache_rj, "RewriteEngine On\n" )
+	&& str_contains( $apache_rj, "RewriteCond %{ENV:REDIRECT_STATUS} ^\$\nRewriteCond %{THE_REQUEST} \"" . $pline['segments'] . "\"\nRewriteRule ^/ - [E=JPKPF_REJECT:server-segments,R=410,L]" )
+	&& str_contains( $apache_rj, "RewriteCond %{ENV:REDIRECT_STATUS} ^\$\nRewriteCond %{THE_REQUEST} \"" . $pline['per_group'] . "\"\nRewriteRule ^/ - [E=JPKPF_REJECT:server-per-group,R=410,L]" )
+	&& str_starts_with( (string) $pline['per_group'], '^[A-Z]+ /+' ), $apache_rj );
+$hdr_ok = true;
+foreach ( [ 'JPKPF_REJECT', 'REDIRECT_JPKPF_REJECT' ] as $env ) {
+	$hdr_ok = $hdr_ok
+		&& str_contains( $apache_rj, "Header always set X-Robots-Tag \"noindex, nofollow\" env=$env" )
+		&& str_contains( $apache_rj, "Header always set X-Jpkpf-Reject \"%{" . $env . "}e\" env=$env" )
+		&& str_contains( $apache_rj, "Header always set X-Jpkpf-Rule \"$hash\" env=$env" )
+		&& str_contains( $apache_rj, "Header always set Cache-Control \"no-store\" env=$env" );
+}
+chk( 'apache: four headers on env= and on REDIRECT_ env=', $hdr_ok && substr_count( $apache_rj, 'Header always set' ) === 8 );
+chk( 'apache: string ErrorDocument with the body, quotes escaped', str_contains( $apache_rj, 'ErrorDocument 410 "' . str_replace( '"', '\\"', $body ) . '"' ) );
+chk( 'apache: vhost form, no <IfModule> around the reject', ! str_contains( $apache_rj, '<IfModule' ) && str_starts_with( $apache_rj, $open . "\n" ) && str_ends_with( $apache_rj, "\n" . $close ) );
+chk( 'apache: no QS_ClientEventLimitCount', $apache !== '' && ! str_contains( $apache, 'QS_ClientEventLimitCount' ) );
+$qos = code_of( $all['apache'], 'apache-qos' );
+chk( 'apache: mod_qos concurrency cap = conn, any cookie and search engines exempt',
+	str_contains( $qos, 'QS_EventRequestLimit JPKPF_ANON 3' ) && str_contains( $qos, 'QS_ErrorResponseCode 429' )
+	&& str_contains( $qos, 'SetEnvIf Request_URI "^/(?:blog/|news/)filter/" JPKPF_FILTER=1' ) && str_contains( $qos, 'SetEnvIf Cookie "." JPKPF_EXEMPT=1' )
+	&& str_contains( $qos, 'SetEnvIfNoCase User-Agent "googlebot|bingbot|applebot|duckduckbot|yandexbot" JPKPF_EXEMPT=1' )
+	&& str_contains( $qos, 'QS_SetEnvIf JPKPF_FILTER !JPKPF_EXEMPT JPKPF_ANON=1' ), $qos );
+$modsec = code_of( $all['apache'], 'apache-modsec' );
+preg_match_all( '/\bid:(\d+)/', $modsec, $m );
+chk( 'apache: ModSecurity ids 4710001+ and unique', $m[1] !== [] && $m[1][0] === '4710001' && count( array_unique( $m[1] ) ) === count( $m[1] ) && min( $m[1] ) === '4710001' );
+chk( 'apache: ModSecurity per IP (10 / 20 s), site-wide (30 / 10 s), search engines own counter (20 / 10 s)',
+	str_contains( $modsec, '&REQUEST_HEADERS:Cookie "@gt 0"' ) && str_contains( $modsec, 'REQUEST_URI "@rx ^/(?:blog/|news/)filter/"' )
+	&& str_contains( $modsec, 'expirevar:ip.jpkpf_hits=20' ) && str_contains( $modsec, 'SecRule IP:JPKPF_HITS "@gt 10"' )
+	&& str_contains( $modsec, 'expirevar:global.jpkpf_hits=10' ) && str_contains( $modsec, 'SecRule GLOBAL:JPKPF_HITS "@gt 30"' )
+	&& str_contains( $modsec, 'expirevar:global.jpkpf_bot_hits=10' ) && str_contains( $modsec, 'SecRule GLOBAL:JPKPF_BOT_HITS "@gt 20"' )
+	&& str_contains( $modsec, 'googlebot|bingbot|applebot|duckduckbot|yandexbot' ) && substr_count( $modsec, 'deny,status:429' ) === 3, $modsec );
+chk( 'apache: Retry-After on every 429', str_contains( $modsec, 'Header always set Retry-After "10" "expr=%{REQUEST_STATUS} == 429"' ) );
+chk( 'apache: context names apachectl -M', str_contains( context_of( $all['apache'] ), 'apachectl -M' ) );
+
+// --- .htaccess -------------------------------------------------------------------
+$ht       = code_of( $all['htaccess'], 'htaccess-reject' );
+$ht_rules = (string) call( 'jpkcom_postfilter_server_htaccess_rules', $inputs );
+chk( 'htaccess: manual markers', str_starts_with( $ht, '# BEGIN JPKCom Post Filter (manual)' ) && str_ends_with( $ht, '# END JPKCom Post Filter (manual)' ) );
+chk( 'htaccess: block = manual markers + rule line + htaccess_rules()', $ht_rules !== '' && $ht === "# BEGIN JPKCom Post Filter (manual)\n# rule $hash\n" . $ht_rules . "\n# END JPKCom Post Filter (manual)" );
+chk( 'htaccess_rules: no markers of any kind', str_contains( $ht_rules, 'RewriteCond' ) && ! str_contains( $ht_rules, '# BEGIN' ) && ! str_contains( $ht_rules, '# END' ) && ! str_contains( $ht_rules, '# >>>' ) );
+chk( 'htaccess: per-directory RewriteRule ^, same THE_REQUEST patterns',
+	str_contains( $ht_rules, "RewriteCond %{THE_REQUEST} \"" . $pline['per_group'] . "\"\nRewriteRule ^ - [E=JPKPF_REJECT:server-per-group,R=410,L]" )
+	&& str_contains( $ht_rules, "RewriteRule ^ - [E=JPKPF_REJECT:server-segments,R=410,L]" ) && ! str_contains( $ht_rules, 'RewriteRule ^/' ) );
+chk( 'htaccess: rewrite and headers inside <IfModule>',
+	str_starts_with( $ht_rules, "<IfModule mod_rewrite.c>\nRewriteEngine On\n" ) && str_contains( $ht_rules, "</IfModule>\n<IfModule mod_headers.c>\n" )
+	&& substr_count( $ht_rules, 'Header always set' ) === 8 && str_contains( $ht_rules, 'ErrorDocument 410 "' ) );
+chk( 'htaccess: no rate-limit code, only a sentence', ! preg_match( '/QS_|SecRule|limit_/', code_of( $all['htaccess'] ) ) && code_of( $all['htaccess'], 'htaccess-rate' ) === '' && context_of( $all['htaccess'], 'htaccess-rate' ) !== '' );
+chk( 'htaccess: context says before # BEGIN WordPress', str_contains( context_of( $all['htaccess'], 'htaccess-reject' ), '# BEGIN WordPress' ) );
+
+// --- OpenLiteSpeed ---------------------------------------------------------------
+$ols = code_of( $all['ols'], 'ols-reject' );
+chk( 'ols: no Header/extraHeaders lines', $ols !== '' && ! preg_match( '/Header|extraHeaders/i', $ols ) );
+chk( 'ols: vhost rewrite on THE_REQUEST, between markers',
+	str_contains( $ols, "RewriteCond %{THE_REQUEST} \"" . $pline['per_group'] . "\"\nRewriteRule ^/ - [E=JPKPF_REJECT:server-per-group,R=410,L]" )
+	&& str_contains( $ols, 'server-segments,R=410,L]' ) && str_starts_with( $ols, $open . "\n" ) && str_ends_with( $ols, "\n" . $close ) && ! str_contains( $ols, 'ErrorDocument' ) );
+chk( 'ols: context names WebAdmin, Graceful Restart and the missing header', str_contains( context_of( $all['ols'], 'ols-reject' ), 'WebAdmin' ) && str_contains( context_of( $all['ols'], 'ols-reject' ), 'Graceful Restart' ) && str_contains( context_of( $all['ols'], 'ols-reject' ), 'X-Jpkpf-Reject' ) );
+chk( 'ols: rate limit only as a sentence', code_of( $all['ols'], 'ols-rate' ) === '' && context_of( $all['ols'], 'ols-rate' ) !== '' );
+
+// --- across servers --------------------------------------------------------------
+$in404   = layout_inputs( 2, 2, [], [ '/blog/', '/news/' ], [ 'reject_status' => 404 ] );
+$code404 = [ 'nginx' => code_of( snips( 'nginx', $in404 ) ), 'ispconfig' => code_of( snips( 'nginx', $in404, 'ispconfig' ) ), 'apache' => code_of( snips( 'apache', $in404 ) ), 'htaccess' => code_of( snips( 'htaccess', $in404 ) ), 'ols' => code_of( snips( 'ols', $in404 ) ) ];
+$mirror  = true;
+foreach ( $code404 as $k => $c ) {
+	$mirror = $mirror && $c !== '' && ! preg_match( '/R=410|return 410|ErrorDocument 410|<title>410/', $c );
+}
+$mirror = $mirror && substr_count( $code404['nginx'], "return 404 '" ) === 2 && substr_count( $code404['ispconfig'], "return 404 '" ) === 2
+	&& substr_count( $code404['apache'], ',R=404,L]' ) === 2 && str_contains( $code404['apache'], 'ErrorDocument 404 "' )
+	&& substr_count( $code404['htaccess'], ',R=404,L]' ) === 2 && str_contains( $code404['htaccess'], 'ErrorDocument 404 "' )
+	&& substr_count( $code404['ols'], ',R=404,L]' ) === 2 && str_contains( $code404['nginx'], '<title>404</title>' );
+chk( 'reject_status 404 mirrored everywhere', $mirror );
+$odd = code_of( snips( 'nginx', layout_inputs( 2, 2, [], [ '/blog/' ], [ 'reject_status' => 302 ] ) ) );
+chk( 'reject_status other than 404 renders as 410', str_contains( $odd, "return 410 '" ) && ! str_contains( $odd, 'return 302' ) );
+
+$off     = layout_inputs( 2, 2, [], [ '/blog/', '/news/' ], [ 'strict' => false ] );
+$nginx_off = code_of( snips( 'nginx', $off ) );
+chk( 'no reject part when patterns null', $nginx_off !== '' && ! str_contains( $nginx_off, 'jpkpf-edge' ) && ! str_contains( $nginx_off, '$request_uri' ) && str_contains( $nginx_off, 'limit_req_status 429' ) );
+chk( 'no reject part when patterns null: Apache, .htaccess, OLS, ISPConfig keeps robots',
+	! str_contains( code_of( snips( 'apache', $off ) ), 'RewriteCond' ) && str_contains( code_of( snips( 'apache', $off ) ), 'QS_EventRequestLimit' )
+	&& call( 'jpkcom_postfilter_server_htaccess_rules', $off ) === '' && ! in_array( 'htaccess-reject', ids_of( snips( 'htaccess', $off ) ), true )
+	&& ! str_contains( code_of( snips( 'ols', $off ) ), 'RewriteCond' )
+	&& str_contains( code_of( snips( 'nginx', $off, 'ispconfig' ) ), '##merge##' ) && ! str_contains( code_of( snips( 'nginx', $off, 'ispconfig' ) ), 'jpkpf-edge' ) );
+$n0  = layout_inputs( 0, 2, [], [ '/blog/' ] );
+$n0c = code_of( snips( 'nginx', $n0 ) ) . code_of( snips( 'apache', $n0 ) ) . code_of( snips( 'htaccess', $n0 ) ) . code_of( snips( 'ols', $n0 ) );
+chk( 'N = 0: segments rule only (R7)', str_contains( $n0c, 'server-segments' ) && ! str_contains( $n0c, 'server-per-group' ) );
+
+$weird = layout_inputs( 2, 2, [], [ '/blog/', '/we"ird/', '/a b/', '/x{y}/', '/q;r/', "/n\nl/", '/d$/' ] );
+$wc    = code_of( snips( 'nginx', $weird ) ) . code_of( snips( 'nginx', $weird, 'ispconfig' ) ) . code_of( snips( 'apache', $weird ) ) . code_of( snips( 'htaccess', $weird ) ) . code_of( snips( 'ols', $weird ) );
+chk( 'a base that could break a config is left out, the others stay',
+	$wc !== '' && str_contains( $wc, 'location /blog/filter/' ) && ! preg_match( '/we"ird|a b|x\{y|q;r|n\nl|d\$/', $wc ) );
+
+// A left-out base still counts for the nested-base check: '/filter/x"y/' lies
+// below '/' + endpoint, so its URLs shift the positions of the '/' rules.
+$nested = layout_inputs( 2, 2, [], [ '/', '/filter/x"y/' ] );
+$nc     = code_of( snips( 'nginx', $nested ) ) . code_of( snips( 'apache', $nested ) ) . code_of( snips( 'htaccess', $nested ) ) . code_of( snips( 'ols', $nested ) );
+chk( 'a left-out base still blocks the reject part when nested', str_contains( $nc, 'location /filter/' ) && ! str_contains( $nc, 'server-segments' ) && ! str_contains( $nc, 'server-per-group' ) );
+
+// --- check commands --------------------------------------------------------------
+$probe_ok = function_exists( 'jpkcom_postfilter_server_probe_paths' );
+if ( $probe_ok ) {
+	foreach ( fuzz_layouts() as $layout ) {
+		if ( ! str_ends_with( $layout['name'], ' blog+news' ) ) {
+			continue;
+		}
+		apply_layout( $layout );
+		$in = layout_inputs( $layout['N'], $layout['G'], $layout['skip'], $layout['bases'] );
+		$pp = jpkcom_postfilter_server_reject_patterns( $in );
+		$pr = jpkcom_postfilter_server_probe_paths( $in );
+		// With every position skipped there is no position a per-group probe
+		// could use without also being a segments reject.
+		$no_position = count( $layout['skip'] ) >= $layout['G'];
+		$probe_ok    = $probe_ok && ( $pr['per_group'] === null ) === $no_position;
+		foreach ( [ 'per_group', 'segments' ] as $k ) {
+			if ( $k === 'per_group' && $no_position ) {
+				continue;
+			}
+			$probe_ok = $probe_ok && is_string( $pr[ $k ] ) && str_starts_with( $pr[ $k ], '/blog/filter/' )
+				&& preg_match( '~' . $pp[ $k ] . '~', $pr[ $k ] ) === 1 && plugin_answer( $pr[ $k ], $layout ) === 'reject';
+		}
+		$probe_ok = $probe_ok && ( $no_position || preg_match( '~' . $pp['segments'] . '~', (string) $pr['per_group'] ) === 0 )
+			&& preg_match( '~' . $pp['per_group'] . '~', (string) $pr['segments'] ) === 0 && count( $pr['within'] ) >= 3;
+		foreach ( $pr['within'] as $w ) {
+			$probe_ok = $probe_ok && preg_match( '~' . $pp['per_group'] . '~', $w ) === 0 && preg_match( '~' . $pp['segments'] . '~', $w ) === 0
+				&& plugin_answer( $w, $layout ) !== 'reject';
+		}
+		if ( ! $probe_ok ) {
+			echo '        probe mismatch in ' . $layout['name'] . ': ' . show( $pr ) . "\n";
+			break;
+		}
+	}
+}
+chk( 'probes: over-cap probes match exactly their own pattern and the guard rejects them; within-cap probes match nothing (24 layouts)', $probe_ok );
+
+$cc = [];
+foreach ( [ 'nginx', 'apache', 'htaccess', 'ols' ] as $server ) {
+	$cc[ $server ] = (string) call( 'jpkcom_postfilter_server_check_commands', $server, $inputs );
+}
+$cc_ok = true;
+foreach ( $cc as $server => $c ) {
+	$cc_ok = $cc_ok && str_contains( $c, "'https://example.test/blog/filter/jpkpf-probe-1+jpkpf-probe-2+jpkpf-probe-3/'" )
+		&& str_contains( $c, "'https://example.test/blog/filter/jpkpf-probe-1+jpkpf-probe-2/'" )
+		&& str_contains( $c, "'https://example.test/robots.txt'" ) && str_contains( $c, 'curl ' );
+}
+chk( 'check commands: probe slugs jpkpf-probe-N under the first base, robots.txt', $cc_ok );
+chk( 'check commands: expectation by header value server-<reason> and the rule hash (not OLS)',
+	str_contains( $cc['nginx'], 'X-Jpkpf-Reject: server-per-group' ) && str_contains( $cc['nginx'], 'X-Jpkpf-Reject: server-segments' ) && str_contains( $cc['nginx'], 'X-Jpkpf-Rule: ' . $hash )
+	&& str_contains( $cc['apache'], 'X-Jpkpf-Rule: ' . $hash ) && str_contains( $cc['htaccess'], 'server-per-group' ) );
+chk( 'check commands: OLS judged by status, rate limit only where a snippet exists',
+	str_contains( $cc['ols'], '410' ) && ! str_contains( $cc['ols'], 'X-Jpkpf-Rule: ' ) && str_contains( $cc['nginx'], 'Cookie:' ) && str_contains( $cc['apache'], 'Cookie:' )
+	&& ! str_contains( $cc['htaccess'], 'Cookie:' ) && ! str_contains( $cc['ols'], 'Cookie:' ) );
+chk( 'check commands: no reject probes without a reject rule', ! str_contains( (string) call( 'jpkcom_postfilter_server_check_commands', 'nginx', $off ), 'server-per-group' ) && str_contains( (string) call( 'jpkcom_postfilter_server_check_commands', 'nginx', $off ), 'robots.txt' ) );
 
 exit( summary() );
