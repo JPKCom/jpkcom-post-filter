@@ -198,16 +198,18 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_wrap' ) ) {
      *
      * @since 1.6.0
      *
-     * @param array<string, mixed> $inputs Rule inputs.
-     * @param string[]             $lines  Code lines.
+     * @param array<string, mixed> $inputs  Rule inputs.
+     * @param string[]             $lines   Code lines.
+     * @param string               $comment Comment marker of the config syntax
+     *                                      (`//` for Ferron 2's KDL).
      * @return string
      */
-    function jpkcom_postfilter_server_wrap( array $inputs, array $lines ): string {
+    function jpkcom_postfilter_server_wrap( array $inputs, array $lines, string $comment = '#' ): string {
         $version = defined( 'JPKCOM_POSTFILTER_VERSION' ) ? (string) JPKCOM_POSTFILTER_VERSION : '';
         $version = (string) preg_replace( '/[^0-9A-Za-z.+-]/', '', $version );
-        $open    = '# >>> jpkcom-post-filter ' . $version . ' rule ' . jpkcom_postfilter_server_hash_of( inputs: $inputs );
+        $open    = $comment . ' >>> jpkcom-post-filter ' . $version . ' rule ' . jpkcom_postfilter_server_hash_of( inputs: $inputs );
 
-        return implode( "\n", array_merge( [ $open ], $lines, [ '# <<< jpkcom-post-filter' ] ) );
+        return implode( "\n", array_merge( [ $open ], $lines, [ $comment . ' <<< jpkcom-post-filter' ] ) );
     }
 }
 
@@ -1005,6 +1007,323 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ols' ) ) {
 }
 
 
+// ---------------------------------------------------------------------------
+// Snippets: Caddy (RE2), Ferron 3 and Ferron 2.8 (Rust regex)
+// ---------------------------------------------------------------------------
+
+if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_caddy' ) ) {
+    /**
+     * Caddy snippet: one `route` with the rejects first, then `rate_limit`
+     *
+     * Research report 2 §2. `path_regexp` sees the decoded path, so the reject
+     * is a CEL `expression` on `{http.request.uri}` (raw path and query). The
+     * pattern sits in a double-quoted CEL string inside a Caddyfile backtick
+     * token: the backticks pass every byte through, CEL then reads `\\` as
+     * one backslash - so each `\` of the pattern is doubled (`\\+`). A root
+     * base renders as an empty alternative `(?:|news/)`, which RE2 accepts.
+     *
+     * `route` keeps the written order. Outside it caddy-ratelimit sorts itself
+     * before `respond`, and every rejected request then used up the budget of
+     * the cookie-less visitors (verified in research). Inside it the segments
+     * block comes first: its `respond` ends the route, so a URL over both caps
+     * gets the guard's reason. The reject carries `no-store` - a cached reject
+     * would outlive a later loosening (spec 5.3).
+     *
+     * Rate limit (caddy-ratelimit, sliding window of `events` per `window`):
+     * per IP `ip_burst` in the time `ip_per_minute` needs for them, site-wide
+     * (`key static`) and search engines' own zone over 10 s. Any Cookie header
+     * exempts. The 429 page carries `no-store` but no X-Robots-Tag: a busy
+     * answer for a valid URL must not tell search engines to drop it.
+     *
+     * @since 1.6.0
+     *
+     * @param array<string, mixed> $inputs Rule inputs.
+     * @param array<string, int>   $limits Normalised rate limits.
+     * @return array<int, array{id: string, title: string, context: string, code: string}>
+     */
+    function jpkcom_postfilter_server_snippets_caddy( array $inputs, array $limits ): array {
+        $reasons = jpkcom_postfilter_server_reasons( patterns: jpkcom_postfilter_server_render_patterns( inputs: $inputs ) );
+        $status  = jpkcom_postfilter_server_reject_status( inputs: $inputs );
+        $hash    = jpkcom_postfilter_server_hash_of( inputs: $inputs );
+        $body    = str_replace( '"', '\\"', jpkcom_postfilter_server_reject_body( inputs: $inputs ) );
+        $scope   = jpkcom_postfilter_server_scope_regex( inputs: $inputs );
+        $route   = [];
+        $out     = [];
+
+        foreach ( $reasons as $reason => $pattern ) {
+            $m       = '@jpkpf_' . str_replace( '-', '_', $reason );
+            $route[] = "\t" . $m . ' expression `{http.request.uri}.matches("' . str_replace( '\\', '\\\\', $pattern ) . '")`';
+            $route[] = "\theader " . $m . ' X-Robots-Tag "noindex, nofollow"';
+            $route[] = "\theader " . $m . ' X-Jpkpf-Reject "server-' . $reason . '"';
+            $route[] = "\theader " . $m . ' X-Jpkpf-Rule "' . $hash . '"';
+            $route[] = "\theader " . $m . ' Cache-Control "no-store"';
+            $route[] = "\theader " . $m . ' Content-Type "text/html; charset=utf-8"';
+            $route[] = "\trespond " . $m . ' "' . $body . '" ' . $status;
+            $route[] = '';
+        }
+
+        $errors = [];
+        if ( $scope !== null ) {
+            $ua   = 'header_regexp User-Agent (?i)(?:' . jpkcom_postfilter_server_searchbots() . ')';
+            $zone = static function ( string $name, string $ua_line, string $key, int $events, int $window ) use ( $scope ): array {
+                return [
+                    "\t\tzone " . $name . ' {',
+                    "\t\t\tmatch {",
+                    "\t\t\t\tpath_regexp " . $scope,
+                    "\t\t\t\theader !Cookie",
+                    "\t\t\t\t" . $ua_line,
+                    "\t\t\t}",
+                    "\t\t\tkey " . $key,
+                    "\t\t\tevents " . $events,
+                    "\t\t\twindow " . $window . 's',
+                    "\t\t}",
+                ];
+            };
+
+            $window  = (int) ceil( $limits['ip_burst'] * 60 / $limits['ip_per_minute'] );
+            $route[] = "\t# Cookie-less filter requests; search engines have their own zone.";
+            $route   = array_merge(
+                $route,
+                [ "\trate_limit {" ],
+                $zone( 'jpkpf_ip', 'not ' . $ua, '{remote_host}', $limits['ip_burst'], $window ),
+                $zone( 'jpkpf_all', 'not ' . $ua, 'static', 10 * $limits['rate'], 10 ),
+                $zone( 'jpkpf_bots', $ua, 'static', 10 * $limits['bot_rate'], 10 ),
+                [ "\t}" ]
+            );
+
+            $errors = [
+                'handle_errors 429 {',
+                "\theader Cache-Control \"no-store\"",
+                "\trespond \"" . jpkcom_postfilter_server_plain_text( text: __( 'Too many filter requests, please retry in a moment.', 'jpkcom-post-filter' ) ) . '" 429',
+                '}',
+            ];
+        }
+
+        if ( $route !== [] ) {
+            if ( end( $route ) === '' ) {
+                array_pop( $route );
+            }
+
+            $lines = array_merge( [ 'route {' ], $route, [ '}' ], $errors );
+
+            $context = __( 'Inside the site block of the Caddyfile (FrankenPHP: the same block), anywhere before php_fastcgi or php_server, then caddy validate and caddy reload. Rejects and rate limit sit in one route on purpose: a rejected request is answered before rate_limit and never uses up the budget of real visitors. If the site block rewrites with its own top-level try_files or rewrite, Caddy runs that first and neither part matches - the check commands below show it.', 'jpkcom-post-filter' );
+            if ( $scope !== null ) {
+                $context .= ' ' . sprintf(
+                    /* translators: 1: requests, 2: seconds, 3: requests, 4: requests, 5: shell command */
+                    __( 'The rate_limit block needs Caddy built with the caddy-ratelimit module (xcaddy build --with github.com/mholt/caddy-ratelimit; FrankenPHP needs its own build with it). Check with %5$s - without the module Caddy refuses the whole file: then delete the rate_limit and handle_errors blocks, the reject still works. Cookie-less filter requests get 429 with Retry-After beyond %1$d per IP in %2$d seconds or %3$d site-wide in 10 seconds; search engines (by User-Agent) have their own limit of %4$d in 10 seconds. Behind a proxy or CDN use key {client_ip} instead of {remote_host} and the global option servers { trusted_proxies static <ranges> }. handle_errors 429 needs Caddy 2.8 or later and answers every 429 of this site.', 'jpkcom-post-filter' ),
+                    $limits['ip_burst'],
+                    $window,
+                    10 * $limits['rate'],
+                    10 * $limits['bot_rate'],
+                    'caddy list-modules | grep http.handlers.rate_limit'
+                );
+            }
+
+            $out[] = jpkcom_postfilter_server_snippet(
+                id: 'caddy-site',
+                title: __( 'Reject before PHP and rate limit (Caddyfile site block)', 'jpkcom-post-filter' ),
+                context: $context,
+                code: jpkcom_postfilter_server_wrap( inputs: $inputs, lines: $lines )
+            );
+        }
+
+        $out[] = jpkcom_postfilter_server_snippet(
+            id: 'caddy-robots',
+            title: __( 'robots.txt', 'jpkcom-post-filter' ),
+            context: __( 'php_fastcgi (and FrankenPHP\'s php_server) hands /robots.txt to WordPress - nothing to do, unless the site block has its own respond or file_server rule for /robots.txt, or a physical robots.txt file exists in the web root.', 'jpkcom-post-filter' ),
+            code: ''
+        );
+
+        return $out;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ferron3' ) ) {
+    /**
+     * Ferron 3 snippets: top-level `match` blocks and host-level `if` blocks
+     *
+     * Research report 2 §3.1 (3.0.0-rc.10, `.conf` format). `match` exists
+     * only at the top level, `if` only inside a host, hence two blocks. The
+     * reject matches `request.uri` (raw; `request.uri.path` is decoded) in a
+     * raw string `r"…"`, so the pattern goes in unchanged; a root base's empty
+     * alternative `(?:|news/)` is valid in Rust's regex since 1.8. The `if`
+     * is decided once on the original URI, before any rewrite stage. The
+     * per-group matcher excludes the segments pattern, so a URL over both
+     * caps gets one status and the guard's reason.
+     *
+     * Rate limit: `rate_limit` is a token bucket with an integer rate per
+     * second (1 is the smallest), per IP. Ferron has no constant key, so
+     * there is neither a site-wide rate nor a bucket of their own for search
+     * engines. Instead a FastCGI bulkhead: a second `fcgi_php` with its own
+     * connection pool, keyed by the URL string - it must differ from the main
+     * URL - and `limit` connections; further requests wait. The plugin does
+     * not know the backend URL: `<php-backend-url>` is a placeholder.
+     *
+     * @since 1.6.0
+     *
+     * @param array<string, mixed> $inputs Rule inputs.
+     * @param array<string, int>   $limits Normalised rate limits.
+     * @return array<int, array{id: string, title: string, context: string, code: string}>
+     */
+    function jpkcom_postfilter_server_snippets_ferron3( array $inputs, array $limits ): array {
+        $reasons = jpkcom_postfilter_server_reasons( patterns: jpkcom_postfilter_server_render_patterns( inputs: $inputs ) );
+        $status  = jpkcom_postfilter_server_reject_status( inputs: $inputs );
+        $hash    = jpkcom_postfilter_server_hash_of( inputs: $inputs );
+        $body    = str_replace( '"', '\\"', jpkcom_postfilter_server_reject_body( inputs: $inputs ) );
+        $scope   = jpkcom_postfilter_server_scope_regex( inputs: $inputs );
+        $match   = [];
+        $host    = [];
+        $out     = [];
+
+        foreach ( $reasons as $reason => $pattern ) {
+            $name    = 'jpkpf_' . str_replace( '-', '_', $reason );
+            $match[] = 'match ' . $name . ' {';
+            $match[] = '    request.uri ~ r"' . $pattern . '"';
+            if ( $reason === 'per-group' && isset( $reasons['segments'] ) ) {
+                $match[] = '    request.uri !~ r"' . $reasons['segments'] . '"';
+            }
+            $match[] = '}';
+
+            $host[] = 'if ' . $name . ' {';
+            $host[] = '    status ' . $status . ' {';
+            $host[] = '        body "' . $body . '"';
+            $host[] = '    }';
+            $host[] = '    header X-Robots-Tag "noindex, nofollow"';
+            $host[] = '    header X-Jpkpf-Reject "server-' . $reason . '"';
+            $host[] = '    header X-Jpkpf-Rule "' . $hash . '"';
+            $host[] = '    header Cache-Control "no-store"';
+            $host[] = '    header Content-Type "text/html; charset=utf-8"';
+            $host[] = '}';
+        }
+
+        if ( $scope !== null ) {
+            $match[] = '# Filter URLs from clients without any Cookie header.';
+            $match[] = 'match jpkpf_filter_anon {';
+            $match[] = '    request.uri.path ~ r"' . $scope . '"';
+            $match[] = '    request.header.cookie !~ r"."';
+            $match[] = '}';
+
+            $host[] = 'if jpkpf_filter_anon {';
+            $host[] = '    rate_limit {';
+            $host[] = '        rate 1';
+            $host[] = '        burst ' . $limits['ip_burst'];
+            $host[] = '        key remote_address';
+            $host[] = '        deny_status 429';
+            $host[] = '    }';
+            $host[] = '    # Bulkhead: replace <php-backend-url> with the URL of the main fcgi_php, keep /jpkpf.';
+            $host[] = '    fcgi_php <php-backend-url>/jpkpf {';
+            $host[] = '        limit ' . $limits['conn'];
+            $host[] = '    }';
+            $host[] = '}';
+        }
+
+        $rc = __( 'Ferron 3 is a release candidate: tested with 3.0.0-rc.10. Check it again against 3.0.0 final - the release candidates changed configuration semantics.', 'jpkcom-post-filter' );
+
+        if ( $match !== [] ) {
+            $out[] = jpkcom_postfilter_server_snippet(
+                id: 'ferron3-match',
+                title: __( 'Matchers (ferron.conf, top level)', 'jpkcom-post-filter' ),
+                context: $rc . ' ' . __( 'At the top level of ferron.conf, outside every host block: match blocks cannot sit inside a host. request.uri is the raw request URI, so the reject leaves every %-encoded path to PHP.', 'jpkcom-post-filter' ),
+                code: jpkcom_postfilter_server_wrap( inputs: $inputs, lines: $match )
+            );
+
+            $context = __( 'Inside the site\'s host block, before the rewrite to /index.php, then ferron validate -c /etc/ferron/ferron.conf and a reload. Needs the matchers block. Rejects answer before PHP with all four headers.', 'jpkcom-post-filter' );
+            if ( $scope !== null ) {
+                $context .= ' ' . sprintf(
+                    /* translators: 1: burst, 2: requests per minute, 3: concurrent requests */
+                    __( 'Rate limit for cookie-less filter requests: per IP a burst of %1$d, then 1 per second (Ferron\'s smallest rate; the plugin\'s %2$d per minute cannot be expressed), beyond that 429 with Retry-After. Ferron has no constant rate-limit key, so there is no site-wide rate and search engines cannot get a bucket of their own: they share the per-IP limit. Instead a FastCGI bulkhead lets at most %3$d cookie-less filter requests reach PHP at once; further requests wait for a free connection, they get no 429. Replace <php-backend-url> with the URL of the main fcgi_php (for example tcp://127.0.0.1:9000) and keep the /jpkpf suffix: the bulkhead URL must differ from the main fcgi_php URL, otherwise the limit applies to every PHP request. A Unix socket URL with a suffix is untested: test it or use TCP. Behind a proxy or CDN set client_ip_from_header with trusted_proxy, otherwise the per-IP limit counts the proxy.', 'jpkcom-post-filter' ),
+                    $limits['ip_burst'],
+                    $limits['ip_per_minute'],
+                    $limits['conn']
+                );
+            }
+
+            $out[] = jpkcom_postfilter_server_snippet(
+                id: 'ferron3-host',
+                title: __( 'Reject before PHP and rate limit (host block)', 'jpkcom-post-filter' ),
+                context: $context,
+                code: jpkcom_postfilter_server_wrap( inputs: $inputs, lines: $host )
+            );
+        }
+
+        $out[] = jpkcom_postfilter_server_snippet(
+            id: 'ferron3-robots',
+            title: __( 'robots.txt', 'jpkcom-post-filter' ),
+            context: __( 'The front-controller rewrite to /index.php hands /robots.txt to WordPress - nothing to do, unless a physical robots.txt file exists in the web root.', 'jpkcom-post-filter' ),
+            code: ''
+        );
+
+        return $out;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ferron2' ) ) {
+    /**
+     * Ferron 2.8 snippets: rate limit only (KDL)
+     *
+     * Research report 2 §3.2. No reject part: Ferron 2's `{path}` is
+     * URL-decoded and no raw-URI placeholder was found, so a count on it would
+     * split `%2B`, `%2F` or `%70age` differently from WordPress - stricter
+     * than the plugin, which the hard rule forbids. A missing header is ""
+     * in conditions (`"-"` never matches). `limit` is per IP only; its bucket
+     * holds `burst` requests. KDL strings know escapes, so each `\` of the
+     * scope regex is doubled, and comments are `//`.
+     *
+     * @since 1.6.0
+     *
+     * @param array<string, mixed> $inputs Rule inputs.
+     * @param array<string, int>   $limits Normalised rate limits.
+     * @return array<int, array{id: string, title: string, context: string, code: string}>
+     */
+    function jpkcom_postfilter_server_snippets_ferron2( array $inputs, array $limits ): array {
+        $scope = jpkcom_postfilter_server_scope_regex( inputs: $inputs );
+        $out   = [];
+
+        $out[] = jpkcom_postfilter_server_snippet(
+            id: 'ferron2-reject',
+            title: __( 'Reject before PHP', 'jpkcom-post-filter' ),
+            context: __( 'No reject rule for Ferron 2.8: its {path} is URL-decoded, so %2B, %2F or %70age would be counted differently from WordPress, and the rule could reject a URL the plugin serves. PHP keeps rejecting over-cap URLs; Ferron 3 can match the raw request.uri.', 'jpkcom-post-filter' ),
+            code: ''
+        );
+
+        if ( $scope !== null ) {
+            $lines = [
+                'condition "JPKPF_FILTER_ANON" {',
+                '    is_regex "{path}" "' . str_replace( '\\', '\\\\', $scope ) . '"',
+                '    is_equal "{header:Cookie}" ""',
+                '}',
+                'if "JPKPF_FILTER_ANON" {',
+                '    limit rate=1 burst=' . $limits['ip_burst'],
+                '}',
+            ];
+
+            $out[] = jpkcom_postfilter_server_snippet(
+                id: 'ferron2-rate',
+                title: __( 'Rate limit for filter URLs (ferron.kdl host block)', 'jpkcom-post-filter' ),
+                context: sprintf(
+                    /* translators: 1: burst, 2: requests per minute */
+                    __( 'Inside the site\'s host block in ferron.kdl, before the rewrite and fcgi_php, then restart Ferron. Cookie-less filter requests: per IP a burst of %1$d, then 1 per second (the plugin\'s %2$d per minute cannot be expressed), beyond that 429. A missing header is "" in Ferron 2 conditions, so is_equal "{header:Cookie}" "" matches exactly the requests without any cookie. Ferron 2 has no site-wide cap and no bucket of their own for search engines: they share the per-IP limit. Behind a proxy or CDN the per-IP limit counts the proxy.', 'jpkcom-post-filter' ),
+                    $limits['ip_burst'],
+                    $limits['ip_per_minute']
+                ),
+                code: jpkcom_postfilter_server_wrap( inputs: $inputs, lines: $lines, comment: '//' )
+            );
+        }
+
+        $out[] = jpkcom_postfilter_server_snippet(
+            id: 'ferron2-robots',
+            title: __( 'robots.txt', 'jpkcom-post-filter' ),
+            context: __( 'The front-controller rewrite to /index.php hands /robots.txt to WordPress - nothing to do, unless a physical robots.txt file exists in the web root.', 'jpkcom-post-filter' ),
+            code: ''
+        );
+
+        return $out;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets' ) ) {
     /**
      * The snippets of one server tab
@@ -1033,6 +1352,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets' ) ) {
             'apache'   => jpkcom_postfilter_server_snippets_apache( inputs: $inputs, limits: $limits ),
             'htaccess' => jpkcom_postfilter_server_snippets_htaccess( inputs: $inputs ),
             'ols'      => jpkcom_postfilter_server_snippets_ols( inputs: $inputs ),
+            'caddy'    => jpkcom_postfilter_server_snippets_caddy( inputs: $inputs, limits: $limits ),
+            'ferron3'  => jpkcom_postfilter_server_snippets_ferron3( inputs: $inputs, limits: $limits ),
+            'ferron2'  => jpkcom_postfilter_server_snippets_ferron2( inputs: $inputs, limits: $limits ),
             default    => [],
         };
     }
@@ -1063,23 +1385,28 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
      * URL with its own 410 (`per-group`, `segments`), and with
      * `unknown_terms_action = reject` even a within-cap probe, so the status
      * alone says nothing. OpenLiteSpeed sends no header with its reject; there
-     * a reject status WITHOUT the header is the server's. Not translated: the
-     * comments belong to the code block.
+     * a reject status WITHOUT the header is the server's. Ferron 2.8 gets no
+     * reject rule at all (jpkcom_postfilter_server_snippets_ferron2()), so it
+     * gets no reject probes either. Not translated: the comments belong to
+     * the code block.
      *
      * @since 1.6.0
      *
-     * @param string               $server nginx|apache|htaccess|ols|…
+     * @param string               $server nginx|apache|htaccess|ols|caddy|ferron3|ferron2
      * @param array<string, mixed> $inputs Rule inputs.
      * @return string
      */
     function jpkcom_postfilter_server_check_commands( string $server, array $inputs ): string {
         $render   = jpkcom_postfilter_server_render_inputs( inputs: $inputs );
         $patterns = jpkcom_postfilter_server_render_patterns( inputs: $inputs );
+        if ( $server === 'ferron2' ) {
+            $patterns = [ 'per_group' => null, 'segments' => null ];
+        }
         $probes   = jpkcom_postfilter_server_probe_paths( inputs: $render );
         $status   = jpkcom_postfilter_server_reject_status( inputs: $inputs );
         $hash     = jpkcom_postfilter_server_hash_of( inputs: $inputs );
         $headers  = $server !== 'ols';
-        $rate     = in_array( $server, [ 'nginx', 'apache' ], true ) && jpkcom_postfilter_server_scope_regex( inputs: $inputs ) !== null;
+        $rate     = in_array( $server, [ 'nginx', 'apache', 'caddy', 'ferron3', 'ferron2' ], true ) && jpkcom_postfilter_server_scope_regex( inputs: $inputs ) !== null;
 
         $home   = wp_parse_url( home_url( '/' ) );
         $home   = is_array( $home ) ? $home : [];
@@ -1119,7 +1446,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
         }
         if ( $n === 0 ) {
             $out[] = '';
-            $out[] = '# No reject rule is generated for these settings: nothing to probe.';
+            if ( $server === 'ferron2' ) {
+                $out[] = '# Ferron 2.8 gets no reject rule (its {path} is URL-decoded): nothing to probe.';
+            } else {
+                $out[] = '# No reject rule is generated for these settings: nothing to probe.';
+            }
         }
 
         $within = implode( ' ', array_map( $url, $probes['within'] ) );
@@ -1145,6 +1476,18 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
             $out[]  = '# ' . ( ++$n ) . ') Rate limit. This uses up the shared budget of cookie-less visitors: run it off-peak.';
             if ( $server === 'nginx' ) {
                 $out[] = '#    Sequential requests (limit_req): expect 429 after the burst, then Retry-After on the next one.';
+                $out[] = $seq . $target . '"$i"; done; echo';
+                $out[] = 'curl -s -o /dev/null -D - ' . $url( $base ) . " | grep -iE '^(HTTP|retry-after)'";
+                $out[] = '#    Any cookie exempts a request: expect no 429.';
+                $out[] = $seq . '-H \'Cookie: jpkpf-check=1\' ' . $target . '"$i"; done; echo';
+            } elseif ( $server !== 'apache' ) {
+                if ( $server === 'ferron3' ) {
+                    $out[] = '#    a) The FastCGI bulkhead makes CONCURRENT requests wait instead of answering 429:';
+                    $out[] = '#       send 8 at once. Expect no 429, and times rising in steps of one PHP request.';
+                    $out[] = str_replace( "'%{http_code} '", "'%{http_code}:%{time_total} '", $par ) . $url( $base . '?rl=p{}' ) . '; echo';
+                    $out[] = '#    b) The per-IP limit, 15 s after a): sequential requests.';
+                }
+                $out[] = '#    Sequential requests: expect 429 after the per-IP burst, with Retry-After where the server sends one.';
                 $out[] = $seq . $target . '"$i"; done; echo';
                 $out[] = 'curl -s -o /dev/null -D - ' . $url( $base ) . " | grep -iE '^(HTTP|retry-after)'";
                 $out[] = '#    Any cookie exempts a request: expect no 429.';
