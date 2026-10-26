@@ -4,11 +4,11 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: JPKCom Post Filter 1.6.0\n"
+"Project-Id-Version: JPKCom Post Filter 1.6.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/jpkcom-post-"
 "filter\n"
-"POT-Creation-Date: 2026-10-26T18:18:48+01:00\n"
-"PO-Revision-Date: 2026-10-26 18:00+0100\n"
+"POT-Creation-Date: 2026-10-26T20:57:11+01:00\n"
+"PO-Revision-Date: 2026-10-26 21:00+0100\n"
 "Last-Translator: jpk@jpkc.com\n"
 "Language-Team: Deutsch\n"
 "Language: de_DE_formal\n"
@@ -304,8 +304,8 @@ msgstr "Cache"
 msgid "Import / Export"
 msgstr "Import / Export"
 
-#: includes/admin-pages.php:125 includes/server-rules-admin.php:1225
-#: includes/server-rules-admin.php:1246
+#: includes/admin-pages.php:125 includes/server-rules-admin.php:1264
+#: includes/server-rules-admin.php:1285
 msgid "Sorry, you are not allowed to do this."
 msgstr "Sie sind leider nicht berechtigt, diese Aktion durchzuführen."
 
@@ -2201,8 +2201,67 @@ msgstr ""
 "Snippet: %s. Filter-URLs darunter prüft nur das Plugin, und sie haben kein "
 "Rate-Limit."
 
+#: includes/server-rules-admin.php:248
+msgid "terms per group"
+msgstr "Begriffe pro Gruppe"
+
+#: includes/server-rules-admin.php:249
+msgid "segment count"
+msgstr "Segmentanzahl"
+
+#. translators: %d: maximum number of characters, e.g. 4000
+#: includes/server-rules-admin.php:254
+#, php-format
+msgid ""
+"its pattern would be longer than %d characters, more than nginx reads in one "
+"parameter"
+msgstr ""
+"ihr Muster wäre länger als %d Zeichen, mehr als nginx in einem Parameter "
+"liest"
+
+#: includes/server-rules-admin.php:257
+msgid ""
+"PCRE (nginx, Apache, OpenLiteSpeed) cannot compile its pattern, it is too "
+"large"
+msgstr ""
+"PCRE (nginx, Apache, OpenLiteSpeed) kann ihr Muster nicht kompilieren, es "
+"ist zu groß"
+
+#. translators: %d: maximum repetition count, e.g. 1000
+#: includes/server-rules-admin.php:260
+#, php-format
+msgid ""
+"it repeats a part more than %d times, which the regular expressions of Caddy "
+"refuse"
+msgstr ""
+"sie wiederholt einen Teil mehr als %d-mal, was die regulären Ausdrücke von "
+"Caddy ablehnen"
+
+#: includes/server-rules-admin.php:263
+msgid "it is nested deeper than the regular expressions of Ferron 3 allow"
+msgstr ""
+"sie ist tiefer verschachtelt, als die regulären Ausdrücke von Ferron 3 "
+"erlauben"
+
+#. translators: %s: the rules left out and why, e.g. "terms per group: PCRE (nginx, Apache, OpenLiteSpeed) cannot compile its pattern, it is too large"
+#: includes/server-rules-admin.php:273
+#, php-format
+msgid ""
+"A server could not load every reject rule for these settings, so these are "
+"left out of every snippet, the check and a managed .htaccess block: %s. The "
+"plugin still rejects those URLs itself; the server only passes them on to "
+"PHP. Fewer filter groups, fewer positions without taxonomy or a lower number "
+"of terms per group bring the rule back."
+msgstr ""
+"Ein Server könnte nicht jede Abweisungsregel für diese Einstellungen laden, "
+"daher fehlen diese in jedem Snippet, in der Prüfung und in einem "
+"verwalteten .htaccess-Block: %s. Das Plugin weist diese URLs weiterhin "
+"selbst ab; der Server reicht sie nur an PHP weiter. Weniger Filtergruppen, "
+"weniger Positionen ohne Taxonomie oder weniger Begriffe pro Gruppe bringen "
+"die Regel zurück."
+
 #. translators: %s: comma-separated filter hook names
-#: includes/server-rules-admin.php:244
+#: includes/server-rules-admin.php:283
 #, php-format
 msgid ""
 "Code on this site filters %s. The rules below use the values of this admin "
@@ -2217,7 +2276,7 @@ msgstr ""
 "Regeln einspielen."
 
 #. translators: %s: comma-separated positions of filter groups, counted from 1
-#: includes/server-rules-admin.php:254
+#: includes/server-rules-admin.php:293
 #, php-format
 msgid ""
 "Filter groups at position %s have no taxonomy. The server rule skips those "
@@ -2228,7 +2287,7 @@ msgstr ""
 "prüft sie weiterhin."
 
 #. translators: %s: comma-separated taxonomy names
-#: includes/server-rules-admin.php:266
+#: includes/server-rules-admin.php:305
 #, php-format
 msgid ""
 "More than one filter group uses the taxonomy %s. The plugin counts the terms "
@@ -2240,7 +2299,7 @@ msgstr ""
 "sich, daher erfasst die Serverregel dort weniger URLs. Strenger ist sie nie."
 
 #. translators: %s: comma-separated constant names
-#: includes/server-rules-admin.php:283
+#: includes/server-rules-admin.php:322
 #, php-format
 msgid ""
 "Set in wp-config.php: %s. The rules below use these values. After changing a "
@@ -2252,7 +2311,7 @@ msgstr ""
 "verwalteter .htaccess-Block folgt beim nächsten Laden einer Admin-Seite)."
 
 #. translators: %s: file path
-#: includes/server-rules-admin.php:295
+#: includes/server-rules-admin.php:334
 #, php-format
 msgid ""
 "A robots.txt file exists in the WordPress directory (%s). The web server "
@@ -2265,7 +2324,7 @@ msgstr ""
 "diese Datei oder löschen Sie sie."
 
 #. translators: %s: file path
-#: includes/server-rules-admin.php:301
+#: includes/server-rules-admin.php:340
 #, php-format
 msgid ""
 "A robots.txt file exists in the site root (%s). The web server delivers it "
@@ -2278,7 +2337,7 @@ msgstr ""
 "in diese Datei oder löschen Sie sie."
 
 #. translators: %s: path of the WordPress site, e.g. "/wp/"
-#: includes/server-rules-admin.php:312
+#: includes/server-rules-admin.php:351
 #, php-format
 msgid ""
 "WordPress runs in the subdirectory %s. Crawlers only read the robots.txt at "
@@ -2290,7 +2349,7 @@ msgstr ""
 "Kopieren Sie die robots.txt-Zeilen des Plugins von der Seite „Allgemein“ in "
 "diese Datei."
 
-#: includes/server-rules-admin.php:318
+#: includes/server-rules-admin.php:357
 msgid ""
 "Search engines are asked not to index this site (Settings > Reading). "
 "WordPress then blocks everything in robots.txt, and the plugin adds no lines "
@@ -2300,7 +2359,7 @@ msgstr ""
 "(Einstellungen > Lesen). WordPress sperrt dann in der robots.txt alles, und "
 "das Plugin fügt keine eigenen Zeilen hinzu."
 
-#: includes/server-rules-admin.php:322
+#: includes/server-rules-admin.php:361
 msgid ""
 "This is a multisite network. The rules on this page cover this site only. "
 "Generate them on the Server Rules page of every site whose filter URLs the "
@@ -2315,7 +2374,7 @@ msgstr ""
 "Beispiel jede location nur einmal), und wenden Sie die Regel einer Website "
 "nie auf die Adressen einer anderen an."
 
-#: includes/server-rules-admin.php:326
+#: includes/server-rules-admin.php:365
 msgid ""
 "The rules use the values this admin request sees. Code that filters "
 "jpkcom_postfilter_request_verdict or a jpkcom_postfilter_ setting only on "
@@ -2330,7 +2389,7 @@ msgstr ""
 "strenger sein als das, was das Plugin im Frontend tut. Prüfen Sie solchen "
 "Code, bevor Sie die Regeln einspielen."
 
-#: includes/server-rules-admin.php:328
+#: includes/server-rules-admin.php:367
 msgid ""
 "Behind a reverse proxy or CDN the web server sees the proxy's address: per-"
 "IP limits then count all visitors as one, unless the server takes the client "
@@ -2343,7 +2402,7 @@ msgstr ""
 "Apache mod_remoteip, Caddy trusted_proxies). Ein CDN kann außerdem Antworten "
 "zwischenspeichern oder die X-Jpkpf-Header entfernen."
 
-#: includes/server-rules-admin.php:329
+#: includes/server-rules-admin.php:368
 msgid ""
 "The server decides by the URL alone. If another plugin adds its own rewrite "
 "rule that serves such a filter URL before this plugin does, the server does "
@@ -2356,11 +2415,11 @@ msgstr ""
 "das nach der Installation von Plugins, die eigene URLs unterhalb des Archivs "
 "anlegen."
 
-#: includes/server-rules-admin.php:350
+#: includes/server-rules-admin.php:389
 msgid "Status checked. The result is shown below."
 msgstr "Status geprüft. Das Ergebnis steht unten."
 
-#: includes/server-rules-admin.php:351
+#: includes/server-rules-admin.php:390
 msgid ""
 "The .htaccess block is set up. From now on the plugin keeps it in step with "
 "the settings."
@@ -2368,7 +2427,7 @@ msgstr ""
 "Der .htaccess-Block ist eingerichtet. Ab jetzt hält das Plugin ihn mit den "
 "Einstellungen im Einklang."
 
-#: includes/server-rules-admin.php:352
+#: includes/server-rules-admin.php:391
 msgid ""
 "The .htaccess block is set up, but the current settings produce no reject "
 "rule, so nothing was written yet. The plugin writes the block as soon as the "
@@ -2378,7 +2437,7 @@ msgstr ""
 "ergeben keine Abweisungsregel, daher wurde noch nichts geschrieben. Das "
 "Plugin schreibt den Block, sobald die Einstellungen eine ergeben."
 
-#: includes/server-rules-admin.php:353
+#: includes/server-rules-admin.php:392
 msgid ""
 "The .htaccess block was not set up. The reason is shown in the .htaccess box "
 "below."
@@ -2386,7 +2445,7 @@ msgstr ""
 "Der .htaccess-Block wurde nicht eingerichtet. Der Grund steht unten im ."
 "htaccess-Kasten."
 
-#: includes/server-rules-admin.php:354
+#: includes/server-rules-admin.php:393
 msgid ""
 "Writing the .htaccess failed, nothing was set up. Check that the file is "
 "writable and that its JPKCom Post Filter markers pair up."
@@ -2395,12 +2454,12 @@ msgstr ""
 "eingerichtet. Prüfen Sie, ob die Datei beschreibbar ist und ob ihre JPKCom-"
 "Post-Filter-Markierungen Paare bilden."
 
-#: includes/server-rules-admin.php:355
+#: includes/server-rules-admin.php:394
 msgid "The .htaccess block is removed. The plugin no longer manages the file."
 msgstr ""
 "Der .htaccess-Block ist entfernt. Das Plugin verwaltet die Datei nicht mehr."
 
-#: includes/server-rules-admin.php:356
+#: includes/server-rules-admin.php:395
 msgid ""
 "The .htaccess block could not be removed: the file is not writable, or its "
 "JPKCom Post Filter markers do not pair up. The plugin keeps guarding the "
@@ -2413,7 +2472,7 @@ msgstr ""
 "abgelehnt, nach denen er strenger als das Plugin wäre. Reparieren Sie die "
 "Datei und entfernen Sie den Block dann erneut."
 
-#: includes/server-rules-admin.php:379
+#: includes/server-rules-admin.php:418
 msgid ""
 "The web server does not report itself as Apache, so it does not read ."
 "htaccess rules. Use the tab of your server instead."
@@ -2421,7 +2480,7 @@ msgstr ""
 "Der Webserver meldet sich nicht als Apache und liest daher keine .htaccess-"
 "Regeln. Verwenden Sie stattdessen den Tab Ihres Servers."
 
-#: includes/server-rules-admin.php:380
+#: includes/server-rules-admin.php:419
 msgid ""
 "The server is LiteSpeed. OpenLiteSpeed only reads .htaccess changes after a "
 "restart, so the plugin does not manage the file there. Copy the block by "
@@ -2431,7 +2490,7 @@ msgstr ""
 "erst nach einem Neustart, daher verwaltet das Plugin die Datei dort nicht. "
 "Kopieren Sie den Block von Hand oder verwenden Sie den Tab OpenLiteSpeed."
 
-#: includes/server-rules-admin.php:381
+#: includes/server-rules-admin.php:420
 msgid ""
 "This is a multisite network: one .htaccess serves every site, so the plugin "
 "does not manage it. Copy the block by hand."
@@ -2439,7 +2498,7 @@ msgstr ""
 "Dies ist ein Multisite-Netzwerk: Eine .htaccess bedient alle Websites, daher "
 "verwaltet das Plugin sie nicht. Kopieren Sie den Block von Hand."
 
-#: includes/server-rules-admin.php:382
+#: includes/server-rules-admin.php:421
 msgid ""
 "DISALLOW_FILE_MODS is set in wp-config.php, so the plugin does not change "
 "files. Copy the block by hand."
@@ -2447,7 +2506,7 @@ msgstr ""
 "DISALLOW_FILE_MODS ist in der wp-config.php gesetzt, daher ändert das Plugin "
 "keine Dateien. Kopieren Sie den Block von Hand."
 
-#: includes/server-rules-admin.php:383
+#: includes/server-rules-admin.php:422
 msgid ""
 "There is no .htaccess in the WordPress directory. Save the permalink "
 "settings once so that WordPress creates it, then come back."
@@ -2456,7 +2515,7 @@ msgstr ""
 "Permalink-Einstellungen, damit WordPress sie anlegt, und kommen Sie dann "
 "zurück."
 
-#: includes/server-rules-admin.php:384
+#: includes/server-rules-admin.php:423
 msgid ""
 "WordPress cannot write the .htaccess. Make it writable for the web server "
 "user, or copy the block by hand."
@@ -2464,7 +2523,7 @@ msgstr ""
 "WordPress kann die .htaccess nicht schreiben. Machen Sie sie für den "
 "Benutzer des Webservers beschreibbar oder kopieren Sie den Block von Hand."
 
-#: includes/server-rules-admin.php:385
+#: includes/server-rules-admin.php:424
 msgid ""
 "The .htaccess already contains a block inserted by hand (# BEGIN JPKCom Post "
 "Filter (manual)). Delete that block first: two blocks would apply the same "
@@ -2474,65 +2533,65 @@ msgstr ""
 "JPKCom Post Filter (manual)). Löschen Sie diesen Block zuerst: Zwei Blöcke "
 "würden dieselben Regeln doppelt anwenden."
 
-#: includes/server-rules-admin.php:386
+#: includes/server-rules-admin.php:425
 msgid ""
 "The plugin cannot manage the .htaccess on this site. Copy the block by hand."
 msgstr ""
 "Das Plugin kann die .htaccess auf dieser Website nicht verwalten. Kopieren "
 "Sie den Block von Hand."
 
-#: includes/server-rules-admin.php:475 includes/server-rules-check.php:268
+#: includes/server-rules-admin.php:514 includes/server-rules-check.php:268
 msgid "robots.txt reaches WordPress and carries the plugin's lines."
 msgstr "robots.txt erreicht WordPress und enthält die Zeilen des Plugins."
 
-#: includes/server-rules-admin.php:476
+#: includes/server-rules-admin.php:515
 msgid "robots.txt is answered by a file or the web server, not by WordPress."
 msgstr ""
 "robots.txt wird von einer Datei oder vom Webserver beantwortet, nicht von "
 "WordPress."
 
-#: includes/server-rules-admin.php:477
+#: includes/server-rules-admin.php:516
 msgid "The plugin adds no robots.txt lines on this site."
 msgstr "Das Plugin fügt auf dieser Website keine robots.txt-Zeilen hinzu."
 
-#: includes/server-rules-admin.php:478
+#: includes/server-rules-admin.php:517
 msgid "robots.txt could not be checked."
 msgstr "robots.txt konnte nicht geprüft werden."
 
-#: includes/server-rules-admin.php:481
+#: includes/server-rules-admin.php:520
 msgid ""
 "Active: the server rejects filter URLs over the limits with the current rule."
 msgstr ""
 "Aktiv: Der Server weist Filter-URLs über den Grenzen mit der aktuellen Regel "
 "ab."
 
-#: includes/server-rules-admin.php:482
+#: includes/server-rules-admin.php:521
 msgid "Outdated: the server uses a rule built from other settings."
 msgstr ""
 "Veraltet: Der Server verwendet eine Regel, die aus anderen Einstellungen "
 "erzeugt wurde."
 
-#: includes/server-rules-admin.php:483
+#: includes/server-rules-admin.php:522
 msgid "Not deployed: WordPress rejected the probe URL itself."
 msgstr "Nicht eingespielt: WordPress hat die Test-URL selbst abgewiesen."
 
-#: includes/server-rules-admin.php:484
+#: includes/server-rules-admin.php:523
 msgid "Not detectable from the response."
 msgstr "An der Antwort nicht erkennbar."
 
-#: includes/server-rules-admin.php:485
+#: includes/server-rules-admin.php:524
 msgid "No server rule for these settings."
 msgstr "Für diese Einstellungen gibt es keine Serverregel."
 
-#: includes/server-rules-admin.php:486
+#: includes/server-rules-admin.php:525
 msgid "Could not be checked."
 msgstr "Konnte nicht geprüft werden."
 
-#: includes/server-rules-admin.php:488
+#: includes/server-rules-admin.php:527
 msgid "Unknown result."
 msgstr "Unbekanntes Ergebnis."
 
-#: includes/server-rules-admin.php:496
+#: includes/server-rules-admin.php:535
 msgid ""
 "Alarm: the server rejects a filter URL that the plugin serves. Replace or "
 "remove the server rules now."
@@ -2540,7 +2599,7 @@ msgstr ""
 "Alarm: Der Server weist eine Filter-URL ab, die das Plugin ausliefert. "
 "Ersetzen oder entfernen Sie die Serverregeln sofort."
 
-#: includes/server-rules-admin.php:498
+#: includes/server-rules-admin.php:537
 msgid ""
 "Possibly stricter than the plugin: LiteSpeed rejected a filter URL within "
 "the limits without a header. See the details."
@@ -2548,24 +2607,24 @@ msgstr ""
 "Möglicherweise strenger als das Plugin: LiteSpeed hat eine Filter-URL "
 "innerhalb der Grenzen ohne Header abgewiesen. Siehe die Details."
 
-#: includes/server-rules-admin.php:500
+#: includes/server-rules-admin.php:539
 msgid ""
 "Not checked whether the server is stricter than the plugin. See the details."
 msgstr ""
 "Nicht geprüft, ob der Server strenger als das Plugin ist. Siehe die Details."
 
-#: includes/server-rules-admin.php:502
+#: includes/server-rules-admin.php:541
 msgid ""
 "Not stricter than the plugin: a filter URL within the limits got through."
 msgstr ""
 "Nicht strenger als das Plugin: Eine Filter-URL innerhalb der Grenzen kam "
 "durch."
 
-#: includes/server-rules-admin.php:538
+#: includes/server-rules-admin.php:577
 msgid "Copy"
 msgstr "Kopieren"
 
-#: includes/server-rules-admin.php:586
+#: includes/server-rules-admin.php:625
 msgid ""
 "Server rules let the web server turn away filter URLs that the plugin "
 "rejects anyway - before WordPress even starts - and slow down floods of "
@@ -2577,7 +2636,7 @@ msgstr ""
 "Filteranfragen durch Besucher ohne Cookie. Kopieren Sie die Snippets für "
 "Ihren Server in seine Konfiguration."
 
-#: includes/server-rules-admin.php:587
+#: includes/server-rules-admin.php:626
 msgid ""
 "The snippets never reject a URL the plugin serves with the current settings. "
 "After you loosen the settings, rules already deployed in the server "
@@ -2593,28 +2652,28 @@ msgstr ""
 "verwaltete .htaccess-Block unter Apache folgt den Einstellungen von selbst; "
 "abgesehen von diesem Block ändert das Plugin Ihre Serverkonfiguration nie."
 
-#: includes/server-rules-admin.php:612
+#: includes/server-rules-admin.php:651
 msgid "on"
 msgstr "an"
 
-#: includes/server-rules-admin.php:612
+#: includes/server-rules-admin.php:651
 msgid "off"
 msgstr "aus"
 
-#: includes/server-rules-admin.php:618
+#: includes/server-rules-admin.php:657
 msgid "constant"
 msgstr "Konstante"
 
-#: includes/server-rules-admin.php:621
+#: includes/server-rules-admin.php:660
 msgid "filtered"
 msgstr "gefiltert"
 
-#: includes/server-rules-admin.php:626
+#: includes/server-rules-admin.php:665
 msgid "Web server"
 msgstr "Webserver"
 
 #. translators: 1: name of a server tab, e.g. "nginx", 2: the SERVER_SOFTWARE value
-#: includes/server-rules-admin.php:632
+#: includes/server-rules-admin.php:671
 #, php-format
 msgid ""
 "Detected: %1$s (SERVER_SOFTWARE: %2$s). Its tab is preselected below; all "
@@ -2624,7 +2683,7 @@ msgstr ""
 "alle anderen Tabs bleiben verfügbar."
 
 #. translators: %s: the SERVER_SOFTWARE value
-#: includes/server-rules-admin.php:639
+#: includes/server-rules-admin.php:678
 #, php-format
 msgid ""
 "The web server could not be identified from SERVER_SOFTWARE (%s). Choose the "
@@ -2633,7 +2692,7 @@ msgstr ""
 "Der Webserver ließ sich anhand von SERVER_SOFTWARE (%s) nicht erkennen. "
 "Wählen Sie unten den Tab Ihres Servers."
 
-#: includes/server-rules-admin.php:644
+#: includes/server-rules-admin.php:683
 msgid ""
 "This is the server that runs PHP. A proxy or CDN in front of it is not "
 "visible here."
@@ -2641,11 +2700,11 @@ msgstr ""
 "Das ist der Server, der PHP ausführt. Ein Proxy oder CDN davor ist hier "
 "nicht sichtbar."
 
-#: includes/server-rules-admin.php:659
+#: includes/server-rules-admin.php:698
 msgid "What the rules are built from"
 msgstr "Woraus die Regeln erzeugt werden"
 
-#: includes/server-rules-admin.php:660
+#: includes/server-rules-admin.php:699
 msgid ""
 "The effective values of this site: wp-config.php constants, saved settings "
 "and code filters already applied. The rule hash changes whenever one of them "
@@ -2656,40 +2715,40 @@ msgstr ""
 "Hash ändert sich, sobald sich einer davon ändert; die Statusprüfung erkennt "
 "daran veraltete Regeln."
 
-#: includes/server-rules-admin.php:664
+#: includes/server-rules-admin.php:703
 msgid "Strict URLs"
 msgstr "Strikte URLs"
 
-#: includes/server-rules-admin.php:668
+#: includes/server-rules-admin.php:707
 msgid "Terms per filter group"
 msgstr "Begriffe pro Filtergruppe"
 
-#: includes/server-rules-admin.php:672
+#: includes/server-rules-admin.php:711
 msgid "Filter groups"
 msgstr "Filtergruppen"
 
-#: includes/server-rules-admin.php:676
+#: includes/server-rules-admin.php:715
 msgid "Reject status"
 msgstr "Abweisungsstatus"
 
-#: includes/server-rules-admin.php:680
+#: includes/server-rules-admin.php:719
 msgid "URL endpoint / fragment segment"
 msgstr "URL-Endpunkt / Fragment-Segment"
 
-#: includes/server-rules-admin.php:684
+#: includes/server-rules-admin.php:723
 msgid "Archive paths"
 msgstr "Archivpfade"
 
-#: includes/server-rules-admin.php:696
+#: includes/server-rules-admin.php:735
 msgid "Rule hash"
 msgstr "Regel-Hash"
 
-#: includes/server-rules-admin.php:702 includes/server-rules-render.php:1032
+#: includes/server-rules-admin.php:741 includes/server-rules-render.php:1032
 #: includes/server-rules-render.php:1084
 msgid "Rate limit"
 msgstr "Rate-Limit"
 
-#: includes/server-rules-admin.php:703
+#: includes/server-rules-admin.php:742
 msgid ""
 "Two numbers decide every rate limit on this page. Enter what your hosting "
 "gives you; when in doubt, keep the defaults."
@@ -2697,11 +2756,11 @@ msgstr ""
 "Zwei Zahlen bestimmen jedes Rate-Limit auf dieser Seite. Tragen Sie ein, was "
 "Ihr Hosting Ihnen bietet; im Zweifel behalten Sie die Standardwerte."
 
-#: includes/server-rules-admin.php:708
+#: includes/server-rules-admin.php:747
 msgid "PHP workers"
 msgstr "PHP-Worker"
 
-#: includes/server-rules-admin.php:711
+#: includes/server-rules-admin.php:750
 msgid ""
 "How many PHP requests the site can run at the same time (PHP-FPM pm."
 "max_children, or what your host states). Default 8."
@@ -2709,11 +2768,11 @@ msgstr ""
 "Wie viele PHP-Anfragen die Website gleichzeitig ausführen kann (PHP-FPM pm."
 "max_children oder die Angabe Ihres Hosters). Standard 8."
 
-#: includes/server-rules-admin.php:715
+#: includes/server-rules-admin.php:754
 msgid "Render time of a filter page (seconds)"
 msgstr "Renderzeit einer Filterseite (Sekunden)"
 
-#: includes/server-rules-admin.php:718
+#: includes/server-rules-admin.php:757
 msgid ""
 "How long WordPress needs for one filter page without page cache (browser "
 "developer tools, \"waiting for server\"). Default 0.4."
@@ -2722,28 +2781,28 @@ msgstr ""
 "(Entwicklertools des Browsers, „Waiting for server“ bzw. Wartezeit auf den "
 "Server). Standard 0.4."
 
-#: includes/server-rules-admin.php:722
+#: includes/server-rules-admin.php:761
 msgid "nginx variant"
 msgstr "nginx-Variante"
 
-#: includes/server-rules-admin.php:725
+#: includes/server-rules-admin.php:764
 msgid "Standard (server block)"
 msgstr "Standard (Serverblock)"
 
-#: includes/server-rules-admin.php:726
+#: includes/server-rules-admin.php:765
 msgid "ISPConfig (nginx Directives field)"
 msgstr "ISPConfig (Feld nginx Directives)"
 
-#: includes/server-rules-admin.php:731
+#: includes/server-rules-admin.php:770
 msgid "Save and update the snippets"
 msgstr "Speichern und Snippets aktualisieren"
 
-#: includes/server-rules-admin.php:734
+#: includes/server-rules-admin.php:773
 msgid "Resulting limits for filter URLs, requests without any cookie:"
 msgstr "Daraus folgende Grenzen für Filter-URLs, Anfragen ohne jedes Cookie:"
 
 #. translators: %d: number of filter pages
-#: includes/server-rules-admin.php:741
+#: includes/server-rules-admin.php:780
 #, php-format
 msgid ""
 "At most %d filter page rendering at the same time (3/8 of the workers, at "
@@ -2751,11 +2810,15 @@ msgid ""
 msgid_plural ""
 "At most %d filter pages rendering at the same time (3/8 of the workers, at "
 "least 1). The other workers stay free for the rest of the site."
-msgstr[0] "Höchstens %d Filterseite wird gleichzeitig gerendert (3/8 der Worker, mindestens 1). Die übrigen Worker bleiben für den Rest der Website frei."
-msgstr[1] "Höchstens %d Filterseiten werden gleichzeitig gerendert (3/8 der Worker, mindestens 1). Die übrigen Worker bleiben für den Rest der Website frei."
+msgstr[0] ""
+"Höchstens %d Filterseite wird gleichzeitig gerendert (3/8 der Worker, "
+"mindestens 1). Die übrigen Worker bleiben für den Rest der Website frei."
+msgstr[1] ""
+"Höchstens %d Filterseiten werden gleichzeitig gerendert (3/8 der Worker, "
+"mindestens 1). Die übrigen Worker bleiben für den Rest der Website frei."
 
 #. translators: 1: requests per second, 2: burst size
-#: includes/server-rules-admin.php:752
+#: includes/server-rules-admin.php:791
 #, php-format
 msgid ""
 "Site-wide %1$d request per second, burst %2$d (0.4 x the concurrent pages / "
@@ -2763,11 +2826,15 @@ msgid ""
 msgid_plural ""
 "Site-wide %1$d requests per second, burst %2$d (0.4 x the concurrent pages / "
 "render time: those workers are busy 40%% of the time on average)."
-msgstr[0] "Websiteweit %1$d Anfrage pro Sekunde, Burst %2$d (0,4 x gleichzeitige Seiten / Renderzeit: Diese Worker sind im Mittel 40%% der Zeit beschäftigt)."
-msgstr[1] "Websiteweit %1$d Anfragen pro Sekunde, Burst %2$d (0,4 x gleichzeitige Seiten / Renderzeit: Diese Worker sind im Mittel 40%% der Zeit beschäftigt)."
+msgstr[0] ""
+"Websiteweit %1$d Anfrage pro Sekunde, Burst %2$d (0,4 x gleichzeitige "
+"Seiten / Renderzeit: Diese Worker sind im Mittel 40%% der Zeit beschäftigt)."
+msgstr[1] ""
+"Websiteweit %1$d Anfragen pro Sekunde, Burst %2$d (0,4 x gleichzeitige "
+"Seiten / Renderzeit: Diese Worker sind im Mittel 40%% der Zeit beschäftigt)."
 
 #. translators: 1: requests per minute, 2: burst size
-#: includes/server-rules-admin.php:764
+#: includes/server-rules-admin.php:803
 #, php-format
 msgid "Per visitor IP %1$d request per minute, burst %2$d."
 msgid_plural "Per visitor IP %1$d requests per minute, burst %2$d."
@@ -2775,7 +2842,7 @@ msgstr[0] "Pro Besucher-IP %1$d Anfrage pro Minute, Burst %2$d."
 msgstr[1] "Pro Besucher-IP %1$d Anfragen pro Minute, Burst %2$d."
 
 #. translators: 1: requests per second, 2: burst size
-#: includes/server-rules-admin.php:776
+#: includes/server-rules-admin.php:815
 #, php-format
 msgid ""
 "Search engines in their own budget: %1$d request per second, burst %2$d (two "
@@ -2783,16 +2850,20 @@ msgid ""
 msgid_plural ""
 "Search engines in their own budget: %1$d requests per second, burst %2$d "
 "(two thirds of the site-wide rate)."
-msgstr[0] "Suchmaschinen mit eigenem Budget: %1$d Anfrage pro Sekunde, Burst %2$d (zwei Drittel der websiteweiten Rate)."
-msgstr[1] "Suchmaschinen mit eigenem Budget: %1$d Anfragen pro Sekunde, Burst %2$d (zwei Drittel der websiteweiten Rate)."
+msgstr[0] ""
+"Suchmaschinen mit eigenem Budget: %1$d Anfrage pro Sekunde, Burst %2$d (zwei "
+"Drittel der websiteweiten Rate)."
+msgstr[1] ""
+"Suchmaschinen mit eigenem Budget: %1$d Anfragen pro Sekunde, Burst %2$d "
+"(zwei Drittel der websiteweiten Rate)."
 
 #. translators: %d: seconds
-#: includes/server-rules-admin.php:787
+#: includes/server-rules-admin.php:826
 #, php-format
 msgid "Over the limit the server answers 429 with Retry-After: %d."
 msgstr "Über der Grenze antwortet der Server mit 429 und Retry-After: %d."
 
-#: includes/server-rules-admin.php:793
+#: includes/server-rules-admin.php:832
 msgid ""
 "Any Cookie header exempts a request from the rate limit, on every server: "
 "logged-in users and visitors who already browse the site are never slowed "
@@ -2805,7 +2876,7 @@ msgstr ""
 "Erstbesucher hat keines - das Limit ist eine Bremse für anonyme Fluten, "
 "keine Zugangskontrolle."
 
-#: includes/server-rules-admin.php:794
+#: includes/server-rules-admin.php:833
 msgid ""
 "Googlebot, Bingbot, Applebot, DuckDuckBot and YandexBot get their own budget "
 "where the server can tell them apart (nginx, Caddy, Apache with "
@@ -2818,11 +2889,11 @@ msgstr ""
 "verlangsamen. Anderswo teilen sie sich das websiteweite Limit, was der "
 "jeweilige Tab dann angibt."
 
-#: includes/server-rules-admin.php:812
+#: includes/server-rules-admin.php:851
 msgid "Status"
 msgstr "Status"
 
-#: includes/server-rules-admin.php:813
+#: includes/server-rules-admin.php:852
 msgid ""
 "Sends a few requests to this site, without cookies: robots.txt, one filter "
 "URL over the limits and one within them. It shows whether the server rule is "
@@ -2836,43 +2907,43 @@ msgstr ""
 "Rate-Limit wird nicht getestet, weil das das Budget verbrauchen würde, das "
 "sich alle Besucher ohne Cookie teilen."
 
-#: includes/server-rules-admin.php:816
+#: includes/server-rules-admin.php:855
 msgid "The check has not run yet."
 msgstr "Die Prüfung ist noch nicht gelaufen."
 
 #. translators: %s: date and time
-#: includes/server-rules-admin.php:826
+#: includes/server-rules-admin.php:865
 #, php-format
 msgid "Last check: %s"
 msgstr "Letzte Prüfung: %s"
 
-#: includes/server-rules-admin.php:834 includes/server-rules-render.php:724
+#: includes/server-rules-admin.php:873 includes/server-rules-render.php:724
 #: includes/server-rules-render.php:991 includes/server-rules-render.php:1038
 #: includes/server-rules-render.php:1090 includes/server-rules-render.php:1231
 #: includes/server-rules-render.php:1356 includes/server-rules-render.php:1428
 msgid "robots.txt"
 msgstr "robots.txt"
 
-#: includes/server-rules-admin.php:838
+#: includes/server-rules-admin.php:877
 msgid "Server rule"
 msgstr "Serverregel"
 
-#: includes/server-rules-admin.php:843
+#: includes/server-rules-admin.php:882
 msgid "Stricter than the plugin?"
 msgstr "Strenger als das Plugin?"
 
-#: includes/server-rules-admin.php:858
+#: includes/server-rules-admin.php:897
 msgid "Check now"
 msgstr "Jetzt prüfen"
 
-#: includes/server-rules-admin.php:886
+#: includes/server-rules-admin.php:925
 msgid ""
 "This server ignores .htaccess, so the block has no effect here; remove it."
 msgstr ""
 "Dieser Server ignoriert die .htaccess, der Block wirkt hier also nicht; "
 "entfernen Sie ihn."
 
-#: includes/server-rules-admin.php:889
+#: includes/server-rules-admin.php:928
 msgid ""
 "It is not set up, so the plugin does not update it; remove it, or set it up "
 "again."
@@ -2880,7 +2951,7 @@ msgstr ""
 "Er ist nicht eingerichtet, daher aktualisiert das Plugin ihn nicht; "
 "entfernen Sie ihn oder richten Sie ihn erneut ein."
 
-#: includes/server-rules-admin.php:892
+#: includes/server-rules-admin.php:931
 msgid ""
 "The file also contains a block inserted by hand, so the plugin does not "
 "update this one; delete one of the two."
@@ -2888,18 +2959,18 @@ msgstr ""
 "Die Datei enthält außerdem einen von Hand eingefügten Block, daher "
 "aktualisiert das Plugin diesen nicht; löschen Sie einen der beiden."
 
-#: includes/server-rules-admin.php:895
+#: includes/server-rules-admin.php:934
 msgid ""
 "The file is not writable, so the plugin cannot update it; make it writable."
 msgstr ""
 "Die Datei ist nicht beschreibbar, daher kann das Plugin ihn nicht "
 "aktualisieren; machen Sie sie beschreibbar."
 
-#: includes/server-rules-admin.php:898
+#: includes/server-rules-admin.php:937
 msgid "It is updated on the next admin page load."
 msgstr "Er wird beim nächsten Laden einer Admin-Seite aktualisiert."
 
-#: includes/server-rules-admin.php:901
+#: includes/server-rules-admin.php:940
 msgid ""
 "The plugin cannot update it on this site (see below); update or remove it by "
 "hand."
@@ -2907,11 +2978,11 @@ msgstr ""
 "Das Plugin kann ihn auf dieser Website nicht aktualisieren (siehe unten); "
 "aktualisieren oder entfernen Sie ihn von Hand."
 
-#: includes/server-rules-admin.php:935
+#: includes/server-rules-admin.php:974
 msgid "Let the plugin manage the block"
 msgstr "Block vom Plugin verwalten lassen"
 
-#: includes/server-rules-admin.php:936
+#: includes/server-rules-admin.php:975
 msgid ""
 "Set up writes the reject block between # BEGIN JPKCom Post Filter and # END "
 "JPKCom Post Filter directly before WordPress's own block, and from then on "
@@ -2929,7 +3000,7 @@ msgstr ""
 "wieder."
 
 #. translators: %d: HTTP status of the reject (404 or 410)
-#: includes/server-rules-admin.php:941
+#: includes/server-rules-admin.php:980
 #, php-format
 msgid ""
 "The block contains an ErrorDocument line: Apache sends its text for every %d "
@@ -2940,32 +3011,32 @@ msgstr ""
 "jedes %d, das er selbst in diesem Verzeichnisbaum beantwortet, nicht nur für "
 "Filter-URLs. WordPress beantwortet seine eigenen 404-Seiten über index.php."
 
-#: includes/server-rules-admin.php:950
+#: includes/server-rules-admin.php:989
 msgid "does not exist"
 msgstr "existiert nicht"
 
-#: includes/server-rules-admin.php:952
+#: includes/server-rules-admin.php:991
 msgid "writable"
 msgstr "beschreibbar"
 
-#: includes/server-rules-admin.php:954
+#: includes/server-rules-admin.php:993
 msgid "not writable"
 msgstr "nicht beschreibbar"
 
 #. translators: 1: file path, 2: file state, e.g. "writable"
-#: includes/server-rules-admin.php:958
+#: includes/server-rules-admin.php:997
 #, php-format
 msgid "File: %1$s (%2$s)"
 msgstr "Datei: %1$s (%2$s)"
 
 #. translators: %s: rule hash
-#: includes/server-rules-admin.php:968
+#: includes/server-rules-admin.php:1007
 #, php-format
 msgid "Managed block present, current (rule %s)."
 msgstr "Verwalteter Block vorhanden, aktuell (Regel %s)."
 
 #. translators: 1: rule hash in the file, 2: rule hash of the current settings
-#: includes/server-rules-admin.php:972
+#: includes/server-rules-admin.php:1011
 #, php-format
 msgid ""
 "Managed block present, built from other settings (rule %1$s, current %2$s)."
@@ -2973,15 +3044,15 @@ msgstr ""
 "Verwalteter Block vorhanden, aus anderen Einstellungen erzeugt (Regel %1$s, "
 "aktuell %2$s)."
 
-#: includes/server-rules-admin.php:977
+#: includes/server-rules-admin.php:1016
 msgid "Managed block present."
 msgstr "Verwalteter Block vorhanden."
 
-#: includes/server-rules-admin.php:979
+#: includes/server-rules-admin.php:1018
 msgid "The block's markers do not pair up, see below."
 msgstr "Die Markierungen des Blocks bilden keine Paare, siehe unten."
 
-#: includes/server-rules-admin.php:981
+#: includes/server-rules-admin.php:1020
 msgid ""
 "Set up, but there is no block in the file: the current settings produce no "
 "reject rule, or the block was deleted by hand."
@@ -2990,11 +3061,11 @@ msgstr ""
 "Einstellungen ergeben keine Abweisungsregel, oder der Block wurde von Hand "
 "gelöscht."
 
-#: includes/server-rules-admin.php:983
+#: includes/server-rules-admin.php:1022
 msgid "Not set up."
 msgstr "Nicht eingerichtet."
 
-#: includes/server-rules-admin.php:993
+#: includes/server-rules-admin.php:1032
 msgid ""
 "The JPKCom Post Filter markers in the .htaccess do not pair up (a BEGIN "
 "without END, or the other way round). The plugin neither writes nor removes "
@@ -3004,7 +3075,7 @@ msgstr ""
 "BEGIN ohne END oder umgekehrt). Das Plugin schreibt und entfernt nichts, bis "
 "die Datei von Hand repariert ist."
 
-#: includes/server-rules-admin.php:1000
+#: includes/server-rules-admin.php:1039
 msgid ""
 "The managed block sits below WordPress's block, where it never takes effect. "
 "The plugin moves it with the next update; Set up moves it right away."
@@ -3013,7 +3084,7 @@ msgstr ""
 "Das Plugin verschiebt ihn bei der nächsten Aktualisierung; „Einrichten“ "
 "verschiebt ihn sofort."
 
-#: includes/server-rules-admin.php:1007
+#: includes/server-rules-admin.php:1046
 msgid ""
 "The file contains a block inserted by hand (manual markers). The plugin "
 "never changes it."
@@ -3021,41 +3092,41 @@ msgstr ""
 "Die Datei enthält einen von Hand eingefügten Block (manuelle Markierungen). "
 "Das Plugin ändert ihn nie."
 
-#: includes/server-rules-admin.php:1019
+#: includes/server-rules-admin.php:1058
 msgid "Set up again"
 msgstr "Erneut einrichten"
 
-#: includes/server-rules-admin.php:1019
+#: includes/server-rules-admin.php:1058
 msgid "Set up"
 msgstr "Einrichten"
 
-#: includes/server-rules-admin.php:1024
+#: includes/server-rules-admin.php:1063
 msgid "Remove"
 msgstr "Entfernen"
 
-#: includes/server-rules-admin.php:1057
+#: includes/server-rules-admin.php:1096
 msgid "This server was detected on this site."
 msgstr "Dieser Server wurde auf dieser Website erkannt."
 
-#: includes/server-rules-admin.php:1062
+#: includes/server-rules-admin.php:1101
 msgid "ISPConfig"
 msgstr "ISPConfig"
 
-#: includes/server-rules-admin.php:1062
+#: includes/server-rules-admin.php:1101
 msgid "Standard"
 msgstr "Standard"
 
 #. translators: %s: variant name, "Standard" or "ISPConfig"
-#: includes/server-rules-admin.php:1065
+#: includes/server-rules-admin.php:1104
 #, php-format
 msgid "Variant: %s. Change it in the rate limit form above."
 msgstr "Variante: %s. Ändern lässt sie sich im Rate-Limit-Formular oben."
 
-#: includes/server-rules-admin.php:1073
+#: includes/server-rules-admin.php:1112
 msgid "Order of changes"
 msgstr "Reihenfolge der Änderungen"
 
-#: includes/server-rules-admin.php:1074
+#: includes/server-rules-admin.php:1113
 msgid ""
 "When tightening (fewer terms per group, fewer filter groups, strict URLs "
 "on): change the plugin settings first and purge the page cache, then update "
@@ -3065,7 +3136,7 @@ msgstr ""
 "strikte URLs an): zuerst die Plugin-Einstellungen ändern und den Seiten-"
 "Cache leeren, dann die Serverregeln aktualisieren."
 
-#: includes/server-rules-admin.php:1075
+#: includes/server-rules-admin.php:1114
 msgid ""
 "When loosening (more terms per group, more filter groups, strict URLs off, "
 "another endpoint or archive): update the server rules first, then the plugin "
@@ -3077,11 +3148,11 @@ msgstr ""
 "aktualisieren, dann die Plugin-Einstellungen. Andersherum weist der Server "
 "Filterseiten ab, die das Plugin bereits ausliefert."
 
-#: includes/server-rules-admin.php:1101
+#: includes/server-rules-admin.php:1140
 msgid "Check after installing"
 msgstr "Nach dem Einspielen prüfen"
 
-#: includes/server-rules-admin.php:1102
+#: includes/server-rules-admin.php:1141
 msgid ""
 "Run these commands on any computer with curl. Judge by the value of X-Jpkpf-"
 "Reject, not by the status code: WordPress answers the same URLs with its own "
@@ -3094,11 +3165,11 @@ msgstr ""
 "\" belegt also die Serverregel. Der Knopf „Jetzt prüfen“ oben sendet "
 "dieselben Testanfragen, ohne das Rate-Limit."
 
-#: includes/server-rules-admin.php:1107
+#: includes/server-rules-admin.php:1146
 msgid "Page cache"
 msgstr "Seiten-Cache"
 
-#: includes/server-rules-admin.php:1108
+#: includes/server-rules-admin.php:1147
 msgid ""
 "A page cache (caching plugin, Varnish, CDN) may still hold filter pages from "
 "before a change. Purge it after every change of the plugin settings or the "
@@ -3113,15 +3184,15 @@ msgstr ""
 "limitierte Filter-URLs, die ein Cache beantwortet, erreichen das Server-"
 "Limit nie, und das ist so gewollt."
 
-#: includes/server-rules-admin.php:1130
+#: includes/server-rules-admin.php:1169
 msgid "Rate limit values saved. The snippets below use them."
 msgstr "Rate-Limit-Werte gespeichert. Die Snippets unten verwenden sie."
 
-#: includes/server-rules-admin.php:1165
+#: includes/server-rules-admin.php:1204
 msgid "Snippets"
 msgstr "Snippets"
 
-#: includes/server-rules-admin.php:1303 includes/server-rules-admin.php:1304
+#: includes/server-rules-admin.php:1342 includes/server-rules-admin.php:1343
 msgid "Server Rules"
 msgstr "Serverregeln"
 
