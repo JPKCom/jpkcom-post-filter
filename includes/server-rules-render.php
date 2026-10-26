@@ -1016,8 +1016,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_caddy' ) ) 
      * Caddy snippet: one `route` with the rejects first, then `rate_limit`
      *
      * Research report 2 §2. `path_regexp` sees the decoded path, so the reject
-     * is a CEL `expression` on `{http.request.uri}` (raw path and query). The
-     * pattern sits in a double-quoted CEL string inside a Caddyfile backtick
+     * is a CEL `expression` on the raw path and query. Both the reject and the
+     * rate-limit scope read the ORIGINAL request (`{http.request.orig_uri}`,
+     * `{http.request.orig_uri.path}`): the Caddyfile sorts `rewrite` and
+     * `try_files` before `route`, so a site-level try_files would otherwise
+     * have rewritten `{http.request.uri}` and `path` to /index.php first and
+     * silently disabled both (controller ruling R13). The pattern sits in a double-quoted CEL string inside a Caddyfile backtick
      * token: the backticks pass every byte through, CEL then reads `\\` as
      * one backslash - so each `\` of the pattern is doubled (`\\+`). A root
      * base renders as an empty alternative `(?:|news/)`, which RE2 accepts.
@@ -1052,7 +1056,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_caddy' ) ) 
 
         foreach ( $reasons as $reason => $pattern ) {
             $m       = '@jpkpf_' . str_replace( '-', '_', $reason );
-            $route[] = "\t" . $m . ' expression `{http.request.uri}.matches("' . str_replace( '\\', '\\\\', $pattern ) . '")`';
+            $route[] = "\t" . $m . ' expression `{http.request.orig_uri}.matches("' . str_replace( '\\', '\\\\', $pattern ) . '")`';
             $route[] = "\theader " . $m . ' X-Robots-Tag "noindex, nofollow"';
             $route[] = "\theader " . $m . ' X-Jpkpf-Reject "server-' . $reason . '"';
             $route[] = "\theader " . $m . ' X-Jpkpf-Rule "' . $hash . '"';
@@ -1065,11 +1069,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_caddy' ) ) 
         $errors = [];
         if ( $scope !== null ) {
             $ua   = 'header_regexp User-Agent (?i)(?:' . jpkcom_postfilter_server_searchbots() . ')';
-            $zone = static function ( string $name, string $ua_line, string $key, int $events, int $window ) use ( $scope ): array {
+            $in   = 'expression `{http.request.orig_uri.path}.matches("' . str_replace( '\\', '\\\\', $scope ) . '")`';
+            $zone = static function ( string $name, string $ua_line, string $key, int $events, int $window ) use ( $in ): array {
                 return [
                     "\t\tzone " . $name . ' {',
                     "\t\t\tmatch {",
-                    "\t\t\t\tpath_regexp " . $scope,
+                    "\t\t\t\t" . $in,
                     "\t\t\t\theader !Cookie",
                     "\t\t\t\t" . $ua_line,
                     "\t\t\t}",
@@ -1106,7 +1111,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_caddy' ) ) 
 
             $lines = array_merge( [ 'route {' ], $route, [ '}' ], $errors );
 
-            $context = __( 'Inside the site block of the Caddyfile (FrankenPHP: the same block), anywhere before php_fastcgi or php_server, then caddy validate and caddy reload. Rejects and rate limit sit in one route on purpose: a rejected request is answered before rate_limit and never uses up the budget of real visitors. If the site block rewrites with its own top-level try_files or rewrite, Caddy runs that first and neither part matches - the check commands below show it.', 'jpkcom-post-filter' );
+            $context = __( 'Inside the site block of the Caddyfile (FrankenPHP: the same block), anywhere before php_fastcgi or php_server, then caddy validate and caddy reload. Rejects and rate limit sit in one route on purpose: a rejected request is answered before rate_limit and never uses up the budget of real visitors. Both parts read the original request URI ({http.request.orig_uri}), so a try_files or rewrite of the site block does not change what they see.', 'jpkcom-post-filter' );
             if ( $scope !== null ) {
                 $context .= ' ' . sprintf(
                     /* translators: 1: requests, 2: seconds, 3: requests, 4: requests, 5: shell command */

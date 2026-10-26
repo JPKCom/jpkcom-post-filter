@@ -1489,11 +1489,14 @@ $cel_string = implode( "\n", $cm[1] );
 
 // --- Caddy -----------------------------------------------------------------------
 chk( 'caddy: snippet ids site, robots', ids_of( $cf['caddy'] ) === [ 'caddy-site', 'caddy-robots' ], implode( ',', ids_of( $cf['caddy'] ) ) );
-chk( 'caddy: CEL on raw uri, doubled backslashes', str_contains( $caddy, '{http.request.uri}.matches(' ) && ! preg_match( '/(?<!\\\\)\\\\\+/', $cel_string ) );
+chk( 'caddy: CEL on raw uri, doubled backslashes', str_contains( $caddy, '{http.request.orig_uri}.matches(' ) && ! preg_match( '/(?<!\\\\)\\\\\+/', $cel_string ) );
+// R13: rewrite/try_files run before route in the Caddyfile order; only the
+// original URI is immune to them.
+chk( 'caddy: original URI only - no rewritten {http.request.uri}, no path_regexp', $caddy !== '' && ! str_contains( $caddy, '{http.request.uri}' ) && ! str_contains( $caddy, 'path_regexp' ) );
 chk( 'caddy: one expression matcher per reason with the exact pattern, CEL-escaped',
-	str_contains( $caddy, "\t@jpkpf_segments expression `{http.request.uri}.matches(\"" . cel( (string) $pat['segments'] ) . "\")`\n" )
-	&& str_contains( $caddy, "\t@jpkpf_per_group expression `{http.request.uri}.matches(\"" . cel( (string) $pat['per_group'] ) . "\")`\n" )
-	&& count( $cm[1] ) === 2 && str_replace( '\\\\', '\\', $cm[1][0] ) === $pat['segments'], $cel_string );
+	str_contains( $caddy, "\t@jpkpf_segments expression `{http.request.orig_uri}.matches(\"" . cel( (string) $pat['segments'] ) . "\")`\n" )
+	&& str_contains( $caddy, "\t@jpkpf_per_group expression `{http.request.orig_uri}.matches(\"" . cel( (string) $pat['per_group'] ) . "\")`\n" )
+	&& count( $cm[1] ) === 5 && str_replace( '\\\\', '\\', $cm[1][0] ) === $pat['segments'], $cel_string );
 chk( 'caddy: reject before rate_limit in one route', strpos( $caddy, 'respond @jpkpf' ) < strpos( $caddy, 'rate_limit' ) );
 chk( 'caddy: key static zone and header !Cookie',  str_contains( $caddy, 'key static' ) && str_contains( $caddy, 'header !Cookie' ) );
 $c_head = "\theader @jpkpf_segments X-Robots-Tag \"noindex, nofollow\"\n\theader @jpkpf_segments X-Jpkpf-Reject \"server-segments\"\n"
@@ -1506,7 +1509,7 @@ $route_close = $route_open === false ? false : strpos( $caddy, "\n}\n", $route_o
 chk( 'caddy: matchers, rejects and rate_limit all inside the one route',
 	$route_open !== false && $route_close !== false && substr_count( $caddy, 'route {' ) === 1
 	&& strpos( $caddy, '@jpkpf_segments expression' ) > $route_open && strrpos( $caddy, 'rate_limit {' ) < $route_close && strpos( $caddy, 'handle_errors' ) > $route_close );
-$zone = static fn( string $name, string $ua, string $key, int $events, int $window ): string => "\t\tzone $name {\n\t\t\tmatch {\n\t\t\t\tpath_regexp ^/(?:blog/|news/)filter/\n\t\t\t\theader !Cookie\n"
+$zone = static fn( string $name, string $ua, string $key, int $events, int $window ): string => "\t\tzone $name {\n\t\t\tmatch {\n\t\t\t\texpression `{http.request.orig_uri.path}.matches(\"^/(?:blog/|news/)filter/\")`\n\t\t\t\theader !Cookie\n"
 	. "\t\t\t\t$ua\n\t\t\t}\n\t\t\tkey $key\n\t\t\tevents $events\n\t\t\twindow {$window}s\n\t\t}\n";
 $ua = 'header_regexp User-Agent (?i)(?:googlebot|bingbot|applebot|duckduckbot|yandexbot)';
 chk( 'caddy: zones per IP (10 / 20 s), site-wide (30 / 10 s), search engines own (20 / 10 s), bots out of the first two',
@@ -1572,14 +1575,14 @@ $dot  = layout_inputs( 2, 2, [], [ '/my.blog/' ] );
 $dotc = code_of( snips( 'caddy', $dot ) );
 $dot3 = code_of( snips( 'ferron3', $dot ) );
 $dot2 = code_of( snips( 'ferron2', $dot ) );
-chk( 'escaped base: Caddy path_regexp single, CEL doubled, Ferron 3 raw single, KDL doubled',
-	str_contains( $dotc, "path_regexp ^/(?:my\\.blog/)filter/\n" ) && str_contains( $dotc, 'my\\\\.blog/' )
+chk( 'escaped base: Caddy CEL doubled (reject and scope), Ferron 3 raw single, KDL doubled',
+	str_contains( $dotc, '{http.request.orig_uri.path}.matches("^/(?:my\\\\.blog/)filter/")' ) && substr_count( $dotc, 'my\\\\.blog/' ) === 5
 	&& str_contains( $dot3, 'r"^/(?:my\\.blog/)filter/"' ) && str_contains( $dot2, '"^/(?:my\\\\.blog/)filter/"' ), $dot2 );
 
 $root  = layout_inputs( 2, 2, [], [ '/', '/news/' ] );
 $rootc = code_of( snips( 'caddy', $root ) );
 $root3 = code_of( snips( 'ferron3', $root ) );
-chk( 'root base renders the empty alternation (RE2, Rust regex >= 1.8)', str_contains( $rootc, '(?:|news/)filter/' ) && str_contains( $root3, '(?:|news/)filter/' ) && str_contains( $rootc, 'path_regexp ^/(?:|news/)filter/' ) );
+chk( 'root base renders the empty alternation (RE2, Rust regex >= 1.8)', str_contains( $rootc, '(?:|news/)filter/' ) && str_contains( $root3, '(?:|news/)filter/' ) && str_contains( $rootc, '{http.request.orig_uri.path}.matches("^/(?:|news/)filter/")' ) );
 
 $c404 = code_of( snips( 'caddy', $in404 ) ) . code_of( snips( 'ferron3', $in404 ) );
 chk( 'reject_status 404 mirrored in Caddy and Ferron 3', substr_count( $c404, "\" 404\n" ) === 2 && substr_count( $c404, 'status 404 {' ) === 2 && ! preg_match( '/" 410\n|status 410|<title>410/', $c404 ) );
@@ -1587,7 +1590,7 @@ chk( 'reject_status 404 mirrored in Caddy and Ferron 3', substr_count( $c404, "\
 $coff = code_of( snips( 'caddy', $off ) );
 $foff = code_of( snips( 'ferron3', $off ) );
 chk( 'no reject part when patterns null: Caddy and Ferron 3 keep the rate limit',
-	$coff !== '' && ! str_contains( $coff, 'expression' ) && ! str_contains( $coff, 'respond @jpkpf' ) && str_contains( $coff, 'rate_limit {' ) && str_contains( $coff, 'route {' )
+	$coff !== '' && ! str_contains( $coff, '{http.request.orig_uri}.matches' ) && ! str_contains( $coff, '@jpkpf_' ) && ! str_contains( $coff, 'respond @jpkpf' ) && str_contains( $coff, 'rate_limit {' ) && str_contains( $coff, 'route {' )
 	&& $foff !== '' && ! str_contains( $foff, 'jpkpf_segments' ) && ! preg_match( '/^\s*status \d/m', $foff ) && str_contains( $foff, 'rate_limit {' ), $coff . "\n----\n" . $foff );
 $n0cf = code_of( snips( 'caddy', $n0 ) ) . code_of( snips( 'ferron3', $n0 ) );
 chk( 'N = 0: segments rule only in Caddy and Ferron 3 (R7)', str_contains( $n0cf, 'server-segments' ) && ! str_contains( $n0cf, 'server-per-group' ) && ! str_contains( $n0cf, '!~ r"^' ) );
