@@ -818,6 +818,24 @@ if ( $have && function_exists( 'jpkcom_postfilter_server_check_capture_before' )
 	$at_capture = strpos( $src, 'jpkcom_postfilter_server_check_capture_before(' );
 	$at_cb      = strpos( $src, '$cb( $data[ $group ] )' );
 	chk( 'admin-pages.php import: captures before it runs the sanitizer', $at_capture !== false && $at_cb !== false && $at_capture < $at_cb );
+
+	// D1 / fix wave item 4: the import runs inside the page render, after
+	// admin_notices has fired. The page prints the notice itself, right after
+	// the import, so it shows on the import result page - not on whatever page
+	// loads next within 60 seconds, or never.
+	$at_save    = strpos( $src, 'jpkcom_postfilter_settings_save( $group, $sanitized );' );
+	$at_notice  = strpos( $src, 'jpkcom_postfilter_server_check_notice()', (int) $at_save );
+	$at_errors  = strpos( $src, "settings_errors( 'jpkcom_postfilter_import_messages' );" );
+	chk( 'admin-pages.php import: prints the server rules notice after the import, before the page\'s messages',
+		$at_save !== false && $at_notice !== false && $at_errors !== false && $at_save < $at_notice && $at_notice < $at_errors );
+
+	site( general() );
+	$import( 'general', general( [ 'max_filters_per_group' => 3 ] ), true );
+	ob_start();
+	jpkcom_postfilter_server_check_notice();   // what the import page calls
+	$html = (string) ob_get_clean();
+	chk( 'import N 2->3: the notice is printed in the same request', str_contains( $html, 'update them now' ), $html );
+	chk( 'import N 2->3: shown once - the next admin page does not repeat it', ! noticed() && ! str_contains( notice_html(), 'update them now' ) );
 } else {
 	chk( 'import: capture_before exists', false );
 }

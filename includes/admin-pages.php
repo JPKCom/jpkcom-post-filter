@@ -2651,6 +2651,14 @@ function jpkcom_postfilter_page_import_export(): void {
         }
     }
 
+    // 1.6.0: an import that loosened the filter URL settings sets the "update
+    // your server rules" notice - but admin_notices has already run before
+    // this page callback imports anything, so it is printed here, on the import
+    // result page itself (it is shown once; the next page does not repeat it).
+    if ( function_exists( 'jpkcom_postfilter_server_check_notice' ) ) {
+        jpkcom_postfilter_server_check_notice();
+    }
+
     settings_errors( 'jpkcom_postfilter_import_messages' );
     ?>
     <div class="wrap">
