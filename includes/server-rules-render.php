@@ -1284,7 +1284,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ferron3' ) 
             if ( $scope !== null ) {
                 $context .= ' ' . sprintf(
                     /* translators: 1: burst, 2: requests per minute, 3: concurrent requests */
-                    __( 'Rate limit for cookie-less filter requests: per IP a burst of %1$d, then 1 per second (Ferron\'s smallest rate; the plugin\'s %2$d per minute cannot be expressed), beyond that 429 with Retry-After. Ferron has no constant rate-limit key, so there is no site-wide rate and search engines cannot get a bucket of their own: they share the per-IP limit. Instead a FastCGI bulkhead lets at most %3$d cookie-less filter requests reach PHP at once; further requests wait for a free connection, they get no 429. Replace <php-backend-url> with the URL of the main fcgi_php (for example tcp://127.0.0.1:9000) and keep the /jpkpf suffix: the bulkhead URL must differ from the main fcgi_php URL, otherwise the limit applies to every PHP request. With a Unix socket the suffix becomes part of the socket path and every cookie-less filter request fails with 500: leave out /jpkpf and spell the same path differently instead, for example unix:///run/php/./php-fpm.sock for unix:///run/php/php-fpm.sock. Behind a proxy or CDN set client_ip_from_header with trusted_proxy, otherwise the per-IP limit counts the proxy.', 'jpkcom-post-filter' ),
+                    __( 'Rate limit for cookie-less filter requests: per IP a burst of %1$d, then 1 per second (Ferron\'s smallest rate; the plugin\'s %2$d per minute cannot be expressed), beyond that 429 with Retry-After. Ferron has no constant rate-limit key, so there is no site-wide rate and search engines cannot get a bucket of their own: they share the per-IP limit. Instead a FastCGI bulkhead lets at most %3$d cookie-less filter requests reach PHP at once; further requests wait for a free connection, they get no 429. Replace <php-backend-url> with the URL of the main fcgi_php (for example tcp://127.0.0.1:9000) and keep the /jpkpf suffix: the bulkhead URL must differ from the main fcgi_php URL, otherwise the limit applies to every PHP request. With a Unix socket the suffix becomes part of the socket path and every cookie-less filter request fails with 500: leave out /jpkpf and spell the same path differently instead, for example unix:///run/php/./php-fpm.sock for unix:///run/php/php-fpm.sock. Both forms rely on Ferron keying the connection pool and its limit by the literal URL string - read in the 3.0.0-rc.10 source, not documented, so check it again against 3.0.0 final; a second PHP-FPM listen socket or port (its own pool) is the robust alternative. Ferron answers the 429 with its default error page and no Cache-Control header; a 429 is not cached by default (RFC 9111), so nothing needs adding. Behind a proxy or CDN set client_ip_from_header with trusted_proxy, otherwise the per-IP limit counts the proxy.', 'jpkcom-post-filter' ),
                     $limits['ip_burst'],
                     $limits['ip_per_minute'],
                     $limits['conn']
@@ -1315,10 +1315,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ferron2' ) 
     /**
      * Ferron 2.8 snippets: rate limit only (KDL)
      *
-     * Research report 2 §3.2. No reject part: Ferron 2's `{path}` is
-     * URL-decoded and no raw-URI placeholder was found, so a count on it would
-     * split `%2B`, `%2F` or `%70age` differently from WordPress - stricter
-     * than the plugin, which the hard rule forbids. A missing header is ""
+     * Research report 2 §3.2. No reject part in 1.6.0 (untested). Ferron 2's
+     * URL sanitizer decodes safe escapes and merges slashes before any module
+     * and rewrites the URI PHP receives, so `{path}` equals WordPress's view;
+     * a reject on it would not be stricter, but none was built or
+     * container-tested. A missing header is ""
      * in conditions (`"-"` never matches). `limit` is per IP only; its bucket
      * holds `burst` requests. KDL strings know escapes, so each `\` of the
      * scope regex is doubled, and comments are `//`.
@@ -1338,7 +1339,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ferron2' ) 
             title: __( 'Reject before PHP', 'jpkcom-post-filter' ),
             context: sprintf(
                 /* translators: 1, 2, 3: literal URL escapes (%2B, %2F, %70age), not placeholders to translate */
-                __( 'No reject rule for Ferron 2.8: its {path} is URL-decoded, so %1$s, %2$s or %3$s would be counted differently from WordPress, and the rule could reject a URL the plugin serves. PHP keeps rejecting over-cap URLs; Ferron 3 can match the raw request.uri.', 'jpkcom-post-filter' ),
+                __( 'No reject rule for Ferron 2.8 in this version: none has been tested. Ferron 2 decodes percent escapes such as %1$s, %2$s or %3$s and merges slashes before any rule runs, and PHP receives that same decoded URI, so WordPress already counts what a server rule would see and keeps rejecting over-cap URLs itself. Ferron 3 can reject before PHP on the raw request.uri.', 'jpkcom-post-filter' ),
                 '%2B',
                 '%2F',
                 '%70age'
@@ -1362,7 +1363,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ferron2' ) 
                 title: __( 'Rate limit for filter URLs (ferron.kdl host block)', 'jpkcom-post-filter' ),
                 context: sprintf(
                     /* translators: 1: burst, 2: requests per minute */
-                    __( 'Inside the site\'s host block in ferron.kdl, before the rewrite and fcgi_php, then restart Ferron. Cookie-less filter requests: per IP a burst of %1$d, then 1 per second (the plugin\'s %2$d per minute cannot be expressed), beyond that 429. A missing header is "" in Ferron 2 conditions, so is_equal "{header:Cookie}" "" matches exactly the requests without any cookie. Ferron 2 has no site-wide cap and no bucket of their own for search engines: they share the per-IP limit. Behind a proxy or CDN the per-IP limit counts the proxy.', 'jpkcom-post-filter' ),
+                    __( 'Inside the site\'s host block in ferron.kdl, before the rewrite and fcgi_php, then restart Ferron. Cookie-less filter requests: per IP a burst of %1$d, then 1 per second (the plugin\'s %2$d per minute cannot be expressed), beyond that 429. A missing header is "" in Ferron 2 conditions, so is_equal "{header:Cookie}" "" matches exactly the requests without any cookie. Ferron 2 has no site-wide cap and no bucket of their own for search engines: they share the per-IP limit. The 429 is Ferron\'s default error page without Retry-After or Cache-Control; a 429 is not cached by default (RFC 9111). Behind a proxy or CDN the per-IP limit counts the proxy.', 'jpkcom-post-filter' ),
                     $limits['ip_burst'],
                     $limits['ip_per_minute']
                 ),
@@ -1505,7 +1506,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
         if ( $n === 0 ) {
             $out[] = '';
             if ( $server === 'ferron2' ) {
-                $out[] = '# Ferron 2.8 gets no reject rule (its {path} is URL-decoded): nothing to probe.';
+                $out[] = '# Ferron 2.8 gets no reject rule in this version: nothing to probe.';
             } else {
                 $out[] = '# No reject rule is generated for these settings: nothing to probe.';
             }

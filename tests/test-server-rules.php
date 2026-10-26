@@ -1585,7 +1585,9 @@ chk( 'ferron3: match blocks outside, if blocks inside the host (two marked block
 
 // --- Ferron 2.8 ------------------------------------------------------------------
 chk( 'ferron2: snippet ids reject (hint), rate, robots', ids_of( $cf['ferron2'] ) === [ 'ferron2-reject', 'ferron2-rate', 'ferron2-robots' ], implode( ',', ids_of( $cf['ferron2'] ) ) );
-chk( 'ferron2: no reject part, says why',         ! str_contains( $f2, 'status 410' ) && str_contains( $f2_context, '{path}' ) && code_of( $cf['ferron2'], 'ferron2-reject' ) === '' && ! str_contains( $f2, 'X-Jpkpf-Reject' ) );
+$f2_reject_ctx = context_of( $cf['ferron2'], 'ferron2-reject' );
+chk( 'ferron2: no reject part, says why (untested; PHP sees the same decoded URI)', ! str_contains( $f2, 'status 410' ) && code_of( $cf['ferron2'], 'ferron2-reject' ) === '' && ! str_contains( $f2, 'X-Jpkpf-Reject' )
+	&& str_contains( $f2_reject_ctx, 'none has been tested' ) && str_contains( $f2_reject_ctx, 'PHP receives that same decoded URI' ) && str_contains( $f2_reject_ctx, '%2B, %2F or %70age' ), $f2_reject_ctx );
 chk( 'ferron2: KDL condition on {path} with "" for a missing Cookie, limit rate=1 burst=10',
 	str_contains( $f2, "condition \"JPKPF_FILTER_ANON\" {\n    is_regex \"{path}\" \"^/+(?:blog/|news/)filter/\"\n    is_equal \"{header:Cookie}\" \"\"\n}\nif \"JPKPF_FILTER_ANON\" {\n    limit rate=1 burst=10\n}" ), $f2 );
 $kdl_comments = $f2 !== '';
@@ -1665,7 +1667,8 @@ chk( 'check commands caddy/ferron3: reject probes by header value and hash',
 	str_contains( $cc['caddy'], 'X-Jpkpf-Reject: server-per-group' ) && str_contains( $cc['caddy'], 'X-Jpkpf-Rule: ' . $hash )
 	&& str_contains( $cc['ferron3'], 'X-Jpkpf-Reject: server-segments' ) && str_contains( $cc['ferron3'], "'https://example.test/blog/filter/jpkpf-probe-1+jpkpf-probe-2+jpkpf-probe-3/'" ) );
 chk( 'check commands ferron2: no reject probes, says why',
-	! str_contains( $cc['ferron2'], 'server-per-group' ) && ! str_contains( $cc['ferron2'], 'jpkpf-probe-1+jpkpf-probe-2+jpkpf-probe-3' ) && str_contains( $cc['ferron2'], '{path}' ) );
+	! str_contains( $cc['ferron2'], 'server-per-group' ) && ! str_contains( $cc['ferron2'], 'jpkpf-probe-1+jpkpf-probe-2+jpkpf-probe-3' )
+	&& str_contains( $cc['ferron2'], '# Ferron 2.8 gets no reject rule in this version: nothing to probe.' ) && ! str_contains( $cc['ferron2'], 'URL-decoded' ) );
 chk( 'check commands ferron3: bulkhead shown with parallel requests and their times', str_contains( $cc['ferron3'], 'xargs -P 8' ) && str_contains( $cc['ferron3'], 'time_total' ) && ! str_contains( $cc['caddy'], 'xargs' ) );
 
 // =====================================================================================
@@ -1692,5 +1695,17 @@ chk( 'ferron3: matcher context does not claim match blocks cannot sit inside a h
 chk( 'check commands ferron3/apache: the waits between the rate-limit parts are sleep commands',
 	str_contains( $cc['ferron3'], "#    b) The per-IP limit, 15 s after a): sequential requests.\nsleep 15\n" )
 	&& substr_count( $cc['apache'], "\nsleep 30\n" ) === 2, $cc['ferron3'] . "\n----\n" . $cc['apache'] );
+// Ferron 2.8.1: the URL sanitizer rewrites the URI before any module and PHP
+// receives the rewritten one ({path_and_query} == REQUEST_URI in the lab), so
+// "counted differently from WordPress" was wrong (ruling R14).
+chk( 'ferron2: no claim that the decoded {path} is counted differently from WordPress',
+	! str_contains( $f2_context, 'counted differently' ) && ! str_contains( $f2_context, 'could reject a URL the plugin serves' ) && ! str_contains( $cc['ferron2'], 'counted differently' ), $f2_context );
+// Ferron 3 rc.10: FastCGI pool and per-upstream limit are keyed by the literal
+// URL string (source, undocumented) - the /./ spelling relies on it.
+chk( 'ferron3: host context says the pool is keyed by the literal URL string (rc.10 source), names a second PHP-FPM socket',
+	str_contains( $f3_ctx_host, 'literal URL string' ) && str_contains( $f3_ctx_host, '3.0.0-rc.10' ) && str_contains( $f3_ctx_host, 'second PHP-FPM' ), $f3_ctx_host );
+// Ferron 2 and 3 answer 429 with their default page and no Cache-Control.
+chk( 'ferron2/3: context explains the 429 without Cache-Control (not cached by default, RFC 9111)',
+	str_contains( $f3_ctx_host, 'RFC 9111' ) && str_contains( context_of( $cf['ferron2'], 'ferron2-rate' ), 'RFC 9111' ) );
 
 exit( summary() );
