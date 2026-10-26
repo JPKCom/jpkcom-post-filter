@@ -273,10 +273,17 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_scope_regex' ) ) {
     /**
      * Rate-limit scope: a request path below any safe base's endpoint
      *
+     * `^/+`, not `^/`: some servers match the scope on a path they do not
+     * merge (Caddy's `{http.request.orig_uri.path}`, possibly Ferron), and
+     * WordPress trims leading slashes before it matches its rewrite rules -
+     * `//blog/filter/x/` is a full filter render. Where the server merges
+     * slashes first (Apache's Request_URI and LocationMatch) the `+` changes
+     * nothing. nginx uses prefix locations and never reads this.
+     *
      * @since 1.6.0
      *
      * @param array<string, mixed> $inputs Rule inputs.
-     * @return string|null `^/(?:blog/|news/)filter/`, or null without bases or endpoint.
+     * @return string|null `^/+(?:blog/|news/)filter/`, or null without bases or endpoint.
      */
     function jpkcom_postfilter_server_scope_regex( array $inputs ): ?string {
         $bases    = jpkcom_postfilter_server_safe_bases( bases: (array) ( $inputs['bases'] ?? [] ) );
@@ -291,7 +298,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_scope_regex' ) ) {
             $bases
         );
 
-        return '^/(?:' . implode( '|', $alternatives ) . ')' . $endpoint . '/';
+        return '^/+(?:' . implode( '|', $alternatives ) . ')' . $endpoint . '/';
     }
 }
 
@@ -1021,10 +1028,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_caddy' ) ) 
      * `{http.request.orig_uri.path}`): the Caddyfile sorts `rewrite` and
      * `try_files` before `route`, so a site-level try_files would otherwise
      * have rewritten `{http.request.uri}` and `path` to /index.php first and
-     * silently disabled both (controller ruling R13). The pattern sits in a double-quoted CEL string inside a Caddyfile backtick
-     * token: the backticks pass every byte through, CEL then reads `\\` as
-     * one backslash - so each `\` of the pattern is doubled (`\\+`). A root
-     * base renders as an empty alternative `(?:|news/)`, which RE2 accepts.
+     * silently disabled both. The original path is not cleaned, which is why
+     * the scope allows leading slashes (scope_regex()).
+     *
+     * The pattern sits in a double-quoted CEL string inside a Caddyfile
+     * backtick token: the backticks pass every byte through, CEL then reads
+     * `\\` as one backslash - so each `\` of the pattern is doubled (`\\+`).
+     * A root base renders as an empty alternative `(?:|news/)`, which RE2
+     * accepts.
      *
      * `route` keeps the written order. Outside it caddy-ratelimit sorts itself
      * before `respond`, and every rejected request then used up the budget of
@@ -1111,7 +1122,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_caddy' ) ) 
 
             $lines = array_merge( [ 'route {' ], $route, [ '}' ], $errors );
 
-            $context = __( 'Inside the site block of the Caddyfile (FrankenPHP: the same block), anywhere before php_fastcgi or php_server, then caddy validate and caddy reload. Rejects and rate limit sit in one route on purpose: a rejected request is answered before rate_limit and never uses up the budget of real visitors. Both parts read the original request URI ({http.request.orig_uri}), so a try_files or rewrite of the site block does not change what they see.', 'jpkcom-post-filter' );
+            $context = __( 'Inside the site block of the Caddyfile (FrankenPHP: the same block), anywhere before php_fastcgi or php_server, then caddy validate and caddy reload. Rejects and rate limit sit in one route on purpose: a rejected request is answered before rate_limit and never uses up the budget of real visitors. Both parts read the original request URI ({http.request.orig_uri}), so a try_files or rewrite of the site block does not change what they see. If the site wraps php_fastcgi in a handle block, put this route inside that handle, before php_fastcgi: handle sorts before route and ends the request, so a route outside it never runs.', 'jpkcom-post-filter' );
             if ( $scope !== null ) {
                 $context .= ' ' . sprintf(
                     /* translators: 1: requests, 2: seconds, 3: requests, 4: requests, 5: shell command */
@@ -1229,7 +1240,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ferron3' ) 
             $out[] = jpkcom_postfilter_server_snippet(
                 id: 'ferron3-match',
                 title: __( 'Matchers (ferron.conf, top level)', 'jpkcom-post-filter' ),
-                context: $rc . ' ' . __( 'At the top level of ferron.conf, outside every host block: match blocks cannot sit inside a host. request.uri is the raw request URI, so the reject leaves every %-encoded path to PHP.', 'jpkcom-post-filter' ),
+                context: $rc . ' ' . __( 'At the top level of ferron.conf, outside every host block: match blocks cannot sit inside a host. request.uri is the raw request URI, so the reject leaves every percent-encoded path to PHP.', 'jpkcom-post-filter' ),
                 code: jpkcom_postfilter_server_wrap( inputs: $inputs, lines: $match )
             );
 
@@ -1289,7 +1300,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_ferron2' ) 
         $out[] = jpkcom_postfilter_server_snippet(
             id: 'ferron2-reject',
             title: __( 'Reject before PHP', 'jpkcom-post-filter' ),
-            context: __( 'No reject rule for Ferron 2.8: its {path} is URL-decoded, so %2B, %2F or %70age would be counted differently from WordPress, and the rule could reject a URL the plugin serves. PHP keeps rejecting over-cap URLs; Ferron 3 can match the raw request.uri.', 'jpkcom-post-filter' ),
+            context: sprintf(
+                /* translators: 1, 2, 3: literal URL escapes (%2B, %2F, %70age), not placeholders to translate */
+                __( 'No reject rule for Ferron 2.8: its {path} is URL-decoded, so %1$s, %2$s or %3$s would be counted differently from WordPress, and the rule could reject a URL the plugin serves. PHP keeps rejecting over-cap URLs; Ferron 3 can match the raw request.uri.', 'jpkcom-post-filter' ),
+                '%2B',
+                '%2F',
+                '%70age'
+            ),
             code: ''
         );
 

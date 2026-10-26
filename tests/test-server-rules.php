@@ -1299,7 +1299,7 @@ chk( 'apache: no QS_ClientEventLimitCount', $apache !== '' && ! str_contains( $a
 $qos = code_of( $all['apache'], 'apache-qos' );
 chk( 'apache: mod_qos concurrency cap = conn, any cookie exempt',
 	str_contains( $qos, 'QS_EventRequestLimit JPKPF_ANON 3' ) && str_contains( $qos, 'QS_ErrorResponseCode 429' )
-	&& str_contains( $qos, 'SetEnvIf Request_URI "^/(?:blog/|news/)filter/" JPKPF_FILTER=1' ) && str_contains( $qos, 'SetEnvIf Cookie "." JPKPF_EXEMPT=1' )
+	&& str_contains( $qos, 'SetEnvIf Request_URI "^/+(?:blog/|news/)filter/" JPKPF_FILTER=1' ) && str_contains( $qos, 'SetEnvIf Cookie "." JPKPF_EXEMPT=1' )
 	&& str_contains( $qos, 'QS_SetEnvIf JPKPF_FILTER !JPKPF_EXEMPT JPKPF_ANON=1' ), $qos );
 // R10: a faked search-engine User-Agent must not get past the only concurrency cap.
 chk( 'apache: mod_qos has no User-Agent exemption, context says search engines share the cap',
@@ -1310,7 +1310,7 @@ preg_match_all( '/\bid:(\d+)/', $modsec, $m );
 chk( 'apache: ModSecurity ids 4710001+ and unique', $m[1] !== [] && $m[1][0] === '4710001' && count( array_unique( $m[1] ) ) === count( $m[1] ) && min( $m[1] ) === '4710001' );
 // R9: SecRuleEngine On only inside the LocationMatch over the filter
 // prefixes - a vhost-wide one would make OWASP CRS block wp-admin too.
-$lm_open  = strpos( $modsec, '<LocationMatch "^/(?:blog/|news/)filter/">' );
+$lm_open  = strpos( $modsec, '<LocationMatch "^/+(?:blog/|news/)filter/">' );
 $lm_close = strpos( $modsec, '</LocationMatch>' );
 $scoped   = $lm_open !== false && $lm_close !== false && substr_count( $modsec, 'SecRuleEngine' ) === 1 && substr_count( $modsec, '<LocationMatch' ) === 1;
 foreach ( [ 'SecRuleEngine', 'SecRule ', 'SecAction' ] as $needle ) {
@@ -1509,7 +1509,7 @@ $route_close = $route_open === false ? false : strpos( $caddy, "\n}\n", $route_o
 chk( 'caddy: matchers, rejects and rate_limit all inside the one route',
 	$route_open !== false && $route_close !== false && substr_count( $caddy, 'route {' ) === 1
 	&& strpos( $caddy, '@jpkpf_segments expression' ) > $route_open && strrpos( $caddy, 'rate_limit {' ) < $route_close && strpos( $caddy, 'handle_errors' ) > $route_close );
-$zone = static fn( string $name, string $ua, string $key, int $events, int $window ): string => "\t\tzone $name {\n\t\t\tmatch {\n\t\t\t\texpression `{http.request.orig_uri.path}.matches(\"^/(?:blog/|news/)filter/\")`\n\t\t\t\theader !Cookie\n"
+$zone = static fn( string $name, string $ua, string $key, int $events, int $window ): string => "\t\tzone $name {\n\t\t\tmatch {\n\t\t\t\texpression `{http.request.orig_uri.path}.matches(\"^/+(?:blog/|news/)filter/\")`\n\t\t\t\theader !Cookie\n"
 	. "\t\t\t\t$ua\n\t\t\t}\n\t\t\tkey $key\n\t\t\tevents $events\n\t\t\twindow {$window}s\n\t\t}\n";
 $ua = 'header_regexp User-Agent (?i)(?:googlebot|bingbot|applebot|duckduckbot|yandexbot)';
 chk( 'caddy: zones per IP (10 / 20 s), site-wide (30 / 10 s), search engines own (20 / 10 s), bots out of the first two',
@@ -1524,7 +1524,8 @@ chk( 'caddy: no cacheable reject (no max-age)', $caddy !== '' && ! str_contains(
 chk( 'caddy: between the >>> rule <hash> / <<< comment lines', str_starts_with( $caddy, $open . "\n" ) && str_contains( $caddy, "\n" . $close ) );
 chk( 'caddy: context names caddy-ratelimit, xcaddy, list-modules check, FrankenPHP, trusted_proxies',
 	str_contains( $caddy_ctx, 'caddy-ratelimit' ) && str_contains( $caddy_ctx, 'xcaddy' ) && str_contains( $caddy_ctx, 'caddy list-modules | grep http.handlers.rate_limit' )
-	&& str_contains( $caddy_ctx, 'FrankenPHP' ) && str_contains( $caddy_ctx, 'trusted_proxies' ) );
+	&& str_contains( $caddy_ctx, 'FrankenPHP' ) && str_contains( $caddy_ctx, 'trusted_proxies' )
+	&& str_contains( $caddy_ctx, 'wraps php_fastcgi in a handle block' ) );
 chk( 'caddy: robots is a hint without code', code_of( $cf['caddy'], 'caddy-robots' ) === '' && str_contains( context_of( $cf['caddy'], 'caddy-robots' ), 'php_fastcgi' ) );
 
 // --- Ferron 3 --------------------------------------------------------------------
@@ -1534,14 +1535,14 @@ chk( 'ferron3: snippet ids match, host, robots', ids_of( $cf['ferron3'] ) === [ 
 chk( 'ferron3: request.uri (raw), not .path, for reject',
 	str_contains( $f3_match, "match jpkpf_segments {\n    request.uri ~ r\"" . $pat['segments'] . "\"\n}" )
 	&& str_contains( $f3_match, "match jpkpf_per_group {\n    request.uri ~ r\"" . $pat['per_group'] . "\"\n" )
-	&& ! str_contains( $f3, 'request.uri.path ~ r"^/+' ) );
+	&& ! str_contains( $f3, 'request.uri.path ~ r"' . $pat['segments'] ) && ! str_contains( $f3, 'request.uri.path ~ r"' . $pat['per_group'] ) );
 chk( 'ferron3: per-group excludes segments, so one reason per request (guard order)',
 	str_contains( $f3_match, "match jpkpf_per_group {\n    request.uri ~ r\"" . $pat['per_group'] . "\"\n    request.uri !~ r\"" . $pat['segments'] . "\"\n}" ) );
 $f3_if = "if jpkpf_per_group {\n    status 410 {\n        body \"" . str_replace( '"', '\\"', $body ) . "\"\n    }\n    header X-Robots-Tag \"noindex, nofollow\"\n"
 	. "    header X-Jpkpf-Reject \"server-per-group\"\n    header X-Jpkpf-Rule \"$hash\"\n    header Cache-Control \"no-store\"\n    header Content-Type \"text/html; charset=utf-8\"\n}";
 chk( 'ferron3: if block per reason with status, body and the four headers', str_contains( $f3_host, $f3_if ) && substr_count( $f3_host, 'status 410 {' ) === 2 && str_contains( $f3_host, 'X-Jpkpf-Reject "server-segments"' ), $f3_host );
 chk( 'ferron3: anonymous filter match on the decoded path, any cookie exempts',
-	str_contains( $f3_match, "match jpkpf_filter_anon {\n    request.uri.path ~ r\"^/(?:blog/|news/)filter/\"\n    request.header.cookie !~ r\".\"\n}" ) );
+	str_contains( $f3_match, "match jpkpf_filter_anon {\n    request.uri.path ~ r\"^/+(?:blog/|news/)filter/\"\n    request.header.cookie !~ r\".\"\n}" ) );
 chk( 'ferron3: per-IP rate_limit rate 1 burst 10',
 	str_contains( $f3_host, "if jpkpf_filter_anon {\n    rate_limit {\n        rate 1\n        burst 10\n        key remote_address\n        deny_status 429\n    }\n" ) );
 chk( 'ferron3: bulkhead limit = conn',            str_contains( $f3, 'limit 3' ) && str_contains( $f3_host, "    fcgi_php <php-backend-url>/jpkpf {\n        limit 3\n    }\n" ) );
@@ -1557,7 +1558,7 @@ chk( 'ferron3: match blocks outside, if blocks inside the host (two marked block
 chk( 'ferron2: snippet ids reject (hint), rate, robots', ids_of( $cf['ferron2'] ) === [ 'ferron2-reject', 'ferron2-rate', 'ferron2-robots' ], implode( ',', ids_of( $cf['ferron2'] ) ) );
 chk( 'ferron2: no reject part, says why',         ! str_contains( $f2, 'status 410' ) && str_contains( $f2_context, '{path}' ) && code_of( $cf['ferron2'], 'ferron2-reject' ) === '' && ! str_contains( $f2, 'X-Jpkpf-Reject' ) );
 chk( 'ferron2: KDL condition on {path} with "" for a missing Cookie, limit rate=1 burst=10',
-	str_contains( $f2, "condition \"JPKPF_FILTER_ANON\" {\n    is_regex \"{path}\" \"^/(?:blog/|news/)filter/\"\n    is_equal \"{header:Cookie}\" \"\"\n}\nif \"JPKPF_FILTER_ANON\" {\n    limit rate=1 burst=10\n}" ), $f2 );
+	str_contains( $f2, "condition \"JPKPF_FILTER_ANON\" {\n    is_regex \"{path}\" \"^/+(?:blog/|news/)filter/\"\n    is_equal \"{header:Cookie}\" \"\"\n}\nif \"JPKPF_FILTER_ANON\" {\n    limit rate=1 burst=10\n}" ), $f2 );
 $kdl_comments = $f2 !== '';
 foreach ( explode( "\n", $f2 ) as $l ) {
 	$kdl_comments = $kdl_comments && ! str_starts_with( ltrim( $l ), '#' );
@@ -1565,6 +1566,26 @@ foreach ( explode( "\n", $f2 ) as $l ) {
 $f2_rate = code_of( $cf['ferron2'], 'ferron2-rate' );
 chk( 'ferron2: KDL comments (//), no # line', $kdl_comments && str_starts_with( $f2_rate, '// >>> jpkcom-post-filter 1.6.0-test rule ' . $hash . "\n" ) && str_ends_with( $f2_rate, "\n// <<< jpkcom-post-filter" ), $f2 );
 chk( 'ferron2: context: no site-wide cap, search engines share', stripos( context_of( $cf['ferron2'], 'ferron2-rate' ), 'search engines' ) !== false && str_contains( context_of( $cf['ferron2'], 'ferron2-rate' ), '""' ) );
+
+// A rate-limit scope that runs on a path the server does not merge (Caddy's
+// orig_uri.path, possibly Ferron's) must allow leading slashes: WordPress
+// trims them and still renders //blog/filter/x/ as a filter page.
+$scopes = [];
+if ( preg_match( '/\{http\.request\.orig_uri\.path\}\.matches\("((?:[^"\\\\]|\\\\.)*)"\)/', $caddy, $sm ) ) {
+	$scopes['caddy'] = str_replace( '\\\\', '\\', $sm[1] );
+}
+if ( preg_match( '/request\.uri\.path ~ r"([^"]*)"/', $f3, $sm ) ) {
+	$scopes['ferron3'] = $sm[1];
+}
+if ( preg_match( '/is_regex "\{path\}" "((?:[^"\\\\]|\\\\.)*)"/', $f2, $sm ) ) {
+	$scopes['ferron2'] = str_replace( '\\\\', '\\', $sm[1] );
+}
+$scope_ok = count( $scopes ) === 3;
+foreach ( $scopes as $server => $re ) {
+	$scope_ok = $scope_ok && preg_match( '~' . $re . '~', '//blog/filter/a/' ) === 1 && preg_match( '~' . $re . '~', '///news/filter/a+b/' ) === 1
+		&& preg_match( '~' . $re . '~', '/blog/filter/a/' ) === 1 && preg_match( '~' . $re . '~', '/blog/x/' ) === 0 && preg_match( '~' . $re . '~', '/other/blog/filter/a/' ) === 0;
+}
+chk( 'rate-limit scopes (Caddy, Ferron 3, Ferron 2) match //blog/filter/a/ and /blog/filter/a/, not /blog/x/', $scope_ok, show( $scopes ) );
 
 // --- across caddy/ferron ---------------------------------------------------------
 chk( 'all servers carry the hash where headers exist',
@@ -1576,13 +1597,13 @@ $dotc = code_of( snips( 'caddy', $dot ) );
 $dot3 = code_of( snips( 'ferron3', $dot ) );
 $dot2 = code_of( snips( 'ferron2', $dot ) );
 chk( 'escaped base: Caddy CEL doubled (reject and scope), Ferron 3 raw single, KDL doubled',
-	str_contains( $dotc, '{http.request.orig_uri.path}.matches("^/(?:my\\\\.blog/)filter/")' ) && substr_count( $dotc, 'my\\\\.blog/' ) === 5
-	&& str_contains( $dot3, 'r"^/(?:my\\.blog/)filter/"' ) && str_contains( $dot2, '"^/(?:my\\\\.blog/)filter/"' ), $dot2 );
+	str_contains( $dotc, '{http.request.orig_uri.path}.matches("^/+(?:my\\\\.blog/)filter/")' ) && substr_count( $dotc, 'my\\\\.blog/' ) === 5
+	&& str_contains( $dot3, 'r"^/+(?:my\\.blog/)filter/"' ) && str_contains( $dot2, '"^/+(?:my\\\\.blog/)filter/"' ), $dot2 );
 
 $root  = layout_inputs( 2, 2, [], [ '/', '/news/' ] );
 $rootc = code_of( snips( 'caddy', $root ) );
 $root3 = code_of( snips( 'ferron3', $root ) );
-chk( 'root base renders the empty alternation (RE2, Rust regex >= 1.8)', str_contains( $rootc, '(?:|news/)filter/' ) && str_contains( $root3, '(?:|news/)filter/' ) && str_contains( $rootc, '{http.request.orig_uri.path}.matches("^/(?:|news/)filter/")' ) );
+chk( 'root base renders the empty alternation (RE2, Rust regex >= 1.8)', str_contains( $rootc, '(?:|news/)filter/' ) && str_contains( $root3, '(?:|news/)filter/' ) && str_contains( $rootc, '{http.request.orig_uri.path}.matches("^/+(?:|news/)filter/")' ) );
 
 $c404 = code_of( snips( 'caddy', $in404 ) ) . code_of( snips( 'ferron3', $in404 ) );
 chk( 'reject_status 404 mirrored in Caddy and Ferron 3', substr_count( $c404, "\" 404\n" ) === 2 && substr_count( $c404, 'status 404 {' ) === 2 && ! preg_match( '/" 410\n|status 410|<title>410/', $c404 ) );
