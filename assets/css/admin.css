@@ -366,6 +366,136 @@
 }
 
 /* ==========================================================================
+   Server Rules page (1.6.0)
+   ========================================================================== */
+
+.jpkpf-server-rules .jpkpf-sr-warnings .notice {
+    margin: 8px 0;
+}
+
+.jpkpf-sr-inputs {
+    max-width: 900px;
+}
+
+.jpkpf-sr-inputs th {
+    width: 260px;
+}
+
+.jpkpf-sr-limits {
+    list-style: disc;
+    margin-inline-start: 20px;
+}
+
+.jpkpf-sr-status {
+    max-width: 900px;
+    margin-block: 24px;
+    padding: 4px 16px 16px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+}
+
+.jpkpf-sr-status-table {
+    margin-block-end: 12px;
+}
+
+.jpkpf-sr-status-table th {
+    width: 220px;
+}
+
+.jpkpf-sr-status-table td {
+    border-left: 4px solid #c3c4c7;
+}
+
+.jpkpf-sr-status-table td.jpkpf-sr-level-success { border-left-color: #00a32a; }
+.jpkpf-sr-status-table td.jpkpf-sr-level-info    { border-left-color: #72aee6; }
+.jpkpf-sr-status-table td.jpkpf-sr-level-warning { border-left-color: #dba617; background: #fcf9e8; }
+.jpkpf-sr-status-table td.jpkpf-sr-level-error   { border-left-color: #d63638; background: #fcf0f1; font-weight: 600; }
+
+.jpkpf-sr-detail {
+    color: #50575e;
+    max-width: 900px;
+}
+
+.jpkpf-sr-detected {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #edfaef;
+    border-left: 4px solid #00a32a;
+}
+
+.jpkpf-sr-order {
+    max-width: 900px;
+    padding: 4px 12px;
+    background: #f0f6fc;
+    border-left: 4px solid #72aee6;
+}
+
+.jpkpf-sr-order p {
+    margin: 6px 0;
+}
+
+.jpkpf-sr-snippet {
+    max-width: 1100px;
+    margin-block: 20px;
+}
+
+.jpkpf-sr-snippet h3 {
+    margin-block-end: 4px;
+}
+
+.jpkpf-sr-code {
+    border: 1px solid #c3c4c7;
+    background: #f6f7f7;
+}
+
+.jpkpf-sr-code-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.jpkpf-sr-copy-feedback {
+    font-size: 12px;
+    color: #50575e;
+}
+
+.jpkpf-sr-code pre {
+    margin: 0;
+    padding: 10px 12px;
+    max-height: 420px;
+    overflow: auto;
+    white-space: pre;
+}
+
+.jpkpf-sr-code code {
+    display: block;
+    padding: 0;
+    background: transparent;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.jpkpf-sr-htaccess {
+    max-width: 900px;
+    margin-block: 20px;
+    padding: 4px 16px 12px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+}
+
+.jpkpf-sr-htaccess-state {
+    list-style: disc;
+    margin-inline-start: 20px;
+}
+
+.jpkpf-sr-inline-form {
+    display: inline-block;
+    margin-inline-end: 8px;
+}
+
+/* ==========================================================================
    Responsive
    ========================================================================== */
 

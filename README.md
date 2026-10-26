@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.5.0  
+**Version:** 1.6.0  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 7.0  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.5.0  
+**Stable tag:** 1.6.0  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -43,6 +43,7 @@ Filter any post type by taxonomy terms — SEO-friendly URLs, AJAX, and shortcod
 - **Four color schemes** — Default, Dark, Contrast, Monochrome (all overridable)
 - **Three stylesheet modes** — Full plugin CSS, CSS variables only, or fully disabled
 - **Four-layer caching** — Object cache, transients, APCu, and PHP file cache for settings
+- **Server rules** — Generated nginx, Apache, Caddy, Ferron and OpenLiteSpeed rules that reject impossible filter URLs before PHP runs and rate-limit anonymous filter floods; optional managed `.htaccess` block on Apache
 - **Full accessibility** — `aria-live` regions, `aria-pressed` toggle buttons, screen-reader-only counts
 - **Multi-language** — Ships with EN, de\_DE, and de\_DE\_formal translations
 - **No dependencies** — No ACF, no Bootstrap, no jQuery required
@@ -70,7 +71,7 @@ Filter any post type by taxonomy terms — SEO-friendly URLs, AJAX, and shortcod
 | URL Endpoint | URL path segment for filter URLs (default: `filter`) |
 | Bare Endpoint Behaviour | What happens when `/filter/` is accessed without filter terms: 404, redirect to blog homepage, or custom URL |
 | Max Filter Combinations | Maximum simultaneous active filter groups (affects URL and JS) |
-| Max. Filters per Group | Maximum terms selectable within one filter group (0 = unlimited) |
+| Max. Filters per Group | Maximum terms selectable within one filter group (0 = unlimited). Default 2 for new installations since 1.6.0; installations from before 1.6.0 keep 3 |
 | Debug Mode | Use `debug-templates/` and write detailed logs to PHP error log |
 
 **Crawlers & SEO** (since 1.5.0). Every combination of filter terms is its own URL; these settings keep that space small without locking any crawler out of content. Each can also be pinned in `wp-config.php` (the field is then shown locked).
@@ -169,6 +170,26 @@ Cache TTL applies to transients. Object cache respects the TTL of the active obj
 ### Import / Export
 
 All plugin settings (general, layout, cache, filter\_groups) can be exported as a JSON file and re-imported at **Post Filter → Import / Export**. Useful for migrating settings between environments.
+
+### Server Rules
+
+*Since 1.6.0.* The plugin rejects filter URLs beyond its limits, but only after WordPress has started - on a busy site that start-up alone can exhaust PHP. **Post Filter → Server Rules** generates rules from the current settings that let the web server turn those URLs away before PHP runs, and slow down floods of filter requests. One tab per server: **nginx** (plain server block or ISPConfig), **Apache** (server configuration), **Apache (.htaccess)**, **Caddy / FrankenPHP**, **Ferron 3**, **Ferron 2.8** and **OpenLiteSpeed**. The server PHP runs on is detected and its tab preselected.
+
+Each tab contains, as far as the server allows:
+
+| Part | What it does |
+|------|--------------|
+| Reject before PHP | Answers filter URLs with more terms per group, or more segments, than the plugin accepts - with the same 410 (or 404) status, `X-Robots-Tag: noindex, nofollow`, `X-Jpkpf-Reject: server-…`, `X-Jpkpf-Rule: <hash>` and `Cache-Control: no-store`. Not available for Ferron 2.8 (no tested rule) and without headers on OpenLiteSpeed |
+| robots.txt | How `/robots.txt` reaches WordPress, so the plugin's robots.txt lines are served |
+| Rate limit | For filter URLs requested **without any cookie**: a cap on concurrent renders, a site-wide rate, a per-IP rate and a separate budget for the major search engines, beyond that 429 with `Retry-After`. Derived from two numbers you enter: PHP workers (default 8) and the render time of a filter page (default 0.4 s). Not possible in `.htaccess` or on OpenLiteSpeed; reduced on Ferron |
+| Check after installing | curl commands to verify the rule |
+| Page cache | When to purge it |
+
+**The rules never reject a URL the plugin serves with the current settings.** Rules pasted into a server configuration do not change by themselves, so follow the order on the page: when *tightening* the settings, change the plugin first, purge the page cache, then update the server; when *loosening*, update the server first, then the plugin. After every save that loosens the filter URL settings the plugin reminds you to update deployed server rules.
+
+**Managed `.htaccess` (Apache only).** On Apache, single site, with a writable `.htaccess` and without `DISALLOW_FILE_MODS`, *Set up* lets the plugin write its block itself - directly before WordPress's own block, between `# BEGIN JPKCom Post Filter` and `# END JPKCom Post Filter` - and keep it in step with the settings from then on - every save in wp-admin and the import. A loosening `wp option update` under WP-CLI loosens the block before the change is stored; tightening through WP-CLI, `wp-config.php` constants or code filters follows on the next admin page load (until then the block is only looser than the plugin, never stricter). A save that would loosen the settings is refused while the block cannot be updated, so the block is never stricter than the plugin. *Remove*, or deactivating the plugin, deletes the block. The plugin never writes the file without that click and never touches a block you pasted yourself (those carry `(manual)` markers). Not available on LiteSpeed/OpenLiteSpeed or multisite.
+
+**Check now** sends a few requests to your own site without cookies and shows whether robots.txt reaches WordPress, whether the server rule is deployed and current, and - as a red alarm - whether it is stricter than the plugin. The rate limit is not tested, because that would use up the budget all cookie-less visitors share. If the site cannot reach itself (HTTP authentication, firewall, maintenance mode) the result says "could not be checked", never "missing".
 
 ---
 
@@ -615,6 +636,19 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.6.0
+
+What changes on a running site after the update - read this first:
+
+* **Changed (behaviour, all sites):** the limit *Max. Filters per Group* now counts the terms of a group as they appear in the URL, before duplicates are removed or spellings cleaned up. A hand-built URL with more terms in a group than the limit - for example `a+a+b` at a limit of 2, or extra upper-case or empty variants - is now answered with **410** (or 404) instead of a **301** to the cleaned-up URL. URLs the plugin builds itself (links, the filter script, the Abilities API) never look like that. Within the limit, other spellings are still redirected as before.
+* **Changed (new installations only):** the default of *Max. Filters per Group* is **2** instead of 3. Existing installations keep 3 on the update - the plugin stores 3 for them if the setting was never saved. A value you saved yourself is never changed.
+* **Added:** **Post Filter → Server Rules**, a new page that generates web server rules from the current settings for nginx (incl. ISPConfig), Apache, Apache `.htaccess`, Caddy/FrankenPHP, Ferron 3, Ferron 2.8 and OpenLiteSpeed: reject over-limit filter URLs before PHP runs, let `/robots.txt` reach WordPress, and rate-limit filter requests from visitors without cookies. Nothing changes on your server until you deploy the rules - except on Apache if you choose to let the plugin manage its `.htaccess` block.
+* **Added:** managed `.htaccess` block on Apache (single site, writable file): set up and removed by button, placed directly before WordPress's block, removed on deactivation. Kept in step with every settings save - in wp-admin, through the import and through WP-CLI (`wp option update`): a save that loosens the filter URL settings loosens the block first, and while the block cannot be updated such a save is refused with an error, so the server never rejects a URL the plugin serves. Tightening through WP-CLI, `wp-config.php` constants or code filters follows on the next admin page load (until then the block is only looser than the plugin). The path stored at *Set up* is only trusted inside the site's own directories.
+* **Added:** *Check now* on the Server Rules page: shows whether robots.txt reaches WordPress, whether the server rule is deployed and current, and raises an alarm if it is stricter than the plugin.
+* **Added:** a notice after every save (or import) that loosens the filter URL settings, reminding you to update server rules you deployed by hand - red when the last check found them active. Not shown while the plugin manages the `.htaccess` block itself.
+* **Translations:** German (de_DE and de_DE_formal) for every new string.
+* **Background:** after 1.5.0 the rejected filter URLs on a production site still cost a full WordPress start each - about 70 % of the remaining PHP load. A web server rule can answer them for almost nothing; counting terms as they appear in the URL is what lets one simple, tested rule match exactly what the plugin rejects, on every server.
 
 ### 1.5.0
 

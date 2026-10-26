@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+            <title>JPKCom Post Filter</title>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="../">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png"/>
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png"/>
+    <link rel="icon" href="images/favicon.ico"/>
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png"/>
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/base.css">
+            <link rel="preconnect" href="https://fonts.gstatic.com">
+        <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@100;200;300;400;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="css/template.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.0/css/all.min.css" integrity="sha256-ybRkN9dBjhcS2qrW1z+hfCxq+1aBdwyQM5wlQoQVt/0=" crossorigin="anonymous" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/themes/prism-okaidia.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/plugins/line-numbers/prism-line-numbers.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/plugins/line-highlight/prism-line-highlight.css">
+                <script src="https://cdn.jsdelivr.net/npm/fuse.js@3.4.6"></script>
+        <script src="https://cdn.jsdelivr.net/npm/css-vars-ponyfill@2"></script>
+        <script src="js/template.js"></script>
+        <script src="js/search.js"></script>
+        <script defer src="js/searchIndex.js"></script>
+    </head>
+<body id="top">
+    <header class="phpdocumentor-header phpdocumentor-section">
+    <h1 class="phpdocumentor-title"><a href="" class="phpdocumentor-title__link">JPKCom Post Filter</a></h1>
+    <input class="phpdocumentor-header__menu-button" type="checkbox" id="menu-button" name="menu-button" />
+    <label class="phpdocumentor-header__menu-icon" for="menu-button">
+        <i class="fas fa-bars"></i>
+    </label>
+    <section data-search-form class="phpdocumentor-search">
+    <label>
+        <span class="visually-hidden">Search for</span>
+        <svg class="phpdocumentor-search__icon" width="21" height="20" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="7.5" cy="7.5" r="6.5" stroke="currentColor" stroke-width="2"/>
+            <line x1="12.4892" y1="12.2727" x2="19.1559" y2="18.9393" stroke="currentColor" stroke-width="3"/>
+        </svg>
+        <input type="search" class="phpdocumentor-field phpdocumentor-search__field" placeholder="Loading .." disabled />
+    </label>
+</section>
+
+    <nav class="phpdocumentor-topnav">
+    <ul class="phpdocumentor-topnav__menu">
+        </ul>
+</nav>
+</header>
+
+    <main class="phpdocumentor">
+        <div class="phpdocumentor-section">
+            <input class="phpdocumentor-sidebar__menu-button" type="checkbox" id="sidebar-button" name="sidebar-button" />
+<label class="phpdocumentor-sidebar__menu-icon" for="sidebar-button">
+    Menu
+</label>
+<aside class="phpdocumentor-column -three phpdocumentor-sidebar">
+                    <section class="phpdocumentor-sidebar__category -namespaces">
+            <h2 class="phpdocumentor-sidebar__category-header">Namespaces</h2>
+                                    <h4 class="phpdocumentor-sidebar__root-namespace">
+    <a href="namespaces/jpkcompostfiltergitupdate.html" class="">JPKComPostFilterGitUpdate</a>
+</h4>
+
+                                    <h4 class="phpdocumentor-sidebar__root-namespace">
+    <a href="namespaces/jpkcompostfilter.html" class="">JPKComPostFilter</a>
+</h4>
+    <ul class="phpdocumentor-list">
+                    <li>
+                <a href="namespaces/jpkcompostfilter-elementor.html" class="">Elementor</a>
+                
+            </li>
+                    <li>
+                <a href="namespaces/jpkcompostfilter-oxygen.html" class="">Oxygen</a>
+                
+            </li>
+            </ul>
+
+                        </section>
+                <section class="phpdocumentor-sidebar__category -packages">
+            <h2 class="phpdocumentor-sidebar__category-header">Packages</h2>
+                                    <h4 class="phpdocumentor-sidebar__root-namespace">
+    <a href="packages/JPKCom.html" class="">JPKCom</a>
+</h4>
+    <ul class="phpdocumentor-list">
+                    <li>
+                <a href="packages/JPKCom-Post.html" class="">Post</a>
+                
+            </li>
+            </ul>
+
+                                    <h4 class="phpdocumentor-sidebar__root-namespace">
+    <a href="packages/JPKComPostFilter.html" class="">JPKComPostFilter</a>
+</h4>
+
+                                    <h4 class="phpdocumentor-sidebar__root-namespace">
+    <a href="packages/JPKComPostFilterGitUpdate.html" class="">JPKComPostFilterGitUpdate</a>
+</h4>
+
+                        </section>
+            
+    <section class="phpdocumentor-sidebar__category -reports">
+        <h2 class="phpdocumentor-sidebar__category-header">Reports</h2>
+                <h3 class="phpdocumentor-sidebar__root-package"><a href="graphs/classes.html">Class Diagram</a></h3>
+                <h3 class="phpdocumentor-sidebar__root-package"><a href="reports/deprecated.html">Deprecated</a></h3>
+        <h3 class="phpdocumentor-sidebar__root-package"><a href="reports/errors.html">Errors</a></h3>
+        <h3 class="phpdocumentor-sidebar__root-package"><a href="reports/markers.html">Markers</a></h3>
+    </section>
+
+    <section class="phpdocumentor-sidebar__category -indices">
+        <h2 class="phpdocumentor-sidebar__category-header">Indices</h2>
+        <h3 class="phpdocumentor-sidebar__root-package"><a href="indices/files.html">Files</a></h3>
+    </section>
+</aside>
+
+            <div class="phpdocumentor-column -nine phpdocumentor-content">
+                                <section>
+                                        <ul class="phpdocumentor-breadcrumbs">
+    </ul>
+
+    <article class="phpdocumentor-element -file">
+        <h2 class="phpdocumentor-content__title">server-rules.php</h2>
+
+            <p class="phpdocumentor-summary">Server Rules – what a web server may reject before PHP runs</p>
+
+        
+            <section class="phpdocumentor-description"><p>No hooks are registered here: the inputs are read from WordPress on demand,
+everything else is pure, so tests/test-server-rules.php can fuzz the
+patterns against the real request guard without a server. The snippets
+built from these patterns live in includes/server-rules-render.php.</p>
+<h2>WHY THIS EXISTS</h2>
+<p>The 1.5.0 request guard answers over-cap filter URLs with 410, but only
+after the WordPress bootstrap - on the production site that prompted 1.5.0
+the bootstrap alone was enough to exhaust PHP-FPM. A web server can turn the
+same URLs away for almost nothing, provided its rule is never stricter than
+the plugin: a server rule must never match a URL the plugin answers with 200
+or 301. Looser is fine; PHP still has the last word.</p>
+<p>The patterns read the RAW request URI (nginx <code class="prettyprint">$request_uri</code>, Apache
+<code class="prettyprint">THE_REQUEST</code>, Caddy <code class="prettyprint">{http.request.uri}</code>, Ferron <code class="prettyprint">request.uri</code>) and only
+ever match a path without <code class="prettyprint">%</code>. WordPress tries every rewrite rule on the raw
+path and then on its urldecode()d form (WP::parse_request()), so an encoded
+<code class="prettyprint">%70age</code>, <code class="prettyprint">jpkpf%2Dfragment</code> or <code class="prettyprint">%2F</code> splits the filter path differently
+from its raw bytes; leaving every <code class="prettyprint">%</code> path to PHP rules that out entirely.</p>
+<p>They use only what PCRE (nginx, Apache, OpenLiteSpeed), RE2 (Caddy) and
+Rust's <code class="prettyprint">regex</code> (Ferron) share: literals, negated classes, non-capturing
+groups, <code class="prettyprint">* + ? {n} {n,} {n,m}</code>, alternation and anchors. No lookaround, no
+backreferences - one grammar, one fuzz test for every server.</p>
+</section>
+
+        
+    <h5 class="phpdocumentor-tag-list__heading" id="tags">
+        Tags
+        <a href="files/includes-server-rules.html#tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+
+        
+<h3 id="toc">
+    Table of Contents
+    <a href="files/includes-server-rules.html#toc" class="headerlink"><i class="fas fa-link"></i></a>
+
+</h3>
+
+
+
+
+
+
+
+
+
+
+
+<h4 id="toc-functions">
+    Functions
+    <a href="files/includes-server-rules.html#toc-functions" class="headerlink"><i class="fas fa-link"></i></a>
+
+</h4>
+<dl class="phpdocumentor-table-of-contents">
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_rule_base_path">jpkcom_postfilter_server_rule_base_path()</a>
+    <span>
+                                &nbsp;: string|null    </span>
+</dt>
+<dd>Reduce an archive base URL to the path a server rule can match</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_rule_bases">jpkcom_postfilter_server_rule_bases()</a>
+    <span>
+                                &nbsp;: array&lt;string|int, string&gt;    </span>
+</dt>
+<dd>The base paths a server rule covers for the given post types</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_rule_inputs">jpkcom_postfilter_server_rule_inputs()</a>
+    <span>
+                                &nbsp;: array{strict: bool, max_per_group: int, groups: int, skip_positions: int[], reject_status: int, endpoint: string, fragment: string, bases: string[], verdict_filtered: bool, policy_filtered: string[], hash: string}    </span>
+</dt>
+<dd>The effective values a server rule is generated from</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_rule_hash">jpkcom_postfilter_server_rule_hash()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Short hash over every input that shapes the rule</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_regex_quote">jpkcom_postfilter_server_regex_quote()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Escape a literal for the server patterns</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns">jpkcom_postfilter_server_reject_patterns()</a>
+    <span>
+                                &nbsp;: array{per_group: ?string, segments: ?string}    </span>
+</dt>
+<dd>The two patterns a server may reject a filter URL on</dd>
+
+    </dl>
+
+
+        
+
+            <section class="phpdocumentor-functions">
+        <h3 class="phpdocumentor-elements__header" id="functions">
+            Functions
+            <a href="files/includes-server-rules.html#functions" class="headerlink"><i class="fas fa-link"></i></a>
+
+        </h3>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_rule_base_path">
+        jpkcom_postfilter_server_rule_base_path()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_base_path" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">58</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Reduce an archive base URL to the path a server rule can match</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_rule_base_path</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$url</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string|null</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$url</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Absolute base URL (home path included).</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_server_rule_base_path_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_base_path_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string|null</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Path with leading and trailing slash, or null when it
+contains <code class="prettyprint">%</code> - browsers send percent escapes in either
+case and WordPress also matches the decoded form, so
+such a base is left to PHP - or cannot be parsed.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_rule_bases">
+        jpkcom_postfilter_server_rule_bases()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_bases" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">88</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">The base paths a server rule covers for the given post types</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_rule_bases</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string|int, string&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$post_types</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string|int, string&gt;</span></code>
+
+        <section class="phpdocumentor-description"><p>Every post type that gets rewrite rules, in every language
+jpkcom_postfilter_archive_base_urls_all_languages() knows, as paths
+including the home path, sorted and without duplicates. Separate from
+jpkcom_postfilter_server_rule_inputs() so the .htaccess sync can work
+out the bases of a post type list that is not saved yet.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$post_types</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string|int, string&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Post type slugs, as jpkcom_postfilter_routable_post_types() returns them.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_server_rule_bases_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_bases_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;string|int, string&gt;</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_rule_inputs">
+        jpkcom_postfilter_server_rule_inputs()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_inputs" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">140</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">The effective values a server rule is generated from</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_rule_inputs</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{strict: bool, max_per_group: int, groups: int, skip_positions: int[], reject_status: int, endpoint: string, fragment: string, bases: string[], verdict_filtered: bool, policy_filtered: string[], hash: string}</span></code>
+
+        <section class="phpdocumentor-description"><p>Effective means after constants, stored settings, defaults and the
+<code class="prettyprint">jpkcom_postfilter_{key}</code> filters - what this request's guard would use.
+A filter that answers differently per request cannot be seen from here,
+which is why <code class="prettyprint">policy_filtered</code> and <code class="prettyprint">verdict_filtered</code> are reported.</p>
+<p>Bases: every routable post type that gets rewrite rules, in every
+language jpkcom_postfilter_archive_base_urls_all_languages() knows,
+as paths including the home path. A missing base only makes the rule
+looser. For a base the plugin derives itself (post type archive, posts
+page, WPML language directory) a path it does not route is one
+WordPress would 404 anyway. That is NOT proven for bases a callback on
+<code class="prettyprint">jpkcom_postfilter_robots_txt_base_urls</code> adds (multilingual plugins
+other than WPML): the filter feeds the server rejects too, so if other
+code serves <code class="prettyprint">{base}{endpoint}/a+b+c/</code> below such a base, the server
+would reject it. A callback must return only bases the plugin routes.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_server_rule_inputs_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_inputs_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array{strict: bool, max_per_group: int, groups: int, skip_positions: int[], reject_status: int, endpoint: string, fragment: string, bases: string[], verdict_filtered: bool, policy_filtered: string[], hash: string}</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_rule_hash">
+        jpkcom_postfilter_server_rule_hash()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_hash" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">196</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Short hash over every input that shapes the rule</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_rule_hash</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$inputs</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>Sent as <code class="prettyprint">X-Jpkpf-Rule</code> by the server and compared by the status check,
+so a deployed rule built from other settings is recognised as stale.
+Neither the key order of the argument nor the order of <code class="prettyprint">skip_positions</code>
+and <code class="prettyprint">bases</code> matters (both are sets); <code class="prettyprint">policy_filtered</code> and <code class="prettyprint">hash</code> do not
+shape the rule and are left out.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$inputs</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, mixed&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>As returned by jpkcom_postfilter_server_rule_inputs().</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_server_rule_hash_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_hash_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>First 12 hex characters of sha256( json_encode ).</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_regex_quote">
+        jpkcom_postfilter_server_regex_quote()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_regex_quote" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">237</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Escape a literal for the server patterns</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_regex_quote</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$s</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>Only <code class="prettyprint">\ . + * ? ( ) [ ] { } | ^ $</code>. Unlike preg_quote(), <code class="prettyprint">-</code>, <code class="prettyprint">/</code>, <code class="prettyprint">#</code>
+and the rest stay as they are: an escape that PCRE tolerates may be an
+error or mean something else in RE2 or Rust's <code class="prettyprint">regex</code>.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$s</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Literal.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_server_regex_quote_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_regex_quote_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_reject_patterns">
+        jpkcom_postfilter_server_reject_patterns()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">298</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">The two patterns a server may reject a filter URL on</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_reject_patterns</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$inputs</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$subject</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">'uri'</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{per_group: ?string, segments: ?string}</span></code>
+
+        <section class="phpdocumentor-description"><p>Regexes without delimiters, for the raw request URI (path plus optional
+query). With B = the bases without their leading <code class="prettyprint">/</code>, E = endpoint,
+N = terms per group, G = filter groups:</p>
+<p>per_group: a segment below {B}{E}/ with N+1 or more non-empty pieces
+separated by literal <code class="prettyprint">+</code>
+segments:  segment G+1 contains a <code class="prettyprint">+</code>, or there are G+4 segments</p>
+<p>Why that is never stricter than the plugin, for a path without <code class="prettyprint">%</code>:</p>
+<ul>
+<li>urldecode() changes nothing but <code class="prettyprint">+</code> there, and no rewrite rule
+literal contains <code class="prettyprint">+</code>, so WordPress captures from the raw path.</li>
+<li>The capture is the path after {E}/ minus an optional
+<code class="prettyprint">page/N</code> / fragment suffix - at most three segments, none with a
+<code class="prettyprint">+</code>. A segment with a <code class="prettyprint">+</code> is therefore always part of the capture,
+and of G+4 segments at least G+1 are.</li>
+<li>The guard rejects more than G non-empty segments (<code class="prettyprint">segments</code>), and
+since 1.6.0 more than N non-empty raw pieces per taxonomy, counted
+before sanitize_title() and de-duplication (<code class="prettyprint">per-group</code>). A literal
+<code class="prettyprint">+</code> always separates pieces; <code class="prettyprint">%2b</code> joining does not apply without
+<code class="prettyprint">%</code>. Pieces of one taxonomy add up across segments, so one
+segment over the cap is enough.</li>
+<li>A position whose group has no taxonomy is not counted by the guard,
+so per_group then only looks at the other positions - or at a
+position past G, which is a <code class="prettyprint">segments</code> reject anyway.</li>
+<li>per_group looks for the over-cap segment up to position G+3 only
+(bounded repetition, no JIT stack per segment); past that, and
+without <code class="prettyprint">%</code>, <code class="prettyprint">segments</code> matches anyway - with <code class="prettyprint">%</code>, nothing does.</li>
+</ul>
+<p>Both null when strict URLs are off, the guard's verdict is filtered
+(code may decide per request), there are no groups, no bases or no
+endpoint, or one base lies below another base's endpoint (a URL could
+then be captured by either base's rules, positions shifted). per_group
+is also null when N is 0 (unlimited).</p>
+<p><code class="prettyprint">request_line</code> builds the same grammar for Apache's and OpenLiteSpeed's
+<code class="prettyprint">%{THE_REQUEST}</code>, &quot;METHOD URI PROTOCOL&quot;: anchored <code class="prettyprint">^[A-Z]+ </code> ...
+<code class="prettyprint">(?:\s|$)</code>, every negated class also excludes whitespace and the query
+is <code class="prettyprint">(?:\?\S*)?</code>. The whitespace matters - &quot;HTTP/1.1&quot; contains a <code class="prettyprint">/</code>, so
+a class that may cross the space counts &quot;jpkpf-fragment HTTP/&quot; as one
+more segment, and /blog/filter/a/b/page/2/jpkpf-fragment would be
+rejected although the plugin serves it. A URI cannot contain whitespace
+in a request line, so on every real request both forms decide the same.
+This form is PCRE-only (<code class="prettyprint">\s</code>, <code class="prettyprint">\S</code>); only the URI form is for RE2/Rust.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$inputs</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, mixed&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>As returned by jpkcom_postfilter_server_rule_inputs().</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$subject</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">'uri'</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p><code class="prettyprint">uri</code> (raw request URI, default) or
+<code class="prettyprint">request_line</code> (THE_REQUEST).</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_server_reject_patterns_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array{per_group: ?string, segments: ?string}</span>
+            </section>
+
+</article>
+            </section>
+
+        
+    </article>
+                                </section>
+                <section class="phpdocumentor-on-this-page__sidebar">
+                            
+    <section class="phpdocumentor-on-this-page__content">
+        <strong class="phpdocumentor-on-this-page__title">On this page</strong>
+
+        <ul class="phpdocumentor-list -clean">
+            <li class="phpdocumentor-on-this-page-section__title">Table Of Contents</li>
+            <li>
+                <ul class="phpdocumentor-list -clean">
+                                                                                                                                                                                        <li><a href="files/includes-server-rules.html#toc-functions">Functions</a></li>
+                                    </ul>
+            </li>
+
+            
+                            <li class="phpdocumentor-on-this-page-section__title">Functions</li>
+                <li>
+                    <ul class="phpdocumentor-list -clean">
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_regex_quote">jpkcom_postfilter_server_regex_quote()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns">jpkcom_postfilter_server_reject_patterns()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_base_path">jpkcom_postfilter_server_rule_base_path()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_bases">jpkcom_postfilter_server_rule_bases()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_hash">jpkcom_postfilter_server_rule_hash()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_inputs">jpkcom_postfilter_server_rule_inputs()</a></li>
+                                            </ul>
+                </li>
+                    </ul>
+    </section>
+
+                </section>
+                            </div>
+            <section data-search-results class="phpdocumentor-search-results phpdocumentor-search-results--hidden">
+    <section class="phpdocumentor-search-results__dialog">
+        <header class="phpdocumentor-search-results__header">
+            <h2 class="phpdocumentor-search-results__title">Search results</h2>
+            <button class="phpdocumentor-search-results__close"><i class="fas fa-times"></i></button>
+        </header>
+        <section class="phpdocumentor-search-results__body">
+            <ul class="phpdocumentor-search-results__entries"></ul>
+        </section>
+    </section>
+</section>
+        </div>
+        <a href="files/includes-server-rules.html#top" class="phpdocumentor-back-to-top"><i class="fas fa-chevron-circle-up"></i></a>
+
+    </main>
+
+    <script>
+        cssVars({});
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/plugins/line-highlight/prism-line-highlight.min.js"></script>
+</body>
+</html>

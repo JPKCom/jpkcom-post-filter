@@ -287,6 +287,13 @@ file-based cache layer (.ht.jpkcom-post-filter-settings/).</p>
 <dd>Get the default settings for all groups</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_migrate_pin_per_group_cap">jpkcom_postfilter_migrate_pin_per_group_cap()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Keep existing installations at 3 terms per group</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_sanitize_general_settings">jpkcom_postfilter_sanitize_general_settings()</a>
     <span>
                                 &nbsp;: array&lt;string, mixed&gt;    </span>
@@ -1223,6 +1230,74 @@ long-running process (WP-CLI, cron) never reads a stale group.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_migrate_pin_per_group_cap">
+        jpkcom_postfilter_migrate_pin_per_group_cap()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_migrate_pin_per_group_cap" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">627</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Keep existing installations at 3 terms per group</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_migrate_pin_per_group_cap</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>1.6.0 lowers the default of max_filters_per_group from 3 to 2, for new
+installations only. The effective value of a key that was never stored is
+the default, so an installation that never saved the key (or never saved
+the General page at all) would silently drop to 2. This pins 3 for those.</p>
+<p>Runs only on the step from a version before 1.6.0: the rewrite version
+marker is older than 1.6.0, or - an installation from before the marker
+existed (1.2.0) - it is empty and the filter groups option exists. A
+fresh install has neither; once the marker says 1.6.0 or later this
+never writes again, so a fresh 1.6.0 install keeps its 2 on every later
+update. Call before jpkcom_postfilter_maybe_flush_rewrites() updates the
+marker.</p>
+<p>Only the stored array plus the pinned key is written; keys that were never
+stored stay missing and keep reading their defaults (merging the defaults
+in would freeze constant-derived ones such as debug_mode or url_endpoint).
+The General sanitizer is detached for this one write: it filters
+enabled_post_types / auto_inject against the post types registered at that
+moment (a CPT of a plugin that loads later would be dropped for good) and
+reads missing checkbox keys as &quot;none selected&quot;. The add_option_* /
+update_option_* actions still run and refresh the memo and cache file.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_migrate_pin_per_group_cap_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_migrate_pin_per_group_cap_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True when the pin was written.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_sanitize_general_settings">
         jpkcom_postfilter_sanitize_general_settings()
         <a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_general_settings" class="headerlink"><i class="fas fa-link"></i></a>
@@ -1231,7 +1306,7 @@ long-running process (WP-CLI, cron) never reads a stale group.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">663</span>
+    <span class="phpdocumentor-element-found-in__line">747</span>
 
     </aside>
 
@@ -1291,7 +1366,7 @@ long-running process (WP-CLI, cron) never reads a stale group.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">759</span>
+    <span class="phpdocumentor-element-found-in__line">843</span>
 
     </aside>
 
@@ -1351,7 +1426,7 @@ long-running process (WP-CLI, cron) never reads a stale group.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">837</span>
+    <span class="phpdocumentor-element-found-in__line">921</span>
 
     </aside>
 
@@ -1411,7 +1486,7 @@ long-running process (WP-CLI, cron) never reads a stale group.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">864</span>
+    <span class="phpdocumentor-element-found-in__line">948</span>
 
     </aside>
 
@@ -1471,7 +1546,7 @@ long-running process (WP-CLI, cron) never reads a stale group.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">921</span>
+    <span class="phpdocumentor-element-found-in__line">1005</span>
 
     </aside>
 
@@ -1519,7 +1594,7 @@ long-running process (WP-CLI, cron) never reads a stale group.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">995</span>
+    <span class="phpdocumentor-element-found-in__line">1079</span>
 
     </aside>
 
@@ -1579,7 +1654,7 @@ long-running process (WP-CLI, cron) never reads a stale group.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1069</span>
+    <span class="phpdocumentor-element-found-in__line">1153</span>
 
     </aside>
 
@@ -1661,6 +1736,7 @@ For 'vars_only' mode, all defaults are included.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_color_scheme_vars">jpkcom_postfilter_get_color_scheme_vars()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_css_var_defaults">jpkcom_postfilter_get_css_var_defaults()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_merged_css_vars">jpkcom_postfilter_get_merged_css_vars()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_migrate_pin_per_group_cap">jpkcom_postfilter_migrate_pin_per_group_cap()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_path_is_inside">jpkcom_postfilter_path_is_inside()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_protect_settings_dir">jpkcom_postfilter_protect_settings_dir()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_cache_settings">jpkcom_postfilter_sanitize_cache_settings()</a></li>

@@ -429,6 +429,13 @@
 <dd>Render: Cache TTL number field</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_settings_has_error">jpkcom_postfilter_settings_has_error()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Did options.php hand back an error for this settings slug?</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_page_general">jpkcom_postfilter_page_general()</a>
     <span>
                                 &nbsp;: void    </span>
@@ -2293,6 +2300,65 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_settings_has_error">
+        jpkcom_postfilter_settings_has_error()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_settings_has_error" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">1632</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Did options.php hand back an error for this settings slug?</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_settings_has_error</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$setting</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>get_settings_errors() moves the errors from the redirect transient into
+the global list, so settings_errors() still prints them afterwards.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$setting</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Settings error slug.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_settings_has_error_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_settings_has_error_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.6.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_page_general">
         jpkcom_postfilter_page_general()
         <a href="namespaces/default.html#function_jpkcom_postfilter_page_general" class="headerlink"><i class="fas fa-link"></i></a>
@@ -2301,7 +2367,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1625</span>
+    <span class="phpdocumentor-element-found-in__line">1647</span>
 
     </aside>
 
@@ -2341,7 +2407,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1671</span>
+    <span class="phpdocumentor-element-found-in__line">1694</span>
 
     </aside>
 
@@ -2381,7 +2447,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">2134</span>
+    <span class="phpdocumentor-element-found-in__line">2157</span>
 
     </aside>
 
@@ -2421,7 +2487,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">2240</span>
+    <span class="phpdocumentor-element-found-in__line">2263</span>
 
     </aside>
 
@@ -2461,7 +2527,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">2428</span>
+    <span class="phpdocumentor-element-found-in__line">2451</span>
 
     </aside>
 
@@ -2501,7 +2567,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">2566</span>
+    <span class="phpdocumentor-element-found-in__line">2589</span>
 
     </aside>
 
@@ -2596,6 +2662,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_render_color_field">jpkcom_postfilter_render_color_field()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_render_select_var_field">jpkcom_postfilter_render_select_var_field()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_render_text_var_field">jpkcom_postfilter_render_text_var_field()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_settings_has_error">jpkcom_postfilter_settings_has_error()</a></li>
                                             </ul>
                 </li>
                     </ul>

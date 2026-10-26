@@ -141,6 +141,9 @@ URL unique, the PHP-FPM pool exhausted.</p>
 <p>The fix is to make the URL space finite and canonical: one spelling per
 selection (slugs sorted and de-duplicated), hard caps that reject instead of
 truncate, and one source of truth for both.</p>
+<p>Since 1.6.0 the per-group cap counts the non-empty raw pieces of a group
+(after splitting, before sanitize_title and de-duplication), so a web server
+rule can mirror it exactly by counting <code class="prettyprint">+</code>-separated pieces in the path.</p>
 </section>
 
         
@@ -301,7 +304,7 @@ truncate, and one source of truth for both.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">52</span>
+    <span class="phpdocumentor-element-found-in__line">56</span>
 
     </aside>
 
@@ -349,7 +352,7 @@ through a filter named <code class="prettyprint">jpkcom_postfilter_{key}</code>.
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">83</span>
+    <span class="phpdocumentor-element-found-in__line">87</span>
 
     </aside>
 
@@ -422,7 +425,7 @@ into the form.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">137</span>
+    <span class="phpdocumentor-element-found-in__line">141</span>
 
     </aside>
 
@@ -478,7 +481,7 @@ into the form.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">156</span>
+    <span class="phpdocumentor-element-found-in__line">160</span>
 
     </aside>
 
@@ -541,7 +544,7 @@ request, the rest is a handful of comparisons.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">206</span>
+    <span class="phpdocumentor-element-found-in__line">210</span>
 
     </aside>
 
@@ -609,7 +612,7 @@ entry.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">253</span>
+    <span class="phpdocumentor-element-found-in__line">257</span>
 
     </aside>
 
@@ -665,7 +668,7 @@ entry.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">276</span>
+    <span class="phpdocumentor-element-found-in__line">280</span>
 
     </aside>
 
@@ -725,7 +728,7 @@ Abilities API carried a hand-maintained copy of the parser's truncation.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">315</span>
+    <span class="phpdocumentor-element-found-in__line">319</span>
 
     </aside>
 
@@ -773,7 +776,7 @@ positions of later groups do not shift.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">337</span>
+    <span class="phpdocumentor-element-found-in__line">341</span>
 
     </aside>
 
@@ -845,7 +848,7 @@ empty position before a non-empty one, trailing empty positions dropped.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">383</span>
+    <span class="phpdocumentor-element-found-in__line">387</span>
 
     </aside>
 
@@ -917,7 +920,7 @@ same thing everywhere. (No hooks, which is why it lives here.)</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">438</span>
+    <span class="phpdocumentor-element-found-in__line">442</span>
 
     </aside>
 
@@ -976,7 +979,7 @@ jpkcom_postfilter_known_term_slugs().</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">476</span>
+    <span class="phpdocumentor-element-found-in__line">480</span>
 
     </aside>
 
@@ -1066,7 +1069,7 @@ so <code class="prettyprint">c%2b%2b%2Bzaeune</code> (two slugs joined by an enc
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">559</span>
+    <span class="phpdocumentor-element-found-in__line">565</span>
 
     </aside>
 
@@ -1086,7 +1089,9 @@ order, duplicates, case, empty segments, <code class="prettyprint">page/1</code>
 <ol>
 <li>more segments than filter groups          -&gt; reject (<code class="prettyprint">segments</code>)</li>
 <li>a slug longer than 200 characters         -&gt; reject (<code class="prettyprint">length</code>)</li>
-<li>caps per group, group count, total terms  -&gt; reject (<code class="prettyprint">per-group</code>, <code class="prettyprint">groups</code>, <code class="prettyprint">total</code>)</li>
+<li>caps per group, group count, total terms  -&gt; reject (<code class="prettyprint">per-group</code>, <code class="prettyprint">groups</code>, <code class="prettyprint">total</code>)
+(per-group counts the non-empty raw pieces, summed per taxonomy,
+before normalising; see the file header)</li>
 <li>unknown slugs, per $unknown_action:
 redirect: dropped (the caller then redirects to what is left)
 noindex:  kept, flagged
@@ -1169,7 +1174,7 @@ Null callable = no existence check.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">673</span>
+    <span class="phpdocumentor-element-found-in__line">685</span>
 
     </aside>
 
