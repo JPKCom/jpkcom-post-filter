@@ -245,7 +245,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_html_text' ) ) {
             static function ( array $m ): string {
                 $bytes = array_values( (array) unpack( 'C*', $m[0] ) );
                 $count = count( $bytes );
-                $code  = $count === 1 ? $bytes[0] : $bytes[0] & ( 0xFF >> ( $count + 1 ) );
+                $code  = $bytes[0] & ( 0xFF >> ( $count + 1 ) ); // lead byte of a 2-4 byte sequence
                 for ( $i = 1; $i < $count; $i++ ) {
                     $code = ( $code << 6 ) | ( $bytes[ $i ] & 0x3F );
                 }
@@ -919,7 +919,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
                 title: __( 'Rate limits per IP and site-wide (ModSecurity, VirtualHost)', 'jpkcom-post-filter' ),
                 context: sprintf(
                     /* translators: 1: requests, 2: seconds, 3: requests, 4: requests */
-                    __( 'Inside the site\'s <VirtualHost>. Needs ModSecurity 2 (security2_module) with a SecDataDir for its counters, and mod_headers for Retry-After. Cookie-less filter requests get 429 beyond %1$d per IP in %2$d seconds or %3$d site-wide in 10 seconds; search engines have their own limit of %4$d in 10 seconds. Everything sits in a LocationMatch for the filter URLs: SecRuleEngine On applies there only. If OWASP CRS is loaded, it then also enforces on these filter URLs (and only there) - try it on a staging copy first. mod_evasive is not recommended: it bans whole IPs and knows no path or cookie.', 'jpkcom-post-filter' ),
+                    __( 'Inside the site\'s <VirtualHost>. Needs ModSecurity 2 (security2_module) with a SecDataDir for its counters, and mod_headers for Retry-After. Cookie-less filter requests get 429 beyond %1$d per IP in %2$d seconds or %3$d site-wide in 10 seconds; search engines have their own limit of %4$d in 10 seconds. Everything sits in a LocationMatch for the filter URLs: SecRuleEngine On applies there only. If OWASP CRS is loaded without a global SecRuleEngine (Debian\'s default without modsecurity.conf), CRS runs uninitialised inside this LocationMatch: it blocks nothing there and logs rule 911100 for every filter request. Enable modsecurity.conf globally (for example SecRuleEngine DetectionOnly): CRS then initialises normally, only logs elsewhere and also blocks attacks on the filter URLs - try it on a staging copy first. The site-wide counter is keyed on SERVER_NAME, which follows the request\'s Host header: in the default VirtualHost or one with a wildcard ServerAlias set UseCanonicalName On, otherwise every Host value gets a fresh site-wide counter. mod_evasive is not recommended: it bans whole IPs and knows no path or cookie.', 'jpkcom-post-filter' ),
                     $limits['ip_burst'],
                     $window,
                     $site,

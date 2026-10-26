@@ -1348,6 +1348,15 @@ chk( 'apache: Retry-After on every 429, inside <IfModule mod_headers.c>, context
 	str_contains( $modsec, "<IfModule mod_headers.c>\n    Header always set Retry-After \"10\" \"expr=%{REQUEST_STATUS} == 429\"\n</IfModule>" )
 	&& str_contains( $qos, "<IfModule mod_headers.c>\n    Header always set Retry-After \"10\" \"expr=%{REQUEST_STATUS} == 429\"\n</IfModule>" )
 	&& str_contains( context_of( $all['apache'], 'apache-modsec' ), 'mod_headers' ) );
+// Measured on Debian 13 (CRS 3.3.7, no modsecurity.conf): CRS runs uninitialised in
+// the LocationMatch, blocks nothing and logs 911100 per filter request. And the
+// site counter key SERVER_NAME follows the Host header unless UseCanonicalName On
+// (catch-all VirtualHost: b.test got a fresh counter with Off, 429 with On).
+$modsec_ctx = context_of( $all['apache'], 'apache-modsec' );
+chk( 'apache: ModSecurity context explains CRS without a global engine and the Host-keyed site counter',
+	str_contains( $modsec_ctx, 'without a global SecRuleEngine' ) && str_contains( $modsec_ctx, 'logs rule 911100 for every filter request' )
+	&& str_contains( $modsec_ctx, 'SecRuleEngine DetectionOnly' ) && str_contains( $modsec_ctx, 'UseCanonicalName On' )
+	&& ! str_contains( $modsec_ctx, 'If OWASP CRS is loaded, it then also enforces' ), $modsec_ctx );
 chk( 'apache: context names apachectl -M', str_contains( context_of( $all['apache'] ), 'apachectl -M' ) );
 
 // --- .htaccess -------------------------------------------------------------------
