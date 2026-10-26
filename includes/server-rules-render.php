@@ -1579,13 +1579,21 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
             $base   = $probes['within'][1];
             $target = $url( $base . '?rl=' );
             $seq    = 'for i in $(seq 1 25); do curl -s -o /dev/null -w \'%{http_code} \' ';
+            // One command that is its own evidence: the status codes, then the
+            // Retry-After header of the first 429 inside the loop. A request
+            // sent after the loop proved nothing - the site-wide bucket
+            // refills in between (lab: 200 at 3 r/s).
+            $proof  = 'first=; for i in $(seq 1 25); do h=$(curl -s -o /dev/null -D - -w \'%{http_code}\' ' . $target . '"$i"); '
+                . 'c=$(printf \'%s\' "$h" | tail -n 1); printf \'%s \' "$c"; '
+                . 'if [ "$c" = 429 ] && [ -z "$first" ]; then first=$(printf \'%s\n\' "$h" | grep -i \'^retry-after:\' | tr -d \'\r\'); first="${first:-no Retry-After header}"; fi; '
+                . 'done; echo; echo "first 429: ${first:-none}"';
             $par    = 'seq 1 8 | xargs -P 8 -I{} curl -s -o /dev/null -w \'%{http_code} \' ';
             $out[]  = '';
             $out[]  = '# ' . ( ++$n ) . ') Rate limit. This uses up the shared budget of cookie-less visitors: run it off-peak.';
             if ( $server === 'nginx' ) {
-                $out[] = '#    Sequential requests (limit_req): expect 429 after the burst, then Retry-After on the next one.';
-                $out[] = $seq . $target . '"$i"; done; echo';
-                $out[] = 'curl -s -o /dev/null -D - ' . $url( $base ) . " | grep -iE '^(HTTP|retry-after)'";
+                $out[] = '#    Sequential requests (limit_req): expect 429 once the burst is used up.';
+                $out[] = '#    The last line shows the Retry-After header of the first 429.';
+                $out[] = $proof;
                 $out[] = '#    Any cookie exempts a request: expect no 429.';
                 $out[] = $seq . '-H \'Cookie: jpkpf-check=1\' ' . $target . '"$i"; done; echo';
             } elseif ( $server !== 'apache' ) {
@@ -1596,9 +1604,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
                     $out[] = '#    b) The per-IP limit, 15 s after a): sequential requests.';
                     $out[] = 'sleep 15';
                 }
-                $out[] = '#    Sequential requests: expect 429 after the per-IP burst, with Retry-After where the server sends one.';
-                $out[] = $seq . $target . '"$i"; done; echo';
-                $out[] = 'curl -s -o /dev/null -D - ' . $url( $base ) . " | grep -iE '^(HTTP|retry-after)'";
+                $out[] = '#    Sequential requests: expect 429 once the per-IP burst is used up.';
+                $out[] = '#    The last line shows the Retry-After header of the first 429, where the server sends one.';
+                $out[] = $proof;
                 $out[] = '#    Any cookie exempts a request: expect no 429.';
                 $out[] = $seq . '-H \'Cookie: jpkpf-check=1\' ' . $target . '"$i"; done; echo';
             } else {
@@ -1606,10 +1614,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
                 $out[] = '#       than the cap overlap (they only overlap while PHP is busy rendering).';
                 $out[] = $par . $url( $base . '?rl=p{}' ) . '; echo';
                 $out[] = '#    b) ModSecurity counts per IP over time: wait 30 s after a), then sequential requests.';
-                $out[] = '#       Expect 429 after the per-IP limit, then Retry-After on the next one.';
+                $out[] = '#       Expect 429 once the per-IP limit is used up; the last line shows the Retry-After';
+                $out[] = '#       header of the first 429.';
                 $out[] = 'sleep 30';
-                $out[] = $seq . $target . '"$i"; done; echo';
-                $out[] = 'curl -s -o /dev/null -D - ' . $url( $base ) . " | grep -iE '^(HTTP|retry-after)'";
+                $out[] = $proof;
                 $out[] = '#    Any cookie exempts a request from both: expect no 429 (wait 30 s first).';
                 $out[] = 'sleep 30';
                 $out[] = $par . '-H \'Cookie: jpkpf-check=1\' ' . $url( $base . '?rl=p{}' ) . '; echo';

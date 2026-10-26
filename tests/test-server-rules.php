@@ -1767,6 +1767,79 @@ chk( 'check commands ferron2: no reject probes, says why',
 	&& str_contains( $cc['ferron2'], '# Ferron 2.8 gets no reject rule in this version: nothing to probe.' ) && ! str_contains( $cc['ferron2'], 'URL-decoded' ) );
 chk( 'check commands ferron3: bulkhead shown with parallel requests and their times', str_contains( $cc['ferron3'], 'xargs -P 8' ) && str_contains( $cc['ferron3'], 'time_total' ) && ! str_contains( $cc['caddy'], 'xargs' ) );
 
+// --- 1.6.1: the rate-limit loop is its own evidence -----------------------------
+// Lab run (nginx, 3 r/s site-wide): the single request printed after the
+// sequential loop answered 200, not 429 - the site bucket refills between the
+// loop and that request. The loop itself now prints the codes and the
+// Retry-After header of the first 429 it sees; no request after it.
+$rate_servers = [ 'nginx', 'apache', 'caddy', 'ferron3', 'ferron2' ];
+$no_next      = true;
+$evidence     = [];
+foreach ( $rate_servers as $server ) {
+	$c       = $cc[ $server ];
+	$no_next = $no_next && ! str_contains( $c, 'on the next one' )
+		&& preg_match( '/^curl [^\n]*grep -iE \'\^\(HTTP\|retry-after\)\'$/m', $c ) === 0;
+	$lines   = array_values( array_filter( explode( "\n", $c ), static fn( string $l ): bool => str_contains( $l, 'for i in $(seq 1 25)' ) && ! str_contains( $l, 'Cookie:' ) ) );
+	$evidence[ $server ] = $lines;
+}
+chk( 'check commands 1.6.1: no separate request after the rate-limit loop, no "Retry-After on the next one"', $no_next, $cc['nginx'] );
+chk( 'check commands 1.6.1: exactly one cookie-less sequential loop per rate-limited server, printing the first 429\'s Retry-After',
+	array_sum( array_map( 'count', $evidence ) ) === count( $rate_servers )
+	&& array_reduce( $evidence, static fn( bool $ok, array $l ): bool => $ok && isset( $l[0] ) && str_contains( $l[0], "grep -i '^retry-after:'" ) && str_contains( $l[0], 'first 429: ' ), true ),
+	show( $evidence ) );
+chk( 'check commands 1.6.1: cookie loops unchanged (codes only, expect no 429), mod_qos still parallel',
+	str_contains( $cc['nginx'], "#    Any cookie exempts a request: expect no 429.\nfor i in \$(seq 1 25); do curl -s -o /dev/null -w '%{http_code} ' -H 'Cookie: jpkpf-check=1' " )
+	&& substr_count( $cc['apache'], 'xargs -P 8' ) === 2 && ! str_contains( $cc['apache'], 'then Retry-After' ) );
+
+/**
+ * Run one printed loop under POSIX sh with a stand-in curl: requests 1..$ok
+ * answer 200, later ones 429 (with or without Retry-After). Returns stdout,
+ * or null when no sh is available.
+ */
+function run_rate_loop( string $loop, int $ok, bool $retry_after ): ?string {
+	$sh = is_executable( '/bin/sh' ) ? '/bin/sh' : null;
+	if ( $sh === null || ! function_exists( 'proc_open' ) ) {
+		return null;
+	}
+	$counter = tempnam( sys_get_temp_dir(), 'jpkpf-rl' );
+	$ra      = $retry_after ? 'Retry-After: 10\r\n' : '';
+	$fake    = 'curl() { n=$(cat "$JPKPF_CNT"); n=$((n+1)); echo "$n" > "$JPKPF_CNT"; '
+		. 'if [ "$n" -gt ' . $ok . ' ]; then printf \'HTTP/1.1 429 Too Many Requests\r\n' . $ra . 'Cache-Control: no-store\r\n\r\n429\'; '
+		. 'else printf \'HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n200\'; fi; }';
+	file_put_contents( $counter, '0' );
+	$proc = proc_open( [ $sh, '-c', $fake . "\n" . $loop ], [ 1 => [ 'pipe', 'w' ], 2 => [ 'pipe', 'w' ] ], $pipes, null, [ 'JPKPF_CNT' => $counter, 'PATH' => (string) getenv( 'PATH' ) ] );
+	if ( ! is_resource( $proc ) ) {
+		@unlink( $counter );
+		return null;
+	}
+	$out = (string) stream_get_contents( $pipes[1] ) . (string) stream_get_contents( $pipes[2] );
+	proc_close( $proc );
+	@unlink( $counter );
+	return $out;
+}
+
+$loop_runs = [];
+foreach ( $rate_servers as $server ) {
+	$loop = $evidence[ $server ][0] ?? 'echo missing';
+	$loop_runs[ $server ] = [
+		run_rate_loop( $loop, 7, true ),
+		run_rate_loop( $loop, 25, true ),
+		run_rate_loop( $loop, 3, false ),
+	];
+}
+$expect_429 = str_repeat( '200 ', 7 ) . str_repeat( '429 ', 18 ) . "\nfirst 429: Retry-After: 10\n";
+$expect_200 = str_repeat( '200 ', 25 ) . "\nfirst 429: none\n";
+$expect_nra = str_repeat( '200 ', 3 ) . str_repeat( '429 ', 22 ) . "\nfirst 429: no Retry-After header\n";
+if ( $loop_runs['nginx'][0] === null ) {
+	echo "  SKIP  check commands 1.6.1: loop run under sh (no /bin/sh or proc_open)\n";
+} else {
+	$runs_ok = true;
+	foreach ( $loop_runs as $server => [ $a, $b, $c ] ) {
+		$runs_ok = $runs_ok && $a === $expect_429 && $b === $expect_200 && $c === $expect_nra;
+	}
+	chk( 'check commands 1.6.1: the loop runs under POSIX sh and prints the codes plus the first 429\'s Retry-After (or none / no header)', $runs_ok, show( $loop_runs ) );
+}
+
 // =====================================================================================
 section( 'container findings: caddy/ferron' );
 // =====================================================================================
