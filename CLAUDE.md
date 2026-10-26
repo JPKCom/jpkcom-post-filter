@@ -54,7 +54,7 @@ URL/crawl policy (1.5.0, see **Crawl guard** below). Each one also exists as a G
 
 | Constant | Setting key | Default | Purpose |
 |----------|-------------|---------|---------|
-| `JPKCOM_POSTFILTER_MAX_FILTERS_PER_GROUP` | `max_filters_per_group` | `3` | Terms per group (0 = unlimited) |
+| `JPKCOM_POSTFILTER_MAX_FILTERS_PER_GROUP` | `max_filters_per_group` | `2` (since 1.6.0; `3` before) | Terms per group (0 = unlimited), counted raw since 1.6.0 (see **Server rules**) |
 | `JPKCOM_POSTFILTER_MAX_FILTER_COMBOS` | `max_filter_combos` | `3` | Active groups (0 = unlimited, admin form 1–10) |
 | `JPKCOM_POSTFILTER_MAX_TERMS_TOTAL` | `max_terms_total` | `0` | Terms across all groups (0 = off) |
 | `JPKCOM_POSTFILTER_LINK_MODE` | `filter_link_mode` | `'single'` | `single` / `combo` / `none` – what term buttons link to |
@@ -64,6 +64,8 @@ URL/crawl policy (1.5.0, see **Crawl guard** below). Each one also exists as a G
 | `JPKCOM_POSTFILTER_UNKNOWN_TERMS_ACTION` | `unknown_terms_action` | `'redirect'` | `redirect` / `noindex` / `reject` |
 | `JPKCOM_POSTFILTER_ROBOTS_TXT` | `robots_txt_mode` | `'deep'` | `deep` / `all` / `off` |
 | `JPKCOM_POSTFILTER_STRIP_QUERY` | `strip_query` | `false` | 301 filter URLs with a query string to the bare path |
+
+**The default 2 applies to new installations only.** An existing installation that never stored `max_filters_per_group` would otherwise drop from 3 to 2 silently and start rejecting URLs it served the day before. `jpkcom_postfilter_migrate_pin_per_group_cap()` (`includes/settings.php`) runs once in the version-change hook, before the rewrite-version marker moves: when the filter groups option exists or the marker is non-empty (a fresh install has neither) and the stored General array lacks the key, it writes the stored array plus `max_filters_per_group = 3` - **without the General sanitizer** (it would drop post types registered later and read missing checkboxes as "none") and without merging defaults (that would freeze constant-derived values into the database). A stored value, including 2 or 0, is never touched. Tests: `tests/test-migration.php`.
 
 Constant only: `JPKCOM_POSTFILTER_ROBOTS_HEADER` (default `true`, X-Robots-Tag on non-indexable filter pages), `JPKCOM_POSTFILTER_LINK_MAX_TERMS` (default `0`, depth limit for `combo` links), `JPKCOM_POSTFILTER_PAGECACHE_MAX_TERMS` (default `0` = off; above N terms `DONOTCACHEPAGE`), `JPKCOM_POSTFILTER_QUERY_CACHE_MAX_TERMS` (default `1`; deeper selections skip the query cache).
 
@@ -84,6 +86,12 @@ jpkcom-post-filter/
 │   ├── url-policy.php              ← Pure URL rules: normalisation, caps, path validation (1.5.0)
 │   ├── url-routing.php             ← Rewrite rules + URL parsing/building
 │   ├── crawl-guard.php             ← Request guard, robots, canonical, robots.txt, term links (1.5.0)
+│   ├── server-rules.php            ← Pure: rule inputs, hash, reject patterns (1.6.0)
+│   ├── server-rules-render.php     ← Pure: rate-limit formula, reject body, per-server snippets, curl checks (1.6.0)
+│   ├── htaccess-manager.php        ← Pure file ops: managed .htaccess block (place, replace, remove) (1.6.0)
+│   ├── htaccess-sync.php           ← Hooks: keep the managed block never stricter than the plugin (1.6.0)
+│   ├── server-rules-check.php      ← "Check now" loopback probes + notice after loosening saves (1.6.0)
+│   ├── server-rules-admin.php      ← Server Rules admin page and its admin-post actions (1.6.0)
 │   ├── query-handler.php           ← WP_Query builder + caching
 │   ├── filter-injection.php        ← Auto-inject into archives
 │   ├── shortcodes.php              ← Shortcode registration + render functions
@@ -113,7 +121,8 @@ jpkcom-post-filter/
 │   ├── css/post-filter.css         ← Frontend (CSS variables system)
 │   ├── css/admin.css               ← Backend
 │   ├── js/post-filter.js           ← AJAX filter + history.pushState + pagination swap
-│   └── js/shortcode-generator.js   ← Admin shortcode builder
+│   ├── js/shortcode-generator.js   ← Admin shortcode builder
+│   └── js/admin-server-rules.js    ← Server Rules page: tabs, copy buttons (1.6.0)
 └── languages/
     ├── jpkcom-post-filter.pot
     ├── jpkcom-post-filter-de_DE.{po,mo,l10n.php}
@@ -848,7 +857,7 @@ At 10 terms per group that is ~34 million URL strings instead of ~31 000 distinc
 | canonical, within caps | 200 |
 | other spelling (order, duplicate, case, `_` at the end, `page/1`, empty segment) | **301** to the canonical URL, query string kept (unless `strip_query`) |
 | unknown slug (`unknown_terms_action = redirect`) | **301** to the selection without it, or to the archive |
-| over a cap, more segments than groups, slug > 200 chars | **410** (or 404), minimal body, `X-Robots-Tag: noindex, nofollow`, `X-Jpkpf-Reject: <reason>` |
+| over a cap (per group: raw pieces since 1.6.0, see **Server rules**), more segments than groups, slug > 200 chars | **410** (or 404), minimal body, `X-Robots-Tag: noindex, nofollow`, `X-Jpkpf-Reject: <reason>` |
 | `?jpkcom_filter_path=` / `_fragment=` / `_post_type=` via GET/POST | ignored - those vars are only taken from the matched rewrite rule |
 | fragment request | never redirected (the script owns the URL); rejected like the page; served for the cleaned selection |
 
@@ -889,8 +898,144 @@ Pagination: page 1 links to the page itself (`base` with `%_%`, `format` `page/%
 ### What it deliberately does not do
 
 - **Page cache exclusion** is opt-in (`JPKCOM_POSTFILTER_PAGECACHE_MAX_TERMS`). The analysis proposed `DONOTCACHEPAGE` above 1 term by default; that was not adopted: once the URL space is finite and canonical, caching deep pages is what absorbs the alias redirects (k! spellings of a selection all 301 onto one cached page). Excluding them made each of those a full render again.
-- **Server-level limits** (nginx bulkhead, grammar whitelist, static robots.txt) are not plugin code. The plugin cannot spare the WordPress bootstrap; nginx can.
+- **Server-level limits** are not enforced by plugin code - the plugin cannot spare the WordPress bootstrap, a web server can. Since 1.6.0 the **Server Rules** page generates them (reject before PHP, robots.txt to WordPress, rate limit) for seven server setups; the admin deploys them. The only server configuration the plugin ever writes itself is the managed `.htaccess` block on Apache, and only after the admin clicks *Set up*. Page caches are a text hint on that page, never a generated config. See **Server rules (since 1.6.0)**.
 - **Updater DNS lookup per request** (`wp_http_validate_url()` in the updater constructor) is family code - fix upstream for all 19 plugins at once, never here alone.
+
+---
+
+## Server rules (since 1.6.0)
+
+The 1.5.0 guard rejects over-cap filter URLs, but only after the WordPress bootstrap - measured on the production site that prompted 1.5.0, ~22 000 rejects an hour still went through a full bootstrap, about 70 % of the remaining PHP load. A web server can turn the same URLs away for almost nothing. **Post Filter → Server Rules** generates the rules from the effective settings, for nginx (plain server block or ISPConfig's "nginx Directives"), Apache server configuration, Apache `.htaccess`, Caddy/FrankenPHP, Ferron 3, Ferron 2.8 and OpenLiteSpeed: reject before PHP, robots.txt to WordPress, a rate limit for cookie-less filter requests, and the page-cache hint as text.
+
+**The hard rule: no generated rule may reject a URL the plugin answers with 200 or 301.** Looser is always allowed - PHP keeps the last word. Every design decision below follows from it.
+
+Files: `includes/server-rules.php` (inputs, hash, patterns - pure, no hooks), `includes/server-rules-render.php` (rate-limit formula, reject body, one snippet function per server, curl commands - pure), `includes/htaccess-manager.php` (file operations on the managed block - pure, the path is a parameter), `includes/htaccess-sync.php` (hooks that keep the block in step), `includes/server-rules-check.php` (the status check and the notice), `includes/server-rules-admin.php` (the page). Options: `jpkcom_postfilter_server_rules` (workers, render time, nginx variant; never autoloaded), `jpkcom_postfilter_htaccess_managed` (`'1'` or absent, not autoloaded), `jpkcom_postfilter_server_rules_check` (last check result and time).
+
+### Raw per-group count (behaviour change)
+
+Since 1.6.0 `jpkcom_postfilter_validate_filter_path()` checks `max_filters_per_group` against the number of **non-empty raw pieces** per taxonomy - after splitting at `+`/`%2b` and re-joining known `%2b` slugs, **before** `sanitize_title()` and before de-duplication. Above N: `per-group` reject. At or below N the old path stays (normalise, 301 duplicates and other spellings to the canonical URL). Pieces of one taxonomy add up across segments (two groups on the same taxonomy). `max_filter_combos`, `max_terms_total`, the segment count and the length limits are unchanged; with strict URLs off the parser still truncates by the normalised count.
+
+**Consequence for running sites:** hand-built URLs with more than N pieces in a group - duplicates (`a+a+b` at N = 2), case variants, pieces that sanitise to nothing (`-`) - now get **410 instead of 301**. The plugin itself (PHP links, JS, Abilities) never builds such URLs.
+
+**Why:** a server can only count what is in the URL. With the raw count, "a segment with N+1 non-empty `+`-separated pieces in a `%`-free path" is **exactly** what the plugin rejects - no backreferences, no lookahead, and independent of `sanitize_title()` and of anything that filters it. That is what makes one grammar work in PCRE, RE2 and Rust's `regex`, in linear time.
+
+### Inputs and hash
+
+`jpkcom_postfilter_server_rule_inputs()` reads the **effective** values (constant → stored → default → `jpkcom_postfilter_{key}` filter): `strict`, `max_per_group` (N), `groups` (G, every enabled group site-wide), `skip_positions` (groups without a taxonomy), `reject_status`, `endpoint`, `fragment`, `bases`, plus `verdict_filtered` (`has_filter( 'jpkcom_postfilter_request_verdict' )`) and `policy_filtered`. Bases (`jpkcom_postfilter_server_rule_bases()`): every routable post type that gets rewrite rules, in every language `jpkcom_postfilter_archive_base_urls_all_languages()` knows, as paths including the home path; a base containing `%` is left out.
+
+`jpkcom_postfilter_server_rule_hash()` = first 12 hex characters of sha256 over the values that shape the rule (sets sorted; `policy_filtered` and the hash itself excluded). The server sends it as `X-Jpkpf-Rule`; the status check and the `.htaccess` sync compare it. Known limit: the hash covers inputs, not renderer code - a future release that changes a renderer without changing an input must fold a renderer version into the hash, or deployed rules will not be recognised as stale.
+
+**Caveat - bases from `jpkcom_postfilter_robots_txt_base_urls`.** That filter (for multilingual plugins other than WPML) feeds `archive_base_urls_all_languages()`, so since 1.6.0 the bases it returns also get **server rejects**, not only robots.txt lines. The argument "a base the plugin does not route only covers a path WordPress would 404 anyway" holds for bases the plugin derives itself; it is unproven for a filter-supplied base. If such a base is a path where some other code serves `{base}/{endpoint}/a+b+c/`, the server would reject it. A filter callback must return only bases the plugin actually routes.
+
+### Grammar (`jpkcom_postfilter_server_reject_patterns()`)
+
+Two patterns, matched on the **raw** request URI and only on a path **without `%`**: WordPress tries every rewrite rule on the raw path and again on its `urldecode()`d form, so `%70age`, `jpkpf%2Dfragment` or `%2F` split a path differently from its bytes. Leaving every `%` path to PHP removes that whole class. Matched case-sensitively; only literals, negated classes, non-capturing groups, quantifiers, alternation and anchors - no lookaround, no backreferences.
+
+- **per_group** (`server-per-group`): a segment below `{base}{endpoint}/` with N+1 or more non-empty pieces separated by a literal `+`. Page and fragment suffixes never contain `+`, so they never count. Positions without a taxonomy are skipped position-exactly; past G every segment is a `segments` reject anyway.
+- **segments** (`server-segments`): segment G+1 contains a `+`, or there are G+4 segments (the capture is the path after the endpoint minus at most a three-segment `page/N` / fragment suffix, so of G+4 segments at least G+1 are captured).
+
+Both null when strict URLs are off, the verdict is filtered, there are no groups, bases or endpoint, or one base lies below another base's endpoint (positions would shift). `per_group` is also null for N = 0 - **but `segments` stays** (ruling R7; the design spec's "N = 0 → no reject part" is superseded): segments alone is still never stricter. The guard checks `segments` before `per-group`, and so do the snippets, so a URL over both gets the same reason from the server as from PHP.
+
+**The linear form is load-bearing** (ruling R5). The literal grammar `(?:any segment)*` retried the tail scan from every split point: 12.6 ms for a 2000-character path without a JIT, against a budget of 1 ms. The built form skips exactly the segments within the cap, so only the first over-cap segment is a candidate (0.24-0.28 ms without JIT). Renderers must keep these constructs.
+
+`subject: 'request_line'` builds the same grammar for `%{THE_REQUEST}` (Apache, OpenLiteSpeed): `^[A-Z]+ … (?:\s|$)`, and **every negated class also excludes whitespace** (ruling R1). `THE_REQUEST` ends in ` HTTP/1.1`, which contains a `/`; without `\s` in the classes, `…/page/2/jpkpf-fragment HTTP/` counted as extra segments and the plugin's own fragment requests were rejected. PCRE-only (`\s`, `\S`).
+
+Bases are filtered once more for the snippets (`jpkcom_postfilter_server_safe_bases()`: RFC 3986 unreserved plus `! * + , = : @`); a base with a quote, space, brace, `$`, `;` and the like is left out of every snippet and named on the page (looser). `jpkcom_postfilter_server_render_patterns()` keeps a pattern null whenever it is null over all bases, so dropping a base cannot lift the nested-base check.
+
+**Not on the server** (looser, allowed): length limits (2000 / 200), `max_filter_combos`, `max_terms_total`, unknown slugs, upper case, `%`-encoded paths. **Known limit:** the server decides by URL alone - if another plugin's own `top` rewrite rule serves a filter-shaped URL before this plugin, the server rejects it anyway. The page says so.
+
+**Proof:** `tests/test-server-rules.php` fuzzes both forms differentially against the real `jpkcom_postfilter_validate_filter_path()` behind an emulation of WordPress's rewrite matching (raw, then `urldecode()`, in registration order) over 120 layouts (N 1-5, G 1-3, positions without taxonomy, nested and root bases) with a noise pool of `%70age`, `pag%65`, `jpkpf%2Dfragment`, `%2F`, `%2B`/`%2b`, `%2b` slugs, upper case, `--`, `.`, empty pieces, `//`, `_`, page/fragment suffixes, query strings and over-length. Expected: **0 cases "server rejects, plugin does not"**. Default 9000 cases per layout (CI ~15 s); `JPKPF_FUZZ=400000` for a deep run, `JPKPF_WPCORE=/path/to/wordpress` for the real `formatting.php` instead of the stub. Also: the production bot shapes (4/3, 3/4, 4/2, 2/4, 3/3 at N = 2, canonical, with `page/2`, fragment, `?utm`) are caught 100 %, and a 2000-character worst case runs under 1 ms.
+
+### The server's answer
+
+Status = `reject_status` (410 or 404), `X-Robots-Tag: noindex, nofollow`, `X-Jpkpf-Reject: server-<reason>`, `X-Jpkpf-Rule: <hash>`, `Cache-Control: no-store`.
+
+- `X-Jpkpf-Reject` is mandatory: without it the front-end script treats a rejected fragment as damaged and reloads the page.
+- `no-store`: a cached reject would outlive a later loosening and be stricter than the plugin.
+- Body (`jpkcom_postfilter_server_reject_body()`): one line of HTML in the site language, `noindex`, a link to the first base. **Pure ASCII** - every non-ASCII character is a numeric entity, because Apache sends a string `ErrorDocument` as `text/html; charset=iso-8859-1` and that header beats the meta tag ("verfÃ¼gbar"). Also free of `{ } $ \ % '`, so a translation cannot break nginx `return '…'`, ISPConfig's brace counter, Apache expressions or the Caddy/Ferron strings.
+- The rate limit answers **429** with `Retry-After: 10` and **without** `X-Robots-Tag` (a busy answer for a valid URL must not tell search engines to drop it). 429, not 503: ISPConfig's "Own Error-Documents" replace a 503 together with its headers, and the script treats both alike.
+
+### Rate limit
+
+One formula for every server (`jpkcom_postfilter_rate_limits()`), from two inputs on the page: W = PHP workers (default 8, 1-256) and t = render time of a filter page (default 0.4 s, 0.05-10).
+
+```
+conn          = max(1, floor(3W/8))         cookie-less filter pages rendering at once
+rate          = max(1, round(0.4 conn / t)) site-wide req/s (those workers ~40 % busy)
+burst         = 2 rate
+ip_per_minute = 30, ip_burst = 10           per visitor IP
+bot_rate      = max(1, round(2 rate / 3)), bot_burst = 20   search engines' own bucket
+retry_after   = 10 s
+```
+
+Anchor (8 workers, 0.4 s): conn 3, 3 r/s burst 6, 30 r/min burst 10 per IP, search engines 2 r/s burst 20. **Any `Cookie` header exempts** a request on every server - logged-in users and returning visitors are never slowed down; a bot can send a cookie too, and a first-time visitor has none, so this is a brake for anonymous floods, not access control. Googlebot, Bingbot, Applebot, DuckDuckBot and YandexBot get their own bucket where the server can tell them apart (nginx, Caddy, ModSecurity); a 429 for Google throttles its crawl of the whole site.
+
+### Server matrix (as built and container-tested)
+
+Every snippet was run as generated, in containers (nginx standard + ISPConfig, Apache prefork/event with `.htaccess`, VirtualHost, mod_qos, ModSecurity ± OWASP CRS, OpenLiteSpeed, Caddy, Ferron 3.0.0-rc.10, Ferron 2.8.1). Harnesses and protocol stay local (`/home/jpk/tmp/post-filter-160-lab/`), not in this repo.
+
+| Server | Reject before PHP | Rate limit | What is impossible / caveats |
+|---|---|---|---|
+| **nginx** | Server-level `if ($request_uri ~ …)` → `rewrite ^ /jpkpf-edge-<reason>? last;` → `location = /jpkpf-edge-<reason> { internal; add_header …; return <status> '<body>'; }` (`add_header` is not allowed in a server-level `if`). Rejected requests never reach PHP or the rate limit. | Two parts: an http-context file (root: `map`s, `limit_req_zone` for IP/site/bots, `limit_conn_zone`) and a per-base `location` with `limit_req`/`limit_conn`, `error_page 429 = @jpkpf_busy`. Dry-run switches as comments. | `nginx-light` has no `limit_req`. The rate-limit location takes precedence over page-cache rules in `location /`. |
+| **nginx / ISPConfig** | Same, pasted into "nginx Directives". | Same, `location` in the field, zones still need root. | ISPConfig strips lines starting with `#`, replaces a `location` it already has (so no `location /`), counts braces per line; robots.txt goes through its own `location = /robots.txt { ##merge##` - pasting it twice breaks `nginx -t` ("try_files directive is duplicate"). |
+| **Apache (server config)** | `RewriteCond %{ENV:REDIRECT_STATUS} ^$` + `RewriteCond %{THE_REQUEST} "…"` + `RewriteRule ^/ - [E=JPKPF_REJECT:server-<reason>,R=<status>,L]`; `Header always set … env=` twice (also `REDIRECT_JPKPF_REJECT` - an internal redirect renames the variable); string `ErrorDocument`. `RewriteRule` patterns, `REQUEST_URI` and `RedirectMatch` see the decoded path, `THE_REQUEST` does not. | **mod_qos** `QS_EventRequestLimit` as the concurrency cap (never `QS_ClientEventLimitCount`: it bans the whole IP for every URL) - search engines **share** it (ruling R10; a User-Agent exemption would let anyone past the only cap). **ModSecurity 2** for per-IP, site-wide and bot limits, everything inside a `<LocationMatch>` over the filter prefixes including `SecRuleEngine On` (ruling R9: no vhost-wide engine switch, CRS is not flipped to blocking for the whole site), phase 2, fixed windows. Counters in **RESOURCE** (`jpkpf_ip_<addr>`) and **USER** (`jpkpf_site_<server name>`) - not IP/GLOBAL, which CRS 3.3 opens first under other keys (measured: a new User-Agent per request walked past the per-IP limit, and one vhost's site counter answered 429 on another). | Without a global `SecRuleEngine` (Debian's default without `modsecurity.conf`) CRS runs uninitialised inside the LocationMatch: blocks nothing there, logs 911100 per filter request; the context text says so. The site counter is keyed on `SERVER_NAME`, which follows the Host header - catch-all vhosts need `UseCanonicalName On`. mod_evasive is not recommended. Other rule sets could in theory use RESOURCE/USER too. |
+| **Apache (.htaccess)** | Same rules in per-directory form (`RewriteRule ^`, `<IfModule>`), **before** `# BEGIN WordPress` - after WordPress's block it never takes effect (its `RewriteRule . /index.php [L]` already sent the URL to PHP). Needs `AllowOverride FileInfo`. | Not possible in `.htaccess` (mod_qos and ModSecurity are server-level); the tab says so. | The copy snippet carries **manual** markers; the managed block is described below. |
+| **Caddy / FrankenPHP** | One `route` before `php_fastcgi`: `@jpkpf_<reason> expression {http.request.orig_uri}.matches("…")` (CEL string inside a backtick token, so every `\` is doubled), `respond <status>` with headers. **`orig_uri`, not `uri`** (ruling R13): the Caddyfile sorts `rewrite`/`try_files` before `route`, so a site-level `try_files` would otherwise have rewritten the URI to `/index.php` first and silently disabled the rule. | `caddy-ratelimit` (xcaddy build) **inside the same `route`, after the rejects** - outside it the module sorts itself before `respond` and rejected requests use up the visitors' budget. Zones per IP, site-wide (`key static`) and bots; scope on `{http.request.orig_uri.path}` with `^/+` (WordPress trims leading slashes, so `//blog/filter/x/` must count). `handle_errors 429` needs Caddy 2.8+. | Without the module Caddy refuses the whole file - delete the `rate_limit`/`handle_errors` blocks, the reject still works. A site that wraps `php_fastcgi` in `handle` needs the route inside that `handle` (handle sorts before route and ends the request), `handle_errors` outside it. Root base renders as `(?:|news/)`, which RE2 accepts. |
+| **Ferron 3** (3.0.0-rc.10) | Top-level `match` blocks on `request.uri` (raw; `request.uri.path` is decoded) in raw strings `r"…"`, host-level `if` blocks with `status` + headers; the per-group matcher excludes the segments pattern so a URL over both gets one answer. | `rate_limit` per IP only (token bucket, 1 r/s minimum - the plugin's 30/min cannot be expressed). **No site-wide rate and no bot bucket** (no constant key); instead a FastCGI **bulkhead**: a second `fcgi_php` with `limit` connections and a URL that must differ from the main one (`/jpkpf` suffix; with a Unix socket `/./` in the path, because a suffix becomes part of the socket path → 500). Further requests wait, no 429. | Relies on Ferron keying the pool by the literal URL string - read in the rc.10 source, undocumented; re-check against 3.0.0 final. Ferron's 429 has no `Cache-Control` (a 429 is not cacheable by default, RFC 9111). Root base needs Rust `regex` ≥ 1.8. |
+| **Ferron 2.8** | **None** (ruling R14). Ferron 2 decodes safe escapes and merges slashes before any module and hands PHP that same decoded URI, so WordPress already counts what a server rule would see; a reject on `{path}` would not be stricter, but none was built or tested. | `limit rate= burst=` per IP; a missing header is `""` in conditions (`is_equal "{header:Cookie}" ""`). | No site-wide cap, no bot bucket, 429 without `Retry-After`. No reject probes in the curl commands. |
+| **OpenLiteSpeed** | Virtual Host rewrite (WebAdmin → Rewrite) on `THE_REQUEST`, **status only, no headers** - neither rewrite nor `.htaccess` can set one, and `extraHeaders` ignores its `env=` condition (it would put `noindex` on every page). Graceful restart. | None in released versions (only server-wide Per Client Throttling). | The status check cannot recognise the rule; a rejected fragment reloads the page. `.htaccess` changes need a restart, so the plugin never manages it there. |
+
+robots.txt: every tab says how `/robots.txt` reaches WordPress (`location /`, WordPress's `.htaccess`, `php_fastcgi`, the front-controller rewrite) and that a physical file in the web root always wins. Every tab also carries the **order rule** - *tightening: plugin first and purge the page cache, then the server; loosening: server first, then the plugin* - curl commands with synthetic slugs (`jpkpf-probe-1+…`) judged by the **value** of `X-Jpkpf-Reject` (PHP answers the same URLs with its own 410, so the status proves nothing), and the page-cache hint. Every pasted block starts with `# >>> jpkcom-post-filter <version> rule <hash>` (`//` in Ferron 2's KDL; the ISPConfig variant has no comment lines at all - ISPConfig strips them - and carries the hash only in its `X-Jpkpf-Rule` line).
+
+### Managed `.htaccess` block (Apache)
+
+**Available only when** `SERVER_SOFTWARE` names Apache and not LiteSpeed (WordPress's `$is_apache` is true for LiteSpeed too), no multisite, no `DISALLOW_FILE_MODS`, `get_home_path() . '.htaccess'` exists and is writable, and no manual block is present (`jpkcom_postfilter_htaccess_available()` returns the first failing reason; the tab shows it and offers copying only). *Set up* / *Remove* check `manage_options` and a nonce.
+
+- **Markers:** managed `# BEGIN JPKCom Post Filter` / `# END JPKCom Post Filter` with a `# rule <hash>` line; the copy snippet carries `(manual)` markers. The plugin touches only the managed block, never a manual one, and *Set up* refuses while a manual block exists (rules twice). Markers are compared as whole lines, so the managed marker (a prefix of the manual one) never matches the manual line.
+- **Placement, not `insert_with_markers()`** (ruling R16): that function appends a new pair at the end of the file - after WordPress's block, where a reject never takes effect - and leaves marker lines behind when removing. `htaccess-manager.php` writes the block itself, directly before `# BEGIN WordPress` (or at the top, after a BOM, when there is none), under `flock(LOCK_EX)`, in place (`c+`, `ftruncate`) so owner, group and mode survive; line endings, BOM and a missing final newline are kept, every byte outside the block stays. A managed block found **below** WordPress's is moved before it (ruling R15). Managed markers that do not pair up (`damaged`) stop every write and remove until fixed by hand.
+- **Lifecycle:** *Set up* writes the block and sets `jpkcom_postfilter_htaccess_managed` (also when the settings currently produce no reject part - the block follows once they do). *Remove* and deactivation delete the block, and the option only once no managed block is left (a block that could not be removed stays guarded). Activation and version change: managed → sync; block present but option gone (plugin deleted and reinstalled) → removed. Nothing is ever set up automatically.
+
+**Sync - never stricter, not even for one request** (`includes/htaccess-sync.php`):
+
+- A save of General or Filter Groups first brings the block to the **union** of the current and the submitted state (`jpkcom_postfilter_server_rule_union()`: strict only if both are; N = 0 if either is 0, else the larger; the larger G; every position either leaves without taxonomy; a different endpoint, fragment or base set leaves no reject part), lets WordPress commit, then writes the new state (which tightens where the save tightened). Import goes through the same path (`jpkcom_postfilter_htaccess_prepare_save()`).
+- **The sanitizer trap:** `update_option()` runs `sanitize_option()` first, and the plugin's settings sanitizer (priority 10) **writes the settings cache file** - which the plugin reads before the database, so from that moment it runs with the new values. `pre_update_option_*` is too late. The loosening therefore runs on `sanitize_option_*` at **priority 5**.
+- **Refusal:** when the block cannot be loosened (not writable, damaged, management no longer available) the save is refused with an error: the filter hands on the stored value, a last filter on `PHP_INT_MAX` hands on exactly what `get_option()` returns and puts the cache file back, so `update_option()` sees no change. Option, cache file and `.htaccess` stay on the old state (tested). **Only where the server reads `.htaccess`** (Apache or LiteSpeed, ruling R17): on nginx/Caddy/Ferron a leftover block is inert, so the save proceeds and the block waits for *Remove* or deactivation. The migration pin is never refused (`jpkcom_postfilter_htaccess_without_refusal()`).
+- `page_for_posts` and `permalink_structure` (incl. `permalink_structure_changed`, which fires after `WP_Rewrite::init()`) sync after their commit.
+- **Constants and filters change effective values without any option event**, so `admin_init` compares the hash in the file with the current one and syncs - on normal admin page loads only, not on admin-ajax/heartbeat, REST or cron (ruling R18). **Known limit:** a constant that loosens between two requests leaves the block stricter until the next admin page load. Same for WP-CLI: `SERVER_SOFTWARE` is empty there, so the plugin sees no Apache - a loosening `wp option update` neither loosens the block nor is refused, and the block catches up on the next admin page load.
+
+### Status check and notice (`includes/server-rules-check.php`)
+
+**"Check now"** (button only, no background job) sends loopback requests to the site itself - no cookies, 5 s timeout, no redirects, `https_local_ssl_verify` respected:
+
+1. `GET /robots.txt` at the host root: carries the plugin's lines → reaches WordPress; otherwise a physical file or the server answers it, or the plugin adds none (`blog_public` off, mode off).
+2. `HEAD` on an over-cap probe (N+1 probe slugs at the first position with a taxonomy; G+4 segments when N = 0): `server-…` with the current hash → **active** (`active`); `server-…` with another hash or none → **stale** (`stale`); PHP's own reason → **not deployed** (`missing`); a reject without header (LiteSpeed, or a proxy that strips it) → **not detectable** (`unknown`); anything that did not get through (401, 403, 429, 5xx, timeout) → **unreachable** (`unreachable`) with the reason, never `missing`. No reject part in the settings → `none`.
+3. `HEAD` on an at-cap probe (exactly N slugs, a URL the plugin serves): `server-…` → **red alarm, stricter than the plugin**. On LiteSpeed a header-less 404/410 there is only `stricter_suspected` (amber, ruling R19) - OpenLiteSpeed rejects without a header, but so does WordPress for a base it does not route. A probe that could not run is reported as "not checked", never as "not stricter".
+4. The rate limit is **not** probed: that would use up the budget all cookie-less visitors share.
+
+**Notice after a loosening save:** after every save of General or Filter Groups (and every import) that loosens the rule inputs (`jpkcom_postfilter_server_rules_is_looser()`: the union differs from the old state - N higher or 0, a group or taxonomy-less position added, strict off, another endpoint/fragment/base, a filtered verdict; `reject_status` alone is not a loosening, ruling R20), the saving admin sees "update your server rules", red when the last check found rules active or stale. Nothing is blocked. The "before" state is captured on `sanitize_option_*` at priority 4, ahead of the cache-file write. Suppressed when the plugin manages the `.htaccess` block itself and can sync it, and for the migration write.
+
+**The gap that remains, by design:** for servers the plugin does not manage, the hard rule holds **at the time the snippet is generated**. After that, applying the order rule is the admin's job - the notice tells them, and the page says so, but a deployed nginx/Caddy/Ferron/OLS rule stays as strict as it was until someone replaces it.
+
+### Page content and warnings
+
+Head: the server detected from `SERVER_SOFTWARE` (its tab preselected, all tabs available - it is the server in front of PHP, not a proxy or CDN), the effective inputs with their source (constant, filtered), the two rate-limit inputs and the derived limits, the status box. Warnings when they apply: verdict filtered (no reject part, a managed block loses it on the next sync); strict off; N = 0; no groups; no archive bases; unsafe bases left out; policy filters (rules use this admin request's values); positions without taxonomy; duplicate taxonomies (plugin counts them together, the server per segment - looser); constants in `wp-config.php`; physical robots.txt in the WordPress or site root; WordPress in a subdirectory; `blog_public` off; multisite (rules per site, never one site's rule on another's addresses); proxy/CDN (per-IP counts the proxy unless the server reads the forwarded address); other plugins' rewrite rules.
+
+**Multisite:** the generator covers the current site only, and there is no `.htaccess` management on multisite (one file serves the network).
+
+### Tests
+
+| File | Covers |
+|---|---|
+| `tests/test-url-policy.php` | Raw per-group count (red against 1.5.0), plus the 1.5.0 guard; tests that depended on the default pin 3 explicitly |
+| `tests/test-migration.php` | Default 2 for new installs, pin 3 for existing ones without the key, stored values untouched, no sanitizer, no frozen defaults |
+| `tests/test-server-rules.php` | Inputs, hash, both pattern forms, differential fuzz, bot-shape coverage, timing, every renderer and the curl commands |
+| `tests/test-htaccess.php` | Placement, replacement, relocation, removal, manual and damaged markers, line endings/BOM, WordPress flush afterwards - on file copies |
+| `tests/test-htaccess-sync.php` | Union (fuzzed against the real guard), loosen-before / tighten-after, refusal leaves option, cache file and `.htaccess` on the old state, R17, R18, lifecycle, deactivation |
+| `tests/test-server-rules-check.php` | Probe URLs, classification incl. R19/unreachable, `is_looser` (R20), notice capture and suppression |
+| `tests/test-server-rules-admin.php` | Server detection, tabs, warnings, messages, `.htaccess` actions, render output |
+| `tests/test-i18n.php` | The catalogue carries every string of the page |
+
+Each new test was shown red against the state before its change. Container runs are local (see the matrix). Deferred, worth knowing: a shrinking `.htaccess` write leaves the old tail for the instant between `fwrite()` and `ftruncate()`; ModSecurity/nginx log volume under a flood is unmeasured; the 301 spellings near the cap boundary were covered by the PCRE fuzz only, not by container cases.
 
 ## Security Checklist
 
@@ -1035,6 +1180,7 @@ silently, and that is exactly what the first run of this step caught.
 | `jpkcom-postfilter-shortcodes` | `jpkcom_postfilter_page_shortcodes` | – |
 | `jpkcom-postfilter-cache` | `jpkcom_postfilter_page_cache` | `jpkcom_postfilter_cache` |
 | `jpkcom-postfilter-import-export` | `jpkcom_postfilter_page_import_export` | – |
+| `jpkcom-postfilter-server-rules` (1.6.0, `includes/server-rules-admin.php`, menu priority 21) | `jpkcom_postfilter_page_server_rules` | `jpkcom_postfilter_server_rules` (rate-limit inputs only; `.htaccess` and "Check now" go through `admin-post.php`) |
 
 ---
 

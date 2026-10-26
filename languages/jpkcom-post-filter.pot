@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: JPKCom Post Filter 1.5.0\n"
+"Project-Id-Version: JPKCom Post Filter 1.6.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/jpkcom-post-filter\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-22T13:26:52+00:00\n"
+"POT-Creation-Date: 2026-10-26T17:17:39+01:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: jpkcom-post-filter\n"
@@ -230,7 +230,7 @@ msgstr ""
 
 #: includes/admin-pages.php:59
 #: includes/admin-pages.php:60
-#: includes/admin-pages.php:2315
+#: includes/admin-pages.php:2338
 #: includes/elementor/class-widget-filter.php:77
 #: blocks/post-filter/edit.js:42
 msgid "Filter Groups"
@@ -263,12 +263,14 @@ msgid "Import / Export"
 msgstr ""
 
 #: includes/admin-pages.php:125
+#: includes/server-rules-admin.php:1157
+#: includes/server-rules-admin.php:1178
 msgid "Sorry, you are not allowed to do this."
 msgstr ""
 
 #: includes/admin-pages.php:155
-#: includes/admin-pages.php:1826
-#: includes/admin-pages.php:2028
+#: includes/admin-pages.php:1849
+#: includes/admin-pages.php:2051
 msgid "Post Types"
 msgstr ""
 
@@ -286,7 +288,7 @@ msgid "Auto-Inject Filter"
 msgstr ""
 
 #: includes/admin-pages.php:180
-#: includes/admin-pages.php:2158
+#: includes/admin-pages.php:2181
 msgid "Advanced"
 msgstr ""
 
@@ -980,206 +982,206 @@ msgstr ""
 msgid "Transient cache TTL in seconds. Current: %1$d seconds (%2$s)"
 msgstr ""
 
-#: includes/admin-pages.php:1634
-#: includes/admin-pages.php:2469
+#: includes/admin-pages.php:1656
+#: includes/admin-pages.php:2492
 msgid "Rewrite rules flushed."
 msgstr ""
 
-#: includes/admin-pages.php:1638
+#: includes/admin-pages.php:1661
 msgid "Settings saved."
 msgstr ""
 
-#: includes/admin-pages.php:1655
-#: includes/admin-pages.php:2549
+#: includes/admin-pages.php:1678
+#: includes/admin-pages.php:2572
 msgid "Rewrite Rules"
 msgstr ""
 
-#: includes/admin-pages.php:1656
+#: includes/admin-pages.php:1679
 msgid "After changing the URL endpoint, flush the rewrite rules."
 msgstr ""
 
-#: includes/admin-pages.php:1660
-#: includes/admin-pages.php:2553
+#: includes/admin-pages.php:1683
+#: includes/admin-pages.php:2576
 msgid "Flush Rewrite Rules"
 msgstr ""
 
-#: includes/admin-pages.php:1677
+#: includes/admin-pages.php:1700
 msgid "Filter groups saved."
 msgstr ""
 
-#: includes/admin-pages.php:1690
+#: includes/admin-pages.php:1713
 msgid "Configure which taxonomies are used as filter groups. The order here determines the URL segment order."
 msgstr ""
 
-#: includes/admin-pages.php:1698
+#: includes/admin-pages.php:1721
 msgid "No filter groups configured yet. Click \"Add Filter Group\" below."
 msgstr ""
 
-#: includes/admin-pages.php:1708
-#: includes/admin-pages.php:1920
+#: includes/admin-pages.php:1731
+#: includes/admin-pages.php:1943
 msgid "Custom Taxonomy"
 msgstr ""
 
-#: includes/admin-pages.php:1719
-#: includes/admin-pages.php:1930
+#: includes/admin-pages.php:1742
+#: includes/admin-pages.php:1953
 msgid "Register as new WordPress taxonomy"
 msgstr ""
 
-#: includes/admin-pages.php:1721
-#: includes/admin-pages.php:1932
+#: includes/admin-pages.php:1744
+#: includes/admin-pages.php:1955
 msgid "Enable only if this taxonomy does not yet exist in WordPress."
 msgstr ""
 
-#: includes/admin-pages.php:1725
-#: includes/admin-pages.php:1936
+#: includes/admin-pages.php:1748
+#: includes/admin-pages.php:1959
 msgid "Taxonomy Slug"
 msgstr ""
 
-#: includes/admin-pages.php:1725
-#: includes/admin-pages.php:1936
+#: includes/admin-pages.php:1748
+#: includes/admin-pages.php:1959
 msgid "Required"
 msgstr ""
 
-#: includes/admin-pages.php:1733
-#: includes/admin-pages.php:1941
+#: includes/admin-pages.php:1756
+#: includes/admin-pages.php:1964
 msgid "Required. Unique slug for the new taxonomy, lowercase letters and hyphens only (e.g. \"meine-themen\")."
 msgstr ""
 
-#: includes/admin-pages.php:1737
-#: includes/admin-pages.php:1945
+#: includes/admin-pages.php:1760
+#: includes/admin-pages.php:1968
 msgid "Taxonomy"
 msgstr ""
 
-#: includes/admin-pages.php:1748
-#: includes/admin-pages.php:1955
+#: includes/admin-pages.php:1771
+#: includes/admin-pages.php:1978
 msgid "Select the existing WordPress taxonomy to use as filter."
 msgstr ""
 
-#: includes/admin-pages.php:1752
-#: includes/admin-pages.php:1959
+#: includes/admin-pages.php:1775
+#: includes/admin-pages.php:1982
 msgid "Rewrite Slug"
 msgstr ""
 
-#: includes/admin-pages.php:1758
-#: includes/admin-pages.php:1964
+#: includes/admin-pages.php:1781
+#: includes/admin-pages.php:1987
 msgid "URL rewrite slug for this custom taxonomy (e.g. \"my-topics\"). Defaults to the taxonomy name if left empty."
 msgstr ""
 
-#: includes/admin-pages.php:1762
-#: includes/admin-pages.php:1968
+#: includes/admin-pages.php:1785
+#: includes/admin-pages.php:1991
 msgid "Type"
 msgstr ""
 
-#: includes/admin-pages.php:1772
-#: includes/admin-pages.php:1977
+#: includes/admin-pages.php:1795
+#: includes/admin-pages.php:2000
 msgid "Hierarchical (like categories, with parent/child terms)"
 msgstr ""
 
-#: includes/admin-pages.php:1774
-#: includes/admin-pages.php:1979
+#: includes/admin-pages.php:1797
+#: includes/admin-pages.php:2002
 msgid "Uncheck for tag-like behaviour (flat list, no parent/child)."
 msgstr ""
 
-#: includes/admin-pages.php:1778
-#: includes/admin-pages.php:1983
+#: includes/admin-pages.php:1801
+#: includes/admin-pages.php:2006
 msgid "Public"
 msgstr ""
 
-#: includes/admin-pages.php:1788
-#: includes/admin-pages.php:1992
+#: includes/admin-pages.php:1811
+#: includes/admin-pages.php:2015
 msgid "Enable term archive pages (public = true)"
 msgstr ""
 
-#: includes/admin-pages.php:1790
-#: includes/admin-pages.php:1994
+#: includes/admin-pages.php:1813
+#: includes/admin-pages.php:2017
 msgid "Enables frontend URLs for individual terms (e.g. /my-taxonomy/my-term/). Note: WordPress does not create a taxonomy index page — only per-term archives are generated. Disable for purely internal taxonomies."
 msgstr ""
 
-#: includes/admin-pages.php:1794
-#: includes/admin-pages.php:1998
+#: includes/admin-pages.php:1817
+#: includes/admin-pages.php:2021
 msgid "Admin Column"
 msgstr ""
 
-#: includes/admin-pages.php:1804
-#: includes/admin-pages.php:2007
+#: includes/admin-pages.php:1827
+#: includes/admin-pages.php:2030
 msgid "Show as column in post list (show_admin_column = true)"
 msgstr ""
 
-#: includes/admin-pages.php:1806
-#: includes/admin-pages.php:2009
+#: includes/admin-pages.php:1829
+#: includes/admin-pages.php:2032
 msgid "Adds a column for this taxonomy to the post list table in the WordPress admin."
 msgstr ""
 
-#: includes/admin-pages.php:1810
-#: includes/admin-pages.php:2013
+#: includes/admin-pages.php:1833
+#: includes/admin-pages.php:2036
 msgid "REST API"
 msgstr ""
 
-#: includes/admin-pages.php:1820
-#: includes/admin-pages.php:2022
+#: includes/admin-pages.php:1843
+#: includes/admin-pages.php:2045
 msgid "Expose in REST API (show_in_rest = true)"
 msgstr ""
 
-#: includes/admin-pages.php:1822
-#: includes/admin-pages.php:2024
+#: includes/admin-pages.php:1845
+#: includes/admin-pages.php:2047
 msgid "Required for the Block Editor (Gutenberg). Disable only for purely server-side workflows."
 msgstr ""
 
-#: includes/admin-pages.php:1843
-#: includes/admin-pages.php:2039
+#: includes/admin-pages.php:1866
+#: includes/admin-pages.php:2062
 msgid "On which archive pages should this filter group appear? Leave empty = all enabled post types. For new (custom) taxonomies this also determines for which post types the taxonomy is registered in WordPress."
 msgstr ""
 
-#: includes/admin-pages.php:1847
-#: includes/admin-pages.php:2043
+#: includes/admin-pages.php:1870
+#: includes/admin-pages.php:2066
 msgid "Label"
 msgstr ""
 
-#: includes/admin-pages.php:1853
-#: includes/admin-pages.php:2048
+#: includes/admin-pages.php:1876
+#: includes/admin-pages.php:2071
 msgid "Shown in the filter bar and (for custom taxonomies) in the WordPress backend."
 msgstr ""
 
-#: includes/admin-pages.php:1857
-#: includes/admin-pages.php:2052
+#: includes/admin-pages.php:1880
+#: includes/admin-pages.php:2075
 #: includes/elementor/class-widget-list.php:102
 #: includes/oxygen/class-element-list.php:100
 #: blocks/post-list/edit.js:60
 msgid "Order"
 msgstr ""
 
-#: includes/admin-pages.php:1866
-#: includes/admin-pages.php:2060
+#: includes/admin-pages.php:1889
+#: includes/admin-pages.php:2083
 msgid "Enabled"
 msgstr ""
 
-#: includes/admin-pages.php:1886
-#: includes/admin-pages.php:2080
+#: includes/admin-pages.php:1909
+#: includes/admin-pages.php:2103
 msgid "Remove Group"
 msgstr ""
 
-#: includes/admin-pages.php:1889
-#: includes/admin-pages.php:2083
+#: includes/admin-pages.php:1912
+#: includes/admin-pages.php:2106
 msgid "Warning: Removing this group will unregister the custom taxonomy — all term assignments on posts will be permanently lost and cannot be recovered."
 msgstr ""
 
-#: includes/admin-pages.php:1899
+#: includes/admin-pages.php:1922
 msgid "+ Add Filter Group"
 msgstr ""
 
-#: includes/admin-pages.php:1903
+#: includes/admin-pages.php:1926
 msgid "Save Filter Groups"
 msgstr ""
 
-#: includes/admin-pages.php:2091
+#: includes/admin-pages.php:2114
 msgid "URL-Filter-Segment"
 msgstr ""
 
-#: includes/admin-pages.php:2092
+#: includes/admin-pages.php:2115
 msgid "Are you sure you want to remove this filter group?"
 msgstr ""
 
-#: includes/admin-pages.php:2098
+#: includes/admin-pages.php:2121
 msgid ""
 "Warning: This group uses a Custom Taxonomy registered by this plugin.\n"
 "\n"
@@ -1188,159 +1190,159 @@ msgid ""
 "Are you sure you want to remove this group?"
 msgstr ""
 
-#: includes/admin-pages.php:2140
+#: includes/admin-pages.php:2163
 msgid "Layout settings saved."
 msgstr ""
 
-#: includes/admin-pages.php:2153
+#: includes/admin-pages.php:2176
 msgid "Global"
 msgstr ""
 
-#: includes/admin-pages.php:2154
+#: includes/admin-pages.php:2177
 msgid "Filter"
 msgstr ""
 
-#: includes/admin-pages.php:2155
+#: includes/admin-pages.php:2178
 msgid "Posts"
 msgstr ""
 
-#: includes/admin-pages.php:2156
+#: includes/admin-pages.php:2179
 #: includes/blocks.php:315
 msgid "Pagination"
 msgstr ""
 
-#: includes/admin-pages.php:2157
+#: includes/admin-pages.php:2180
 msgid "Color Schemes"
 msgstr ""
 
-#: includes/admin-pages.php:2197
+#: includes/admin-pages.php:2220
 msgid "Default Layouts"
 msgstr ""
 
-#: includes/admin-pages.php:2199
-#: includes/admin-pages.php:2304
+#: includes/admin-pages.php:2222
+#: includes/admin-pages.php:2327
 msgid "Filter Layout"
 msgstr ""
 
-#: includes/admin-pages.php:2202
-#: includes/admin-pages.php:2307
+#: includes/admin-pages.php:2225
+#: includes/admin-pages.php:2330
 msgid "Horizontal Bar"
 msgstr ""
 
-#: includes/admin-pages.php:2203
-#: includes/admin-pages.php:2308
+#: includes/admin-pages.php:2226
+#: includes/admin-pages.php:2331
 #: includes/elementor/class-widget-filter.php:69
 #: includes/oxygen/class-element-filter.php:70
 #: blocks/post-filter/edit.js:35
 msgid "Sidebar"
 msgstr ""
 
-#: includes/admin-pages.php:2204
-#: includes/admin-pages.php:2309
+#: includes/admin-pages.php:2227
+#: includes/admin-pages.php:2332
 #: includes/elementor/class-widget-filter.php:70
 #: includes/oxygen/class-element-filter.php:71
 #: blocks/post-filter/edit.js:36
 msgid "Dropdown"
 msgstr ""
 
-#: includes/admin-pages.php:2205
-#: includes/admin-pages.php:2310
+#: includes/admin-pages.php:2228
+#: includes/admin-pages.php:2333
 msgid "Column View"
 msgstr ""
 
-#: includes/admin-pages.php:2211
+#: includes/admin-pages.php:2234
 msgid "Post List Layout"
 msgstr ""
 
-#: includes/admin-pages.php:2214
+#: includes/admin-pages.php:2237
 #: blocks/post-list/edit.js:34
 msgid "Cards (grid)"
 msgstr ""
 
-#: includes/admin-pages.php:2215
+#: includes/admin-pages.php:2238
 #: blocks/post-list/edit.js:35
 msgid "Rows (list)"
 msgstr ""
 
-#: includes/admin-pages.php:2216
-#: includes/admin-pages.php:2337
+#: includes/admin-pages.php:2239
+#: includes/admin-pages.php:2360
 #: includes/elementor/class-widget-list.php:70
 #: includes/oxygen/class-element-list.php:71
 #: blocks/post-list/edit.js:36
 msgid "Minimal"
 msgstr ""
 
-#: includes/admin-pages.php:2217
-#: includes/admin-pages.php:2338
+#: includes/admin-pages.php:2240
+#: includes/admin-pages.php:2361
 #: blocks/post-list/edit.js:37
 msgid "Theme Default"
 msgstr ""
 
-#: includes/admin-pages.php:2222
+#: includes/admin-pages.php:2245
 msgid "Applies only to [jpkcom_postfilter_list] shortcode. \"Theme Default\" uses your theme's native content templates. Auto-injection always uses the theme's native loop."
 msgstr ""
 
-#: includes/admin-pages.php:2249
+#: includes/admin-pages.php:2272
 msgid "How shortcodes work — and where they work"
 msgstr ""
 
-#: includes/admin-pages.php:2251
+#: includes/admin-pages.php:2274
 msgid "The three shortcodes always connect to the WordPress archive of the configured post type. The filter bar generates URLs like"
 msgstr ""
 
-#: includes/admin-pages.php:2253
+#: includes/admin-pages.php:2276
 msgid "and after a filter click the browser navigates to that archive URL — regardless of which page the shortcode is placed on."
 msgstr ""
 
-#: includes/admin-pages.php:2255
+#: includes/admin-pages.php:2278
 msgid "Supported use cases:"
 msgstr ""
 
-#: includes/admin-pages.php:2257
+#: includes/admin-pages.php:2280
 msgid "Embed shortcodes inside an archive template via a page builder or the Gutenberg Full Site Editor (FSE). The page IS the archive, so archive URL = current URL."
 msgstr ""
 
 #. translators: 1: Settings → Reading, 2: example URL
-#: includes/admin-pages.php:2262
+#: includes/admin-pages.php:2285
 #, php-format
 msgid "For the built-in \"post\" post type: assign a WordPress page as the \"Posts Page\" under %1$s and place the shortcodes there. WordPress treats that page as the blog archive, so %2$s and the shortcode page are the same URL."
 msgstr ""
 
-#: includes/admin-pages.php:2263
+#: includes/admin-pages.php:2286
 msgid "Settings → Reading"
 msgstr ""
 
-#: includes/admin-pages.php:2268
+#: includes/admin-pages.php:2291
 msgid "Use the Auto-Inject feature (General → Auto-Inject Filter) instead of shortcodes. The plugin then adds the filter UI to archive pages automatically — no shortcode needed."
 msgstr ""
 
-#: includes/admin-pages.php:2270
+#: includes/admin-pages.php:2293
 msgid "What does NOT work:"
 msgstr ""
 
 #. translators: example URL
-#: includes/admin-pages.php:2276
+#: includes/admin-pages.php:2299
 #, php-format
 msgid "Placing the shortcodes on an arbitrary custom page (e.g. %s) whose URL has nothing to do with the post type archive. When a visitor clicks a filter button, the URL will change to the archive URL and the custom page is left behind."
 msgstr ""
 
-#: includes/admin-pages.php:2281
+#: includes/admin-pages.php:2304
 msgid "AJAX results and pagination also point to the archive URL, not to the custom page."
 msgstr ""
 
-#: includes/admin-pages.php:2284
+#: includes/admin-pages.php:2307
 msgid "This is an architectural limitation, not a bug. The plugin's SEO-friendly URL system is tied to WordPress archive URLs and rewrite rules, which require a fixed base URL per post type."
 msgstr ""
 
-#: includes/admin-pages.php:2289
+#: includes/admin-pages.php:2312
 msgid "Shortcode Builder"
 msgstr ""
 
-#: includes/admin-pages.php:2290
+#: includes/admin-pages.php:2313
 msgid "Configure options below. The preview updates automatically."
 msgstr ""
 
-#: includes/admin-pages.php:2294
+#: includes/admin-pages.php:2317
 #: includes/elementor/class-widget-filter.php:55
 #: includes/elementor/class-widget-list.php:55
 #: includes/elementor/class-widget-pagination.php:55
@@ -1353,276 +1355,276 @@ msgstr ""
 msgid "Post Type"
 msgstr ""
 
-#: includes/admin-pages.php:2318
+#: includes/admin-pages.php:2341
 msgid "group-slug-1, group-slug-2"
 msgstr ""
 
-#: includes/admin-pages.php:2319
+#: includes/admin-pages.php:2342
 msgid "Comma-separated group slugs to display. Leave empty to show all."
 msgstr ""
 
-#: includes/admin-pages.php:2323
+#: includes/admin-pages.php:2346
 #: blocks/post-filter/edit.js:48
 msgid "Show Reset Button"
 msgstr ""
 
-#: includes/admin-pages.php:2327
+#: includes/admin-pages.php:2350
 msgid "Display a \"Reset filters\" link"
 msgstr ""
 
-#: includes/admin-pages.php:2332
+#: includes/admin-pages.php:2355
 msgid "List Layout"
 msgstr ""
 
-#: includes/admin-pages.php:2335
+#: includes/admin-pages.php:2358
 #: includes/elementor/class-widget-list.php:68
 #: includes/oxygen/class-element-list.php:69
 msgid "Cards"
 msgstr ""
 
-#: includes/admin-pages.php:2336
+#: includes/admin-pages.php:2359
 #: includes/elementor/class-widget-list.php:69
 #: includes/oxygen/class-element-list.php:70
 msgid "Rows"
 msgstr ""
 
-#: includes/admin-pages.php:2343
+#: includes/admin-pages.php:2366
 #: includes/elementor/class-widget-list.php:77
 #: blocks/post-list/edit.js:42
 msgid "Posts per Page"
 msgstr ""
 
-#: includes/admin-pages.php:2346
+#: includes/admin-pages.php:2369
 msgid "-1 = all posts"
 msgstr ""
 
-#: includes/admin-pages.php:2350
+#: includes/admin-pages.php:2373
 #: includes/elementor/class-widget-list.php:88
 #: includes/oxygen/class-element-list.php:86
 #: blocks/post-list/edit.js:50
 msgid "Order By"
 msgstr ""
 
-#: includes/admin-pages.php:2353
+#: includes/admin-pages.php:2376
 #: includes/elementor/class-widget-list.php:92
 #: includes/oxygen/class-element-list.php:90
 #: blocks/post-list/edit.js:53
 msgid "Date"
 msgstr ""
 
-#: includes/admin-pages.php:2354
+#: includes/admin-pages.php:2377
 #: includes/elementor/class-widget-list.php:93
 #: includes/oxygen/class-element-list.php:91
 #: blocks/post-list/edit.js:54
 msgid "Title"
 msgstr ""
 
-#: includes/admin-pages.php:2355
+#: includes/admin-pages.php:2378
 #: includes/elementor/class-widget-list.php:94
 #: includes/oxygen/class-element-list.php:92
 #: blocks/post-list/edit.js:55
 msgid "Menu Order"
 msgstr ""
 
-#: includes/admin-pages.php:2358
+#: includes/admin-pages.php:2381
 #: includes/elementor/class-widget-list.php:106
 #: includes/oxygen/class-element-list.php:104
 #: blocks/post-list/edit.js:63
 msgid "Descending"
 msgstr ""
 
-#: includes/admin-pages.php:2359
+#: includes/admin-pages.php:2382
 #: includes/elementor/class-widget-list.php:107
 #: includes/oxygen/class-element-list.php:105
 #: blocks/post-list/edit.js:64
 msgid "Ascending"
 msgstr ""
 
-#: includes/admin-pages.php:2367
+#: includes/admin-pages.php:2390
 msgid "Generate Shortcodes"
 msgstr ""
 
-#: includes/admin-pages.php:2372
+#: includes/admin-pages.php:2395
 msgid "Generated Shortcodes"
 msgstr ""
 
-#: includes/admin-pages.php:2377
+#: includes/admin-pages.php:2400
 msgid "Copy to Clipboard"
 msgstr ""
 
-#: includes/admin-pages.php:2380
+#: includes/admin-pages.php:2403
 msgid "Copied!"
 msgstr ""
 
-#: includes/admin-pages.php:2389
+#: includes/admin-pages.php:2412
 msgid "Available Shortcodes"
 msgstr ""
 
-#: includes/admin-pages.php:2392
+#: includes/admin-pages.php:2415
 msgid "Displays the filter/facets bar."
 msgstr ""
 
-#: includes/admin-pages.php:2394
+#: includes/admin-pages.php:2417
 msgid "Target post type (default: post)"
 msgstr ""
 
-#: includes/admin-pages.php:2396
+#: includes/admin-pages.php:2419
 msgid "CSV of group slugs (empty = all)"
 msgstr ""
 
-#: includes/admin-pages.php:2398
-#: includes/admin-pages.php:2409
+#: includes/admin-pages.php:2421
+#: includes/admin-pages.php:2432
 msgid "Extra CSS classes"
 msgstr ""
 
-#: includes/admin-pages.php:2402
+#: includes/admin-pages.php:2425
 msgid "Displays the post list."
 msgstr ""
 
-#: includes/admin-pages.php:2404
+#: includes/admin-pages.php:2427
 msgid "Post type (default: post)"
 msgstr ""
 
-#: includes/admin-pages.php:2406
+#: includes/admin-pages.php:2429
 msgid "Number of posts (-1 = all)"
 msgstr ""
 
-#: includes/admin-pages.php:2413
+#: includes/admin-pages.php:2436
 msgid "Displays pagination for the filtered list."
 msgstr ""
 
-#: includes/admin-pages.php:2415
+#: includes/admin-pages.php:2438
 msgid "Example combination:"
 msgstr ""
 
-#: includes/admin-pages.php:2447
+#: includes/admin-pages.php:2470
 msgid "All caches cleared."
 msgstr ""
 
-#: includes/admin-pages.php:2452
+#: includes/admin-pages.php:2475
 msgid "Object cache cleared."
 msgstr ""
 
-#: includes/admin-pages.php:2457
+#: includes/admin-pages.php:2480
 msgid "Settings file cache cleared."
 msgstr ""
 
-#: includes/admin-pages.php:2464
+#: includes/admin-pages.php:2487
 msgid "Transient cache cleared."
 msgstr ""
 
-#: includes/admin-pages.php:2475
+#: includes/admin-pages.php:2498
 msgid "Cache settings saved."
 msgstr ""
 
-#: includes/admin-pages.php:2494
+#: includes/admin-pages.php:2517
 msgid "Cache Statistics"
 msgstr ""
 
-#: includes/admin-pages.php:2499
+#: includes/admin-pages.php:2522
 msgid "APCu Available"
 msgstr ""
 
-#: includes/admin-pages.php:2500
+#: includes/admin-pages.php:2523
 msgid "Yes"
 msgstr ""
 
-#: includes/admin-pages.php:2500
+#: includes/admin-pages.php:2523
 msgid "No"
 msgstr ""
 
-#: includes/admin-pages.php:2503
+#: includes/admin-pages.php:2526
 msgid "External Object Cache"
 msgstr ""
 
-#: includes/admin-pages.php:2504
+#: includes/admin-pages.php:2527
 msgid "Yes (Redis/Memcached/other)"
 msgstr ""
 
-#: includes/admin-pages.php:2504
+#: includes/admin-pages.php:2527
 msgid "No (WordPress default)"
 msgstr ""
 
-#: includes/admin-pages.php:2508
+#: includes/admin-pages.php:2531
 msgid "APCu Memory Used"
 msgstr ""
 
-#: includes/admin-pages.php:2513
+#: includes/admin-pages.php:2536
 msgid "Settings Cache Dir"
 msgstr ""
 
-#: includes/admin-pages.php:2517
+#: includes/admin-pages.php:2540
 msgid "Exists"
 msgstr ""
 
-#: includes/admin-pages.php:2519
+#: includes/admin-pages.php:2542
 msgid "(not created yet)"
 msgstr ""
 
-#: includes/admin-pages.php:2527
+#: includes/admin-pages.php:2550
 msgid "Clear Caches"
 msgstr ""
 
-#: includes/admin-pages.php:2533
+#: includes/admin-pages.php:2556
 msgid "Clear All Caches"
 msgstr ""
 
-#: includes/admin-pages.php:2537
+#: includes/admin-pages.php:2560
 msgid "Clear Object Cache"
 msgstr ""
 
-#: includes/admin-pages.php:2541
+#: includes/admin-pages.php:2564
 msgid "Clear Settings File Cache"
 msgstr ""
 
-#: includes/admin-pages.php:2545
+#: includes/admin-pages.php:2568
 msgid "Clear Transient Cache"
 msgstr ""
 
-#: includes/admin-pages.php:2550
+#: includes/admin-pages.php:2573
 msgid "After changing the URL endpoint or filter group configuration, flush the rewrite rules."
 msgstr ""
 
 #. translators: %d: number of imported settings groups
-#: includes/admin-pages.php:2607
+#: includes/admin-pages.php:2642
 #, php-format
 msgid "Successfully imported %d settings groups."
 msgstr ""
 
-#: includes/admin-pages.php:2612
+#: includes/admin-pages.php:2647
 msgid "Invalid JSON file. Import aborted."
 msgstr ""
 
-#: includes/admin-pages.php:2615
+#: includes/admin-pages.php:2650
 msgid "File upload failed."
 msgstr ""
 
-#: includes/admin-pages.php:2624
+#: includes/admin-pages.php:2659
 msgid "Export Settings"
 msgstr ""
 
-#: includes/admin-pages.php:2625
+#: includes/admin-pages.php:2660
 msgid "Download all plugin settings as a JSON file."
 msgstr ""
 
-#: includes/admin-pages.php:2630
+#: includes/admin-pages.php:2665
 msgid "Export Settings as JSON"
 msgstr ""
 
-#: includes/admin-pages.php:2634
-#: includes/admin-pages.php:2655
+#: includes/admin-pages.php:2669
+#: includes/admin-pages.php:2690
 msgid "Import Settings"
 msgstr ""
 
-#: includes/admin-pages.php:2635
+#: includes/admin-pages.php:2670
 msgid "Import settings from a previously exported JSON file. Existing settings will be overwritten."
 msgstr ""
 
-#: includes/admin-pages.php:2642
+#: includes/admin-pages.php:2677
 msgid "JSON File"
 msgstr ""
 
-#: includes/admin-pages.php:2651
+#: includes/admin-pages.php:2686
 msgid "Select a .json file exported from this plugin."
 msgstr ""
 
@@ -1662,7 +1664,16 @@ msgstr ""
 
 #: includes/assets-enqueue.php:124
 #: includes/crawl-guard.php:260
+#: includes/server-rules-render.php:440
 msgid "This filter combination is not available."
+msgstr ""
+
+#: includes/assets-enqueue.php:202
+msgid "Copied."
+msgstr ""
+
+#: includes/assets-enqueue.php:203
+msgid "Copying failed - the text is selected, copy it with Ctrl+C."
 msgstr ""
 
 #: includes/blocks.php:312
@@ -1698,6 +1709,7 @@ msgid "Security verification failed: Plugin checksum mismatch. Expected: %1$s, G
 msgstr ""
 
 #: includes/crawl-guard.php:262
+#: includes/server-rules-render.php:441
 msgid "Show all posts"
 msgstr ""
 
@@ -1801,6 +1813,48 @@ msgstr ""
 msgid "Must match the Post List widget on the same page."
 msgstr ""
 
+#: includes/htaccess-sync.php:488
+msgid "the file is not writable"
+msgstr ""
+
+#: includes/htaccess-sync.php:489
+msgid "the file does not exist"
+msgstr ""
+
+#: includes/htaccess-sync.php:490
+msgid "it also contains a manually inserted block"
+msgstr ""
+
+#: includes/htaccess-sync.php:491
+msgid "DISALLOW_FILE_MODS is set"
+msgstr ""
+
+#: includes/htaccess-sync.php:492
+msgid "this is a multisite network"
+msgstr ""
+
+#: includes/htaccess-sync.php:493
+msgid "the server is LiteSpeed"
+msgstr ""
+
+#: includes/htaccess-sync.php:494
+msgid "the server does not report itself as Apache"
+msgstr ""
+
+#: includes/htaccess-sync.php:495
+msgid "its JPKCom Post Filter markers do not pair up"
+msgstr ""
+
+#: includes/htaccess-sync.php:497
+msgid "writing the file failed"
+msgstr ""
+
+#. translators: %s: why the .htaccess could not be changed, e.g. "the file is not writable"
+#: includes/htaccess-sync.php:501
+#, php-format
+msgid "Settings not saved: the JPKCom Post Filter rules in .htaccess could not be updated to match the new settings (%s), and with the old rules the server could reject filter pages the plugin serves. Make the .htaccess writable, or remove the JPKCom Post Filter block from it, then save again."
+msgstr ""
+
 #: includes/oxygen/class-element-filter.php:78
 msgid "Filter Groups (comma-separated slugs)"
 msgstr ""
@@ -1811,6 +1865,906 @@ msgstr ""
 
 #: includes/oxygen/class-element-pagination.php:59
 msgid "Must match the Post List element on the same page."
+msgstr ""
+
+#: includes/server-rules-admin.php:93
+msgid "nginx"
+msgstr ""
+
+#: includes/server-rules-admin.php:94
+msgid "Apache (server configuration)"
+msgstr ""
+
+#: includes/server-rules-admin.php:95
+msgid "Apache (.htaccess)"
+msgstr ""
+
+#: includes/server-rules-admin.php:96
+msgid "Caddy / FrankenPHP"
+msgstr ""
+
+#: includes/server-rules-admin.php:97
+msgid "Ferron 3"
+msgstr ""
+
+#: includes/server-rules-admin.php:98
+msgid "Ferron 2.8"
+msgstr ""
+
+#: includes/server-rules-admin.php:99
+msgid "OpenLiteSpeed"
+msgstr ""
+
+#: includes/server-rules-admin.php:213
+msgid "Code on this site filters jpkcom_postfilter_request_verdict, so the plugin may decide differently on every request. A server cannot follow that: no reject rule is generated, and a managed .htaccess block loses its reject part with the next update. robots.txt and the rate limit are not affected."
+msgstr ""
+
+#: includes/server-rules-admin.php:217
+msgid "Strict URLs are off: the plugin does not reject filter URLs over its limits, so there is no server reject rule either. The rate limit and robots.txt still apply."
+msgstr ""
+
+#: includes/server-rules-admin.php:219
+msgid "Terms per group is 0 (unlimited): there is no per-group rule. The server only rejects filter URLs with more segments than there are filter groups."
+msgstr ""
+
+#: includes/server-rules-admin.php:223
+msgid "No filter group is enabled, so there is no reject rule."
+msgstr ""
+
+#: includes/server-rules-admin.php:227
+msgid "No archive with filter URLs was found for the enabled post types, so there is neither a reject rule nor a rate limit."
+msgstr ""
+
+#. translators: %s: comma-separated archive paths, e.g. "/my news/"
+#: includes/server-rules-admin.php:234
+#, php-format
+msgid "These archive paths contain characters that cannot go into a server configuration safely and are left out of every snippet: %s. Filter URLs below them are checked by the plugin only, and they have no rate limit."
+msgstr ""
+
+#. translators: %s: comma-separated filter hook names
+#: includes/server-rules-admin.php:244
+#, php-format
+msgid "Code on this site filters %s. The rules below use the values of this admin request. If the filter answers differently on other requests (another language, user or URL), the server rule may not match the plugin there. Check that code before you deploy the rules."
+msgstr ""
+
+#. translators: %s: comma-separated positions of filter groups, counted from 1
+#: includes/server-rules-admin.php:254
+#, php-format
+msgid "Filter groups at position %s have no taxonomy. The server rule skips those positions, so it catches fewer URLs there; the plugin still checks them."
+msgstr ""
+
+#. translators: %s: comma-separated taxonomy names
+#: includes/server-rules-admin.php:266
+#, php-format
+msgid "More than one filter group uses the taxonomy %s. The plugin counts the terms of all those groups together, the server counts each segment on its own, so the server rule catches fewer URLs there. It is never stricter."
+msgstr ""
+
+#. translators: %s: comma-separated constant names
+#: includes/server-rules-admin.php:283
+#, php-format
+msgid "Set in wp-config.php: %s. The rules below use these values. After changing a constant, update the server rules (a managed .htaccess block follows on the next admin page load)."
+msgstr ""
+
+#. translators: %s: file path
+#: includes/server-rules-admin.php:295
+#, php-format
+msgid "A robots.txt file exists in the WordPress directory (%s). The web server delivers it directly, so the plugin's robots.txt lines never reach crawlers. Copy the lines from the General page into that file, or delete it."
+msgstr ""
+
+#. translators: %s: file path
+#: includes/server-rules-admin.php:301
+#, php-format
+msgid "A robots.txt file exists in the site root (%s). The web server delivers it directly, so the plugin's robots.txt lines never reach crawlers. Copy the lines from the General page into that file, or delete it."
+msgstr ""
+
+#. translators: %s: path of the WordPress site, e.g. "/wp/"
+#: includes/server-rules-admin.php:312
+#, php-format
+msgid "WordPress runs in the subdirectory %s. Crawlers only read the robots.txt at the root of the domain, which this WordPress does not answer. Copy the plugin's robots.txt lines from the General page into that file."
+msgstr ""
+
+#: includes/server-rules-admin.php:318
+msgid "Search engines are asked not to index this site (Settings > Reading). WordPress then blocks everything in robots.txt, and the plugin adds no lines of its own."
+msgstr ""
+
+#: includes/server-rules-admin.php:322
+msgid "This is a multisite network. The rules on this page cover this site only. Generate them on the Server Rules page of every site whose filter URLs the server should check. Where several sites share one server block, combine their rules by hand (nginx, for example, allows each location only once), and never apply one site's rule to another site's addresses."
+msgstr ""
+
+#: includes/server-rules-admin.php:325
+msgid "Behind a reverse proxy or CDN the web server sees the proxy's address: per-IP limits then count all visitors as one, unless the server takes the client address from the forwarded header (nginx realip, Apache mod_remoteip, Caddy trusted_proxies). A CDN may also cache responses or drop the X-Jpkpf headers."
+msgstr ""
+
+#: includes/server-rules-admin.php:326
+msgid "The server decides by the URL alone. If another plugin adds its own rewrite rule that serves such a filter URL before this plugin does, the server does not know that and rejects it anyway. Check after installing plugins that add their own URLs below the archive."
+msgstr ""
+
+#: includes/server-rules-admin.php:347
+msgid "Status checked. The result is shown below."
+msgstr ""
+
+#: includes/server-rules-admin.php:348
+msgid "The .htaccess block is set up. From now on the plugin keeps it in step with the settings."
+msgstr ""
+
+#: includes/server-rules-admin.php:349
+msgid "The .htaccess block is set up, but the current settings produce no reject rule, so nothing was written yet. The plugin writes the block as soon as the settings produce one."
+msgstr ""
+
+#: includes/server-rules-admin.php:350
+msgid "The .htaccess block was not set up. The reason is shown in the .htaccess box below."
+msgstr ""
+
+#: includes/server-rules-admin.php:351
+msgid "Writing the .htaccess failed, nothing was set up. Check that the file is writable and that its JPKCom Post Filter markers pair up."
+msgstr ""
+
+#: includes/server-rules-admin.php:352
+msgid "The .htaccess block is removed. The plugin no longer manages the file."
+msgstr ""
+
+#: includes/server-rules-admin.php:353
+msgid "The .htaccess block could not be removed: the file is not writable, or its JPKCom Post Filter markers do not pair up. The plugin keeps guarding the block, so saves that would leave it stricter than the plugin are refused. Fix the file, then remove the block again."
+msgstr ""
+
+#: includes/server-rules-admin.php:376
+msgid "The web server does not report itself as Apache, so it does not read .htaccess rules. Use the tab of your server instead."
+msgstr ""
+
+#: includes/server-rules-admin.php:377
+msgid "The server is LiteSpeed. OpenLiteSpeed only reads .htaccess changes after a restart, so the plugin does not manage the file there. Copy the block by hand, or use the OpenLiteSpeed tab."
+msgstr ""
+
+#: includes/server-rules-admin.php:378
+msgid "This is a multisite network: one .htaccess serves every site, so the plugin does not manage it. Copy the block by hand."
+msgstr ""
+
+#: includes/server-rules-admin.php:379
+msgid "DISALLOW_FILE_MODS is set in wp-config.php, so the plugin does not change files. Copy the block by hand."
+msgstr ""
+
+#: includes/server-rules-admin.php:380
+msgid "There is no .htaccess in the WordPress directory. Save the permalink settings once so that WordPress creates it, then come back."
+msgstr ""
+
+#: includes/server-rules-admin.php:381
+msgid "WordPress cannot write the .htaccess. Make it writable for the web server user, or copy the block by hand."
+msgstr ""
+
+#: includes/server-rules-admin.php:382
+msgid "The .htaccess already contains a block inserted by hand (# BEGIN JPKCom Post Filter (manual)). Delete that block first: two blocks would apply the same rules twice."
+msgstr ""
+
+#: includes/server-rules-admin.php:383
+msgid "The plugin cannot manage the .htaccess on this site. Copy the block by hand."
+msgstr ""
+
+#: includes/server-rules-admin.php:470
+#: includes/server-rules-check.php:268
+msgid "robots.txt reaches WordPress and carries the plugin's lines."
+msgstr ""
+
+#: includes/server-rules-admin.php:471
+msgid "robots.txt is answered by a file or the web server, not by WordPress."
+msgstr ""
+
+#: includes/server-rules-admin.php:472
+msgid "The plugin adds no robots.txt lines on this site."
+msgstr ""
+
+#: includes/server-rules-admin.php:473
+msgid "robots.txt could not be checked."
+msgstr ""
+
+#: includes/server-rules-admin.php:476
+msgid "Active: the server rejects filter URLs over the limits with the current rule."
+msgstr ""
+
+#: includes/server-rules-admin.php:477
+msgid "Outdated: the server uses a rule built from other settings."
+msgstr ""
+
+#: includes/server-rules-admin.php:478
+msgid "Not deployed: WordPress rejected the probe URL itself."
+msgstr ""
+
+#: includes/server-rules-admin.php:479
+msgid "Not detectable from the response."
+msgstr ""
+
+#: includes/server-rules-admin.php:480
+msgid "No server rule for these settings."
+msgstr ""
+
+#: includes/server-rules-admin.php:481
+msgid "Could not be checked."
+msgstr ""
+
+#: includes/server-rules-admin.php:483
+msgid "Unknown result."
+msgstr ""
+
+#: includes/server-rules-admin.php:491
+msgid "Alarm: the server rejects a filter URL that the plugin serves. Replace or remove the server rules now."
+msgstr ""
+
+#: includes/server-rules-admin.php:493
+msgid "Possibly stricter than the plugin: LiteSpeed rejected a filter URL within the limits without a header. See the details."
+msgstr ""
+
+#: includes/server-rules-admin.php:495
+msgid "Not checked whether the server is stricter than the plugin. See the details."
+msgstr ""
+
+#: includes/server-rules-admin.php:497
+msgid "Not stricter than the plugin: a filter URL within the limits got through."
+msgstr ""
+
+#: includes/server-rules-admin.php:533
+msgid "Copy"
+msgstr ""
+
+#: includes/server-rules-admin.php:581
+msgid "Server rules let the web server turn away filter URLs that the plugin rejects anyway - before WordPress even starts - and slow down floods of filter requests from visitors without cookies. Copy the snippets for your server into its configuration."
+msgstr ""
+
+#: includes/server-rules-admin.php:582
+msgid "The snippets never reject a URL the plugin serves with the current settings. After you loosen the settings, rules already deployed in the server configuration stay as they are until you replace them - follow the order rule in each tab. Only the managed .htaccess block on Apache follows the settings by itself; apart from that block the plugin never changes your server configuration."
+msgstr ""
+
+#: includes/server-rules-admin.php:607
+msgid "on"
+msgstr ""
+
+#: includes/server-rules-admin.php:607
+msgid "off"
+msgstr ""
+
+#: includes/server-rules-admin.php:613
+msgid "constant"
+msgstr ""
+
+#: includes/server-rules-admin.php:616
+msgid "filtered"
+msgstr ""
+
+#: includes/server-rules-admin.php:621
+msgid "Web server"
+msgstr ""
+
+#. translators: 1: name of a server tab, e.g. "nginx", 2: the SERVER_SOFTWARE value
+#: includes/server-rules-admin.php:627
+#, php-format
+msgid "Detected: %1$s (SERVER_SOFTWARE: %2$s). Its tab is preselected below; all other tabs stay available."
+msgstr ""
+
+#. translators: %s: the SERVER_SOFTWARE value
+#: includes/server-rules-admin.php:634
+#, php-format
+msgid "The web server could not be identified from SERVER_SOFTWARE (%s). Choose the tab of your server below."
+msgstr ""
+
+#: includes/server-rules-admin.php:639
+msgid "This is the server that runs PHP. A proxy or CDN in front of it is not visible here."
+msgstr ""
+
+#: includes/server-rules-admin.php:654
+msgid "What the rules are built from"
+msgstr ""
+
+#: includes/server-rules-admin.php:655
+msgid "The effective values of this site: wp-config.php constants, saved settings and code filters already applied. The rule hash changes whenever one of them changes; the status check uses it to recognise outdated rules."
+msgstr ""
+
+#: includes/server-rules-admin.php:659
+msgid "Strict URLs"
+msgstr ""
+
+#: includes/server-rules-admin.php:663
+msgid "Terms per filter group"
+msgstr ""
+
+#: includes/server-rules-admin.php:667
+msgid "Filter groups"
+msgstr ""
+
+#: includes/server-rules-admin.php:671
+msgid "Reject status"
+msgstr ""
+
+#: includes/server-rules-admin.php:675
+msgid "URL endpoint / fragment segment"
+msgstr ""
+
+#: includes/server-rules-admin.php:679
+msgid "Archive paths"
+msgstr ""
+
+#: includes/server-rules-admin.php:691
+msgid "Rule hash"
+msgstr ""
+
+#: includes/server-rules-admin.php:697
+#: includes/server-rules-render.php:1032
+#: includes/server-rules-render.php:1084
+msgid "Rate limit"
+msgstr ""
+
+#: includes/server-rules-admin.php:698
+msgid "Two numbers decide every rate limit on this page. Enter what your hosting gives you; when in doubt, keep the defaults."
+msgstr ""
+
+#: includes/server-rules-admin.php:703
+msgid "PHP workers"
+msgstr ""
+
+#: includes/server-rules-admin.php:706
+msgid "How many PHP requests the site can run at the same time (PHP-FPM pm.max_children, or what your host states). Default 8."
+msgstr ""
+
+#: includes/server-rules-admin.php:710
+msgid "Render time of a filter page (seconds)"
+msgstr ""
+
+#: includes/server-rules-admin.php:713
+msgid "How long WordPress needs for one filter page without page cache (browser developer tools, \"waiting for server\"). Default 0.4."
+msgstr ""
+
+#: includes/server-rules-admin.php:717
+msgid "nginx variant"
+msgstr ""
+
+#: includes/server-rules-admin.php:720
+msgid "Standard (server block)"
+msgstr ""
+
+#: includes/server-rules-admin.php:721
+msgid "ISPConfig (nginx Directives field)"
+msgstr ""
+
+#: includes/server-rules-admin.php:726
+msgid "Save and update the snippets"
+msgstr ""
+
+#: includes/server-rules-admin.php:729
+msgid "Resulting limits for filter URLs, requests without any cookie:"
+msgstr ""
+
+#. translators: %d: number of requests
+#: includes/server-rules-admin.php:735
+#, php-format
+msgid "At most %d filter pages rendering at the same time (3/8 of the workers, at least 1). The other workers stay free for the rest of the site."
+msgstr ""
+
+#. translators: 1: requests per second, 2: burst size
+#: includes/server-rules-admin.php:744
+#, php-format
+msgid "Site-wide %1$d requests per second, burst %2$d (0.4 x the concurrent pages / render time: those workers are busy 40%% of the time on average)."
+msgstr ""
+
+#. translators: 1: requests per minute, 2: burst size
+#: includes/server-rules-admin.php:754
+#, php-format
+msgid "Per visitor IP %1$d requests per minute, burst %2$d."
+msgstr ""
+
+#. translators: 1: requests per second, 2: burst size
+#: includes/server-rules-admin.php:764
+#, php-format
+msgid "Search engines in their own budget: %1$d requests per second, burst %2$d (two thirds of the site-wide rate)."
+msgstr ""
+
+#. translators: %d: seconds
+#: includes/server-rules-admin.php:774
+#, php-format
+msgid "Over the limit the server answers 429 with Retry-After: %d."
+msgstr ""
+
+#: includes/server-rules-admin.php:780
+msgid "Any Cookie header exempts a request from the rate limit, on every server: logged-in users and visitors who already browse the site are never slowed down. A bot can send a cookie too, and a first-time visitor has none - the limit is a brake for anonymous floods, not access control."
+msgstr ""
+
+#: includes/server-rules-admin.php:781
+msgid "Googlebot, Bingbot, Applebot, DuckDuckBot and YandexBot get their own budget where the server can tell them apart (nginx, Caddy, Apache with ModSecurity): a 429 for Google would slow down its crawling of the whole site. Elsewhere they share the site-wide limit, which the tab then says."
+msgstr ""
+
+#: includes/server-rules-admin.php:799
+msgid "Status"
+msgstr ""
+
+#: includes/server-rules-admin.php:800
+msgid "Sends a few requests to this site, without cookies: robots.txt, one filter URL over the limits and one within them. It shows whether the server rule is deployed, current, and never stricter than the plugin. The rate limit is not tested, because that would use up the budget all visitors without cookies share."
+msgstr ""
+
+#: includes/server-rules-admin.php:803
+msgid "The check has not run yet."
+msgstr ""
+
+#. translators: %s: date and time
+#: includes/server-rules-admin.php:813
+#, php-format
+msgid "Last check: %s"
+msgstr ""
+
+#: includes/server-rules-admin.php:821
+#: includes/server-rules-render.php:724
+#: includes/server-rules-render.php:991
+#: includes/server-rules-render.php:1038
+#: includes/server-rules-render.php:1090
+#: includes/server-rules-render.php:1231
+#: includes/server-rules-render.php:1356
+#: includes/server-rules-render.php:1428
+msgid "robots.txt"
+msgstr ""
+
+#: includes/server-rules-admin.php:825
+msgid "Server rule"
+msgstr ""
+
+#: includes/server-rules-admin.php:830
+msgid "Stricter than the plugin?"
+msgstr ""
+
+#: includes/server-rules-admin.php:845
+msgid "Check now"
+msgstr ""
+
+#: includes/server-rules-admin.php:882
+msgid "Let the plugin manage the block"
+msgstr ""
+
+#: includes/server-rules-admin.php:883
+msgid "Set up writes the reject block between # BEGIN JPKCom Post Filter and # END JPKCom Post Filter directly before WordPress's own block, and from then on the plugin keeps it in step with the settings. A save that would loosen the settings is refused while the block cannot be updated, so the block is never stricter than the plugin. Remove, or deactivating the plugin, deletes the block again."
+msgstr ""
+
+#: includes/server-rules-admin.php:888
+msgid "does not exist"
+msgstr ""
+
+#: includes/server-rules-admin.php:890
+msgid "writable"
+msgstr ""
+
+#: includes/server-rules-admin.php:892
+msgid "not writable"
+msgstr ""
+
+#. translators: 1: file path, 2: file state, e.g. "writable"
+#: includes/server-rules-admin.php:896
+#, php-format
+msgid "File: %1$s (%2$s)"
+msgstr ""
+
+#. translators: %s: rule hash
+#: includes/server-rules-admin.php:906
+#, php-format
+msgid "Managed block present, current (rule %s)."
+msgstr ""
+
+#. translators: 1: rule hash in the file, 2: rule hash of the current settings
+#: includes/server-rules-admin.php:909
+#, php-format
+msgid "Managed block present, built from other settings (rule %1$s, current %2$s). It is updated on the next admin page load."
+msgstr ""
+
+#: includes/server-rules-admin.php:911
+msgid "Managed block present."
+msgstr ""
+
+#: includes/server-rules-admin.php:913
+msgid "Set up, but there is no block in the file: the current settings produce no reject rule, or the block was deleted by hand."
+msgstr ""
+
+#: includes/server-rules-admin.php:915
+msgid "Not set up."
+msgstr ""
+
+#: includes/server-rules-admin.php:925
+msgid "The JPKCom Post Filter markers in the .htaccess do not pair up (a BEGIN without END, or the other way round). The plugin neither writes nor removes anything until the file is fixed by hand."
+msgstr ""
+
+#: includes/server-rules-admin.php:932
+msgid "The managed block sits below WordPress's block, where it never takes effect. The plugin moves it with the next update; Set up moves it right away."
+msgstr ""
+
+#: includes/server-rules-admin.php:939
+msgid "The file contains a block inserted by hand (manual markers). The plugin never changes it."
+msgstr ""
+
+#: includes/server-rules-admin.php:951
+msgid "Set up again"
+msgstr ""
+
+#: includes/server-rules-admin.php:951
+msgid "Set up"
+msgstr ""
+
+#: includes/server-rules-admin.php:956
+msgid "Remove"
+msgstr ""
+
+#: includes/server-rules-admin.php:989
+msgid "This server was detected on this site."
+msgstr ""
+
+#: includes/server-rules-admin.php:994
+msgid "ISPConfig"
+msgstr ""
+
+#: includes/server-rules-admin.php:994
+msgid "Standard"
+msgstr ""
+
+#. translators: %s: variant name, "Standard" or "ISPConfig"
+#: includes/server-rules-admin.php:997
+#, php-format
+msgid "Variant: %s. Change it in the rate limit form above."
+msgstr ""
+
+#: includes/server-rules-admin.php:1005
+msgid "Order of changes"
+msgstr ""
+
+#: includes/server-rules-admin.php:1006
+msgid "When tightening (fewer terms per group, fewer filter groups, strict URLs on): change the plugin settings first and purge the page cache, then update the server rules."
+msgstr ""
+
+#: includes/server-rules-admin.php:1007
+msgid "When loosening (more terms per group, more filter groups, strict URLs off, another endpoint or archive): update the server rules first, then the plugin settings. The other way round the server rejects filter pages the plugin already serves."
+msgstr ""
+
+#: includes/server-rules-admin.php:1033
+msgid "Check after installing"
+msgstr ""
+
+#: includes/server-rules-admin.php:1034
+msgid "Run these commands on any computer with curl. Judge by the value of X-Jpkpf-Reject, not by the status code: WordPress answers the same URLs with its own 410, so only \"server-...\" proves the server rule. The \"Check now\" button above runs the same probes without the rate limit."
+msgstr ""
+
+#: includes/server-rules-admin.php:1039
+msgid "Page cache"
+msgstr ""
+
+#: includes/server-rules-admin.php:1040
+msgid "A page cache (caching plugin, Varnish, CDN) may still hold filter pages from before a change. Purge it after every change of the plugin settings or the server rules. The server's reject is sent with Cache-Control: no-store and is not cached itself. Rate-limited filter URLs that a cache answers never reach the server limit, which is intended."
+msgstr ""
+
+#: includes/server-rules-admin.php:1062
+msgid "Rate limit values saved. The snippets below use them."
+msgstr ""
+
+#: includes/server-rules-admin.php:1097
+msgid "Snippets"
+msgstr ""
+
+#: includes/server-rules-admin.php:1235
+#: includes/server-rules-admin.php:1236
+msgid "Server Rules"
+msgstr ""
+
+#: includes/server-rules-check.php:165
+#: includes/server-rules-check.php:182
+msgid "no answer"
+msgstr ""
+
+#. translators: %s: error message of the HTTP request, e.g. "cURL error 28: Operation timed out"
+#: includes/server-rules-check.php:168
+#, php-format
+msgid "the request failed (%s)"
+msgstr ""
+
+#: includes/server-rules-check.php:174
+msgid "the site asks for a password (HTTP authentication)"
+msgstr ""
+
+#: includes/server-rules-check.php:175
+msgid "refused by a firewall or an access rule"
+msgstr ""
+
+#: includes/server-rules-check.php:176
+msgid "a proxy asks for a password"
+msgstr ""
+
+#: includes/server-rules-check.php:177
+msgid "too many requests (a rate limit)"
+msgstr ""
+
+#: includes/server-rules-check.php:178
+msgid "maintenance mode or overload"
+msgstr ""
+
+#: includes/server-rules-check.php:186
+msgid "server error"
+msgstr ""
+
+#. translators: 1: HTTP status code, 2: what it usually means, e.g. "maintenance mode or overload"
+#: includes/server-rules-check.php:189
+#, php-format
+msgid "HTTP %1$d: %2$s"
+msgstr ""
+
+#. translators: 1: HTTP status code, 2: the URL the answer redirects to
+#: includes/server-rules-check.php:199
+#, php-format
+msgid "HTTP %1$d: redirected to %2$s"
+msgstr ""
+
+#. translators: %s: why the request did not get through, e.g. "HTTP 401: the site asks for a password (HTTP authentication)"
+#: includes/server-rules-check.php:263
+#, php-format
+msgid "robots.txt could not be checked: %s."
+msgstr ""
+
+#: includes/server-rules-check.php:271
+msgid "The plugin adds no lines to robots.txt on this site (robots.txt mode off, or the site asks search engines not to index it)."
+msgstr ""
+
+#: includes/server-rules-check.php:274
+msgid "robots.txt does not carry the plugin's lines: a physical robots.txt file or the web server answers it, not WordPress."
+msgstr ""
+
+#: includes/server-rules-check.php:283
+msgid "These settings produce no server reject rule, so there is nothing to check. A rule deployed from earlier settings would not be noticed here: remove it from the server configuration."
+msgstr ""
+
+#: includes/server-rules-check.php:292
+msgid "The server rule could not be checked: the site address has no host name to send the probe to."
+msgstr ""
+
+#. translators: %s: rule hash, 12 hex characters
+#: includes/server-rules-check.php:299
+#, php-format
+msgid "The server rule is active (rule %s)."
+msgstr ""
+
+#. translators: 1: rule hash the server sent, 2: rule hash of the current settings
+#: includes/server-rules-check.php:306
+#, php-format
+msgid "The server answers with rule %1$s, but the current settings need rule %2$s: replace the server rules with the ones on this page."
+msgstr ""
+
+#: includes/server-rules-check.php:312
+msgid "The server rejects the probe URL but does not say which rule it uses: replace the server rules with the ones on this page."
+msgstr ""
+
+#: includes/server-rules-check.php:316
+msgid "No server rule answered: WordPress rejected the probe URL itself. Deploy the server rules from this page."
+msgstr ""
+
+#. translators: %s: why the request did not get through, e.g. "HTTP 503: maintenance mode or overload"
+#: includes/server-rules-check.php:321
+#, php-format
+msgid "The server rule could not be checked: %s. This says nothing about whether it is deployed."
+msgstr ""
+
+#: includes/server-rules-check.php:326
+msgid "Status not detectable: LiteSpeed rejected the probe URL without a header. OpenLiteSpeed cannot send one with its reject, so this is most likely the server rule, but it cannot be told for certain."
+msgstr ""
+
+#. translators: %d: HTTP status code
+#: includes/server-rules-check.php:331
+#, php-format
+msgid "Status not detectable: the probe URL was answered with HTTP %d and without an X-Jpkpf-Reject header. A proxy or CDN in front of the site may remove it."
+msgstr ""
+
+#: includes/server-rules-check.php:345
+msgid "Alarm: the server rejects a filter URL within the plugin's limits, which the plugin serves. The deployed server rules are stricter than the plugin and break filter pages: replace or remove them now."
+msgstr ""
+
+#. translators: %s: why the request did not get through, e.g. "HTTP 429: too many requests (a rate limit)"
+#: includes/server-rules-check.php:349
+#, php-format
+msgid "The check whether the server is stricter than the plugin could not run: %s. Check again later."
+msgstr ""
+
+#: includes/server-rules-check.php:356
+msgid "LiteSpeed answered a filter URL within the plugin's limits with a reject status and no header. OpenLiteSpeed rejects that way, so the deployed server rules may be stricter than the plugin - but WordPress answers a base it does not route the same way. Open a filter page within the limits in a browser: if it is rejected, replace or remove the server rules."
+msgstr ""
+
+#: includes/server-rules-check.php:362
+msgid "The rate limit is not checked: the check would use up the request budget that all visitors without cookies share."
+msgstr ""
+
+#: includes/server-rules-check.php:506
+msgid "the site address has no host name"
+msgstr ""
+
+#: includes/server-rules-check.php:759
+msgid "The filter URL settings were loosened: the plugin now serves filter URLs it rejected before. If JPKCom Post Filter server rules are deployed in the web server configuration, update them now, otherwise the server keeps rejecting those URLs."
+msgstr ""
+
+#: includes/server-rules-check.php:761
+msgid "The last status check found JPKCom Post Filter server rules deployed on this site."
+msgstr ""
+
+#: includes/server-rules-check.php:772
+msgid "Update the server rules"
+msgstr ""
+
+#: includes/server-rules-render.php:613
+msgid "ISPConfig nginx Directives: robots.txt and reject before PHP"
+msgstr ""
+
+#: includes/server-rules-render.php:614
+msgid "ISPConfig: Sites, Website, Options, nginx Directives. Paste it once: a second ##merge## block makes nginx -t fail with \"try_files directive is duplicate\". ISPConfig removes lines starting with # and replaces a location it already has, so this text has no comments and no \"location /\". The first block adds try_files to ISPConfig's own location = /robots.txt, so robots.txt reaches WordPress. The rule hash is in the X-Jpkpf-Rule line."
+msgstr ""
+
+#: includes/server-rules-render.php:620
+msgid "Reject before PHP (server block)"
+msgstr ""
+
+#: includes/server-rules-render.php:621
+msgid "Inside the site's server block, at server level (not inside a location), then nginx -t and a reload. No root needed if you may edit the site's server block. Rejected requests go to an internal location: they never reach PHP or the rate limit."
+msgstr ""
+
+#: includes/server-rules-render.php:650
+msgid "Rate-limit zones (http context, root)"
+msgstr ""
+
+#. translators: 1: file path, 2: shell command
+#: includes/server-rules-render.php:653
+#, php-format
+msgid "Root only: save as %1$s (http context: map and limit_*_zone are not allowed in a server block), then nginx -t and a reload. Once per server, shared by every site that uses this plugin. The nginx-light package has no limit_req module: check with %2$s (no output means it is available)."
+msgstr ""
+
+#: includes/server-rules-render.php:690
+#: includes/server-rules-render.php:1196
+msgid "Too many filter requests, please retry in a moment."
+msgstr ""
+
+#. translators: 1: concurrent requests, 2: requests per second, 3: burst, 4: requests per minute, 5: burst per IP
+#: includes/server-rules-render.php:695
+#, php-format
+msgid "Server block, only after the http context file is installed (without it nginx -t fails with an unknown zone). Cookie-less filter requests: at most %1$d at once and %2$d per second with a burst of %3$d site-wide, %4$d per minute with a burst of %5$d per IP; beyond that nginx answers 429 with Retry-After. This location takes precedence over page-cache rules in location / for filter URLs."
+msgstr ""
+
+#. translators: %s: log file path
+#: includes/server-rules-render.php:705
+#, php-format
+msgid "ISPConfig: paste it into nginx Directives below the first block. 429 rather than 503, because ISPConfig's Own Error-Documents replace 503 together with its headers. For a calibration phase move limit_req_dry_run on; and limit_conn_dry_run on; out of the trailing comments: nginx then only logs \"limiting requests, dry run\" to %s."
+msgstr ""
+
+#: includes/server-rules-render.php:709
+msgid "For a calibration phase remove the # in front of limit_req_dry_run and limit_conn_dry_run: nginx then only logs \"limiting requests, dry run\" to the site's error log."
+msgstr ""
+
+#: includes/server-rules-render.php:715
+msgid "Rate limit for filter URLs"
+msgstr ""
+
+#: includes/server-rules-render.php:725
+msgid "robots.txt reaches WordPress through location / - nothing to do. Only if the server block has its own location = /robots.txt (a second one makes nginx -t fail), add try_files $uri /index.php?$args; inside it. A physical robots.txt file in the web root always wins."
+msgstr ""
+
+#: includes/server-rules-render.php:893
+msgid "Reject before PHP (VirtualHost)"
+msgstr ""
+
+#. translators: %d: HTTP status code
+#: includes/server-rules-render.php:896
+#, php-format
+msgid "Inside the site's <VirtualHost> (HTTPS and HTTP), then apachectl configtest and a graceful reload. Needs mod_rewrite and mod_headers: apachectl -M | grep -E \"rewrite|headers\". Runs before any .htaccess. The ErrorDocument line sets the body of every %d that Apache itself sends for this host; WordPress answers its own 404 pages through index.php."
+msgstr ""
+
+#: includes/server-rules-render.php:922
+msgid "Concurrency cap (mod_qos, server configuration)"
+msgstr ""
+
+#. translators: %d: concurrent requests
+#: includes/server-rules-render.php:925
+#, php-format
+msgid "Global server configuration, outside every <VirtualHost> (root). Needs mod_qos (Debian: libapache2-mod-qos; check apachectl -M | grep qos). At most %d cookie-less filter requests at once, one cap for all sites on this server; any cookie exempts a request, mod_qos answers 429. Search engines share this cap: a User-Agent exemption would let anyone who fakes one bypass it. QS_ClientEventLimitCount is deliberately not used: it bans the whole IP for every URL."
+msgstr ""
+
+#: includes/server-rules-render.php:976
+msgid "Rate limits per IP and site-wide (ModSecurity, VirtualHost)"
+msgstr ""
+
+#. translators: 1: requests, 2: seconds, 3: requests, 4: requests
+#: includes/server-rules-render.php:979
+#, php-format
+msgid "Inside the site's <VirtualHost>. Needs ModSecurity 2 (security2_module) with a SecDataDir for its counters, and mod_headers for Retry-After. Cookie-less filter requests get 429 beyond %1$d per IP in %2$d seconds or %3$d site-wide in 10 seconds; search engines have their own limit of %4$d in 10 seconds. Everything sits in a LocationMatch for the filter URLs: SecRuleEngine On applies there only. If OWASP CRS is loaded without a global SecRuleEngine (Debian's default without modsecurity.conf), CRS runs uninitialised inside this LocationMatch: it blocks nothing there and logs rule 911100 for every filter request. Enable modsecurity.conf globally (for example SecRuleEngine DetectionOnly): CRS then initialises normally, only logs elsewhere and also blocks attacks on the filter URLs - try it on a staging copy first. The site-wide counter is keyed on SERVER_NAME, which follows the request's Host header: in the default VirtualHost or one with a wildcard ServerAlias set UseCanonicalName On, otherwise every Host value gets a fresh site-wide counter. mod_evasive is not recommended: it bans whole IPs and knows no path or cookie."
+msgstr ""
+
+#: includes/server-rules-render.php:992
+#: includes/server-rules-render.php:1039
+#: includes/server-rules-render.php:1091
+msgid "robots.txt reaches WordPress through WordPress's own .htaccess rules - nothing to do, unless a physical robots.txt file exists in the web root."
+msgstr ""
+
+#: includes/server-rules-render.php:1020
+msgid "Reject before PHP (.htaccess)"
+msgstr ""
+
+#. translators: %d: HTTP status code
+#: includes/server-rules-render.php:1023
+#, php-format
+msgid "Paste it into the .htaccess of the WordPress directory, before the line # BEGIN WordPress - after WordPress's block it never takes effect. Needs AllowOverride FileInfo. The ErrorDocument line sets the body of every %d that Apache itself sends in this directory tree; WordPress answers its own 404 pages through index.php. The plugin never edits a block with these (manual) markers."
+msgstr ""
+
+#: includes/server-rules-render.php:1033
+msgid "A rate limit cannot be set in .htaccess: mod_qos and ModSecurity are configured at server level. See the tab for the Apache server configuration."
+msgstr ""
+
+#: includes/server-rules-render.php:1076
+msgid "Reject before PHP (Virtual Host rewrite)"
+msgstr ""
+
+#: includes/server-rules-render.php:1077
+msgid "WebAdmin: Virtual Hosts, your host, Rewrite. Set Enable Rewrite to Yes, paste this into Rewrite Rules, save, then Graceful Restart. OpenLiteSpeed cannot set response headers here, so its reject carries no X-Jpkpf-Reject header: the status check cannot recognise it, and the filter script reloads the page on a rejected fragment request. Do not use extraHeaders instead - OpenLiteSpeed ignores its env= condition and would mark every page noindex. .htaccess changes also need a restart on OpenLiteSpeed, which is why the plugin does not manage them there."
+msgstr ""
+
+#: includes/server-rules-render.php:1085
+msgid "OpenLiteSpeed has no path-based rate limit in its released versions, only the server-wide Per Client Throttling, which applies to every PHP request."
+msgstr ""
+
+#: includes/server-rules-render.php:1208
+msgid "Inside the site block of the Caddyfile (FrankenPHP: the same block), anywhere before php_fastcgi or php_server, then caddy validate and caddy reload. Rejects and rate limit sit in one route on purpose: a rejected request is answered before rate_limit and never uses up the budget of real visitors. Both parts read the original request URI ({http.request.orig_uri}), so a try_files or rewrite of the site block does not change what they see. If the site wraps php_fastcgi in a handle block, put the route block inside that handle, before php_fastcgi, and keep handle_errors outside it at the site level (Caddy refuses handle_errors inside handle): handle sorts before route and ends the request, so a route outside it never runs."
+msgstr ""
+
+#. translators: 1: requests, 2: seconds, 3: requests, 4: requests, 5: shell command
+#: includes/server-rules-render.php:1212
+#, php-format
+msgid "The rate_limit block needs Caddy built with the caddy-ratelimit module (xcaddy build --with github.com/mholt/caddy-ratelimit; FrankenPHP needs its own build with it). Check with %5$s - without the module Caddy refuses the whole file: then delete the rate_limit and handle_errors blocks, the reject still works. Cookie-less filter requests get 429 with Retry-After beyond %1$d per IP in %2$d seconds or %3$d site-wide in 10 seconds; search engines (by User-Agent) have their own limit of %4$d in 10 seconds. Behind a proxy or CDN use key {client_ip} instead of {remote_host} and the global option servers { trusted_proxies static <ranges> }. handle_errors 429 needs Caddy 2.8 or later and answers every 429 of this site."
+msgstr ""
+
+#: includes/server-rules-render.php:1223
+msgid "Reject before PHP and rate limit (Caddyfile site block)"
+msgstr ""
+
+#: includes/server-rules-render.php:1232
+msgid "php_fastcgi (and FrankenPHP's php_server) hands /robots.txt to WordPress - nothing to do, unless the site block has its own respond or file_server rule for /robots.txt, or a physical robots.txt file exists in the web root."
+msgstr ""
+
+#: includes/server-rules-render.php:1325
+msgid "Ferron 3 is a release candidate: tested with 3.0.0-rc.10. Check it again against 3.0.0 final - the release candidates changed configuration semantics."
+msgstr ""
+
+#: includes/server-rules-render.php:1330
+msgid "Matchers (ferron.conf, top level)"
+msgstr ""
+
+#: includes/server-rules-render.php:1331
+msgid "At the top level of ferron.conf, outside every host block, so every host can use the matchers (3.0.0-rc.10 also accepts them inside the host block). request.uri is the raw request URI, so the reject leaves every percent-encoded path to PHP."
+msgstr ""
+
+#: includes/server-rules-render.php:1335
+msgid "Inside the site's host block, before the rewrite to /index.php, then ferron validate -c /etc/ferron/ferron.conf and a reload. Needs the matchers block. Rejects answer before PHP with all four headers."
+msgstr ""
+
+#. translators: 1: burst, 2: requests per minute, 3: concurrent requests
+#: includes/server-rules-render.php:1339
+#, php-format
+msgid "Rate limit for cookie-less filter requests: per IP a burst of %1$d, then 1 per second (Ferron's smallest rate; the plugin's %2$d per minute cannot be expressed), beyond that 429 with Retry-After. Ferron has no constant rate-limit key, so there is no site-wide rate and search engines cannot get a bucket of their own: they share the per-IP limit. Instead a FastCGI bulkhead lets at most %3$d cookie-less filter requests reach PHP at once; further requests wait for a free connection, they get no 429. Replace <php-backend-url> with the URL of the main fcgi_php (for example tcp://127.0.0.1:9000) and keep the /jpkpf suffix: the bulkhead URL must differ from the main fcgi_php URL, otherwise the limit applies to every PHP request. With a Unix socket the suffix becomes part of the socket path and every cookie-less filter request fails with 500: leave out /jpkpf and spell the same path differently instead, for example unix:///run/php/./php-fpm.sock for unix:///run/php/php-fpm.sock. Both forms rely on Ferron keying the connection pool and its limit by the literal URL string - read in the 3.0.0-rc.10 source, not documented, so check it again against 3.0.0 final; a second PHP-FPM listen socket or port (its own pool) is the robust alternative. Ferron answers the 429 with its default error page and no Cache-Control header; a 429 is not cached by default (RFC 9111), so nothing needs adding. Behind a proxy or CDN set client_ip_from_header with trusted_proxy, otherwise the per-IP limit counts the proxy."
+msgstr ""
+
+#: includes/server-rules-render.php:1348
+msgid "Reject before PHP and rate limit (host block)"
+msgstr ""
+
+#: includes/server-rules-render.php:1357
+#: includes/server-rules-render.php:1429
+msgid "The front-controller rewrite to /index.php hands /robots.txt to WordPress - nothing to do, unless a physical robots.txt file exists in the web root."
+msgstr ""
+
+#: includes/server-rules-render.php:1391
+msgid "Reject before PHP"
+msgstr ""
+
+#. translators: 1, 2, 3: literal URL escapes (%2B, %2F, %70age), not placeholders to translate
+#: includes/server-rules-render.php:1394
+#, php-format
+msgid "No reject rule for Ferron 2.8 in this version: none has been tested. Ferron 2 decodes percent escapes such as %1$s, %2$s or %3$s and merges slashes before any rule runs, and PHP receives that same decoded URI, so WordPress already counts what a server rule would see and keeps rejecting over-cap URLs itself. Ferron 3 can reject before PHP on the raw request.uri."
+msgstr ""
+
+#: includes/server-rules-render.php:1415
+msgid "Rate limit for filter URLs (ferron.kdl host block)"
+msgstr ""
+
+#. translators: 1: burst, 2: requests per minute
+#: includes/server-rules-render.php:1418
+#, php-format
+msgid "Inside the site's host block in ferron.kdl, before the rewrite and fcgi_php, then restart Ferron. Cookie-less filter requests: per IP a burst of %1$d, then 1 per second (the plugin's %2$d per minute cannot be expressed), beyond that 429. A missing header is \"\" in Ferron 2 conditions, so is_equal \"{header:Cookie}\" \"\" matches exactly the requests without any cookie. Ferron 2 has no site-wide cap and no bucket of their own for search engines: they share the per-IP limit. The 429 is Ferron's default error page without Retry-After or Cache-Control; a 429 is not cached by default (RFC 9111). Behind a proxy or CDN the per-IP limit counts the proxy."
 msgstr ""
 
 #: includes/shortcodes.php:294
