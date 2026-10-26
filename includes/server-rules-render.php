@@ -224,6 +224,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_html_text' ) ) {
      * be able to reach any of them, so these characters become entities, and
      * control characters become a space (the body is one line).
      *
+     * Every non-ASCII character becomes a numeric entity as well: Apache sends
+     * a string ErrorDocument as `text/html; charset=iso-8859-1` (measured on
+     * 2.4.69, VirtualHost and .htaccess), and that header wins over the meta
+     * tag - "verfügbar" rendered as "verfÃ¼gbar". Pure ASCII reads the same
+     * whatever charset a server announces.
+     *
      * @since 1.6.0
      *
      * @param string $text Plain text.
@@ -232,6 +238,21 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_html_text' ) ) {
     function jpkcom_postfilter_server_html_text( string $text ): string {
         $text = (string) preg_replace( '/[\x00-\x1F\x7F]+/', ' ', $text );
         $text = htmlspecialchars( $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+
+        // Valid UTF-8 after ENT_SUBSTITUTE, so /u cannot fail here.
+        $text = (string) preg_replace_callback(
+            '/[^\x00-\x7F]/u',
+            static function ( array $m ): string {
+                $bytes = array_values( (array) unpack( 'C*', $m[0] ) );
+                $count = count( $bytes );
+                $code  = $count === 1 ? $bytes[0] : $bytes[0] & ( 0xFF >> ( $count + 1 ) );
+                for ( $i = 1; $i < $count; $i++ ) {
+                    $code = ( $code << 6 ) | ( $bytes[ $i ] & 0x3F );
+                }
+                return '&#' . $code . ';';
+            },
+            $text
+        );
 
         return strtr( $text, [ '{' => '&#123;', '}' => '&#125;', '$' => '&#36;', '\\' => '&#92;', '%' => '&#37;' ] );
     }

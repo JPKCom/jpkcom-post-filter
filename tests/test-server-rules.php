@@ -1132,6 +1132,16 @@ chk( 'body: lang, noindex, status title, text, link on bases[0]',
 	&& str_contains( $body, '<title>410</title>' ) && str_contains( $body, '>This filter combination is not available.<' ) && str_contains( $body, '<a href="/blog/">Show all posts</a>' ), $body );
 chk( 'body has no braces or single quotes', str_starts_with( $body, '<!doctype html>' ) && ! preg_match( "/[{}']/", $body ) );
 chk( 'body is one line', str_starts_with( $body, '<!doctype html>' ) && ! preg_match( '/[\r\n\t]/', $body ) );
+// Apache sends its string ErrorDocument as `text/html; charset=iso-8859-1`
+// (measured on 2.4.69, VirtualHost and .htaccess), and the header beats the
+// meta tag: UTF-8 bytes rendered "verfÃ¼gbar". Pure ASCII reads the same in
+// every charset a server may announce.
+$GLOBALS['__gettext']  = [ 'This filter combination is not available.' => 'Diese Filterkombination ist nicht verfügbar.', 'Show all posts' => 'Alle Beiträge anzeigen – 😀' ];
+$german = (string) call( 'jpkcom_postfilter_server_reject_body', $inputs );
+$GLOBALS['__gettext']  = [];
+chk( 'body: non-ASCII text as numeric entities (charset-independent)',
+	preg_match( '/^[\x20-\x7E]+$/D', $german ) === 1 && str_contains( $german, '>Diese Filterkombination ist nicht verf&#252;gbar.<' )
+	&& str_contains( $german, '>Alle Beitr&#228;ge anzeigen &#8211; &#128512;</a>' ), $german );
 $GLOBALS['__gettext']  = [ 'This filter combination is not available.' => "L'offre {x} \$y \\ 100% <b> \"q\"\n;", 'Show all posts' => 'Alle {Beiträge}' ];
 $GLOBALS['__language'] = 'de"DE{x}';
 $hostile = (string) call( 'jpkcom_postfilter_server_reject_body', layout_inputs( 2, 2, [], [ '/blog/' ], [ 'reject_status' => 404 ] ) );
