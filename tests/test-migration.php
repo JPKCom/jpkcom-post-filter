@@ -38,23 +38,43 @@ define( 'HOUR_IN_SECONDS', 3600 );
 function trailingslashit( $s ) { return rtrim( (string) $s, '/\\' ) . '/'; }
 function untrailingslashit( $s ) { return rtrim( (string) $s, '/\\' ); }
 function esc_url_raw( $u ) { return (string) $u; }
+// 'legacy_cpt' is deliberately absent: a stored post type whose plugin is inactive
+// (or registers late) is not public at the moment the migration runs.
 function get_post_types( $args = [] ) { return [ 'post' => 'post', 'page' => 'page', 'jpk_job' => 'jpk_job' ]; }
 function do_action( ...$args ) {}
 function jpkcom_postfilter_cache_flush_group(): void {}
 
 /**
- * Records writes, and - like WordPress - runs the registered sanitizer on the
- * value when the option is the General group and $GLOBALS['__sanitize'] is on.
- * With it off, the raw array is stored, which is what the migration hands over.
+ * Filter-registry stand-ins over bootstrap.php's $GLOBALS['__filters'].
  */
-$GLOBALS['__writes']   = [];
-$GLOBALS['__sanitize'] = false;
+function has_filter( $tag, $cb = false ) { return in_array( $cb, $GLOBALS['__filters'][ $tag ] ?? [], true ) ? 10 : false; }
+function remove_filter( $tag, $cb, $p = 10 ) {
+	$GLOBALS['__filters'][ $tag ] = array_values( array_diff( $GLOBALS['__filters'][ $tag ] ?? [], [ $cb ] ) );
+	return true;
+}
+
+/**
+ * Behaves like WordPress for the General group: runs the sanitize_option_*
+ * filters registered for the option (register_setting does that on admin_init),
+ * then fires what the plugin hooks on - update_option_* when the row exists
+ * (memo reset + cache file rewrite), add_option_* when it does not (memo reset
+ * only), as settings.php wires them.
+ */
+$GLOBALS['__writes'] = [];
 function update_option( $k, $v, $a = null ) {
 	$GLOBALS['__writes'][] = $k;
-	if ( $GLOBALS['__sanitize'] && $k === 'jpkcom_postfilter_general' ) {
-		$v = jpkcom_postfilter_sanitize_general_settings( $v );
+	foreach ( $GLOBALS['__filters'][ 'sanitize_option_' . $k ] ?? [] as $cb ) {
+		$v = $cb( $v );
 	}
+	$existed                    = array_key_exists( $k, $GLOBALS['__options'] );
 	$GLOBALS['__options'][ $k ] = $v;
+	if ( $k === 'jpkcom_postfilter_general' ) {
+		$GLOBALS['__hook_fired'] = $existed ? 'update' : 'add';
+		jpkcom_postfilter_settings_memo_reset();
+		if ( $existed && is_array( $v ) ) {
+			jpkcom_postfilter_settings_write_file( 'general', $v );
+		}
+	}
 	return true;
 }
 
@@ -68,9 +88,13 @@ function call( string $fn, mixed ...$args ): mixed {
 
 /** Reset to a blank site; the settings file cache is off, options are the truth. */
 function fresh_site(): void {
+	foreach ( glob( JPKCOM_POSTFILTER_SETTINGS_DIR . '/{,.}*', GLOB_BRACE ) ?: [] as $f ) {
+		if ( is_file( $f ) ) {
+			@unlink( $f );
+		}
+	}
 	$GLOBALS['__options']  = [ 'jpkcom_postfilter_cache' => [ 'settings_cache_enabled' => false ] ];
 	$GLOBALS['__writes']   = [];
-	$GLOBALS['__sanitize'] = false;
 	if ( function_exists( 'jpkcom_postfilter_settings_memo_reset' ) ) {
 		jpkcom_postfilter_settings_memo_reset();
 	}
@@ -106,9 +130,10 @@ chk( 'never saved general: reports a write', $wrote === true );
 jpkcom_postfilter_settings_memo_reset();
 chk( 'never saved general: pins 3', jpkcom_postfilter_policy( 'max_filters_per_group' ) === 3, (string) jpkcom_postfilter_policy( 'max_filters_per_group' ) );
 $after = effective_general();
+$after_pin = $after;
 unset( $before['max_filters_per_group'], $after['max_filters_per_group'] );
 chk( 'pin keeps every other effective value', $before === $after, json_encode( [ $before, $after ] ) );
-chk( 'auto_inject survives the pin', ( $saved['auto_inject'] ?? null ) === [ 'post' ], json_encode( $saved['auto_inject'] ?? null ) );
+chk( 'auto_inject still reads its default after the pin', $after_pin['auto_inject'] === [ 'post' ] && ! array_key_exists( 'auto_inject', $saved ), json_encode( $saved ) );
 chk( 'a second run writes nothing', call( 'jpkcom_postfilter_migrate_pin_per_group_cap' ) === false );
 
 // ---------------------------------------------------------------------------
@@ -149,25 +174,56 @@ $GLOBALS['__options']['jpkcom_postfilter_general']         = [ 'max_filters_per_
 chk( 'saved 0 (unlimited): unchanged', call( 'jpkcom_postfilter_migrate_pin_per_group_cap' ) === false );
 
 // ---------------------------------------------------------------------------
-section( 'The real sanitizer (what update_option runs in WordPress)' );
+section( 'The General sanitizer is bypassed for this write, and put back' );
 
-foreach ( [ 'never saved general' => null, 'saved general without key' => [ 'auto_inject' => [ 'jpk_job' ], 'enabled_post_types' => [ 'post', 'jpk_job' ], 'max_filter_combos' => 5, 'debug_mode' => true, 'robots_txt_mode' => 'all', 'seo_index_max_terms' => 2, 'strip_query' => true ] ] as $label => $stored ) {
+add_filter( 'sanitize_option_jpkcom_postfilter_general', 'jpkcom_postfilter_sanitize_general_settings' );
+
+// A post type that is not public at this moment must survive.
+fresh_site();
+$GLOBALS['__options']['jpkcom_postfilter_rewrite_version'] = '1.5.0';
+$GLOBALS['__options']['jpkcom_postfilter_general']         = [
+	'enabled_post_types' => [ 'post', 'legacy_cpt' ],
+	'auto_inject'        => [ 'legacy_cpt' ],
+];
+call( 'jpkcom_postfilter_migrate_pin_per_group_cap' );
+$saved = $GLOBALS['__options']['jpkcom_postfilter_general'];
+chk( 'a stored non-public post type survives (enabled_post_types)', $saved['enabled_post_types'] === [ 'post', 'legacy_cpt' ], json_encode( $saved ) );
+chk( 'a stored non-public post type survives (auto_inject)', $saved['auto_inject'] === [ 'legacy_cpt' ], json_encode( $saved ) );
+chk( 'stored array plus the pinned key, nothing else', $saved === [ 'enabled_post_types' => [ 'post', 'legacy_cpt' ], 'auto_inject' => [ 'legacy_cpt' ], 'max_filters_per_group' => 3 ], json_encode( $saved ) );
+chk( 'the sanitizer filter is registered again afterwards', has_filter( 'sanitize_option_jpkcom_postfilter_general', 'jpkcom_postfilter_sanitize_general_settings' ) !== false );
+
+// Never saved: exactly the pin, no frozen defaults.
+fresh_site();
+$GLOBALS['__options']['jpkcom_postfilter_filter_groups'] = [ 'groups' => [] ];
+call( 'jpkcom_postfilter_migrate_pin_per_group_cap' );
+chk( 'never saved: the stored option is exactly the pin', ( $GLOBALS['__options']['jpkcom_postfilter_general'] ?? null ) === [ 'max_filters_per_group' => 3 ], json_encode( $GLOBALS['__options']['jpkcom_postfilter_general'] ?? null ) );
+chk( 'never saved: the add_option hook path ran', ( $GLOBALS['__hook_fired'] ?? '' ) === 'add' );
+
+// Cache file and memo, with the settings file cache switched on.
+foreach ( [ 'add' => null, 'update' => [ 'auto_inject' => [ 'post' ] ] ] as $case => $stored ) {
 	fresh_site();
+	$GLOBALS['__options']['jpkcom_postfilter_cache']         = [ 'settings_cache_enabled' => true ];
 	$GLOBALS['__options']['jpkcom_postfilter_filter_groups'] = [ 'groups' => [] ];
 	if ( $stored !== null ) {
 		$GLOBALS['__options']['jpkcom_postfilter_general'] = $stored;
+		jpkcom_postfilter_settings_write_file( 'general', $stored );
 	}
-	$before = effective_general();
-
-	$GLOBALS['__sanitize'] = true;
+	jpkcom_postfilter_settings_memo_reset();
+	$stale = (int) jpkcom_postfilter_policy( 'max_filters_per_group' );   // memoises the pre-migration state
 	call( 'jpkcom_postfilter_migrate_pin_per_group_cap' );
-	$GLOBALS['__sanitize'] = false;
-
-	$after = effective_general();
-	$pin   = $after['max_filters_per_group'];
-	unset( $before['max_filters_per_group'], $after['max_filters_per_group'] );
-	chk( "merged array survives the real sanitizer ({$label}): every effective value unchanged", $before === $after, json_encode( [ $before, $after ] ) );
-	chk( "merged array survives the real sanitizer ({$label}): max_filters_per_group = 3", $pin === 3, (string) $pin );
+	chk( "{$case}: the memo is reset, the effective value is 3 (was {$stale})", (int) jpkcom_postfilter_policy( 'max_filters_per_group' ) === 3 );
+	jpkcom_postfilter_settings_memo_reset();
+	$from_file = jpkcom_postfilter_settings_read_file( 'general' );
+	if ( $case === 'update' ) {
+		chk( 'update: the cache file carries the pin', is_array( $from_file ) && ( $from_file['max_filters_per_group'] ?? null ) === 3, json_encode( $from_file ) );
+	}
+	chk( "{$case}: the effective value is 3 after a fresh read", (int) jpkcom_postfilter_policy( 'max_filters_per_group' ) === 3 );
+	chk( "{$case}: hook path", ( $GLOBALS['__hook_fired'] ?? '' ) === $case );
+	foreach ( glob( JPKCOM_POSTFILTER_SETTINGS_DIR . '/{,.}*', GLOB_BRACE ) ?: [] as $f ) {
+		if ( is_file( $f ) ) {
+			@unlink( $f );
+		}
+	}
 }
 
 // Clean up the cache files the sanitizer wrote.

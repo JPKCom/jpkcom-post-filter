@@ -607,10 +607,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_migrate_pin_per_group_cap' 
      * or the rewrite version marker is non-empty (a fresh install has neither).
      * Call before jpkcom_postfilter_maybe_flush_rewrites() updates the marker.
      *
-     * The write goes through update_option(), which runs the registered
-     * sanitizer, and that treats a missing key as "none selected". So the
-     * stored values are merged over the complete defaults first: the sanitizer
-     * then returns every other value unchanged and only the pinned key differs.
+     * Only the stored array plus the pinned key is written; keys that were never
+     * stored stay missing and keep reading their defaults (merging the defaults
+     * in would freeze constant-derived ones such as debug_mode or url_endpoint).
+     * The General sanitizer is detached for this one write: it filters
+     * enabled_post_types / auto_inject against the post types registered at that
+     * moment (a CPT of a plugin that loads later would be dropped for good) and
+     * reads missing checkbox keys as "none selected". The add_option_* /
+     * update_option_* actions still run and refresh the memo and cache file.
      *
      * @since 1.6.0
      *
@@ -631,13 +635,23 @@ if ( ! function_exists( function: 'jpkcom_postfilter_migrate_pin_per_group_cap' 
             return false;
         }
 
-        $merged = array_merge(
-            jpkcom_postfilter_default_settings()['general'],
-            $stored,
-            [ 'max_filters_per_group' => 3 ]
-        );
+        $stored['max_filters_per_group'] = 3;
 
-        update_option( 'jpkcom_postfilter_general', $merged );
+        $hook     = 'sanitize_option_jpkcom_postfilter_general';
+        $callback = 'jpkcom_postfilter_sanitize_general_settings';
+        $priority = has_filter( $hook, $callback );
+
+        if ( $priority !== false ) {
+            remove_filter( $hook, $callback, $priority );
+        }
+
+        try {
+            update_option( 'jpkcom_postfilter_general', $stored );
+        } finally {
+            if ( $priority !== false ) {
+                add_filter( $hook, $callback, $priority );
+            }
+        }
 
         return true;
     }
