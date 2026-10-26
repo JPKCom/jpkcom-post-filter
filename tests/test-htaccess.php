@@ -208,6 +208,34 @@ $moved = $block . "\n" . $head . $wp_block . $tail;
 $f     = fixture( 'moved', $moved );
 call( 'jpkcom_postfilter_htaccess_write', $f, $block_b );
 chk( 'existing block is replaced where it stands (not moved)', $have && bytes( $f ) === $block_b . "\n" . $head . $wp_block . $tail, bytes( $f ) );
+chk( 'block above WordPress\'s (not adjacent): state not misplaced', ( call( 'jpkcom_postfilter_htaccess_state', $f )['misplaced'] ?? null ) === false );
+
+// R15: a block after WordPress's never takes effect - write moves it directly before it.
+$after_wp = $head . $wp_block . $block . "\n" . $tail;
+$f        = fixture( 'after-wp', $after_wp );
+$st       = call( 'jpkcom_postfilter_htaccess_state', $f );
+chk( 'block after WordPress\'s: state misplaced, managed, hash', is_array( $st ) && ( $st['misplaced'] ?? null ) === true && $st['managed'] === true && $st['hash'] === $inputs['hash'], json_encode( $st ) );
+$ok = call( 'jpkcom_postfilter_htaccess_write', $f, $block_b );
+chk( 'block after WordPress\'s: moved directly before # BEGIN WordPress, all other lines byte-identical',
+	$have && $ok === true && bytes( $f ) === $head . $block_b . "\n" . $wp_block . $tail, bytes( $f ) );
+chk( 'block after WordPress\'s: state not misplaced after write', ( call( 'jpkcom_postfilter_htaccess_state', $f )['misplaced'] ?? null ) === false );
+
+// Same block content, only misplaced: still a write (the position is the change).
+$f = fixture( 'after-wp-same', $after_wp );
+call( 'jpkcom_postfilter_htaccess_write', $f, $block );
+chk( 'misplaced block with unchanged rules is still moved', $have && bytes( $f ) === $head . $block . "\n" . $wp_block . $tail, bytes( $f ) );
+
+// Misplaced at EOF without trailing newline, CRLF file.
+$after_crlf = str_replace( "\n", "\r\n", $head . $wp_block ) . str_replace( "\n", "\r\n", $block );
+$f          = fixture( 'after-wp-crlf', $after_crlf );
+call( 'jpkcom_postfilter_htaccess_write', $f, $block_b );
+chk( 'misplaced at EOF in a CRLF file: moved, CRLF kept, file ends as WordPress\'s block did',
+	$have && bytes( $f ) === str_replace( "\n", "\r\n", $head . $block_b . "\n" . $wp_block ), bytes( $f ) );
+
+// One copy before, one after: the one before is kept in place, the one after dropped.
+$f = fixture( 'before-and-after', $head . $block . "\n" . $wp_block . $block . "\n" . $tail );
+call( 'jpkcom_postfilter_htaccess_write', $f, $block_b );
+chk( 'copies before and after WordPress\'s: one block left, before it', $have && bytes( $f ) === $head . $block_b . "\n" . $wp_block . $tail, bytes( $f ) );
 
 // WordPress flushes rewrite rules later: only its own block changes, ours stays before it.
 $f = fixture( 'wpflush', $original );

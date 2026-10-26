@@ -18,7 +18,8 @@
  *
  * - The managed block sits directly before the line `# BEGIN WordPress`, or at
  *   the top (after a UTF-8 BOM) when there is no WordPress block. An existing
- *   managed block is replaced where it stands.
+ *   managed block above WordPress's is replaced where it stands; one below it
+ *   is moved directly before it (ruling R15).
  * - A block with the MANUAL markers (`# BEGIN JPKCom Post Filter (manual)`,
  *   the copy snippet) is never touched: write refuses, remove leaves it. Two
  *   blocks would apply the same rules twice. Markers are compared as whole
@@ -98,7 +99,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_parse' ) ) {
      * @since 1.6.0
      *
      * @param string $content File content.
-     * @return array{bom: string, eol: string, lines: string[], blocks: array<int, array{0: int, 1: int}>, damaged: bool, manual: bool, wp: ?int}
+     * `misplaced` means the first managed block sits below `# BEGIN WordPress`,
+     * where it never takes effect.
+     *
+     * @return array{bom: string, eol: string, lines: string[], blocks: array<int, array{0: int, 1: int}>, damaged: bool, manual: bool, wp: ?int, misplaced: bool}
      */
     function jpkcom_postfilter_htaccess_parse( string $content ): array {
         $markers = jpkcom_postfilter_htaccess_markers();
@@ -147,13 +151,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_parse' ) ) {
         }
 
         return [
-            'bom'     => $bom,
-            'eol'     => $eol,
-            'lines'   => array_map( 'strval', $lines ),
-            'blocks'  => $blocks,
-            'damaged' => $damaged,
-            'manual'  => $manual,
-            'wp'      => $wp,
+            'bom'       => $bom,
+            'eol'       => $eol,
+            'lines'     => array_map( 'strval', $lines ),
+            'blocks'    => $blocks,
+            'damaged'   => $damaged,
+            'manual'    => $manual,
+            'wp'        => $wp,
+            'misplaced' => $wp !== null && $blocks !== [] && $blocks[0][0] > $wp,
         ];
     }
 }
@@ -164,14 +169,16 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_state' ) ) {
      * What the .htaccess contains
      *
      * `hash` comes from the `# rule <hash>` line of the managed block, so a
-     * caller can compare it with the current rule hash. `damaged` (managed
-     * markers that do not pair up) goes beyond the interface of the plan: in
-     * that state write and remove refuse, and the admin page can say why.
+     * caller can compare it with the current rule hash. Beyond the interface
+     * of the plan: `damaged` (managed markers that do not pair up - write and
+     * remove refuse, and the admin page can say why) and `misplaced` (the
+     * managed block sits below WordPress's and never takes effect; the next
+     * write moves it, ruling R15).
      *
      * @since 1.6.0
      *
      * @param string $file Path of the .htaccess.
-     * @return array{exists: bool, writable: bool, managed: bool, manual: bool, hash: ?string, wp_block: bool, damaged: bool}
+     * @return array{exists: bool, writable: bool, managed: bool, manual: bool, hash: ?string, wp_block: bool, damaged: bool, misplaced: bool}
      */
     function jpkcom_postfilter_htaccess_state( string $file ): array {
         $state = [
@@ -181,7 +188,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_state' ) ) {
             'manual'   => false,
             'hash'     => null,
             'wp_block' => false,
-            'damaged'  => false,
+            'damaged'   => false,
+            'misplaced' => false,
         ];
 
         clearstatcache( true, $file );
@@ -201,7 +209,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_state' ) ) {
         $state['manual']   = $parsed['manual'];
         $state['damaged']  = $parsed['damaged'];
         $state['wp_block'] = $parsed['wp'] !== null;
-        $state['managed']  = ! $parsed['damaged'] && $parsed['blocks'] !== [];
+        $state['managed']   = ! $parsed['damaged'] && $parsed['blocks'] !== [];
+        $state['misplaced'] = $state['managed'] && $parsed['misplaced'];
 
         if ( $state['managed'] ) {
             [ $start, $end ] = $parsed['blocks'][0];
@@ -343,8 +352,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_write' ) ) {
      * Put the managed block into the .htaccess
      *
      * Replaces an existing managed block where it stands (and drops any
-     * further copy of it); otherwise inserts it directly before
-     * `# BEGIN WordPress`, or at the top when there is none. Refuses (false,
+     * further copy of it) - unless it sits below `# BEGIN WordPress`, where it
+     * never takes effect: then it is removed there and the block goes directly
+     * before WordPress's (ruling R15). Without a managed block it is inserted
+     * directly before `# BEGIN WordPress`, or at the top when there is none. Refuses (false,
      * nothing written) when the file is missing, holds a manual block, holds
      * managed markers that do not pair up, or `$block` is not a managed block.
      *
@@ -371,7 +382,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_write' ) ) {
                 $text  = implode( $p['eol'], $block_lines );
                 $lines = $p['lines'];
 
-                if ( $p['blocks'] !== [] ) {
+                if ( $p['misplaced'] ) {
+                    // The first block is below WordPress's line, so all of them are:
+                    // removing them leaves that line's index as it is.
+                    foreach ( array_reverse( $p['blocks'] ) as [ $start, $end ] ) {
+                        array_splice( $lines, $start, $end - $start + 1 );
+                    }
+                    array_splice( $lines, (int) $p['wp'], 0, [ $text . $p['eol'] ] );
+                } elseif ( $p['blocks'] !== [] ) {
                     // Last first, so earlier indexes stay valid. The first block keeps
                     // its place and its END line's own terminator (none at EOF).
                     foreach ( array_reverse( $p['blocks'] ) as $n => [ $start, $end ] ) {
