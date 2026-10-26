@@ -28,14 +28,17 @@
 
 declare(strict_types=1);
 
-define( 'ABSPATH', '/tmp/jpkcom-post-filter-tests/' );
+$GLOBALS['__tmp'] = sys_get_temp_dir() . '/jpkpf-htaccess-sync-' . getmypid();
+
+// WordPress lives in {home}/wp/: what get_home_path() makes of a site whose home
+// differs from siteurl (WordPress in a subdirectory) - see get_home_path() below.
+define( 'ABSPATH', $GLOBALS['__tmp'] . '/home/wp/' );
 define( 'JPKCOM_POSTFILTER_VERSION', '1.6.0-test' );
 define( 'JPKCOM_POSTFILTER_CACHE_ENABLED', true );
 define( 'JPKCOM_POSTFILTER_URL_ENDPOINT', 'filter' );
 define( 'JPKCOM_POSTFILTER_DEBUG', false );
 define( 'HOUR_IN_SECONDS', 3600 );
 
-$GLOBALS['__tmp'] = sys_get_temp_dir() . '/jpkpf-htaccess-sync-' . getmypid();
 define( 'WP_CONTENT_DIR', $GLOBALS['__tmp'] . '/wp-content' );
 define( 'JPKCOM_POSTFILTER_SETTINGS_DIR', WP_CONTENT_DIR . '/.ht.jpkcom-post-filter-settings' );
 
@@ -182,7 +185,32 @@ function home_url( $path = '' ) { return 'https://example.test' . ( $path !== ''
 function wp_parse_url( $url, $component = -1 ) { return parse_url( (string) $url, $component ); }
 function is_multisite() { return false; }
 function get_current_blog_id() { return 1; }
-function get_home_path() { return $GLOBALS['__home_path']; }
+/**
+ * get_home_path(): the fixture's home path, or - with $GLOBALS['__core_home_path'] -
+ * exactly what wp-admin/includes/file.php (core 7.1.3) computes. With home !==
+ * siteurl that depends on SCRIPT_FILENAME, which under WP-CLI is the wp binary.
+ */
+function get_home_path() {
+	if ( empty( $GLOBALS['__core_home_path'] ) ) {
+		return $GLOBALS['__home_path'];
+	}
+	$home    = $GLOBALS['__wp_home'];
+	$siteurl = $GLOBALS['__wp_siteurl'];
+	if ( ! empty( $home ) && 0 !== strcasecmp( $home, $siteurl ) ) {
+		$wp_path_rel_to_home = str_ireplace( $home, '', $siteurl );
+		$script              = (string) ( $_SERVER['SCRIPT_FILENAME'] ?? '' );
+		$pos                 = strripos( str_replace( '\\', '/', $script ), trailingslashit( $wp_path_rel_to_home ) );
+		$home_path           = substr( $script, 0, (int) $pos );   // core runs without strict_types: false -> 0
+		$home_path           = trailingslashit( $home_path );
+	} else {
+		$home_path = ABSPATH;
+	}
+	return str_replace( '\\', '/', $home_path );
+}
+function current_user_can( $cap ) { return $GLOBALS['__can'] ?? true; }
+final class WP_CLI {
+	public static function warning( $message ) { $GLOBALS['__cli_warnings'][] = (string) $message; }
+}
 function get_post_types( $args = [] ) { return [ 'post' => 'post', 'page' => 'page', 'jpk_job' => 'jpk_job' ]; }
 function wp_json_encode( $v ) { return json_encode( $v ); }
 function jpkcom_postfilter_cache_flush_group(): void {}
@@ -748,6 +776,36 @@ if ( $have ) {
 	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 	chk( 'read-only file without a managed block: saved', $ok === true && $GLOBALS['__errors'] === [] );
 
+	// Fix wave item 7: strictness, not the full hash. A pure 404 <-> 410 switch
+	// rejects the same URLs (ruling R20) - nothing to refuse on a read-only file.
+	site( general() );
+	chmod( htaccess(), 0444 );
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'reject_status' => 404 ] ) );
+	chk( 'read-only file, only reject_status 410->404: saved, no error (not stricter)',
+		$ok === true && $GLOBALS['__errors'] === [] && ( $GLOBALS['__options']['jpkcom_postfilter_general']['reject_status'] ?? null ) === 404,
+		json_encode( $GLOBALS['__errors'] ) );
+
+	// Reason-specific refusal texts (D3): damaged markers are fixed by hand, not by chmod.
+	site( general() );
+	file_put_contents( htaccess(), str_replace( "# END JPKCom Post Filter\n", '', bytes( htaccess() ) ) );
+	$ok  = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	$msg = (string) ( $GLOBALS['__errors'][0]['message'] ?? '' );
+	chk( 'damaged markers, writable file: refused, the text says fix the markers - not "make writable"',
+		$ok === false && str_contains( $msg, 'markers' ) && str_contains( $msg, 'by hand' ) && ! str_contains( $msg, 'writable' ), $msg );
+
+	site( general() );   // write() refuses next to a manual block, so the manual one is pasted afterwards
+	file_put_contents( htaccess(), "# BEGIN JPKCom Post Filter (manual)\n# hand-made\n# END JPKCom Post Filter (manual)\n" . bytes( htaccess() ) );
+	$ok  = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	$msg = (string) ( $GLOBALS['__errors'][0]['message'] ?? '' );
+	chk( 'managed + manual block: refused with its own text (delete one of the two blocks)',
+		$ok === false && str_contains( $msg, '(manual)' ) && ! str_contains( $msg, 'Make the .htaccess writable' ), json_encode( [ $ok, $msg, n_of( bytes( htaccess() ) ) ] ) );
+
+	site( general() );
+	chmod( htaccess(), 0444 );
+	save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	$msg = (string) ( $GLOBALS['__errors'][0]['message'] ?? '' );
+	chk( 'read-only file: the text says make it writable', str_contains( $msg, 'not writable' ) && str_contains( $msg, 'Make the .htaccess writable' ), $msg );
+
 	// Import (settings_save writes the cache file itself after update_option()).
 	site( general() );
 	$old_stored = $GLOBALS['__options']['jpkcom_postfilter_general'];
@@ -830,6 +888,123 @@ if ( $have ) {
 			&& $GLOBALS['__options']['jpkcom_postfilter_general']['max_filters_per_group'] === 2 );
 	}
 	$_SERVER['SERVER_SOFTWARE'] = 'Apache/2.4.66 (Debian)';
+}
+
+// =====================================================================================
+section( 'WP-CLI and unknown servers (fix wave item 1, ruling R22)' );
+// =====================================================================================
+
+/**
+ * Run $fn as php-cli under WP-CLI does: no SERVER_SOFTWARE, SCRIPT_FILENAME = the
+ * wp binary. $subdir null keeps the fixture's home path; true/false switch to
+ * core's get_home_path() with WordPress in /wp/ (home !== siteurl) or not.
+ */
+function as_cli( callable $fn, ?bool $subdir = null ): mixed {
+	$software = $_SERVER['SERVER_SOFTWARE'] ?? null;
+	$script   = $_SERVER['SCRIPT_FILENAME'] ?? null;
+	unset( $_SERVER['SERVER_SOFTWARE'] );
+	$_SERVER['SCRIPT_FILENAME'] = '/usr/local/bin/wp';
+	$GLOBALS['__core_home_path'] = $subdir !== null;
+	$GLOBALS['__wp_home']        = 'http://example.test';
+	$GLOBALS['__wp_siteurl']     = $subdir ? 'http://example.test/wp' : 'http://example.test';
+	try {
+		return $fn();
+	} finally {
+		$GLOBALS['__core_home_path'] = false;
+		$_SERVER['SERVER_SOFTWARE']  = $software ?? 'Apache/2.4.66 (Debian)';
+		if ( $script === null ) {
+			unset( $_SERVER['SCRIPT_FILENAME'] );
+		} else {
+			$_SERVER['SCRIPT_FILENAME'] = $script;
+		}
+	}
+}
+
+if ( $have ) {
+	// home !== siteurl (WordPress in /wp/): core's get_home_path() reads SCRIPT_FILENAME,
+	// which under WP-CLI is the wp binary - the path came out as '/.htaccess'.
+	$file = as_cli( static fn() => call( 'jpkcom_postfilter_htaccess_file' ), true );
+	chk( 'CLI, home !== siteurl: the .htaccess of the site root, not /.htaccess', $file === htaccess(), (string) $file );
+	$file = as_cli( static fn() => call( 'jpkcom_postfilter_htaccess_file' ), false );
+	chk( 'CLI, home === siteurl: ABSPATH . .htaccess', $file === ABSPATH . '.htaccess', (string) $file );
+	$file = as_cli( static function () {
+		$GLOBALS['__wp_siteurl'] = 'http://wp.example.test';   // no subdirectory relation at all
+		return call( 'jpkcom_postfilter_htaccess_file' );
+	}, true );
+	chk( 'home and siteurl on different hosts: never /.htaccess (falls back to ABSPATH)', $file === ABSPATH . '.htaccess', (string) $file );
+
+	// The path stored at Set up wins over any derivation while that file exists.
+	site( general() );
+	$GLOBALS['__options']['jpkcom_postfilter_htaccess_managed'] = htaccess();
+	$file = as_cli( static function () {
+		$GLOBALS['__wp_siteurl'] = 'http://wp.example.test';
+		return call( 'jpkcom_postfilter_htaccess_file' );
+	}, true );
+	chk( 'stored path: used even where the derivation fails', $file === htaccess(), (string) $file );
+	chk( 'stored path counts as managed', call( 'jpkcom_postfilter_htaccess_is_managed' ) === true );
+	$GLOBALS['__options']['jpkcom_postfilter_htaccess_managed'] = $GLOBALS['__tmp'] . '/moved-away/.htaccess';
+	chk( 'stored path whose file is gone (site moved): derived path instead', call( 'jpkcom_postfilter_htaccess_file' ) === htaccess() );
+
+	// Empty SERVER_SOFTWARE (WP-CLI on an Apache site), managed and writable block.
+	site( general() );
+	$ok = as_cli( static fn() => save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => 5 ] ) ) );
+	chk( 'CLI, managed + writable, loosening N 2->5: block loosened BEFORE the commit',
+		$ok === true && n_of( $GLOBALS['__commits'][0]['htaccess'] ?? '' ) === 'N5'
+		&& ( $GLOBALS['__options']['jpkcom_postfilter_general']['max_filters_per_group'] ?? null ) === 5,
+		n_of( $GLOBALS['__commits'][0]['htaccess'] ?? '' ) );
+
+	// Same, WordPress in a subdirectory: the real file at the site root follows.
+	site( general() );
+	$ok = as_cli( static fn() => save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => 4 ] ) ), true );
+	chk( 'CLI, home !== siteurl, loosening: the site root .htaccess is loosened before the commit',
+		$ok === true && n_of( $GLOBALS['__commits'][0]['htaccess'] ?? '' ) === 'N4' && ! is_file( '/.htaccess' ) );
+
+	// Empty SERVER_SOFTWARE + read-only: unknown counts as reading .htaccess.
+	site( general() );
+	$was = bytes( htaccess() );
+	chmod( htaccess(), 0444 );
+	$ok = as_cli( static fn() => save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => 5 ] ) ) );
+	chk( 'CLI, managed + read-only, loosening: refused, option and file unchanged',
+		$ok === false && bytes( htaccess() ) === $was && ( $GLOBALS['__options']['jpkcom_postfilter_general']['max_filters_per_group'] ?? null ) === 2 );
+
+	foreach ( [ '', 'Microsoft-IIS/10.0', 'SomeProxy/1.0' ] as $software ) {
+		site( general() );
+		$_SERVER['SERVER_SOFTWARE'] = $software;
+		chmod( htaccess(), 0444 );
+		$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+		chk( "R22 unknown server '{$software}', managed + read-only, loosening: refused", $ok === false && ( $GLOBALS['__errors'][0]['type'] ?? '' ) === 'error' );
+	}
+	foreach ( [ 'Caddy', 'FrankenPHP v1.4', 'ferron/3.0.0' ] as $software ) {
+		site( general() );
+		$_SERVER['SERVER_SOFTWARE'] = $software;
+		chmod( htaccess(), 0444 );
+		$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+		chk( "R22 '{$software}' (positively identified), managed + read-only, loosening: saved", $ok === true && $GLOBALS['__errors'] === [] );
+	}
+	$_SERVER['SERVER_SOFTWARE'] = 'Apache/2.4.66 (Debian)';
+
+	// Writing looser is always safe: also on nginx, the block follows when it can.
+	site( general() );
+	$_SERVER['SERVER_SOFTWARE'] = 'nginx/1.26.3';
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	chk( 'nginx, managed + writable, loosening: block loosened before the commit anyway',
+		$ok === true && n_of( $GLOBALS['__commits'][0]['htaccess'] ?? '' ) === 'N3' );
+	$_SERVER['SERVER_SOFTWARE'] = 'Apache/2.4.66 (Debian)';
+
+	// Deactivation under WP-CLI (`wp plugin deactivate`), WordPress in a subdirectory.
+	site( general() );
+	as_cli( static fn() => call( 'jpkcom_postfilter_htaccess_deactivate' ), true );
+	chk( 'CLI deactivate, home !== siteurl (option \'1\'): the real block is removed, then the option',
+		bytes( htaccess() ) === $GLOBALS['__wp_block'] && ! array_key_exists( 'jpkcom_postfilter_htaccess_managed', $GLOBALS['__options'] ), n_of( bytes( htaccess() ) ) );
+
+	site( general() );
+	$GLOBALS['__options']['jpkcom_postfilter_htaccess_managed'] = htaccess();
+	as_cli( static function () {
+		$GLOBALS['__wp_siteurl'] = 'http://wp.example.test';
+		call( 'jpkcom_postfilter_htaccess_deactivate' );
+	}, true );
+	chk( 'CLI deactivate with the stored path: the real block is removed',
+		bytes( htaccess() ) === $GLOBALS['__wp_block'] && ! array_key_exists( 'jpkcom_postfilter_htaccess_managed', $GLOBALS['__options'] ) );
 }
 
 // =====================================================================================
@@ -948,6 +1123,15 @@ if ( $have ) {
 	define( 'DOING_AJAX', true );
 	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
 	chk( 'R18 DOING_AJAX: hash mismatch causes no write', bytes( htaccess() ) === $was && n_of( $was ) === 'N1' );
+
+	// WP-CLI: a refusal says why (`wp option update` alone only says it could not update).
+	site( general() );
+	chmod( htaccess(), 0444 );
+	define( 'WP_CLI', true );
+	$GLOBALS['__cli_warnings'] = [];
+	// N is locked by the constant above: add a group instead.
+	$ok = as_cli( static fn() => save( 'jpkcom_postfilter_filter_groups', [ 'groups' => [ group( 'category', 0 ), group( 'post_tag', 1 ), group( 'color', 2 ) ] ] ) );
+	chk( 'WP-CLI refusal: WP_CLI::warning() carries the reason', $ok === false && str_contains( $GLOBALS['__cli_warnings'][0] ?? '', 'not writable' ), json_encode( [ $ok, $GLOBALS['__cli_warnings'], $GLOBALS['__errors'] ] ) );
 }
 
 exit( summary() );

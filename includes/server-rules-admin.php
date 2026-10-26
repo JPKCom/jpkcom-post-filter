@@ -391,8 +391,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_htaccess_actio
      * "Set up" or "Remove" the managed .htaccess block
      *
      * install: only when jpkcom_postfilter_htaccess_available() allows it;
-     * writes the block for the current inputs, then sets the option
-     * `jpkcom_postfilter_htaccess_managed` (not autoloaded). With no reject
+     * writes the block for the current inputs, then stores the file's path
+     * in the option `jpkcom_postfilter_htaccess_managed` (not autoloaded). With no reject
      * part the option is set anyway and the block follows once there is one.
      *
      * remove: whenever the file can be written, whatever available() says -
@@ -426,7 +426,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_htaccess_actio
                 return 'htaccess-failed';
             }
 
-            update_option( 'jpkcom_postfilter_htaccess_managed', '1', false );
+            // The resolved path: WP-CLI, cron and deactivation work on this file
+            // from now on, whatever SCRIPT_FILENAME says there (fix wave item 1).
+            update_option( 'jpkcom_postfilter_htaccess_managed', $file, false );
 
             return jpkcom_postfilter_htaccess_block( inputs: $inputs ) === '' ? 'htaccess-installed-empty' : 'htaccess-installed';
         }

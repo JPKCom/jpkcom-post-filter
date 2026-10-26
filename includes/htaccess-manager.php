@@ -3,7 +3,9 @@
  * .htaccess management – the plugin's own block in Apache's .htaccess
  *
  * Pure file operations: every function takes the file path (or the rule
- * inputs) as a parameter and registers no hooks. Wiring them to admin
+ * inputs) as a parameter and registers no hooks - except
+ * jpkcom_postfilter_htaccess_file() and jpkcom_postfilter_htaccess_available(),
+ * which find the site's file and read the server. Wiring them to admin
  * actions, options and version changes is the job of the callers; nothing in
  * this file writes on its own.
  *
@@ -50,7 +52,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_markers' ) ) {
      *
      * @since 1.6.0
      *
-     * @return array{begin: string, end: string, manual_begin: string, manual_end: string, wp_begin: string}
+     * @return array{begin: string, end: string, manual_begin: string, manual_end: string, wp_begin: string, wp_end: string}
      */
     function jpkcom_postfilter_htaccess_markers(): array {
         return [
@@ -59,6 +61,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_markers' ) ) {
             'manual_begin' => '# BEGIN JPKCom Post Filter (manual)',
             'manual_end'   => '# END JPKCom Post Filter (manual)',
             'wp_begin'     => '# BEGIN WordPress',
+            'wp_end'       => '# END WordPress',
         ];
     }
 }
@@ -93,15 +96,17 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_parse' ) ) {
      * are compared as whole lines, ignoring surrounding blanks.
      *
      * `damaged` means managed markers that do not pair up (BEGIN without END,
-     * END without BEGIN, BEGIN inside a block): where the block ends is then
-     * a guess, and write and remove refuse rather than guess.
+     * END without BEGIN, BEGIN inside a block), or a managed block that holds
+     * one of WordPress's own marker lines (it spans or overlaps WordPress's
+     * block): where the block ends is then a guess - or replacing it would
+     * take WordPress's rewrite rules with it - and write and remove refuse.
+     *
+     * `misplaced` means the first managed block sits below `# BEGIN WordPress`,
+     * where it never takes effect.
      *
      * @since 1.6.0
      *
      * @param string $content File content.
-     * `misplaced` means the first managed block sits below `# BEGIN WordPress`,
-     * where it never takes effect.
-     *
      * @return array{bom: string, eol: string, lines: string[], blocks: array<int, array{0: int, 1: int}>, damaged: bool, manual: bool, wp: ?int, misplaced: bool}
      */
     function jpkcom_postfilter_htaccess_parse( string $content ): array {
@@ -141,8 +146,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_parse' ) ) {
                     $blocks[] = [ $open, $i ];
                     $open     = null;
                 }
-            } elseif ( $text === $markers['wp_begin'] && $wp === null && $open === null ) {
-                $wp = $i;
+            } elseif ( $text === $markers['wp_begin'] || $text === $markers['wp_end'] ) {
+                // Inside a managed block: removing or replacing that block would
+                // take WordPress's marker (and what follows it) along.
+                if ( $open !== null ) {
+                    $damaged = true;
+                } elseif ( $text === $markers['wp_begin'] && $wp === null ) {
+                    $wp = $i;
+                }
             }
         }
 
@@ -448,19 +459,76 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_remove' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_home_file' ) ) {
+    /**
+     * Path of the site's .htaccess as WordPress derives it: get_home_path()
+     *
+     * get_home_path() reads SCRIPT_FILENAME when home and siteurl differ
+     * (WordPress in a subdirectory). That is the PHP script of the request:
+     * the wp binary under WP-CLI, the root index.php on a front-end request -
+     * and from there the home path came out as '/' and the file as
+     * '/.htaccess'. So SCRIPT_FILENAME is ABSPATH for the call, which is what
+     * get_home_path() expects to find it below (WP-CLI's own rewrite command
+     * does the same); on an admin request the result is unchanged. When even
+     * that yields no home path (home and siteurl on different hosts), the
+     * WordPress directory is taken - never the file system root.
+     *
+     * @since 1.6.0
+     *
+     * @return string
+     */
+    function jpkcom_postfilter_htaccess_home_file(): string {
+        if ( ! function_exists( function: 'get_home_path' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+
+        $had    = array_key_exists( 'SCRIPT_FILENAME', $_SERVER );
+        $script = $_SERVER['SCRIPT_FILENAME'] ?? null;
+
+        $_SERVER['SCRIPT_FILENAME'] = ABSPATH;
+        try {
+            $home = str_replace( '\\', '/', (string) get_home_path() );
+        } finally {
+            if ( $had ) {
+                $_SERVER['SCRIPT_FILENAME'] = $script;
+            } else {
+                unset( $_SERVER['SCRIPT_FILENAME'] );
+            }
+        }
+
+        $abspath = str_replace( '\\', '/', ABSPATH );
+        if ( trim( $home, '/' ) === '' && trim( $abspath, '/' ) !== '' ) {
+            $home = $abspath;
+        }
+
+        return rtrim( $home, '/' ) . '/.htaccess';
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_file' ) ) {
     /**
-     * Path of the site's .htaccess: get_home_path() . '.htaccess'
+     * Path of the site's .htaccess
+     *
+     * The path stored at Set up (option `jpkcom_postfilter_htaccess_managed`,
+     * fix wave item 1) while that file exists - a WP-CLI command, a cron run
+     * or a deactivation then works on the file the admin set up, whatever
+     * the request looks like. Otherwise (not set up, the legacy value '1', or
+     * the site moved and the stored file is gone)
+     * jpkcom_postfilter_htaccess_home_file().
      *
      * @since 1.6.0
      *
      * @return string
      */
     function jpkcom_postfilter_htaccess_file(): string {
-        if ( ! function_exists( function: 'get_home_path' ) ) {
-            require_once ABSPATH . 'wp-admin/includes/file.php';
+        $stored = get_option( 'jpkcom_postfilter_htaccess_managed', '' );
+
+        if ( is_string( $stored ) && str_ends_with( $stored, '/.htaccess' ) && is_file( $stored ) ) {
+            return $stored;
         }
-        return get_home_path() . '.htaccess';
+
+        return jpkcom_postfilter_htaccess_home_file();
     }
 }
 
@@ -477,7 +545,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_available' ) ) {
      *   FrankenPHP, Ferron, IIS, none).
      * - `multisite`: one .htaccess serves the whole network.
      * - `file-mods-disallowed`: DISALLOW_FILE_MODS is set.
-     * - `no-file`, `not-writable`: get_home_path() . '.htaccess'.
+     * - `no-file`, `not-writable`: jpkcom_postfilter_htaccess_file().
      * - `manual-block`: a pasted block with the manual markers is present;
      *   a second, managed one would apply the same rules twice.
      *

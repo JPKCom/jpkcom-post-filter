@@ -368,6 +368,21 @@ chk( 'damaged block: remove refuses, file unchanged', call( 'jpkcom_postfilter_h
 $st = call( 'jpkcom_postfilter_htaccess_state', $f );
 chk( 'damaged block: state managed false, damaged true', is_array( $st ) && $st['managed'] === false && ( $st['damaged'] ?? null ) === true, json_encode( $st ) );
 
+// A managed block that spans WordPress's markers (fix wave A2). C1: what an admin
+// gets who adds the missing END at the bottom after WordPress appended its own
+// block; C2: the other interleaving. Splicing [BEGIN JPK .. END JPK] would take
+// WordPress's rewrite rules (or its END marker and </IfModule>) with it.
+$wp_lines = [ 'C1' => $head . "# BEGIN JPKCom Post Filter\n# rule 0123456789ab\nRewriteEngine On\n" . $wp_block . "# END JPKCom Post Filter\n" . $tail,
+	'C2' => $head . "# BEGIN WordPress\n<IfModule mod_rewrite.c>\nRewriteEngine On\n# BEGIN JPKCom Post Filter\n# rule 0123456789ab\nRewriteRule . /index.php [L]\n</IfModule>\n# END WordPress\n# END JPKCom Post Filter\n" . $tail ];
+foreach ( $wp_lines as $case => $content ) {
+	$f  = fixture( 'span-' . $case, $content );
+	$st = call( 'jpkcom_postfilter_htaccess_state', $f );
+	chk( "{$case} managed block spanning a WordPress marker: state damaged, not managed",
+		is_array( $st ) && ( $st['damaged'] ?? null ) === true && ( $st['managed'] ?? null ) === false, json_encode( $st ) );
+	chk( "{$case}: write refuses, WordPress's block untouched", call( 'jpkcom_postfilter_htaccess_write', $f, $block ) === false && bytes( $f ) === $content );
+	chk( "{$case}: remove refuses, WordPress's block untouched", call( 'jpkcom_postfilter_htaccess_remove', $f ) === false && bytes( $f ) === $content );
+}
+
 // Two managed blocks (e.g. a copy pasted twice): write keeps one, remove takes both.
 $twice = $block . "\n" . $head . $block . "\n" . $wp_block . $tail;
 $f     = fixture( 'twice', $twice );

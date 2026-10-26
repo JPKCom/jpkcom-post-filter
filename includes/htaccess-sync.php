@@ -53,15 +53,19 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_is_managed' ) ) {
     /**
      * Has the admin set up the managed .htaccess block?
      *
-     * Option `jpkcom_postfilter_htaccess_managed`: '1' or missing, never
-     * autoloaded.
+     * Option `jpkcom_postfilter_htaccess_managed`: the absolute path of the
+     * .htaccess resolved at Set up (jpkcom_postfilter_htaccess_file() uses it
+     * from then on), '1' as written before that path was stored, or missing.
+     * Never autoloaded.
      *
      * @since 1.6.0
      *
      * @return bool
      */
     function jpkcom_postfilter_htaccess_is_managed(): bool {
-        return get_option( 'jpkcom_postfilter_htaccess_managed', '' ) === '1';
+        $value = get_option( 'jpkcom_postfilter_htaccess_managed', '' );
+
+        return is_string( $value ) && ( $value === '1' || str_ends_with( $value, '/.htaccess' ) );
     }
 }
 
@@ -394,21 +398,62 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_refused' ) ) {
 
 if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_server_reads' ) ) {
     /**
-     * Does the web server read .htaccess at all?
+     * May the web server read .htaccess?
      *
-     * Apache and LiteSpeed (OpenLiteSpeed too, after a restart), detected from
-     * SERVER_SOFTWARE as jpkcom_postfilter_htaccess_available() does. On nginx,
-     * Caddy, Ferron or an unknown server a leftover managed block is inert
-     * (ruling R17).
+     * False only when SERVER_SOFTWARE positively names a server that never
+     * reads it - nginx, Caddy, FrankenPHP, Ferron: a leftover managed block is
+     * inert there. Everything else counts as reading it (ruling R22, which
+     * replaces R17's "unknown server"): an empty SERVER_SOFTWARE is what
+     * php-cli under WP-CLI or a system cron has on an Apache site, and when
+     * in doubt a block has to count as active.
      *
      * @since 1.6.0
      *
      * @return bool
      */
     function jpkcom_postfilter_htaccess_server_reads(): bool {
-        $software = isset( $_SERVER['SERVER_SOFTWARE'] ) && is_string( $_SERVER['SERVER_SOFTWARE'] ) ? $_SERVER['SERVER_SOFTWARE'] : '';
+        $software = isset( $_SERVER['SERVER_SOFTWARE'] ) && is_string( $_SERVER['SERVER_SOFTWARE'] ) ? strtolower( $_SERVER['SERVER_SOFTWARE'] ) : '';
 
-        return stripos( $software, 'apache' ) !== false || stripos( $software, 'litespeed' ) !== false;
+        foreach ( [ 'nginx', 'caddy', 'frankenphp', 'ferron' ] as $ignores ) {
+            if ( str_contains( $software, $ignores ) ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_as_strict_as' ) ) {
+    /**
+     * Is the block in the file exactly as strict as the given inputs?
+     *
+     * The `# rule` hash of the block against the hash of the inputs, with the
+     * reject status left out of the comparison (ruling R20): a block that
+     * answers 410 where the settings now say 404 rejects the same URLs, so it
+     * cannot be stricter. A block below WordPress's never counts.
+     *
+     * @since 1.6.0
+     *
+     * @param array<string, mixed> $state  As returned by jpkcom_postfilter_htaccess_state().
+     * @param array<string, mixed> $inputs Rule inputs.
+     * @return bool
+     */
+    function jpkcom_postfilter_htaccess_as_strict_as( array $state, array $inputs ): bool {
+        if ( ! $state['managed'] || $state['hash'] === null || $state['misplaced'] ) {
+            return false;
+        }
+
+        $statuses = array_unique( [ (int) ( $inputs['reject_status'] ?? 0 ), 404, 410 ] );
+        foreach ( $statuses as $status ) {
+            $inputs['reject_status'] = $status;
+            if ( jpkcom_postfilter_server_rule_hash( inputs: $inputs ) === $state['hash'] ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 
@@ -417,38 +462,47 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_loosen' ) ) {
     /**
      * Make sure the .htaccess is no stricter than the given inputs
      *
-     * True when the block was brought to the inputs, already was there, the
-     * file holds no managed block that could be stricter, or the server does
-     * not read .htaccess (nothing is written then; the block stays for the
-     * Remove action and deactivation). False when a managed block (or markers
-     * that no longer pair up) stays as it is on Apache or LiteSpeed.
+     * Writing a looser block, like removing one, is always safe, so it is
+     * attempted whenever the file holds a managed block and is writable -
+     * whatever jpkcom_postfilter_htaccess_available() says and whatever
+     * SERVER_SOFTWARE names (empty under WP-CLI). Where the plugin may manage
+     * the file, a missing block is written, too.
+     *
+     * True when the block was brought to the inputs, already is as strict as
+     * them, the file holds no managed block that could be stricter, or the
+     * server positively does not read .htaccess (nothing more is done; the
+     * block stays for the Remove action and deactivation). False, with a
+     * reason, when a managed block (or markers that no longer pair up) stays
+     * stricter on a server that may read it (ruling R22).
      *
      * An orphaned block (managed markers in the file, option gone - e.g. a
      * deactivation that could not remove it) is not brought to the inputs but
-     * removed: nothing would keep it in step afterwards. Removing only ever
-     * loosens, so it does not wait for jpkcom_postfilter_htaccess_available().
+     * removed: nothing would keep it in step afterwards.
      *
      * @since 1.6.0
      *
      * @param array<string, mixed> $inputs Rule inputs (usually a union).
      * @param bool                 $orphan The block is in the file without the managed option.
-     * @return array{ok: bool, reason: string}
+     * @return array{ok: bool, reason: string} Reason: `damaged`, `manual-block`, `not-writable` or `write-failed`.
      */
     function jpkcom_postfilter_htaccess_loosen( array $inputs, bool $orphan = false ): array {
-        $file      = jpkcom_postfilter_htaccess_file();
-        $available = jpkcom_postfilter_htaccess_available();
+        $ok    = [ 'ok' => true, 'reason' => '' ];
+        $file  = jpkcom_postfilter_htaccess_file();
+        $state = jpkcom_postfilter_htaccess_state( file: $file );
 
         if ( $orphan ) {
             if ( jpkcom_postfilter_htaccess_remove( file: $file ) ) {
-                return [ 'ok' => true, 'reason' => '' ];
+                return $ok;
             }
-        } elseif ( $available['ok'] && jpkcom_postfilter_htaccess_apply( file: $file, inputs: $inputs ) ) {
-            return [ 'ok' => true, 'reason' => '' ];
+        } elseif ( ( $state['managed'] && $state['writable'] ) || jpkcom_postfilter_htaccess_available()['ok'] ) {
+            if ( jpkcom_postfilter_htaccess_apply( file: $file, inputs: $inputs ) ) {
+                return $ok;
+            }
         }
 
-        // Ruling R17: a block the server never reads cannot be stricter than the plugin.
+        // A block on a server that never reads it cannot be stricter than the plugin.
         if ( ! jpkcom_postfilter_htaccess_server_reads() ) {
-            return [ 'ok' => true, 'reason' => '' ];
+            return $ok;
         }
 
         $state = jpkcom_postfilter_htaccess_state( file: $file );
@@ -457,16 +511,19 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_loosen' ) ) {
             return [ 'ok' => false, 'reason' => 'damaged' ];
         }
         if ( ! $state['managed'] ) {
-            return [ 'ok' => true, 'reason' => '' ];
+            return $ok;
         }
-        // Already the block for these inputs (a tightening save on a read-only file).
-        if ( $state['hash'] === ( $inputs['hash'] ?? null ) && ! $state['misplaced'] ) {
-            return [ 'ok' => true, 'reason' => '' ];
+        // Already as strict as these inputs (a tightening save on a read-only file).
+        if ( jpkcom_postfilter_htaccess_as_strict_as( state: $state, inputs: $inputs ) ) {
+            return $ok;
         }
 
-        $reason = $available['ok'] ? 'write-failed' : $available['reason'];
-        if ( $orphan && ! is_writable( $file ) ) {
+        if ( $state['manual'] ) {
+            $reason = 'manual-block';
+        } elseif ( ! $state['writable'] ) {
             $reason = 'not-writable';
+        } else {
+            $reason = 'write-failed';
         }
 
         return [ 'ok' => false, 'reason' => $reason ];
@@ -480,7 +537,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_refusal_message' )
      *
      * @since 1.6.0
      *
-     * @param string $reason A reason from jpkcom_postfilter_htaccess_available(), `damaged` or `write-failed`.
+     * The sentence that says what to do depends on the reason: damaged
+     * markers are fixed by hand, a manual block next to the managed one is
+     * deleted, a read-only file is made writable.
+     *
+     * @param string $reason `damaged`, `manual-block`, `not-writable`, `write-failed`, or a reason from jpkcom_postfilter_htaccess_available().
      * @return string
      */
     function jpkcom_postfilter_htaccess_refusal_message( string $reason ): string {
@@ -496,11 +557,21 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_refusal_message' )
         ];
         $why = $reasons[ $reason ] ?? __( 'writing the file failed', 'jpkcom-post-filter' );
 
-        return sprintf(
+        // What fixes it depends on the reason: chmod does not repair markers (D3).
+        $remedy = match ( $reason ) {
+            'damaged'      => __( 'Fix the file by hand: every # BEGIN JPKCom Post Filter line needs its own # END JPKCom Post Filter line, and WordPress\'s block (# BEGIN WordPress to # END WordPress) must stay outside it. Or delete the JPKCom Post Filter lines. Then save again.', 'jpkcom-post-filter' ),
+            'manual-block' => __( 'Delete one of the two blocks - the one inserted by hand (# BEGIN JPKCom Post Filter (manual)) or the managed one - then save again.', 'jpkcom-post-filter' ),
+            'not-writable', 'no-file' => __( 'Make the .htaccess writable, or remove the JPKCom Post Filter block from it, then save again.', 'jpkcom-post-filter' ),
+            default        => __( 'Check the .htaccess (permissions, free disk space), or remove the JPKCom Post Filter block from it, then save again.', 'jpkcom-post-filter' ),
+        };
+
+        $message = sprintf(
             /* translators: %s: why the .htaccess could not be changed, e.g. "the file is not writable" */
-            __( 'Settings not saved: the JPKCom Post Filter rules in .htaccess could not be updated to match the new settings (%s), and with the old rules the server could reject filter pages the plugin serves. Make the .htaccess writable, or remove the JPKCom Post Filter block from it, then save again.', 'jpkcom-post-filter' ),
+            __( 'Settings not saved: the JPKCom Post Filter rules in .htaccess could not be updated to match the new settings (%s), and with the old rules the server could reject filter pages the plugin serves.', 'jpkcom-post-filter' ),
             $why
         );
+
+        return $message . ' ' . $remedy;
     }
 }
 
@@ -512,8 +583,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_prepare_save' ) ) 
      * Writes union( current, prospective ) when the block is managed, and
      * removes an orphaned managed block (markers in the file without the
      * option). On failure adds a settings error for `$setting` (default: the
-     * messages of the option's admin page) - or, outside wp-admin, a debug log
-     * line - and returns false: the caller must then not save. Inside
+     * messages of the option's admin page), a warning under WP-CLI - or,
+     * otherwise outside wp-admin, a debug log line - and returns false: the caller must then not save. Inside
      * jpkcom_postfilter_htaccess_without_refusal() it never returns false.
      *
      * @since 1.6.0
@@ -562,7 +633,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_prepare_save' ) ) 
         if ( function_exists( function: 'add_settings_error' ) ) {
             $slug = $setting !== '' ? $setting : $option . '_messages';
             add_settings_error( $slug, 'jpkcom_postfilter_htaccess', $message, 'error' );
-        } elseif ( function_exists( function: 'jpkcom_postfilter_debug_log' ) ) {
+        }
+        if ( defined( constant_name: 'WP_CLI' ) && WP_CLI && class_exists( class: 'WP_CLI' ) ) {
+            // `wp option update` only says "Could not update option" otherwise.
+            WP_CLI::warning( $message );
+        } elseif ( ! function_exists( function: 'add_settings_error' ) && function_exists( function: 'jpkcom_postfilter_debug_log' ) ) {
             jpkcom_postfilter_debug_log( $message, [ 'option' => $option, 'reason' => $result['reason'] ] );
         }
 

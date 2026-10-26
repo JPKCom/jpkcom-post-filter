@@ -494,14 +494,16 @@ $c   = (string) file_get_contents( htaccess() );
 chk( 'install: message key', $key === 'htaccess-installed', (string) $key );
 chk( 'install: managed block written before # BEGIN WordPress',
 	str_contains( $c, "# BEGIN JPKCom Post Filter\n" ) && strpos( $c, '# BEGIN JPKCom Post Filter' ) < strpos( $c, '# BEGIN WordPress' ) );
-chk( 'install: option set, not autoloaded', get_option( 'jpkcom_postfilter_htaccess_managed' ) === '1' && ( $GLOBALS['__autoload']['jpkcom_postfilter_htaccess_managed'] ?? null ) === false );
+chk( 'install: option holds the resolved .htaccess path (fix wave item 1), not autoloaded',
+	get_option( 'jpkcom_postfilter_htaccess_managed' ) === htaccess() && ( $GLOBALS['__autoload']['jpkcom_postfilter_htaccess_managed'] ?? null ) === false,
+	(string) get_option( 'jpkcom_postfilter_htaccess_managed' ) );
 
 $key = call( 'jpkcom_postfilter_server_rules_htaccess_action', 'remove', inputs() );
 chk( 'remove: message key, block gone, option deleted',
 	$key === 'htaccess-removed' && (string) file_get_contents( htaccess() ) === $GLOBALS['__wp_block'] && get_option( 'jpkcom_postfilter_htaccess_managed', null ) === null );
 
 $key = call( 'jpkcom_postfilter_server_rules_htaccess_action', 'install', inputs( [ 'strict' => false ] ) );
-chk( 'install without reject part: set up, empty for now', $key === 'htaccess-installed-empty' && get_option( 'jpkcom_postfilter_htaccess_managed' ) === '1' && (string) file_get_contents( htaccess() ) === $GLOBALS['__wp_block'] );
+chk( 'install without reject part: set up, empty for now', $key === 'htaccess-installed-empty' && get_option( 'jpkcom_postfilter_htaccess_managed' ) === htaccess() && (string) file_get_contents( htaccess() ) === $GLOBALS['__wp_block'] );
 delete_option( 'jpkcom_postfilter_htaccess_managed' );
 
 $_SERVER['SERVER_SOFTWARE'] = 'nginx/1.26.3';
@@ -529,7 +531,7 @@ if ( function_exists( 'posix_geteuid' ) && posix_geteuid() === 0 ) {
 } else {
 	chmod( htaccess(), 0444 );
 	$key = call( 'jpkcom_postfilter_server_rules_htaccess_action', 'remove', inputs() );
-	chk( 'remove on a read-only file: failed, option kept (block still guarded)', $key === 'htaccess-remove-failed' && get_option( 'jpkcom_postfilter_htaccess_managed' ) === '1' );
+	chk( 'remove on a read-only file: failed, option kept (block still guarded)', $key === 'htaccess-remove-failed' && get_option( 'jpkcom_postfilter_htaccess_managed' ) === htaccess() );
 	chmod( htaccess(), 0644 );
 }
 call( 'jpkcom_postfilter_server_rules_htaccess_action', 'remove', inputs() );
