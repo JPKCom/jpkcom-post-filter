@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.6.0  
+**Version:** 1.6.1  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 7.0  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.6.0  
+**Stable tag:** 1.6.1  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -636,6 +636,16 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.6.1
+
+What changes on a running site after the update - read this first:
+
+* **Nothing changes for usual settings.** With up to 8 filter groups and up to 5 terms per group every generated server rule, the managed `.htaccess` block and the rule hash are byte-for-byte the same as in 1.6.0 (checked for 680 layouts). Rules you deployed by hand need no update.
+* **Fixed (Server Rules, very many filter groups or a high *Max. Filters per Group*):** the generated reject pattern grows with the number of filter groups and terms per group, and beyond a certain size a server cannot load it. With 71 or more filter groups at 20 terms per group (37 or more if the last group has no taxonomy) PCRE cannot compile it - nginx then refuses the configuration, and a managed `.htaccess` block makes the whole site answer **500**. With filter groups without taxonomy in between it grew past 8 000 characters - nginx reads at most 4 094 in one parameter, Apache at most 8 191 bytes in one `.htaccess` line. Caddy refuses more than 1 000 repetitions, and Ferron 3 silently never applies a pattern nested too deeply (from about 160 filter groups with every second one without taxonomy). Such a rule is now left out of every snippet, the curl commands, *Check now* and the managed `.htaccess` block, for every server alike, and the Server Rules page says which rule and why. That is looser, never stricter: the plugin still rejects those URLs itself, only without the server's help. The limit for the pattern length is 4 000 characters.
+* **If you set up the managed `.htaccess` block with such settings on 1.6.0** and the site has answered 500 since: remove the lines between `# BEGIN JPKCom Post Filter` and `# END JPKCom Post Filter` from the `.htaccess` by hand, then update. *Set up* writes a loadable block from 1.6.1 on.
+* **Fixed (Server Rules check commands):** the rate-limit test printed a single request after the 25 sequential ones and expected it to show 429 and `Retry-After`. Between the loop and that request the site-wide limit refills, so it often answered 200 and the limit looked broken. The loop itself now prints the status codes and, at the end, the `Retry-After` header of the first 429 it received (nginx, Apache with ModSecurity, Caddy, Ferron 3, Ferron 2). Still plain `curl` and `sh`.
+* **Translations:** German (de_DE and de_DE_formal) for the new warning.
 
 ### 1.6.0
 
