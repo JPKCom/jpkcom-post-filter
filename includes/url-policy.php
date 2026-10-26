@@ -22,6 +22,10 @@
  * selection (slugs sorted and de-duplicated), hard caps that reject instead of
  * truncate, and one source of truth for both.
  *
+ * Since 1.6.0 the per-group cap counts the non-empty raw pieces of a group
+ * (after splitting, before sanitize_title and de-duplication), so a web server
+ * rule can mirror it exactly by counting `+`-separated pieces in the path.
+ *
  * @package   JPKCom_Post_Filter
  * @since     1.5.0
  */
@@ -538,6 +542,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_validate_filter_path' ) ) {
      *  1. more segments than filter groups          -> reject (`segments`)
      *  2. a slug longer than 200 characters         -> reject (`length`)
      *  3. caps per group, group count, total terms  -> reject (`per-group`, `groups`, `total`)
+     *     (per-group counts the non-empty raw pieces, summed per taxonomy,
+     *     before normalising; see the file header)
      *  4. unknown slugs, per $unknown_action:
      *       redirect: dropped (the caller then redirects to what is left)
      *       noindex:  kept, flagged
@@ -592,6 +598,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_validate_filter_path' ) ) {
             }
 
             foreach ( jpkcom_postfilter_split_segment( $segment, $known_slugs, $taxonomy ) as $part ) {
+                // Empty pieces (`a++b`, a leading or trailing `+`) are not counted.
+                if ( $part === '' ) {
+                    continue;
+                }
+
                 if ( strlen( $part ) > 200 ) {
                     return $reject( 'length' );
                 }
@@ -599,16 +610,17 @@ if ( ! function_exists( function: 'jpkcom_postfilter_validate_filter_path' ) ) {
             }
         }
 
-        $filters = jpkcom_postfilter_normalize_filters( $raw );
-
+        // Count raw pieces, before sanitize_title and de-duplication (1.6.0).
         $max_per_group = (int) jpkcom_postfilter_policy( 'max_filters_per_group' );
         if ( $max_per_group > 0 ) {
-            foreach ( $filters as $slugs ) {
-                if ( count( $slugs ) > $max_per_group ) {
+            foreach ( $raw as $pieces ) {
+                if ( count( $pieces ) > $max_per_group ) {
                     return $reject( 'per-group' );
                 }
             }
         }
+
+        $filters = jpkcom_postfilter_normalize_filters( $raw );
 
         $max_combos = (int) jpkcom_postfilter_policy( 'max_filter_combos' );
         if ( $max_combos > 0 && count( $filters ) > $max_combos ) {

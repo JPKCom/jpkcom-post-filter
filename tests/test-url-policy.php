@@ -189,6 +189,39 @@ $v = call( 'jpkcom_postfilter_validate_filter_path', str_repeat( 'a', 201 ), $ta
 chk( 'an absurdly long slug', ( $v['reason'] ?? '' ) === 'length' );
 
 // ---------------------------------------------------------------------------
+section( '1.6.0 raw per-group count' );
+
+// The cap counts non-empty raw pieces (after the split, before sanitize_title
+// and de-duplication), summed per taxonomy, so a server regex can mirror it.
+set_general( [ 'max_filters_per_group' => 2 ] );
+
+$validate = static fn( string $path, ?array $known = null, array $groups = [ 'category', 'post_tag' ] ): array
+	=> call(
+		'jpkcom_postfilter_validate_filter_path',
+		$path,
+		$groups,
+		$known === null ? null : static fn( string $t ): ?array => $known[ $t ] ?? null
+	);
+
+chk( 'raw: a+a+b over cap 2 is per-group',   ( $validate( 'a+a+b' )['reason'] ?? '' ) === 'per-group' );
+chk( 'raw: A+a+b over cap 2 is per-group',   ( $validate( 'A+a+b' )['reason'] ?? '' ) === 'per-group' );
+chk( 'raw: a+-+- over cap 2 is per-group',   ( $validate( 'a+-+-' )['reason'] ?? '' ) === 'per-group' );
+chk( 'raw: a+a within cap stays ok',         ( $validate( 'a+a' )['action'] ?? '' ) === 'ok' );
+chk( 'raw: a++b empty pieces not counted',   ( $validate( 'a++b' )['action'] ?? '' ) === 'ok' );
+chk( 'raw: +a+b+ empty ends not counted',    ( $validate( '+a+b+' )['action'] ?? '' ) === 'ok' );
+chk(
+	'raw: known c%2b%2b+a is two pieces',
+	( $validate( 'c%2b%2b+a', [ 'category' => [ 'c%2b%2b', 'a' ] ] )['action'] ?? '' ) === 'ok'
+);
+chk( 'raw: _ segment still skipped',         ( $validate( '_/x+y' )['action'] ?? '' ) === 'ok' );
+chk(
+	'raw: same taxonomy twice sums pieces',
+	( $validate( 'a/a+b', null, [ 'category', 'category' ] )['reason'] ?? '' ) === 'per-group'
+);
+
+set_general( [] );
+
+// ---------------------------------------------------------------------------
 section( 'The request guard answers before the main query' );
 
 /**
