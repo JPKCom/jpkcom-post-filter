@@ -603,9 +603,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_migrate_pin_per_group_cap' 
      * the default, so an installation that never saved the key (or never saved
      * the General page at all) would silently drop to 2. This pins 3 for those.
      *
-     * An installation counts as existing when the filter groups option exists
-     * or the rewrite version marker is non-empty (a fresh install has neither).
-     * Call before jpkcom_postfilter_maybe_flush_rewrites() updates the marker.
+     * Runs only on the step from a version before 1.6.0: the rewrite version
+     * marker is older than 1.6.0, or - an installation from before the marker
+     * existed (1.2.0) - it is empty and the filter groups option exists. A
+     * fresh install has neither; once the marker says 1.6.0 or later this
+     * never writes again, so a fresh 1.6.0 install keeps its 2 on every later
+     * update. Call before jpkcom_postfilter_maybe_flush_rewrites() updates the
+     * marker.
      *
      * Only the stored array plus the pinned key is written; keys that were never
      * stored stay missing and keep reading their defaults (merging the defaults
@@ -628,10 +632,20 @@ if ( ! function_exists( function: 'jpkcom_postfilter_migrate_pin_per_group_cap' 
             return false;
         }
 
-        $has_groups  = get_option( 'jpkcom_postfilter_filter_groups', null ) !== null;
-        $has_version = (string) get_option( 'jpkcom_postfilter_rewrite_version', '' ) !== '';
+        // Only the step from a version before 1.6.0. The marker holds the
+        // version of the last init (since 1.2.0); an installation older than
+        // that has none and counts as existing when its filter groups were
+        // saved. A fresh 1.6.0 install also has groups and a marker by the
+        // next release - it must keep its default (fix wave item 3).
+        $marker = (string) get_option( 'jpkcom_postfilter_rewrite_version', '' );
 
-        if ( ! $has_groups && ! $has_version ) {
+        if ( $marker !== '' ) {
+            $before_160 = version_compare( $marker, '1.6.0', '<' );
+        } else {
+            $before_160 = get_option( 'jpkcom_postfilter_filter_groups', null ) !== null;
+        }
+
+        if ( ! $before_160 ) {
             return false;
         }
 

@@ -160,6 +160,38 @@ unset( $before['max_filters_per_group'], $after['max_filters_per_group'] );
 chk( 'pin keeps every other effective value', $before === $after, json_encode( [ $before, $after ] ) );
 
 // ---------------------------------------------------------------------------
+section( 'Only on the transition from before 1.6.0 (fix wave item 3)' );
+
+// A fresh 1.6.0 install: groups saved, General never saved, the first init set
+// the marker to 1.6.0. The next release (1.6.1) must keep its default 2.
+foreach ( [ '1.6.0', '1.6.1', '1.7.0', '2.0.0' ] as $marker ) {
+	fresh_site();
+	$GLOBALS['__options']['jpkcom_postfilter_filter_groups']   = [ 'groups' => [ [ 'taxonomy' => 'category', 'enabled' => true, 'order' => 0 ] ] ];
+	$GLOBALS['__options']['jpkcom_postfilter_rewrite_version'] = $marker;
+	chk( "marker {$marker} (installed with 1.6.0 or later), groups saved: nothing written, N stays 2",
+		call( 'jpkcom_postfilter_migrate_pin_per_group_cap' ) === false && $GLOBALS['__writes'] === []
+		&& (int) jpkcom_postfilter_policy( 'max_filters_per_group' ) === 2 );
+}
+
+fresh_site();
+$GLOBALS['__options']['jpkcom_postfilter_rewrite_version'] = '1.6.0';
+chk( 'marker 1.6.0, nothing configured: nothing written', call( 'jpkcom_postfilter_migrate_pin_per_group_cap' ) === false && $GLOBALS['__writes'] === [] );
+
+foreach ( [ '1.2.0', '1.5.0', '1.5.9' ] as $marker ) {
+	fresh_site();
+	$GLOBALS['__options']['jpkcom_postfilter_rewrite_version'] = $marker;
+	chk( "marker {$marker} -> 1.6.0: pins 3", call( 'jpkcom_postfilter_migrate_pin_per_group_cap' ) === true
+		&& ( $GLOBALS['__options']['jpkcom_postfilter_general']['max_filters_per_group'] ?? null ) === 3 );
+}
+
+fresh_site();
+$GLOBALS['__options']['jpkcom_postfilter_filter_groups'] = [ 'groups' => [] ];
+chk( 'no marker (before 1.2.0), groups option exists: pins 3', call( 'jpkcom_postfilter_migrate_pin_per_group_cap' ) === true );
+
+fresh_site();
+chk( 'no marker, no groups option (fresh): nothing written', call( 'jpkcom_postfilter_migrate_pin_per_group_cap' ) === false && $GLOBALS['__writes'] === [] );
+
+// ---------------------------------------------------------------------------
 section( 'Existing install, key already stored' );
 
 fresh_site();

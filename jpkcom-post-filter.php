@@ -224,9 +224,10 @@ function jpkcom_postfilter_maybe_flush_rewrites(): void {
         return;
     }
 
-    // 1.6.0: the default of max_filters_per_group is 2. Existing installations
-    // keep 3. Runs while $stored still holds the old marker - a fresh install
-    // has '' there - and before update_option() below overwrites it. Never
+    // 1.6.0: the default of max_filters_per_group is 2. Installations from
+    // before 1.6.0 keep 3. Runs while the marker still holds the old version
+    // (the function compares it with 1.6.0; a fresh install has '' there) and
+    // before update_option() below overwrites it. Never
     // refused for an unwritable .htaccess: the marker below means it would not
     // run again (the block is still loosened when it can be).
     if ( function_exists( 'jpkcom_postfilter_htaccess_without_refusal' ) ) {
