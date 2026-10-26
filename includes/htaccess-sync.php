@@ -392,13 +392,36 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_refused' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_server_reads' ) ) {
+    /**
+     * Does the web server read .htaccess at all?
+     *
+     * Apache and LiteSpeed (OpenLiteSpeed too, after a restart), detected from
+     * SERVER_SOFTWARE as jpkcom_postfilter_htaccess_available() does. On nginx,
+     * Caddy, Ferron or an unknown server a leftover managed block is inert
+     * (ruling R17).
+     *
+     * @since 1.6.0
+     *
+     * @return bool
+     */
+    function jpkcom_postfilter_htaccess_server_reads(): bool {
+        $software = isset( $_SERVER['SERVER_SOFTWARE'] ) && is_string( $_SERVER['SERVER_SOFTWARE'] ) ? $_SERVER['SERVER_SOFTWARE'] : '';
+
+        return stripos( $software, 'apache' ) !== false || stripos( $software, 'litespeed' ) !== false;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_loosen' ) ) {
     /**
      * Make sure the .htaccess is no stricter than the given inputs
      *
-     * True when the block was brought to the inputs, already was there, or
-     * the file holds no managed block that could be stricter. False when a
-     * managed block (or markers that no longer pair up) stays as it is.
+     * True when the block was brought to the inputs, already was there, the
+     * file holds no managed block that could be stricter, or the server does
+     * not read .htaccess (nothing is written then; the block stays for the
+     * Remove action and deactivation). False when a managed block (or markers
+     * that no longer pair up) stays as it is on Apache or LiteSpeed.
      *
      * @since 1.6.0
      *
@@ -410,6 +433,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_loosen' ) ) {
         $available = jpkcom_postfilter_htaccess_available();
 
         if ( $available['ok'] && jpkcom_postfilter_htaccess_apply( file: $file, inputs: $inputs ) ) {
+            return [ 'ok' => true, 'reason' => '' ];
+        }
+
+        // Ruling R17: a block the server never reads cannot be stricter than the plugin.
+        if ( ! jpkcom_postfilter_htaccess_server_reads() ) {
             return [ 'ok' => true, 'reason' => '' ];
         }
 
@@ -649,15 +677,24 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_maybe_resync' ) ) 
      * admin_init: sync when the file's hash is not the current one
      *
      * Constants and filters change effective values without an option event.
-     * A block below WordPress's (it never takes effect) is moved, too. Known
-     * limit: a constant that loosens between two requests leaves the block
-     * stricter until the next admin request.
+     * A block below WordPress's (it never takes effect) is moved, too. Only on
+     * admin page loads - not on admin-ajax (heartbeat), REST or cron requests
+     * (ruling R18). Known limit: a constant that loosens between two requests
+     * leaves the block stricter until the next admin page load.
      *
      * @since 1.6.0
      *
      * @return void
      */
     function jpkcom_postfilter_htaccess_maybe_resync(): void {
+        $background = ( defined( constant_name: 'DOING_AJAX' ) && DOING_AJAX )
+            || ( defined( constant_name: 'REST_REQUEST' ) && REST_REQUEST )
+            || ( defined( constant_name: 'DOING_CRON' ) && DOING_CRON );
+
+        if ( $background ) {
+            return;
+        }
+
         if ( ! jpkcom_postfilter_htaccess_is_managed() || ! jpkcom_postfilter_htaccess_available()['ok'] ) {
             return;
         }

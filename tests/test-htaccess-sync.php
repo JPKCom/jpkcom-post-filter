@@ -808,6 +808,28 @@ if ( $have ) {
 	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
 	chk( 'not available (nginx): tightening never writes', bytes( htaccess() ) === $was );
 	$_SERVER['SERVER_SOFTWARE'] = 'Apache/2.4.66 (Debian)';
+
+	// Ruling R17: refuse only where the server reads .htaccess.
+	site( general() );
+	$_SERVER['SERVER_SOFTWARE'] = 'nginx/1.26.3';
+	$was = bytes( htaccess() );
+	chmod( htaccess(), 0444 );
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	chk( 'R17 nginx, managed + unwritable, loosening: saved, no write, no error',
+		$ok === true && $GLOBALS['__errors'] === [] && bytes( htaccess() ) === $was
+		&& ( $GLOBALS['__options']['jpkcom_postfilter_general']['max_filters_per_group'] ?? null ) === 3 );
+
+	foreach ( [ 'Apache/2.4.66 (Debian)', 'LiteSpeed' ] as $software ) {
+		site( general() );
+		$_SERVER['SERVER_SOFTWARE'] = $software;
+		$was = bytes( htaccess() );
+		chmod( htaccess(), 0444 );
+		$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+		chk( "R17 {$software}, managed + unwritable, loosening: refused",
+			$ok === false && ( $GLOBALS['__errors'][0]['type'] ?? '' ) === 'error' && bytes( htaccess() ) === $was
+			&& $GLOBALS['__options']['jpkcom_postfilter_general']['max_filters_per_group'] === 2 );
+	}
+	$_SERVER['SERVER_SOFTWARE'] = 'Apache/2.4.66 (Debian)';
 }
 
 // =====================================================================================
@@ -879,6 +901,14 @@ if ( $have ) {
 	$p = (array) call( 'jpkcom_postfilter_server_inputs_from_raw', 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '9', 'strict_urls' => '0' ] ) );
 	chk( 'locked constant beats raw input', ( $p['max_per_group'] ?? null ) === 2 && ( $p['strict'] ?? null ) === false );
 	chk( 'inputs_from_raw() carries a fresh hash', isset( $p['hash'] ) && $p['hash'] === jpkcom_postfilter_server_rule_hash( $p ) );
+
+	// Ruling R18: no resync on admin-ajax (heartbeat).
+	site( general() );
+	jpkcom_postfilter_htaccess_write( htaccess(), jpkcom_postfilter_htaccess_block( with( [ 'max_per_group' => 1 ] ) ) );
+	$was = bytes( htaccess() );
+	define( 'DOING_AJAX', true );
+	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
+	chk( 'R18 DOING_AJAX: hash mismatch causes no write', bytes( htaccess() ) === $was && n_of( $was ) === 'N1' );
 }
 
 exit( summary() );
