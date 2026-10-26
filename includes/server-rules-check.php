@@ -146,16 +146,19 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_blocked' ) ) {
      *
      * A transport error (timeout, refused connection, TLS), no status, HTTP
      * authentication, a firewall, a rate limit, maintenance mode or another
-     * server error, and a redirect (`redirection` is 0, so a redirect to
-     * https or another host is not followed). Plain text, untrusted parts
-     * (error message, Location) included - the page escapes it.
+     * server error, and - unless `$redirect_ok` - a redirect (`redirection`
+     * is 0, so a redirect to https or another host is not followed). For the
+     * at-cap probe a redirect is the plugin's normal answer (unknown probe
+     * slugs, 301 to the archive). Plain text, untrusted parts (error message,
+     * Location) included - the page escapes it.
      *
      * @since 1.6.0
      *
-     * @param array{error: ?string, status: int, headers: array<string, string>, body: string} $response Normalised answer.
+     * @param array{error: ?string, status: int, headers: array<string, string>, body: string} $response    Normalised answer.
+     * @param bool                                                                            $redirect_ok A 3xx is an answer, not a block.
      * @return string|null
      */
-    function jpkcom_postfilter_server_check_blocked( array $response ): ?string {
+    function jpkcom_postfilter_server_check_blocked( array $response, bool $redirect_ok = false ): ?string {
         $status = (int) $response['status'];
 
         if ( $response['error'] !== null ) {
@@ -189,7 +192,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_blocked' ) ) {
             );
         }
 
-        if ( $status >= 300 && $status < 400 ) {
+        if ( ! $redirect_ok && $status >= 300 && $status < 400 ) {
             $location = substr( $response['headers']['location'] ?? '', 0, 200 );
             return sprintf(
                 /* translators: 1: HTTP status code, 2: the URL the answer redirects to */
@@ -222,9 +225,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_classify' ) ) 
      * transport error, 401, 403, 429, 5xx or a redirect, `none` when the
      * settings produce no reject pattern.
      *
-     * stricter (the `at_cap` probe, a URL the plugin serves): true when the
-     * server rejects it - `server-…`, or on LiteSpeed a 404/410 without
-     * header. That is the alarm.
+     * stricter (the `at_cap` probe, a URL the plugin serves): true only on
+     * proof - the server rejected it with `server-…`. That is the red alarm.
+     * stricter_suspected: on LiteSpeed a 404/410 without header (OpenLiteSpeed
+     * rejects without one, but so does WordPress for a base it does not
+     * route), a hedged warning, never the alarm (ruling R19).
+     * stricter_checked: false when the at-cap probe did not get through
+     * (timeout, 401, 429 - the loopback sends no cookies, so a rate limit
+     * catches it -, 5xx, ...) or there was nothing to check; the detail then
+     * says why.
      *
      * @since 1.6.0
      *
@@ -234,7 +243,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_classify' ) ) 
      * @param array<string, mixed> $inputs          Rule inputs the probes were built from.
      * @param string               $server_software SERVER_SOFTWARE of this site.
      * @param bool                 $robots_expected Does the plugin add lines to robots.txt on this site?
-     * @return array{robots: string, rule: string, stricter: bool, detail: string}
+     * @return array{robots: string, rule: string, stricter: bool, stricter_checked: bool, stricter_suspected: bool, detail: string}
      */
     function jpkcom_postfilter_server_check_classify( array $responses, array $inputs, string $server_software, bool $robots_expected = true ): array {
         $litespeed = stripos( $server_software, 'litespeed' ) !== false;
@@ -266,7 +275,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_classify' ) ) 
         }
 
         // --- the rule ---
-        $stricter = false;
+        $stricter  = false;
+        $checked   = false;
+        $suspected = false;
         if ( $patterns['per_group'] === null && $patterns['segments'] === null ) {
             $rule     = 'none';
             $detail[] = __( 'These settings produce no server reject rule, so there is nothing to check. A rule deployed from earlier settings would not be noticed here: remove it from the server configuration.', 'jpkcom-post-filter' );
@@ -324,15 +335,26 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_classify' ) ) 
 
             // --- never stricter than the plugin ---
             if ( is_array( $responses['at_cap'] ?? null ) ) {
-                $at_cap        = jpkcom_postfilter_server_check_response( response: $responses['at_cap'] );
-                $at_cap_reject = strtolower( $at_cap['headers']['x-jpkpf-reject'] ?? '' );
+                $at_cap         = jpkcom_postfilter_server_check_response( response: $responses['at_cap'] );
+                $at_cap_reject  = strtolower( $at_cap['headers']['x-jpkpf-reject'] ?? '' );
+                $at_cap_blocked = jpkcom_postfilter_server_check_blocked( response: $at_cap, redirect_ok: true );
 
                 if ( str_starts_with( $at_cap_reject, 'server-' ) ) {
+                    $checked  = true;
                     $stricter = true;
                     $detail[] = __( 'Alarm: the server rejects a filter URL within the plugin\'s limits, which the plugin serves. The deployed server rules are stricter than the plugin and break filter pages: replace or remove them now.', 'jpkcom-post-filter' );
-                } elseif ( $litespeed && $at_cap_reject === '' && $at_cap['error'] === null && in_array( $at_cap['status'], [ 404, 410 ], true ) ) {
-                    $stricter = true;
-                    $detail[] = __( 'Alarm: LiteSpeed rejects a filter URL within the plugin\'s limits without a header. Most likely the deployed server rules are stricter than the plugin and break filter pages: replace or remove them now.', 'jpkcom-post-filter' );
+                } elseif ( $at_cap_reject === '' && $at_cap_blocked !== null ) {
+                    $detail[] = sprintf(
+                        /* translators: %s: why the request did not get through, e.g. "HTTP 429: too many requests (a rate limit)" */
+                        __( 'The check whether the server is stricter than the plugin could not run: %s. Check again later.', 'jpkcom-post-filter' ),
+                        $at_cap_blocked
+                    );
+                } else {
+                    $checked = true;
+                    if ( $litespeed && $at_cap_reject === '' && in_array( $at_cap['status'], [ 404, 410 ], true ) ) {
+                        $suspected = true;
+                        $detail[]  = __( 'LiteSpeed answered a filter URL within the plugin\'s limits with a reject status and no header. OpenLiteSpeed rejects that way, so the deployed server rules may be stricter than the plugin - but WordPress answers a base it does not route the same way. Open a filter page within the limits in a browser: if it is rejected, replace or remove the server rules.', 'jpkcom-post-filter' );
+                    }
                 }
             }
         }
@@ -342,8 +364,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_classify' ) ) 
         return [
             'robots'   => $robots_status,
             'rule'     => $rule,
-            'stricter' => $stricter,
-            'detail'   => implode( ' ', $detail ),
+            'stricter'           => $stricter,
+            'stricter_checked'   => $checked,
+            'stricter_suspected' => $suspected,
+            'detail'             => implode( ' ', $detail ),
         ];
     }
 }
@@ -358,9 +382,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_is_looser' ) )
      * endpoint, fragment or base, a filtered verdict). Compared on the values
      * that shape the rule, as sets where they are sets; the hash is ignored.
      * A state without groups rejects nothing whatever `strict` says, so
-     * `strict` counts only with groups. A different reject status counts as
-     * looser, too (union() takes the new one): a deployed rule answers with
-     * the old one, and when unclear, looser is the safe reading.
+     * `strict` counts only with groups. The reject status is left out
+     * (ruling R20): 404 or 410 changes how a rejected URL is answered, not
+     * which URLs are rejected.
      *
      * @since 1.6.0
      *
@@ -386,7 +410,6 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_is_looser' ) )
                 'max_per_group'    => (int) ( $inputs['max_per_group'] ?? 0 ),
                 'groups'           => $groups,
                 'skip_positions'   => $skip,
-                'reject_status'    => (int) ( $inputs['reject_status'] ?? 0 ),
                 'endpoint'         => (string) ( $inputs['endpoint'] ?? '' ),
                 'fragment'         => (string) ( $inputs['fragment'] ?? '' ),
                 'bases'            => $bases,
@@ -435,14 +458,16 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_run' ) ) {
      *
      * GET robots.txt, HEAD on the over-cap and the at-cap URL (both skipped
      * when there is no reject pattern). Only URLs built from home_url();
-     * `timeout` 5, `redirection` 0, no cookies, TLS verification as WordPress
-     * decides. The result goes to the option
+     * `timeout` 5, `redirection` 0, no cookies, and TLS verification as core's
+     * own loopbacks (Site Health) decide it: `https_local_ssl_verify`, default
+     * false - a loopback often reaches a local certificate the system does
+     * not trust, and the probe carries no secrets. The result goes to the option
      * `jpkcom_postfilter_server_rules_check` (not autoloaded) as
      * {time, result}. The caller checks capability and nonce.
      *
      * @since 1.6.0
      *
-     * @return array{time: int, result: array{robots: string, rule: string, stricter: bool, detail: string}}
+     * @return array{time: int, result: array{robots: string, rule: string, stricter: bool, stricter_checked: bool, stricter_suspected: bool, detail: string}}
      */
     function jpkcom_postfilter_server_check_run(): array {
         jpkcom_postfilter_settings_memo_reset();
@@ -454,6 +479,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_run' ) ) {
             'redirection'         => 0,
             'cookies'             => [],
             'limit_response_size' => 65536,
+            /** This filter is documented in wp-includes/class-wp-http-streams.php */
+            'sslverify'           => (bool) apply_filters( 'https_local_ssl_verify', false ),
         ];
 
         $fetch = static function ( string $method, string $url ) use ( $args ): array {
@@ -541,6 +568,38 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_pending' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_server_check_quietly' ) ) {
+    /**
+     * Run a callback whose option writes never raise the notice
+     *
+     * For writes the admin did not make: the 1.6.0 migration
+     * (jpkcom_postfilter_migrate_pin_per_group_cap()) pins N = 3 where the
+     * new default 2 was in effect for a moment - no server rule was ever
+     * built from that moment. Without an argument: whether such a callback
+     * is running.
+     *
+     * @since 1.6.0
+     *
+     * @param callable|null $callback Callback to run.
+     * @return mixed The callback's return value, or the flag.
+     */
+    function jpkcom_postfilter_server_check_quietly( ?callable $callback = null ): mixed {
+        static $depth = 0;
+
+        if ( $callback === null ) {
+            return $depth > 0;
+        }
+
+        $depth++;
+        try {
+            return $callback();
+        } finally {
+            $depth--;
+        }
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_server_check_capture_before' ) ) {
     /**
      * sanitize_option_{option}, priority 4: remember the inputs before the save
@@ -548,7 +607,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_capture_before
      * Before the settings sanitizer (10) rewrites the cache file. A capture
      * that is still pending (the second sanitize of add_option(), or a save
      * that changed nothing) is kept: the state it describes is still the one
-     * before the next commit.
+     * before the next commit. Only for General and Filter Groups, and not
+     * inside jpkcom_postfilter_server_check_quietly().
+     *
+     * Also called directly by the import (admin-pages.php), which runs the
+     * sanitizer itself before jpkcom_postfilter_settings_save().
      *
      * @since 1.6.0
      *
@@ -557,8 +620,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_capture_before
      * @return mixed
      */
     function jpkcom_postfilter_server_check_capture_before( mixed $value, string $option = '' ): mixed {
+        $watched = in_array( $option, [ 'jpkcom_postfilter_general', 'jpkcom_postfilter_filter_groups' ], true );
+
         // Only for a logged-in user: nobody else ever sees the notice.
-        if ( $option !== '' && get_current_user_id() > 0 && jpkcom_postfilter_server_check_pending( option: $option ) === null ) {
+        if ( $watched && get_current_user_id() > 0 && ! jpkcom_postfilter_server_check_quietly()
+            && jpkcom_postfilter_server_check_pending( option: $option ) === null ) {
             jpkcom_postfilter_settings_memo_reset();
             jpkcom_postfilter_server_check_pending( option: $option, inputs: jpkcom_postfilter_server_rule_inputs() );
         }
@@ -604,9 +670,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_note_save' ) )
     function jpkcom_postfilter_server_check_note_save( string $option ): void {
         $before = jpkcom_postfilter_server_check_pending( option: $option, take: true );
 
-        // Nobody to show it to (cron, WP-CLI, a front-end request).
+        // Nobody to show it to (cron, WP-CLI, a front-end request), or a
+        // write the admin did not make.
         $user = get_current_user_id();
-        if ( $user <= 0 ) {
+        if ( $user <= 0 || jpkcom_postfilter_server_check_quietly() ) {
             return;
         }
 

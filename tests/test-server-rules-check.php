@@ -533,9 +533,28 @@ chk( 'at_cap server-* = stricter alarm',       classify( at_cap: hdr( 'server-pe
 chk( 'at_cap server-* with other hash = stricter alarm', classify( at_cap: hdr( 'server-per-group', 'aaaaaaaaaaaa' ) )['stricter'] === true );
 chk( 'at_cap 301 from PHP = not stricter',     classify( at_cap: resp( 301 ) )['stricter'] === false );
 chk( 'at_cap PHP reject (unknown terms) = not stricter', classify( at_cap: hdr( 'unknown' ) )['stricter'] === false );
-chk( 'at_cap unreachable = not stricter',      classify( at_cap: err( 'cURL error 28' ) )['stricter'] === false );
-chk( 'LiteSpeed at_cap 410 without header = stricter alarm', classify( at_cap: resp( 410 ), software: 'LiteSpeed' )['stricter'] === true );
-chk( 'nginx at_cap 410 without header = no alarm', classify( at_cap: resp( 410 ) )['stricter'] === false );
+$r = classify( at_cap: err( 'cURL error 28: Operation timed out' ) );
+chk( 'at_cap timeout: no alarm, but marked as not checked', $r['stricter'] === false && ( $r['stricter_checked'] ?? null ) === false, json_encode( $r ) );
+chk( 'at_cap timeout: the detail says the check could not run, and why',
+	stripos( $r['detail'], 'could not run' ) !== false && str_contains( $r['detail'], 'cURL error 28' ), $r['detail'] );
+$r = classify( at_cap: resp( 429 ) );
+chk( 'at_cap 429 (the loopback hit a rate limit): not checked', ( $r['stricter_checked'] ?? null ) === false && str_contains( $r['detail'], '429' ), $r['detail'] );
+$r = classify( at_cap: resp( 503 ) );
+chk( 'at_cap 503: not checked', ( $r['stricter_checked'] ?? null ) === false );
+chk( 'at_cap 301 from PHP: checked', ( classify( at_cap: resp( 301, [ 'location' => 'https://example.test/blog/' ] ) )['stricter_checked'] ?? null ) === true );
+chk( 'at_cap server-*: checked', ( classify( at_cap: hdr( 'server-per-group', $h ) )['stricter_checked'] ?? null ) === true );
+chk( 'no patterns: nothing to check', ( classify( inputs: with( [ 'strict' => false ] ) )['stricter_checked'] ?? null ) === false );
+
+// Ruling R19: a header-less 404/410 may come from an unrouted base, so on
+// LiteSpeed it is only a suspicion - never the red alarm.
+$r = classify( at_cap: resp( 410 ), software: 'LiteSpeed' );
+chk( 'LiteSpeed at_cap 410 without header: suspected, not the alarm',
+	$r['stricter'] === false && ( $r['stricter_suspected'] ?? null ) === true && ( $r['stricter_checked'] ?? null ) === true, json_encode( $r ) );
+chk( 'LiteSpeed suspicion: hedged detail', stripos( $r['detail'], 'may' ) !== false && stripos( $r['detail'], 'Alarm' ) === false, $r['detail'] );
+chk( 'LiteSpeed at_cap 404 without header: suspected', ( classify( at_cap: resp( 404 ), software: 'LiteSpeed' )['stricter_suspected'] ?? null ) === true );
+chk( 'LiteSpeed at_cap 301: no suspicion', ( classify( at_cap: resp( 301 ), software: 'LiteSpeed' )['stricter_suspected'] ?? null ) === false );
+chk( 'nginx at_cap 410 without header = no alarm, no suspicion', ( $x = classify( at_cap: resp( 410 ) ) )['stricter'] === false && ( $x['stricter_suspected'] ?? null ) === false );
+chk( 'at_cap server-*: the alarm, not a suspicion', ( classify( at_cap: hdr( 'server-per-group', $h ) )['stricter_suspected'] ?? null ) === false );
 $r = classify( at_cap: hdr( 'server-per-group', $h ) );
 chk( 'stricter: the alarm is in the detail', stripos( $r['detail'], 'stricter' ) !== false, $r['detail'] );
 
@@ -576,6 +595,9 @@ chk( 'not looser: unchanged without groups',   $looser( [ 'groups' => 0 ], [ 'gr
 chk( 'not looser: same sets in another order', call( 'jpkcom_postfilter_server_rules_is_looser',
 	with( [ 'bases' => [ '/jobs/', '/blog/' ], 'skip_positions' => [ 1, 0 ], 'groups' => 3 ] ),
 	with( [ 'bases' => [ '/blog/', '/jobs/' ], 'skip_positions' => [ 0, 1 ], 'groups' => 3 ] ) ) === false );
+chk( 'not looser: reject status only (410 -> 404, ruling R20)', $looser( [], [ 'reject_status' => 404 ] ) === false );
+chk( 'not looser: reject status only (404 -> 410)', $looser( [ 'reject_status' => 404 ], [] ) === false );
+chk( 'still looser: reject status and N together', $looser( [], [ 'reject_status' => 404, 'max_per_group' => 3 ] ) === true );
 chk( 'hash is ignored', call( 'jpkcom_postfilter_server_rules_is_looser', array_merge( with( [] ), [ 'hash' => 'x' ] ), array_merge( with( [] ), [ 'hash' => 'y' ] ) ) === false );
 
 // =====================================================================================
@@ -605,10 +627,10 @@ if ( $have && function_exists( 'jpkcom_postfilter_server_check_run' ) ) {
 	foreach ( $GLOBALS['__http'] as [ $m, $u, $a ] ) {
 		$only_home = $only_home && str_starts_with( $u, 'https://example.test/' );
 		$args_ok   = $args_ok && ( $a['timeout'] ?? null ) === 5 && ( $a['redirection'] ?? null ) === 0
-			&& ( $a['cookies'] ?? null ) === [] && ! isset( $a['headers']['Cookie'] ) && ! isset( $a['sslverify'] );
+			&& ( $a['cookies'] ?? null ) === [] && ! isset( $a['headers']['Cookie'] ) && ( $a['sslverify'] ?? null ) === false;
 	}
 	chk( 'run: only URLs of home_url()', $only_home );
-	chk( 'run: timeout 5, no redirects, no cookies, sslverify left to WordPress', $args_ok, json_encode( $GLOBALS['__http'][0][2] ?? null ) );
+	chk( 'run: timeout 5, no redirects, no cookies, sslverify as core\'s loopbacks (https_local_ssl_verify, default false)', $args_ok, json_encode( $GLOBALS['__http'][0][2] ?? null ) );
 	chk( 'run: classified', ( $out['result']['rule'] ?? null ) === 'active' && ( $out['result']['robots'] ?? null ) === 'ok' && ( $out['result']['stricter'] ?? null ) === false, json_encode( $out ) );
 	chk( 'run: {time, result} stored', is_array( $stored ) && ( $stored['time'] ?? 0 ) >= $before && ( $stored['result'] ?? null ) === ( $out['result'] ?? false ), json_encode( $stored ) );
 	chk( 'run: option not autoloaded', array_key_exists( 'jpkcom_postfilter_server_rules_check', $GLOBALS['__autoload'] ) && $GLOBALS['__autoload']['jpkcom_postfilter_server_rules_check'] === false );
@@ -619,6 +641,14 @@ if ( $have && function_exists( 'jpkcom_postfilter_server_check_run' ) ) {
 	chk( 'run: loopback blocked = unreachable everywhere, never missing',
 		( $out['result']['rule'] ?? null ) === 'unreachable' && ( $out['result']['robots'] ?? null ) === 'unreachable'
 		&& str_contains( (string) ( $out['result']['detail'] ?? '' ), 'cURL error 28' ), json_encode( $out ) );
+	chk( 'run: blocked at_cap probe = stricter not checked', ( $out['result']['stricter_checked'] ?? null ) === false );
+
+	$verify = static fn( $v ) => true;
+	add_filter( 'https_local_ssl_verify', $verify );
+	$GLOBALS['__http'] = [];
+	jpkcom_postfilter_server_check_run();
+	chk( 'run: https_local_ssl_verify decides sslverify', ( $GLOBALS['__http'][0][2]['sslverify'] ?? null ) === true );
+	remove_filter( 'https_local_ssl_verify', $verify );
 
 	site( general( [ 'strict_urls' => false ] ) );
 	$GLOBALS['__http']      = [];
@@ -740,6 +770,76 @@ if ( $have ) {
 	site( general() );
 	save( 'jpkcom_postfilter_filter_groups', [ 'groups' => [ group( 'category', 0, [ 'label' => 'Topics' ] ), group( 'post_tag', 1 ) ] ] );
 	chk( 'label changed: no notice', ! noticed() );
+}
+
+// =====================================================================================
+section( 'Notice: import (Import / Export page)' );
+// =====================================================================================
+
+if ( $have && function_exists( 'jpkcom_postfilter_server_check_capture_before' ) ) {
+	$_SERVER['SERVER_SOFTWARE'] = 'nginx/1.26.3';
+
+	// What jpkcom_postfilter_page_import_export() does per group: loosen a
+	// managed block, (capture,) run the sanitizer - whose side effect is that
+	// the settings cache file holds the imported values from then on - and
+	// only then jpkcom_postfilter_settings_save() -> update_option().
+	$import = static function ( string $group, array $raw, bool $capture ): void {
+		$option = 'jpkcom_postfilter_' . $group;
+		jpkcom_postfilter_htaccess_prepare_save( option: $option, raw: $raw, setting: 'jpkcom_postfilter_import_messages' );
+		if ( $capture ) {
+			jpkcom_postfilter_server_check_capture_before( value: $raw, option: $option );
+		}
+		jpkcom_postfilter_settings_write_file( $group, $raw );   // the sanitizer's cache write
+		jpkcom_postfilter_settings_memo_reset();
+		jpkcom_postfilter_settings_save( $group, $raw );
+	};
+
+	site( general() );
+	$import( 'general', general( [ 'max_filters_per_group' => 3 ] ), false );
+	chk( 'import without a capture before the sanitizer: the loosening is not seen (why the call site matters)', ! noticed() );
+
+	site( general() );
+	$import( 'general', general( [ 'max_filters_per_group' => 3 ] ), true );
+	chk( 'import N 2->3 with the capture: notice', noticed() );
+
+	site( general() );
+	$import( 'filter_groups', [ 'groups' => [ group( 'category', 0 ), group( 'post_tag', 1 ), group( 'color', 2 ) ] ], true );
+	chk( 'import adding a group: notice', noticed() );
+
+	site( general() );
+	$import( 'general', general( [ 'max_filters_per_group' => 1 ] ), true );
+	chk( 'import N 2->1: no notice', ! noticed() );
+
+	site( general() );
+	jpkcom_postfilter_server_check_capture_before( value: [], option: 'jpkcom_postfilter_layout' );
+	chk( 'capture ignores options that are not General or Filter Groups', call( 'jpkcom_postfilter_server_check_pending', 'jpkcom_postfilter_layout' ) === null );
+
+	$src        = (string) file_get_contents( __DIR__ . '/../includes/admin-pages.php' );
+	$at_capture = strpos( $src, 'jpkcom_postfilter_server_check_capture_before(' );
+	$at_cb      = strpos( $src, '$cb( $data[ $group ] )' );
+	chk( 'admin-pages.php import: captures before it runs the sanitizer', $at_capture !== false && $at_cb !== false && $at_capture < $at_cb );
+} else {
+	chk( 'import: capture_before exists', false );
+}
+
+// =====================================================================================
+section( 'Notice: the 1.6.0 migration is not a save' );
+// =====================================================================================
+
+if ( $have ) {
+	$_SERVER['SERVER_SOFTWARE'] = 'nginx/1.26.3';
+
+	// Stored without the key: the effective N is the new default 2 until the pin.
+	$stored = general();
+	unset( $stored['max_filters_per_group'] );
+	site( $stored );
+	$GLOBALS['__options']['jpkcom_postfilter_rewrite_version'] = '1.5.0';
+	$wrote = call( 'jpkcom_postfilter_migrate_pin_per_group_cap' );
+	chk( 'fixture: the migration pins 3', $wrote === true && ( get_option( 'jpkcom_postfilter_general' )['max_filters_per_group'] ?? null ) === 3 );
+	chk( 'migration pin (2 -> 3): no notice', ! noticed() );
+
+	save( 'jpkcom_postfilter_general', array_merge( get_option( 'jpkcom_postfilter_general' ), [ 'max_filters_per_group' => '4' ] ) );
+	chk( 'a real save after the migration: notice again', noticed() );
 }
 
 // =====================================================================================

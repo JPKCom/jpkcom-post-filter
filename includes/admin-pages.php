@@ -2624,6 +2624,12 @@ function jpkcom_postfilter_page_import_export(): void {
                             && ! jpkcom_postfilter_htaccess_prepare_save( option: 'jpkcom_postfilter_' . $group, raw: $data[ $group ], setting: 'jpkcom_postfilter_import_messages' ) ) {
                             continue;
                         }
+                        // The "before" state of the server rules notice, too - read
+                        // before the sanitizer rewrites the cache file
+                        // (includes/server-rules-check.php).
+                        if ( function_exists( 'jpkcom_postfilter_server_check_capture_before' ) ) {
+                            jpkcom_postfilter_server_check_capture_before( value: $data[ $group ], option: 'jpkcom_postfilter_' . $group );
+                        }
                         $cb        = $sanitize_callbacks[ $group ] ?? null;
                         $sanitized = ( $cb && function_exists( $cb ) ) ? $cb( $data[ $group ] ) : $data[ $group ];
                         jpkcom_postfilter_settings_save( $group, $sanitized );

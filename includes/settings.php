@@ -646,7 +646,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_migrate_pin_per_group_cap' 
         }
 
         try {
-            update_option( 'jpkcom_postfilter_general', $stored );
+            // Not a save the admin made: no "update your server rules" notice
+            // (includes/server-rules-check.php).
+            if ( function_exists( function: 'jpkcom_postfilter_server_check_quietly' ) ) {
+                jpkcom_postfilter_server_check_quietly( static fn(): bool => update_option( 'jpkcom_postfilter_general', $stored ) );
+            } else {
+                update_option( 'jpkcom_postfilter_general', $stored );
+            }
         } finally {
             if ( $priority !== false ) {
                 add_filter( $hook, $callback, $priority );
