@@ -168,8 +168,9 @@ function get_home_path() { return $GLOBALS['__home_path']; }
 function jpkcom_postfilter_settings_memo_reset(): void {}
 function jpkcom_postfilter_fragment_segment(): string { return 'jpkpf-fragment'; }
 function jpkcom_postfilter_debug_log( $msg, $ctx = [] ) {}
-$GLOBALS['__groups'] = [];
-function jpkcom_postfilter_get_filter_groups_enabled(): array { return $GLOBALS['__groups']; }
+// Not used by the page helpers: the duplicate-taxonomy warning takes the
+// taxonomies as an argument. Present so a live-settings read would show.
+function jpkcom_postfilter_get_filter_groups_enabled(): array { throw new RuntimeException( 'live settings read' ); }
 
 $GLOBALS['__submenus'] = [];
 function add_submenu_page( ...$args ) {
@@ -363,10 +364,12 @@ chk( 'every warning has level, text, id',
 file_put_contents( ABSPATH . 'robots.txt', "User-agent: *\nDisallow:\n" );
 $w = warning( warnings( inputs() ), 'robots-file' );
 chk( 'warning: physical robots.txt', ( $w['level'] ?? '' ) === 'warning' );
+chk( 'robots.txt in the WordPress directory: says so, with the path', str_contains( $w['text'] ?? '', 'WordPress directory' ) && str_contains( $w['text'] ?? '', ABSPATH . 'robots.txt' ) && ! str_contains( $w['text'] ?? '', 'site root' ) );
 unlink( ABSPATH . 'robots.txt' );
 chk( 'no robots.txt file: no warning', warning( warnings( inputs() ), 'robots-file' ) === null );
 file_put_contents( $GLOBALS['__home_path'] . 'robots.txt', "User-agent: *\n" );
-chk( 'warning: physical robots.txt in the site root (get_home_path)', warning( warnings( inputs() ), 'robots-file' ) !== null );
+$w = warning( warnings( inputs() ), 'robots-file' );
+chk( 'warning: physical robots.txt in the site root (get_home_path), says so', $w !== null && str_contains( $w['text'], 'site root' ) && ! str_contains( $w['text'], 'WordPress directory' ) );
 unlink( $GLOBALS['__home_path'] . 'robots.txt' );
 
 $GLOBALS['__home'] = 'https://example.test/wp';
@@ -407,12 +410,11 @@ $w = warning( warnings( inputs( [ 'bases' => [ '/blog/', '/my news/' ] ] ) ), 'u
 chk( 'warning: unsafe bases are named (jpkcom_postfilter_server_unsafe_bases)', ( $w['level'] ?? '' ) === 'warning' && str_contains( $w['text'], '/my news/' ) );
 chk( 'safe bases: no unsafe-bases warning', warning( $base, 'unsafe-bases' ) === null );
 
-$GLOBALS['__groups'] = [ [ 'taxonomy' => 'category' ], [ 'taxonomy' => 'post_tag' ], [ 'taxonomy' => 'category' ] ];
-$w = warning( warnings( inputs( [ 'groups' => 3 ] ) ), 'duplicate-taxonomies' );
-chk( 'info: two groups on one taxonomy', ( $w['level'] ?? '' ) === 'info' && str_contains( $w['text'], 'category' ) && ! str_contains( $w['text'], 'post_tag' ) );
-$GLOBALS['__groups'] = [ [ 'taxonomy' => 'category' ], [ 'taxonomy' => '' ], [ 'taxonomy' => '' ] ];
-chk( 'two groups without taxonomy are not duplicates', warning( warnings( inputs( [ 'groups' => 3, 'skip_positions' => [ 1, 2 ] ] ) ), 'duplicate-taxonomies' ) === null );
-$GLOBALS['__groups'] = [];
+$w = warning( (array) call( 'jpkcom_postfilter_server_rules_warnings', inputs( [ 'groups' => 3 ] ), [ 'category', 'post_tag', 'category' ] ), 'duplicate-taxonomies' );
+chk( 'info: two groups on one taxonomy (taxonomies passed in)', ( $w['level'] ?? '' ) === 'info' && str_contains( $w['text'], 'category' ) && ! str_contains( $w['text'], 'post_tag' ) );
+chk( 'two groups without taxonomy are not duplicates',
+	warning( (array) call( 'jpkcom_postfilter_server_rules_warnings', inputs( [ 'groups' => 3, 'skip_positions' => [ 1, 2 ] ] ), [ 'category', '', '' ] ), 'duplicate-taxonomies' ) === null );
+chk( 'no taxonomies passed: no duplicate check, no live settings read', warning( warnings( inputs() ), 'duplicate-taxonomies' ) === null );
 
 chk( 'no groups: warning', warning( warnings( inputs( [ 'groups' => 0 ] ) ), 'no-groups' ) !== null );
 chk( 'no bases: warning', warning( warnings( inputs( [ 'bases' => [] ] ) ), 'no-bases' ) !== null );
@@ -625,6 +627,9 @@ foreach ( [ 'nginx', 'apache', 'htaccess', 'caddy', 'ferron3', 'ferron2', 'ols' 
 	chk( "{$tab}: check commands block", str_contains( $out, 'jpkpf-sr-code-' . $tab . '-check' ) );
 }
 chk( 'nginx tab marked as detected', str_contains( render( 'jpkcom_postfilter_server_rules_render_tab', 'nginx', $fixed, $opts, 'nginx' ), 'jpkpf-sr-detected' ) );
+chk( 'Apache detected: both Apache tabs marked',
+	str_contains( render( 'jpkcom_postfilter_server_rules_render_tab', 'apache', $fixed, $opts, 'apache' ), 'jpkpf-sr-detected' )
+	&& str_contains( render( 'jpkcom_postfilter_server_rules_render_tab', 'htaccess', $fixed, $opts, 'apache' ), 'jpkpf-sr-detected' ) );
 chk( 'other tab not marked as detected', ! str_contains( render( 'jpkcom_postfilter_server_rules_render_tab', 'caddy', $fixed, $opts, 'nginx' ), 'jpkpf-sr-detected' ) );
 
 $out = render( 'jpkcom_postfilter_server_rules_render_tab', 'nginx', $fixed, [ 'nginx_variant' => 'ispconfig' ] + $opts, 'nginx' );
@@ -653,5 +658,28 @@ chk( 'head: SERVER_SOFTWARE and bases escaped', $head !== '' && ! str_contains( 
 chk( 'head: form posts the option through options.php', str_contains( $head, 'action="options.php"' ) && str_contains( $head, 'value="jpkcom_postfilter_server_rules"' ) );
 chk( 'head: warnings rendered', str_contains( $head, 'jpkpf-sr-warning' ) );
 chk( 'head: cookie and search-engine notes', str_contains( $head, 'Cookie' ) && str_contains( $head, 'Googlebot' ) );
+chk( 'head: render time input step matches the sanitizer (0.01)', str_contains( $head, 'step="0.01"' ) && ! str_contains( $head, 'step="0.05"' ) );
+
+// Spec 8: the hard rule holds when the snippets are generated; after a
+// loosening, deployed rules are the admin's job (order rule).
+$intro = render( 'jpkcom_postfilter_server_rules_render_intro' );
+chk( 'intro: "never stricter" only for the current settings', str_contains( $intro, 'with the current settings' ) && ! str_contains( $intro, 'never reject a URL the plugin serves.' ) );
+chk( 'intro: deployed rules stay until replaced, order rule named', str_contains( $intro, 'stay as they are until you replace them' ) && str_contains( $intro, 'order rule' ) );
+
+chk( 'jpkpf_msg is a removable query arg', in_array( 'jpkpf_msg', (array) apply_filters( 'removable_query_args', [ 'settings-updated' ] ), true )
+	&& in_array( 'settings-updated', (array) apply_filters( 'removable_query_args', [ 'settings-updated' ] ), true ) );
+
+// R17: the site moved to nginx, a managed block is left in a writable
+// .htaccess, the option is gone. Remove must be offered, Set up must not.
+$_SERVER['SERVER_SOFTWARE'] = 'nginx/1.26.3';
+file_put_contents( htaccess(), "# BEGIN JPKCom Post Filter\n# rule 0123456789ab\nRewriteEngine On\n# END JPKCom Post Filter\n" . $GLOBALS['__wp_block'] );
+delete_option( 'jpkcom_postfilter_htaccess_managed' );
+$out = render( 'jpkcom_postfilter_server_rules_render_htaccess_box', $fixed );
+chk( 'R17 box (nginx, leftover block, no option): Remove offered, no Set up',
+	str_contains( $out, 'name="do" value="remove"' ) && ! str_contains( $out, 'name="do" value="install"' ) );
+chk( 'R17 box: the reason is shown too', str_contains( $out, (string) call( 'jpkcom_postfilter_server_rules_htaccess_reason', 'not-apache' ) ) );
+chk( 'htaccess actions: forms are not wrapped in a <p>', ! str_contains( $out, '<p class="jpkpf-sr-htaccess-actions">' ) && str_contains( $out, '<div class="jpkpf-sr-htaccess-actions">' ) );
+$_SERVER['SERVER_SOFTWARE'] = 'Apache/2.4.66 (Debian)';
+file_put_contents( htaccess(), $GLOBALS['__wp_block'] );
 
 exit( summary() );

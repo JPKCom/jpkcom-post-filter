@@ -186,15 +186,19 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_warnings' ) ) 
      *
      * Each entry: `level` (error, warning, info), `text`, and an `id` for
      * styling and tests. Sorted errors first. Reads WordPress state besides
-     * the inputs: a physical robots.txt (ABSPATH), the home path, blog_public,
-     * multisite and the policy constants.
+     * the inputs: a physical robots.txt (ABSPATH and the site root), the home
+     * path, blog_public, multisite and the policy constants. The filter
+     * group taxonomies come in as an argument (the inputs only carry their
+     * count); without them there is no duplicate check.
      *
      * @since 1.6.0
      *
-     * @param array<string, mixed> $inputs As returned by jpkcom_postfilter_server_rule_inputs().
+     * @param array<string, mixed> $inputs     As returned by jpkcom_postfilter_server_rule_inputs().
+     * @param string[]             $taxonomies Taxonomy per filter group position, as
+     *                                         jpkcom_postfilter_filter_taxonomies() returns them.
      * @return array<int, array{level: string, text: string, id: string}>
      */
-    function jpkcom_postfilter_server_rules_warnings( array $inputs ): array {
+    function jpkcom_postfilter_server_rules_warnings( array $inputs, array $taxonomies = [] ): array {
         $out = [];
         $add = static function ( string $id, string $level, string $text ) use ( &$out ): void {
             $out[] = [ 'level' => $level, 'text' => $text, 'id' => $id ];
@@ -254,16 +258,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_warnings' ) ) 
 
         // Two groups on one taxonomy: the plugin adds their terms up, the
         // server counts each segment on its own - looser, never stricter.
-        if ( function_exists( function: 'jpkcom_postfilter_get_filter_groups_enabled' ) ) {
-            $taxonomies = array_filter( jpkcom_postfilter_filter_taxonomies(), static fn( string $t ): bool => $t !== '' );
-            $duplicates = array_keys( array_filter( array_count_values( $taxonomies ), static fn( int $n ): bool => $n > 1 ) );
-            if ( $duplicates !== [] ) {
-                $add( 'duplicate-taxonomies', 'info', sprintf(
-                    /* translators: %s: comma-separated taxonomy names */
-                    __( 'More than one filter group uses the taxonomy %s. The plugin counts the terms of all those groups together, the server counts each segment on its own, so the server rule catches fewer URLs there. It is never stricter.', 'jpkcom-post-filter' ),
-                    implode( ', ', $duplicates )
-                ) );
-            }
+        $taxonomies = array_values( array_filter( array_map( 'strval', $taxonomies ), static fn( string $t ): bool => $t !== '' ) );
+        $duplicates = array_keys( array_filter( array_count_values( $taxonomies ), static fn( int $n ): bool => $n > 1 ) );
+        if ( $duplicates !== [] ) {
+            $add( 'duplicate-taxonomies', 'info', sprintf(
+                /* translators: %s: comma-separated taxonomy names */
+                __( 'More than one filter group uses the taxonomy %s. The plugin counts the terms of all those groups together, the server counts each segment on its own, so the server rule catches fewer URLs there. It is never stricter.', 'jpkcom-post-filter' ),
+                implode( ', ', $duplicates )
+            ) );
         }
 
         $constants = [];
@@ -285,9 +287,20 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_warnings' ) ) 
 
         // The WordPress directory, and the site root when WordPress lives in
         // a subdirectory of it (get_home_path()).
-        $robots_files = [ ABSPATH . 'robots.txt', dirname( jpkcom_postfilter_htaccess_file() ) . '/robots.txt' ];
-        if ( count( array_filter( array_unique( $robots_files ), 'is_file' ) ) > 0 ) {
-            $add( 'robots-file', 'warning', __( 'A robots.txt file exists in the WordPress directory. The web server delivers it directly, so the plugin\'s robots.txt lines never reach crawlers. Copy the lines from the General page into that file, or delete it.', 'jpkcom-post-filter' ) );
+        $wp_robots   = ABSPATH . 'robots.txt';
+        $root_robots = dirname( jpkcom_postfilter_htaccess_file() ) . '/robots.txt';
+        if ( is_file( $wp_robots ) ) {
+            $add( 'robots-file', 'warning', sprintf(
+                /* translators: %s: file path */
+                __( 'A robots.txt file exists in the WordPress directory (%s). The web server delivers it directly, so the plugin\'s robots.txt lines never reach crawlers. Copy the lines from the General page into that file, or delete it.', 'jpkcom-post-filter' ),
+                $wp_robots
+            ) );
+        } elseif ( is_file( $root_robots ) ) {
+            $add( 'robots-file', 'warning', sprintf(
+                /* translators: %s: file path */
+                __( 'A robots.txt file exists in the site root (%s). The web server delivers it directly, so the plugin\'s robots.txt lines never reach crawlers. Copy the lines from the General page into that file, or delete it.', 'jpkcom-post-filter' ),
+                $root_robots
+            ) );
         }
 
         $home_path = wp_parse_url( home_url( '/' ), PHP_URL_PATH );
@@ -550,6 +563,28 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_notice'
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_intro' ) ) {
+    /**
+     * What the page is for, and how far its promise reaches (spec 8)
+     *
+     * The snippets are never stricter than the plugin for the settings they
+     * were generated from. A server the plugin does not manage keeps a
+     * deployed rule after the settings are loosened; from then on the order
+     * rule is the admin's job.
+     *
+     * @since 1.6.0
+     *
+     * @return void
+     */
+    function jpkcom_postfilter_server_rules_render_intro(): void {
+        ?>
+        <p><?php esc_html_e( 'Server rules let the web server turn away filter URLs that the plugin rejects anyway - before WordPress even starts - and slow down floods of filter requests from visitors without cookies. Copy the snippets for your server into its configuration.', 'jpkcom-post-filter' ); ?></p>
+        <p><?php esc_html_e( 'The snippets never reject a URL the plugin serves with the current settings. After you loosen the settings, rules already deployed in the server configuration stay as they are until you replace them - follow the order rule in each tab. Only the managed .htaccess block on Apache follows the settings by itself; apart from that block the plugin never changes your server configuration.', 'jpkcom-post-filter' ); ?></p>
+        <?php
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_head' ) ) {
     /**
      * Head of the page: detected server, warnings, inputs, rate-limit form
@@ -558,10 +593,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_head' )
      *
      * @param array<string, mixed>                                              $inputs   Rule inputs.
      * @param array{workers: int, render_seconds: float, nginx_variant: string} $opts     Rate-limit inputs.
-     * @param string                                                            $software SERVER_SOFTWARE.
+     * @param string                                                            $software   SERVER_SOFTWARE.
+     * @param string[]                                                          $taxonomies Taxonomy per filter group position (duplicate check).
      * @return void
      */
-    function jpkcom_postfilter_server_rules_render_head( array $inputs, array $opts, string $software ): void {
+    function jpkcom_postfilter_server_rules_render_head( array $inputs, array $opts, string $software, array $taxonomies = [] ): void {
         $tabs           = jpkcom_postfilter_server_rules_tabs();
         $detected       = jpkcom_postfilter_detect_server( software: $software );
         $limits         = jpkcom_postfilter_rate_limits( workers: (int) $opts['workers'], render_seconds: (float) $opts['render_seconds'] );
@@ -605,7 +641,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_head' )
 
         <div class="jpkpf-sr-warnings">
             <?php
-            foreach ( jpkcom_postfilter_server_rules_warnings( inputs: $inputs ) as $warning ) {
+            foreach ( jpkcom_postfilter_server_rules_warnings( inputs: $inputs, taxonomies: $taxonomies ) as $warning ) {
                 jpkcom_postfilter_server_rules_render_notice(
                     level: $warning['level'],
                     text: $warning['text'],
@@ -673,7 +709,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_head' )
                 <tr>
                     <th scope="row"><label for="jpkpf-sr-seconds"><?php esc_html_e( 'Render time of a filter page (seconds)', 'jpkcom-post-filter' ); ?></label></th>
                     <td>
-                        <input type="number" id="jpkpf-sr-seconds" name="jpkcom_postfilter_server_rules[render_seconds]" value="<?php echo esc_attr( (string) $opts['render_seconds'] ); ?>" min="0.05" max="10" step="0.05" class="small-text">
+                        <input type="number" id="jpkpf-sr-seconds" name="jpkcom_postfilter_server_rules[render_seconds]" value="<?php echo esc_attr( (string) $opts['render_seconds'] ); ?>" min="0.05" max="10" step="0.01" class="small-text">
                         <p class="description"><?php esc_html_e( 'How long WordPress needs for one filter page without page cache (browser developer tools, "waiting for server"). Default 0.4.', 'jpkcom-post-filter' ); ?></p>
                     </td>
                 </tr>
@@ -910,7 +946,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_htacces
             }
 
             if ( ! $state['damaged'] ) {
-                echo '<p class="jpkpf-sr-htaccess-actions">';
+                echo '<div class="jpkpf-sr-htaccess-actions">';
                 if ( $available['ok'] ) {
                     $label = $has_block ? __( 'Set up again', 'jpkcom-post-filter' ) : __( 'Set up', 'jpkcom-post-filter' );
                     $class = $has_block ? 'secondary' : 'primary';
@@ -919,7 +955,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_htacces
                 if ( $has_block && ( $state['writable'] || ! $state['exists'] ) ) {
                     $button( 'remove', __( 'Remove', 'jpkcom-post-filter' ), 'secondary' );
                 }
-                echo '</p>';
+                echo '</div>';
             }
             ?>
         </div>
@@ -945,7 +981,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_tab' ) 
         $limits   = jpkcom_postfilter_rate_limits( workers: (int) $opts['workers'], render_seconds: (float) $opts['render_seconds'] );
         $variant  = ( $tab === 'nginx' && $opts['nginx_variant'] === 'ispconfig' ) ? 'ispconfig' : '';
         $snippets = jpkcom_postfilter_server_snippets( server: $tab, inputs: $inputs, limits: $limits, variant: $variant );
-        $is_here  = $detected !== '' && jpkcom_postfilter_server_rules_initial_tab( detected: $detected ) === $tab;
+        $is_here  = $detected !== '' && ( $detected === $tab || jpkcom_postfilter_server_rules_initial_tab( detected: $detected ) === $tab );
         ?>
         <div id="tab-<?php echo esc_attr( $tab ); ?>" class="jpkpf-tab-panel jpkpf-sr-panel">
             <h2><?php echo esc_html( $tabs[ $tab ] ?? $tab ); ?></h2>
@@ -1051,10 +1087,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_page_server_rules' ) ) {
             }
             ?>
 
-            <p><?php esc_html_e( 'Server rules let the web server turn away filter URLs that the plugin rejects anyway - before WordPress even starts - and slow down floods of filter requests from visitors without cookies. Copy the snippets for your server into its configuration. They are generated from the current settings and never reject a URL the plugin serves. The plugin does not change your server configuration, except the optional .htaccess block on Apache.', 'jpkcom-post-filter' ); ?></p>
+            <?php jpkcom_postfilter_server_rules_render_intro(); ?>
 
             <?php
-            jpkcom_postfilter_server_rules_render_head( inputs: $inputs, opts: $opts, software: $software );
+            jpkcom_postfilter_server_rules_render_head( inputs: $inputs, opts: $opts, software: $software, taxonomies: jpkcom_postfilter_filter_taxonomies() );
             jpkcom_postfilter_server_rules_render_status( last: jpkcom_postfilter_server_check_last() );
             ?>
 
@@ -1150,6 +1186,25 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_handle_check' 
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_removable_args' ) ) {
+    /**
+     * removable_query_args: drop `jpkpf_msg` from the address bar
+     *
+     * WordPress removes these from the displayed URL after load, so the
+     * notice does not come back on a reload or with the next form's referer.
+     *
+     * @since 1.6.0
+     *
+     * @param string[] $args Query args WordPress removes.
+     * @return string[]
+     */
+    function jpkcom_postfilter_server_rules_removable_args( array $args ): array {
+        $args[] = 'jpkpf_msg';
+        return $args;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_autoload' ) ) {
     /**
      * wp_default_autoload_value: never autoload the rate-limit option
@@ -1199,6 +1254,7 @@ add_action( 'admin_init', static function (): void {
 } );
 
 add_filter( 'wp_default_autoload_value', 'jpkcom_postfilter_server_rules_autoload', 10, 2 );
+add_filter( 'removable_query_args', 'jpkcom_postfilter_server_rules_removable_args', 10, 1 );
 
 add_action( 'admin_post_jpkcom_postfilter_htaccess', 'jpkcom_postfilter_server_rules_handle_htaccess', 10, 0 );
 add_action( 'admin_post_jpkcom_postfilter_server_check', 'jpkcom_postfilter_server_rules_handle_check', 10, 0 );
