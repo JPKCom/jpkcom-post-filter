@@ -1,0 +1,497 @@
+<?php
+/**
+ * .htaccess management – the plugin's own block in Apache's .htaccess
+ *
+ * Pure file operations: every function takes the file path (or the rule
+ * inputs) as a parameter and registers no hooks. Wiring them to admin
+ * actions, options and version changes is the job of the callers; nothing in
+ * this file writes on its own.
+ *
+ * WHY NOT insert_with_markers()
+ * -----------------------------
+ * WordPress's insert_with_markers() appends a new marker pair at the END of
+ * the file - after WordPress's own block, where a reject rule never takes
+ * effect (WordPress's `RewriteRule . /index.php [L]` has already sent every
+ * filter URL to PHP; measured, research report 4 §1.2). And removing through
+ * it with an empty list leaves the marker lines behind. So this file places,
+ * replaces and removes the block itself (spec 7):
+ *
+ * - The managed block sits directly before the line `# BEGIN WordPress`, or at
+ *   the top (after a UTF-8 BOM) when there is no WordPress block. An existing
+ *   managed block is replaced where it stands.
+ * - A block with the MANUAL markers (`# BEGIN JPKCom Post Filter (manual)`,
+ *   the copy snippet) is never touched: write refuses, remove leaves it. Two
+ *   blocks would apply the same rules twice. Markers are compared as whole
+ *   lines, so the managed marker - a prefix of the manual one - never matches
+ *   the manual line.
+ * - Writes happen under flock(LOCK_EX) on the file itself, in place (fopen
+ *   'c+', ftruncate, fwrite) - no temp file and rename, so owner, group and
+ *   mode of the .htaccess survive. Nothing is written when the content would
+ *   not change.
+ * - Line endings (LF or CRLF, taken from the file's first line break), a
+ *   UTF-8 BOM and a missing trailing newline are kept; every byte outside the
+ *   managed block stays as it was.
+ *
+ * @package   JPKCom_Post_Filter
+ * @since     1.6.0
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( constant_name: 'ABSPATH' ) ) {
+    exit;
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_markers' ) ) {
+    /**
+     * The marker lines this file knows
+     *
+     * @since 1.6.0
+     *
+     * @return array{begin: string, end: string, manual_begin: string, manual_end: string, wp_begin: string}
+     */
+    function jpkcom_postfilter_htaccess_markers(): array {
+        return [
+            'begin'        => '# BEGIN JPKCom Post Filter',
+            'end'          => '# END JPKCom Post Filter',
+            'manual_begin' => '# BEGIN JPKCom Post Filter (manual)',
+            'manual_end'   => '# END JPKCom Post Filter (manual)',
+            'wp_begin'     => '# BEGIN WordPress',
+        ];
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_block' ) ) {
+    /**
+     * The managed block for the given rule inputs
+     *
+     * The .htaccess rules of the copy snippet (same function, so both always
+     * carry the same rules), between the managed markers instead of the
+     * manual ones, with the `# rule <hash>` line
+     * jpkcom_postfilter_htaccess_state() reads back.
+     *
+     * @since 1.6.0
+     *
+     * @param array<string, mixed> $inputs As returned by jpkcom_postfilter_server_rule_inputs().
+     * @return string '' when there is no reject part (e.g. strict URLs off). LF, no trailing newline.
+     */
+    function jpkcom_postfilter_htaccess_block( array $inputs ): string {
+        return jpkcom_postfilter_server_htaccess_marked( inputs: $inputs, label: 'JPKCom Post Filter' );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_parse' ) ) {
+    /**
+     * Split .htaccess content into lines and find the markers
+     *
+     * Each line keeps its own terminator (`\n`, `\r\n` or none for a last line
+     * without newline), so joining them gives back the exact bytes. Markers
+     * are compared as whole lines, ignoring surrounding blanks.
+     *
+     * `damaged` means managed markers that do not pair up (BEGIN without END,
+     * END without BEGIN, BEGIN inside a block): where the block ends is then
+     * a guess, and write and remove refuse rather than guess.
+     *
+     * @since 1.6.0
+     *
+     * @param string $content File content.
+     * @return array{bom: string, eol: string, lines: string[], blocks: array<int, array{0: int, 1: int}>, damaged: bool, manual: bool, wp: ?int}
+     */
+    function jpkcom_postfilter_htaccess_parse( string $content ): array {
+        $markers = jpkcom_postfilter_htaccess_markers();
+
+        $bom = '';
+        if ( str_starts_with( $content, "\xEF\xBB\xBF" ) ) {
+            $bom     = "\xEF\xBB\xBF";
+            $content = substr( $content, 3 );
+        }
+
+        $nl  = strpos( $content, "\n" );
+        $eol = ( $nl !== false && $nl > 0 && $content[ $nl - 1 ] === "\r" ) ? "\r\n" : "\n";
+
+        $lines = $content === '' ? [] : (array) preg_split( '/(?<=\n)/', $content, -1, PREG_SPLIT_NO_EMPTY );
+
+        $blocks  = [];
+        $damaged = false;
+        $manual  = false;
+        $wp      = null;
+        $open    = null;
+
+        foreach ( $lines as $i => $line ) {
+            $text = trim( (string) $line, " \t\r\n" );
+
+            if ( $text === $markers['manual_begin'] || $text === $markers['manual_end'] ) {
+                $manual = true;
+            } elseif ( $text === $markers['begin'] ) {
+                if ( $open !== null ) {
+                    $damaged = true;
+                }
+                $open = $i;
+            } elseif ( $text === $markers['end'] ) {
+                if ( $open === null ) {
+                    $damaged = true;
+                } else {
+                    $blocks[] = [ $open, $i ];
+                    $open     = null;
+                }
+            } elseif ( $text === $markers['wp_begin'] && $wp === null && $open === null ) {
+                $wp = $i;
+            }
+        }
+
+        if ( $open !== null ) {
+            $damaged = true;
+        }
+
+        return [
+            'bom'     => $bom,
+            'eol'     => $eol,
+            'lines'   => array_map( 'strval', $lines ),
+            'blocks'  => $blocks,
+            'damaged' => $damaged,
+            'manual'  => $manual,
+            'wp'      => $wp,
+        ];
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_state' ) ) {
+    /**
+     * What the .htaccess contains
+     *
+     * `hash` comes from the `# rule <hash>` line of the managed block, so a
+     * caller can compare it with the current rule hash. `damaged` (managed
+     * markers that do not pair up) goes beyond the interface of the plan: in
+     * that state write and remove refuse, and the admin page can say why.
+     *
+     * @since 1.6.0
+     *
+     * @param string $file Path of the .htaccess.
+     * @return array{exists: bool, writable: bool, managed: bool, manual: bool, hash: ?string, wp_block: bool, damaged: bool}
+     */
+    function jpkcom_postfilter_htaccess_state( string $file ): array {
+        $state = [
+            'exists'   => false,
+            'writable' => false,
+            'managed'  => false,
+            'manual'   => false,
+            'hash'     => null,
+            'wp_block' => false,
+            'damaged'  => false,
+        ];
+
+        clearstatcache( true, $file );
+        if ( ! is_file( $file ) ) {
+            return $state;
+        }
+        $state['exists']   = true;
+        $state['writable'] = is_writable( $file );
+
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+        $content = is_readable( $file ) ? file_get_contents( $file ) : false;
+        if ( ! is_string( $content ) ) {
+            return $state;
+        }
+
+        $parsed            = jpkcom_postfilter_htaccess_parse( content: $content );
+        $state['manual']   = $parsed['manual'];
+        $state['damaged']  = $parsed['damaged'];
+        $state['wp_block'] = $parsed['wp'] !== null;
+        $state['managed']  = ! $parsed['damaged'] && $parsed['blocks'] !== [];
+
+        if ( $state['managed'] ) {
+            [ $start, $end ] = $parsed['blocks'][0];
+            for ( $i = $start + 1; $i < $end; $i++ ) {
+                if ( preg_match( '/^# rule ([0-9a-f]{12})$/D', trim( $parsed['lines'][ $i ], " \t\r\n" ), $m ) === 1 ) {
+                    $state['hash'] = $m[1];
+                    break;
+                }
+            }
+        }
+
+        return $state;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_block_lines' ) ) {
+    /**
+     * The lines of a managed block, or null when it is not one
+     *
+     * The block must open with the managed BEGIN line, close with the managed
+     * END line, and carry no marker line in between - anything else would
+     * leave the file with markers that no longer pair up.
+     *
+     * @since 1.6.0
+     *
+     * @param string $block Block text (LF or CRLF, trailing newline optional).
+     * @return string[]|null
+     */
+    function jpkcom_postfilter_htaccess_block_lines( string $block ): ?array {
+        $markers = jpkcom_postfilter_htaccess_markers();
+        $lines   = explode( "\n", rtrim( str_replace( "\r\n", "\n", $block ), "\n" ) );
+        $count   = count( $lines );
+
+        if ( $count < 2 || $lines[0] !== $markers['begin'] || $lines[ $count - 1 ] !== $markers['end'] ) {
+            return null;
+        }
+
+        $all = array_values( $markers );
+        for ( $i = 1; $i < $count - 1; $i++ ) {
+            if ( in_array( trim( $lines[ $i ], " \t\r" ), $all, true ) ) {
+                return null;
+            }
+        }
+
+        return $lines;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_modify' ) ) {
+    /**
+     * Read-modify-write a file under an exclusive lock, in place
+     *
+     * `$change` gets the current content and returns the new content, or null
+     * to refuse (nothing is written, the result is false). Identical content
+     * is not written at all, so the mtime stays. No rename: owner, group and
+     * mode survive. Should the write fail half way, the old content is put
+     * back.
+     *
+     * @since 1.6.0
+     *
+     * @param string   $file   Existing file.
+     * @param callable $change fn( string $content ): ?string.
+     * @return bool
+     */
+    function jpkcom_postfilter_htaccess_modify( string $file, callable $change ): bool {
+        clearstatcache( true, $file );
+        if ( ! is_file( $file ) ) {
+            return false;   // 'c+' would create it; a missing .htaccess is not ours to create.
+        }
+
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+        $fh = @fopen( $file, 'c+' );
+        if ( $fh === false ) {
+            return false;
+        }
+
+        $ok = false;
+        if ( flock( $fh, LOCK_EX ) ) {
+            $old = stream_get_contents( $fh );
+            $new = is_string( $old ) ? $change( $old ) : null;
+
+            if ( is_string( $old ) && is_string( $new ) ) {
+                if ( $new === $old ) {
+                    $ok = true;
+                } else {
+                    $ok = jpkcom_postfilter_htaccess_put( fh: $fh, content: $new );
+                    if ( ! $ok ) {
+                        jpkcom_postfilter_htaccess_put( fh: $fh, content: $old );
+                    }
+                }
+            }
+            flock( $fh, LOCK_UN );
+        }
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+        fclose( $fh );
+        clearstatcache( true, $file );
+
+        return $ok;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_put' ) ) {
+    /**
+     * Replace the content of an open, locked file
+     *
+     * Writes from offset 0 first and cuts the rest afterwards, so the file is
+     * never empty in between.
+     *
+     * @since 1.6.0
+     *
+     * @param resource $fh      Handle opened with 'c+' and locked.
+     * @param string   $content New content.
+     * @return bool
+     */
+    function jpkcom_postfilter_htaccess_put( $fh, string $content ): bool {
+        if ( ! rewind( $fh ) ) {
+            return false;
+        }
+        $length  = strlen( $content );
+        $written = 0;
+        while ( $written < $length ) {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
+            $n = fwrite( $fh, substr( $content, $written ) );
+            if ( $n === false || $n === 0 ) {
+                return false;
+            }
+            $written += $n;
+        }
+        return fflush( $fh ) && ftruncate( $fh, $length );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_write' ) ) {
+    /**
+     * Put the managed block into the .htaccess
+     *
+     * Replaces an existing managed block where it stands (and drops any
+     * further copy of it); otherwise inserts it directly before
+     * `# BEGIN WordPress`, or at the top when there is none. Refuses (false,
+     * nothing written) when the file is missing, holds a manual block, holds
+     * managed markers that do not pair up, or `$block` is not a managed block.
+     *
+     * @since 1.6.0
+     *
+     * @param string $file  Path of the .htaccess.
+     * @param string $block As returned by jpkcom_postfilter_htaccess_block().
+     * @return bool True when the file holds the block afterwards.
+     */
+    function jpkcom_postfilter_htaccess_write( string $file, string $block ): bool {
+        $block_lines = jpkcom_postfilter_htaccess_block_lines( block: $block );
+        if ( $block_lines === null ) {
+            return false;
+        }
+
+        return jpkcom_postfilter_htaccess_modify(
+            file: $file,
+            change: static function ( string $content ) use ( $block_lines ): ?string {
+                $p = jpkcom_postfilter_htaccess_parse( content: $content );
+                if ( $p['manual'] || $p['damaged'] ) {
+                    return null;
+                }
+
+                $text  = implode( $p['eol'], $block_lines );
+                $lines = $p['lines'];
+
+                if ( $p['blocks'] !== [] ) {
+                    // Last first, so earlier indexes stay valid. The first block keeps
+                    // its place and its END line's own terminator (none at EOF).
+                    foreach ( array_reverse( $p['blocks'] ) as $n => [ $start, $end ] ) {
+                        $is_first = $n === count( $p['blocks'] ) - 1;
+                        $after    = substr( $lines[ $end ], strlen( rtrim( $lines[ $end ], "\r\n" ) ) );
+                        $with     = $is_first ? [ $text . $after ] : [];
+                        array_splice( $lines, $start, $end - $start + 1, $with );
+                    }
+                } elseif ( $p['wp'] !== null ) {
+                    array_splice( $lines, $p['wp'], 0, [ $text . $p['eol'] ] );
+                } else {
+                    array_unshift( $lines, $text . $p['eol'] );
+                }
+
+                return $p['bom'] . implode( '', $lines );
+            }
+        );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_remove' ) ) {
+    /**
+     * Remove the managed block, markers included, and nothing else
+     *
+     * A manual block stays. True when no managed block is left (also when
+     * there was none); false when the file is missing or its managed markers
+     * do not pair up.
+     *
+     * @since 1.6.0
+     *
+     * @param string $file Path of the .htaccess.
+     * @return bool
+     */
+    function jpkcom_postfilter_htaccess_remove( string $file ): bool {
+        return jpkcom_postfilter_htaccess_modify(
+            file: $file,
+            change: static function ( string $content ): ?string {
+                $p = jpkcom_postfilter_htaccess_parse( content: $content );
+                if ( $p['damaged'] ) {
+                    return null;
+                }
+                if ( $p['blocks'] === [] ) {
+                    return $content;
+                }
+
+                $lines = $p['lines'];
+                foreach ( array_reverse( $p['blocks'] ) as [ $start, $end ] ) {
+                    array_splice( $lines, $start, $end - $start + 1 );
+                }
+
+                return $p['bom'] . implode( '', $lines );
+            }
+        );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_file' ) ) {
+    /**
+     * Path of the site's .htaccess: get_home_path() . '.htaccess'
+     *
+     * @since 1.6.0
+     *
+     * @return string
+     */
+    function jpkcom_postfilter_htaccess_file(): string {
+        if ( ! function_exists( function: 'get_home_path' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+        return get_home_path() . '.htaccess';
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_available' ) ) {
+    /**
+     * May the plugin manage the .htaccess on this site?
+     *
+     * Reasons, in the order they are checked:
+     * - `litespeed`: LiteSpeed reports itself as such, and WordPress's
+     *   $is_apache is true for it too; OpenLiteSpeed also needs a restart to
+     *   read .htaccess changes, so the plugin does not manage it there.
+     * - `not-apache`: SERVER_SOFTWARE does not name Apache (nginx, Caddy,
+     *   FrankenPHP, Ferron, IIS, none).
+     * - `multisite`: one .htaccess serves the whole network.
+     * - `file-mods-disallowed`: DISALLOW_FILE_MODS is set.
+     * - `no-file`, `not-writable`: get_home_path() . '.htaccess'.
+     * - `manual-block`: a pasted block with the manual markers is present;
+     *   a second, managed one would apply the same rules twice.
+     *
+     * The capability and nonce checks belong to the admin action.
+     *
+     * @since 1.6.0
+     *
+     * @return array{ok: bool, reason: string}
+     */
+    function jpkcom_postfilter_htaccess_available(): array {
+        $software = isset( $_SERVER['SERVER_SOFTWARE'] ) && is_string( $_SERVER['SERVER_SOFTWARE'] ) ? $_SERVER['SERVER_SOFTWARE'] : '';
+
+        $reason = '';
+        if ( stripos( $software, 'litespeed' ) !== false ) {
+            $reason = 'litespeed';
+        } elseif ( stripos( $software, 'apache' ) === false ) {
+            $reason = 'not-apache';
+        } elseif ( function_exists( function: 'is_multisite' ) && is_multisite() ) {
+            $reason = 'multisite';
+        } elseif ( defined( constant_name: 'DISALLOW_FILE_MODS' ) && DISALLOW_FILE_MODS ) {
+            $reason = 'file-mods-disallowed';
+        } else {
+            $state = jpkcom_postfilter_htaccess_state( file: jpkcom_postfilter_htaccess_file() );
+            if ( ! $state['exists'] ) {
+                $reason = 'no-file';
+            } elseif ( ! $state['writable'] ) {
+                $reason = 'not-writable';
+            } elseif ( $state['manual'] ) {
+                $reason = 'manual-block';
+            }
+        }
+
+        return [ 'ok' => $reason === '', 'reason' => $reason ];
+    }
+}

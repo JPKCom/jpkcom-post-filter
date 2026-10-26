@@ -86,6 +86,7 @@ $jpkcom_postfilter_includes = [
     'includes/crawl-guard.php',
     'includes/server-rules.php',
     'includes/server-rules-render.php',
+    'includes/htaccess-manager.php',
     'includes/fragment-response.php',
     'includes/query-handler.php',
     'includes/abilities.php',

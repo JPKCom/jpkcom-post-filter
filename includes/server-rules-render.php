@@ -785,6 +785,36 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_htaccess_rules' ) ) 
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_server_htaccess_marked' ) ) {
+    /**
+     * The .htaccess reject rules between `# BEGIN <label>` / `# END <label>`
+     *
+     * One assembly for both blocks: the copy snippet passes the manual label,
+     * jpkcom_postfilter_htaccess_block() the managed one. The `# rule <hash>`
+     * line is what jpkcom_postfilter_htaccess_state() reads back.
+     *
+     * @since 1.6.0
+     *
+     * @param array<string, mixed> $inputs Rule inputs.
+     * @param string               $label  Marker label, e.g. `JPKCom Post Filter`.
+     * @return string '' when there is no reject part. Lines joined with LF, no trailing newline.
+     */
+    function jpkcom_postfilter_server_htaccess_marked( array $inputs, string $label ): string {
+        $rules = jpkcom_postfilter_server_htaccess_rules( inputs: $inputs );
+        if ( $rules === '' ) {
+            return '';
+        }
+
+        return implode( "\n", [
+            '# BEGIN ' . $label,
+            '# rule ' . jpkcom_postfilter_server_hash_of( inputs: $inputs ),
+            $rules,
+            '# END ' . $label,
+        ] );
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) ) {
     /**
      * Apache snippets: VirtualHost reject, mod_qos cap, ModSecurity limits
@@ -954,10 +984,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_htaccess' )
      * @return array<int, array{id: string, title: string, context: string, code: string}>
      */
     function jpkcom_postfilter_server_snippets_htaccess( array $inputs ): array {
-        $out   = [];
-        $rules = jpkcom_postfilter_server_htaccess_rules( inputs: $inputs );
+        $out  = [];
+        $code = jpkcom_postfilter_server_htaccess_marked( inputs: $inputs, label: 'JPKCom Post Filter (manual)' );
 
-        if ( $rules !== '' ) {
+        if ( $code !== '' ) {
             $out[] = jpkcom_postfilter_server_snippet(
                 id: 'htaccess-reject',
                 title: __( 'Reject before PHP (.htaccess)', 'jpkcom-post-filter' ),
@@ -966,12 +996,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_htaccess' )
                     __( 'Paste it into the .htaccess of the WordPress directory, before the line # BEGIN WordPress - after WordPress\'s block it never takes effect. Needs AllowOverride FileInfo. The ErrorDocument line sets the body of every %d that Apache itself sends in this directory tree; WordPress answers its own 404 pages through index.php. The plugin never edits a block with these (manual) markers.', 'jpkcom-post-filter' ),
                     jpkcom_postfilter_server_reject_status( inputs: $inputs )
                 ),
-                code: implode( "\n", [
-                    '# BEGIN JPKCom Post Filter (manual)',
-                    '# rule ' . jpkcom_postfilter_server_hash_of( inputs: $inputs ),
-                    $rules,
-                    '# END JPKCom Post Filter (manual)',
-                ] )
+                code: $code
             );
         }
 
