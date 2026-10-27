@@ -216,6 +216,16 @@ Search.appendIndex(
             "summary": "Render\u003A\u0020Indexable\u0020filter\u0020pages",
             "url": "namespaces/default.html#function_jpkcom_postfilter_field_seo_index_max_terms"
         },                {
+            "fqsen": "\\jpkcom_postfilter_field_canonical_single\u0028\u0029",
+            "name": "jpkcom_postfilter_field_canonical_single",
+            "summary": "Render\u003A\u0020Canonical\u0020of\u0020a\u0020single\u002Dterm\u0020filter\u0020page",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_field_canonical_single"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_field_canonical_multi\u0028\u0029",
+            "name": "jpkcom_postfilter_field_canonical_multi",
+            "summary": "Render\u003A\u0020Canonical\u0020of\u0020a\u0020filter\u0020page\u0020with\u0020several\u0020terms",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_field_canonical_multi"
+        },                {
             "fqsen": "\\jpkcom_postfilter_field_max_terms_total\u0028\u0029",
             "name": "jpkcom_postfilter_field_max_terms_total",
             "summary": "Render\u003A\u0020Max.\u0020terms\u0020in\u0020total",
@@ -470,6 +480,61 @@ Search.appendIndex(
             "name": "jpkcom_postfilter_cache_stats",
             "summary": "Retrieve\u0020cache\u0020statistics\u0020for\u0020the\u0020admin\u0020panel",
             "url": "namespaces/default.html#function_jpkcom_postfilter_cache_stats"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_canonical_target_memo\u0028\u0029",
+            "name": "jpkcom_postfilter_canonical_target_memo",
+            "summary": "Per\u002Drequest\u0020memo\u0020of\u0020the\u0020target\u0020decisions",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_canonical_target_memo"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_canonical_target_memo_reset\u0028\u0029",
+            "name": "jpkcom_postfilter_canonical_target_memo_reset",
+            "summary": "Drop\u0020the\u0020per\u002Drequest\u0020memo\u0020of\u0020the\u0020target\u0020decisions",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_canonical_target_memo_reset"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_seo_switch_on\u0028\u0029",
+            "name": "jpkcom_postfilter_seo_switch_on",
+            "summary": "Read\u0020a\u0020stored\u0020on\/off\u0020switch\u0020the\u0020way\u0020Rank\u0020Math\u0020normalises\u0020it",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_seo_switch_on"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_rank_math_robots_noindex\u0028\u0029",
+            "name": "jpkcom_postfilter_rank_math_robots_noindex",
+            "summary": "Whether\u0020a\u0020Rank\u0020Math\u0020robots\u0020list\u0020says\u0020noindex",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_rank_math_robots_noindex"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_rank_math_titles_robots\u0028\u0029",
+            "name": "jpkcom_postfilter_rank_math_titles_robots",
+            "summary": "A\u0020Rank\u0020Math\u0020\u0060\u007Bprefix\u007D_robots\u0060\u0020list,\u0020if\u0020its\u0020\u0060\u007Bprefix\u007D_custom_robots\u0060\u0020is\u0020on",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_rank_math_titles_robots"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_seo_canonical_moved\u0028\u0029",
+            "name": "jpkcom_postfilter_seo_canonical_moved",
+            "summary": "Whether\u0020an\u0020active\u0020SEO\u0020plugin\u0020gives\u0020a\u0020target\u0020a\u0020canonical\u0020of\u0020its\u0020own\u0020elsewhere",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_seo_canonical_moved"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_term_archive_lists_post_type\u0028\u0029",
+            "name": "jpkcom_postfilter_term_archive_lists_post_type",
+            "summary": "Whether\u0020the\u0020archive\u0020of\u0020a\u0020taxonomy\u0027s\u0020terms\u0020lists\u0020a\u0020post\u0020type",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_term_archive_lists_post_type"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_seo_term_noindex\u0028\u0029",
+            "name": "jpkcom_postfilter_seo_term_noindex",
+            "summary": "Whether\u0020an\u0020active\u0020SEO\u0020plugin\u0020sends\u0020a\u0020term\u0020archive\u0020as\u0020noindex",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_seo_term_noindex"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_term_archive_url\u0028\u0029",
+            "name": "jpkcom_postfilter_term_archive_url",
+            "summary": "The\u0020term\u0020archive\u0020a\u0020single\u002Dterm\u0020filter\u0020page\u0020may\u0020point\u0020at",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_term_archive_url"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_seo_base_noindex\u0028\u0029",
+            "name": "jpkcom_postfilter_seo_base_noindex",
+            "summary": "Whether\u0020an\u0020active\u0020SEO\u0020plugin\u0020sends\u0020the\u0020archive\u0020base\u0020of\u0020a\u0020post\u0020type\u0020as\u0020noindex",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_seo_base_noindex"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_base_canonical_url\u0028\u0029",
+            "name": "jpkcom_postfilter_base_canonical_url",
+            "summary": "The\u0020archive\u0020base\u0020a\u0020filter\u0020combination\u0020may\u0020point\u0020at",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_base_canonical_url"
         },                {
             "fqsen": "\\JPKComPostFilterGitUpdate\\JPKComGitPluginUpdater",
             "name": "JPKComGitPluginUpdater",
@@ -761,6 +826,16 @@ Search.appendIndex(
             "summary": "Whether\u0020the\u0020\u0028already\u0020executed\u0029\u0020main\u0020query\u0020found\u0020nothing\u0020on\u0020page\u00201",
             "url": "namespaces/default.html#function_jpkcom_postfilter_main_query_is_empty"
         },                {
+            "fqsen": "\\jpkcom_postfilter_is_bot_filter_page\u0028\u0029",
+            "name": "jpkcom_postfilter_is_bot_filter_page",
+            "summary": "Whether\u0020the\u0020current\u0020filter\u0020page\u0020is\u0020one\u0020only\u0020bots\u0020make",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_is_bot_filter_page"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_canonical_decision\u0028\u0029",
+            "name": "jpkcom_postfilter_canonical_decision",
+            "summary": "Where\u0020the\u0020canonical\u0020of\u0020the\u0020current\u0020filter\u0020page\u0020points",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_canonical_decision"
+        },                {
             "fqsen": "\\jpkcom_postfilter_robots_directives\u0028\u0029",
             "name": "jpkcom_postfilter_robots_directives",
             "summary": "Robots\u0020directives\u0020for\u0020the\u0020current\u0020filter\u0020page",
@@ -770,6 +845,11 @@ Search.appendIndex(
             "name": "jpkcom_postfilter_should_noindex",
             "summary": "Whether\u0020the\u0020current\u0020filter\u0020page\u0020must\u0020not\u0020be\u0020indexed",
             "url": "namespaces/default.html#function_jpkcom_postfilter_should_noindex"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_should_nofollow\u0028\u0029",
+            "name": "jpkcom_postfilter_should_nofollow",
+            "summary": "Whether\u0020links\u0020on\u0020the\u0020current\u0020filter\u0020page\u0020must\u0020not\u0020be\u0020followed",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_should_nofollow"
         },                {
             "fqsen": "\\jpkcom_postfilter_canonical_url\u0028\u0029",
             "name": "jpkcom_postfilter_canonical_url",

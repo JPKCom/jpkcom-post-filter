@@ -517,6 +517,20 @@
 <dd>Render: Indexable filter pages</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_field_canonical_single">jpkcom_postfilter_field_canonical_single()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>Render: Canonical of a single-term filter page</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_field_canonical_multi">jpkcom_postfilter_field_canonical_multi()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>Render: Canonical of a filter page with several terms</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_field_max_terms_total">jpkcom_postfilter_field_max_terms_total()</a>
     <span>
                                 &nbsp;: void    </span>
@@ -860,6 +874,83 @@
 <dd>Retrieve cache statistics for the admin panel</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_canonical_target_memo">jpkcom_postfilter_canonical_target_memo()</a>
+    <span>
+                                &nbsp;: mixed    </span>
+</dt>
+<dd>Per-request memo of the target decisions</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_canonical_target_memo_reset">jpkcom_postfilter_canonical_target_memo_reset()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>Drop the per-request memo of the target decisions</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_seo_switch_on">jpkcom_postfilter_seo_switch_on()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Read a stored on/off switch the way Rank Math normalises it</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_rank_math_robots_noindex">jpkcom_postfilter_rank_math_robots_noindex()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether a Rank Math robots list says noindex</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_rank_math_titles_robots">jpkcom_postfilter_rank_math_titles_robots()</a>
+    <span>
+                                &nbsp;: array&lt;int, string&gt;    </span>
+</dt>
+<dd>A Rank Math `{prefix}_robots` list, if its `{prefix}_custom_robots` is on</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_seo_canonical_moved">jpkcom_postfilter_seo_canonical_moved()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether an active SEO plugin gives a target a canonical of its own elsewhere</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_term_archive_lists_post_type">jpkcom_postfilter_term_archive_lists_post_type()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether the archive of a taxonomy&#039;s terms lists a post type</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_seo_term_noindex">jpkcom_postfilter_seo_term_noindex()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether an active SEO plugin sends a term archive as noindex</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_term_archive_url">jpkcom_postfilter_term_archive_url()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>The term archive a single-term filter page may point at</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_seo_base_noindex">jpkcom_postfilter_seo_base_noindex()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether an active SEO plugin sends the archive base of a post type as noindex</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_base_canonical_url">jpkcom_postfilter_base_canonical_url()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>The archive base a filter combination may point at</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_restrict_internal_query_vars">jpkcom_postfilter_restrict_internal_query_vars()</a>
     <span>
                                 &nbsp;: array&lt;string, mixed&gt;    </span>
@@ -902,6 +993,20 @@
 <dd>Whether the (already executed) main query found nothing on page 1</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_is_bot_filter_page">jpkcom_postfilter_is_bot_filter_page()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether the current filter page is one only bots make</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_canonical_decision">jpkcom_postfilter_canonical_decision()</a>
+    <span>
+                                &nbsp;: array{kind: string, url: string}|null    </span>
+</dt>
+<dd>Where the canonical of the current filter page points</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_robots_directives">jpkcom_postfilter_robots_directives()</a>
     <span>
                                 &nbsp;: array{index: bool, follow: bool}|null    </span>
@@ -914,6 +1019,13 @@
                                 &nbsp;: bool    </span>
 </dt>
 <dd>Whether the current filter page must not be indexed</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_should_nofollow">jpkcom_postfilter_should_nofollow()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether links on the current filter page must not be followed</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_canonical_url">jpkcom_postfilter_canonical_url()</a>
@@ -4545,7 +4657,7 @@ is checked explicitly.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">315</span>
+    <span class="phpdocumentor-element-found-in__line">317</span>
 
     </aside>
 
@@ -4585,7 +4697,7 @@ is checked explicitly.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">343</span>
+    <span class="phpdocumentor-element-found-in__line">345</span>
 
     </aside>
 
@@ -4625,7 +4737,7 @@ is checked explicitly.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">373</span>
+    <span class="phpdocumentor-element-found-in__line">375</span>
 
     </aside>
 
@@ -4665,7 +4777,7 @@ is checked explicitly.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">396</span>
+    <span class="phpdocumentor-element-found-in__line">398</span>
 
     </aside>
 
@@ -4705,7 +4817,7 @@ is checked explicitly.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">421</span>
+    <span class="phpdocumentor-element-found-in__line">423</span>
 
     </aside>
 
@@ -4745,7 +4857,7 @@ is checked explicitly.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">451</span>
+    <span class="phpdocumentor-element-found-in__line">453</span>
 
     </aside>
 
@@ -4785,7 +4897,7 @@ is checked explicitly.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">503</span>
+    <span class="phpdocumentor-element-found-in__line">505</span>
 
     </aside>
 
@@ -4825,7 +4937,7 @@ is checked explicitly.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">537</span>
+    <span class="phpdocumentor-element-found-in__line">539</span>
 
     </aside>
 
@@ -4884,7 +4996,7 @@ and disabled, so the form never pretends a change would take effect.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">554</span>
+    <span class="phpdocumentor-element-found-in__line">556</span>
 
     </aside>
 
@@ -4936,7 +5048,7 @@ and disabled, so the form never pretends a change would take effect.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">577</span>
+    <span class="phpdocumentor-element-found-in__line">579</span>
 
     </aside>
 
@@ -4997,7 +5109,7 @@ and disabled, so the form never pretends a change would take effect.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">606</span>
+    <span class="phpdocumentor-element-found-in__line">608</span>
 
     </aside>
 
@@ -5061,7 +5173,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">629</span>
+    <span class="phpdocumentor-element-found-in__line">631</span>
 
     </aside>
 
@@ -5101,7 +5213,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">646</span>
+    <span class="phpdocumentor-element-found-in__line">648</span>
 
     </aside>
 
@@ -5133,6 +5245,86 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_field_canonical_single">
+        jpkcom_postfilter_field_canonical_single()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_field_canonical_single" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">671</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Render: Canonical of a single-term filter page</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_field_canonical_single</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+    
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_field_canonical_single_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_field_canonical_single_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_field_canonical_multi">
+        jpkcom_postfilter_field_canonical_multi()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_field_canonical_multi" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">688</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Render: Canonical of a filter page with several terms</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_field_canonical_multi</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+    
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_field_canonical_multi_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_field_canonical_multi_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_field_max_terms_total">
         jpkcom_postfilter_field_max_terms_total()
         <a href="namespaces/default.html#function_jpkcom_postfilter_field_max_terms_total" class="headerlink"><i class="fas fa-link"></i></a>
@@ -5141,7 +5333,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">669</span>
+    <span class="phpdocumentor-element-found-in__line">705</span>
 
     </aside>
 
@@ -5181,7 +5373,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">692</span>
+    <span class="phpdocumentor-element-found-in__line">728</span>
 
     </aside>
 
@@ -5221,7 +5413,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">705</span>
+    <span class="phpdocumentor-element-found-in__line">741</span>
 
     </aside>
 
@@ -5261,7 +5453,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">721</span>
+    <span class="phpdocumentor-element-found-in__line">757</span>
 
     </aside>
 
@@ -5301,7 +5493,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">738</span>
+    <span class="phpdocumentor-element-found-in__line">774</span>
 
     </aside>
 
@@ -5341,7 +5533,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">751</span>
+    <span class="phpdocumentor-element-found-in__line">787</span>
 
     </aside>
 
@@ -5381,7 +5573,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">782</span>
+    <span class="phpdocumentor-element-found-in__line">818</span>
 
     </aside>
 
@@ -5451,7 +5643,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">815</span>
+    <span class="phpdocumentor-element-found-in__line">851</span>
 
     </aside>
 
@@ -5521,7 +5713,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">836</span>
+    <span class="phpdocumentor-element-found-in__line">872</span>
 
     </aside>
 
@@ -5598,7 +5790,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">855</span>
+    <span class="phpdocumentor-element-found-in__line">891</span>
 
     </aside>
 
@@ -5650,7 +5842,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">864</span>
+    <span class="phpdocumentor-element-found-in__line">900</span>
 
     </aside>
 
@@ -5690,7 +5882,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">875</span>
+    <span class="phpdocumentor-element-found-in__line">911</span>
 
     </aside>
 
@@ -5742,7 +5934,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">898</span>
+    <span class="phpdocumentor-element-found-in__line">934</span>
 
     </aside>
 
@@ -5812,7 +6004,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">915</span>
+    <span class="phpdocumentor-element-found-in__line">951</span>
 
     </aside>
 
@@ -5882,7 +6074,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">982</span>
+    <span class="phpdocumentor-element-found-in__line">1018</span>
 
     </aside>
 
@@ -5952,7 +6144,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1127</span>
+    <span class="phpdocumentor-element-found-in__line">1163</span>
 
     </aside>
 
@@ -6022,7 +6214,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1215</span>
+    <span class="phpdocumentor-element-found-in__line">1251</span>
 
     </aside>
 
@@ -6092,7 +6284,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1266</span>
+    <span class="phpdocumentor-element-found-in__line">1302</span>
 
     </aside>
 
@@ -6144,7 +6336,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1323</span>
+    <span class="phpdocumentor-element-found-in__line">1359</span>
 
     </aside>
 
@@ -6196,7 +6388,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1517</span>
+    <span class="phpdocumentor-element-found-in__line">1553</span>
 
     </aside>
 
@@ -6236,7 +6428,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1538</span>
+    <span class="phpdocumentor-element-found-in__line">1574</span>
 
     </aside>
 
@@ -6276,7 +6468,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1559</span>
+    <span class="phpdocumentor-element-found-in__line">1595</span>
 
     </aside>
 
@@ -6316,7 +6508,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1589</span>
+    <span class="phpdocumentor-element-found-in__line">1625</span>
 
     </aside>
 
@@ -6356,7 +6548,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1632</span>
+    <span class="phpdocumentor-element-found-in__line">1668</span>
 
     </aside>
 
@@ -6415,7 +6607,7 @@ the global list, so settings_errors() still prints them afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1647</span>
+    <span class="phpdocumentor-element-found-in__line">1683</span>
 
     </aside>
 
@@ -6455,7 +6647,7 @@ the global list, so settings_errors() still prints them afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1694</span>
+    <span class="phpdocumentor-element-found-in__line">1730</span>
 
     </aside>
 
@@ -6495,7 +6687,7 @@ the global list, so settings_errors() still prints them afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">2157</span>
+    <span class="phpdocumentor-element-found-in__line">2193</span>
 
     </aside>
 
@@ -6535,7 +6727,7 @@ the global list, so settings_errors() still prints them afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">2263</span>
+    <span class="phpdocumentor-element-found-in__line">2299</span>
 
     </aside>
 
@@ -6575,7 +6767,7 @@ the global list, so settings_errors() still prints them afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">2451</span>
+    <span class="phpdocumentor-element-found-in__line">2487</span>
 
     </aside>
 
@@ -6615,7 +6807,7 @@ the global list, so settings_errors() still prints them afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">2589</span>
+    <span class="phpdocumentor-element-found-in__line">2625</span>
 
     </aside>
 
@@ -7808,6 +8000,706 @@ does not have this problem: it prefixes per blog itself.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_canonical_target_memo">
+        jpkcom_postfilter_canonical_target_memo()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_canonical_target_memo" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">41</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Per-request memo of the target decisions</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_canonical_target_memo</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$key</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">mixed|null&nbsp;</span><span class="phpdocumentor-signature__argument__name">$value</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">null</span><span> ]</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">bool&nbsp;</span><span class="phpdocumentor-signature__argument__name">$reset</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">false</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">mixed</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$key</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Memo key.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$value</span>
+                : <span class="phpdocumentor-argument-list__argument__type">mixed|null</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">null</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Value to store; null reads.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$reset</span>
+                : <span class="phpdocumentor-argument-list__argument__type">bool</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">false</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Drop every entry.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_canonical_target_memo_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_canonical_target_memo_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">mixed</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Stored value, or null when absent.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_canonical_target_memo_reset">
+        jpkcom_postfilter_canonical_target_memo_reset()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_canonical_target_memo_reset" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">66</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Drop the per-request memo of the target decisions</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_canonical_target_memo_reset</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+    
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_canonical_target_memo_reset_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_canonical_target_memo_reset_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_seo_switch_on">
+        jpkcom_postfilter_seo_switch_on()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_seo_switch_on" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">81</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Read a stored on/off switch the way Rank Math normalises it</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_seo_switch_on</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">mixed&nbsp;</span><span class="phpdocumentor-signature__argument__name">$value</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$value</span>
+                : <span class="phpdocumentor-argument-list__argument__type">mixed</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Stored value (<code class="prettyprint">on</code>, <code class="prettyprint">off</code>, <code class="prettyprint">1</code>, true, ...).</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_seo_switch_on_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_seo_switch_on_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_rank_math_robots_noindex">
+        jpkcom_postfilter_rank_math_robots_noindex()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_rank_math_robots_noindex" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">100</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether a Rank Math robots list says noindex</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_rank_math_robots_noindex</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;int, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$candidates</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>Rank Math stores robots as a list of directives (<code class="prettyprint">['noindex', 'follow']</code>).
+The first non-empty list of the candidates decides; with none,
+<code class="prettyprint">titles.robots_global</code> does (Paper::get_robots()).</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$candidates</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;int, mixed&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Robots lists, most specific first.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_rank_math_robots_noindex_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_rank_math_robots_noindex_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_rank_math_titles_robots">
+        jpkcom_postfilter_rank_math_titles_robots()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_rank_math_titles_robots" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">126</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">A Rank Math `{prefix}_robots` list, if its `{prefix}_custom_robots` is on</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_rank_math_titles_robots</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$prefix</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;int, string&gt;</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$prefix</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>e.g. <code class="prettyprint">tax_category</code>, <code class="prettyprint">pt_page</code>, <code class="prettyprint">homepage</code>.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_rank_math_titles_robots_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_rank_math_titles_robots_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;int, string&gt;</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Empty when custom robots are off.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_seo_canonical_moved">
+        jpkcom_postfilter_seo_canonical_moved()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_seo_canonical_moved" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">156</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether an active SEO plugin gives a target a canonical of its own elsewhere</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_seo_canonical_moved</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$url</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type"><abbr title="\WP_Term">WP_Term</abbr>|null&nbsp;</span><span class="phpdocumentor-signature__argument__name">$term</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">int&nbsp;</span><span class="phpdocumentor-signature__argument__name">$page_id</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>An editor can point a term archive or the posts page at another URL
+(Rank Math <code class="prettyprint">rank_math_canonical_url</code>, Yoast <code class="prettyprint">wpseo_canonical</code> /
+<code class="prettyprint">_yoast_wpseo_canonical</code>). A canonical to such a target would be a chain;
+the target is then unusable and the filter page keeps its own canonical.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$url</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Target URL.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$term</span>
+                : <span class="phpdocumentor-argument-list__argument__type"><abbr title="\WP_Term">WP_Term</abbr>|null</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Term of a term archive, or null.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$page_id</span>
+                : <span class="phpdocumentor-argument-list__argument__type">int</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Page of the archive base (posts page), or 0.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_seo_canonical_moved_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_seo_canonical_moved_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_term_archive_lists_post_type">
+        jpkcom_postfilter_term_archive_lists_post_type()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_term_archive_lists_post_type" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">203</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether the archive of a taxonomy&#039;s terms lists a post type</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_term_archive_lists_post_type</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$taxonomy</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$post_type</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>Mirrors WP_Query::get_posts() for an archive query without a post type
+(wp-includes/class-wp-query.php, 7.1.3 l. 2310-2333): only a custom
+taxonomy sets <code class="prettyprint">is_tax</code>, and only then does core search every post type
+with <code class="prettyprint">exclude_from_search = false</code> that has the taxonomy. Category and
+tag archives set <code class="prettyprint">is_category</code> / <code class="prettyprint">is_tag</code> instead and query <code class="prettyprint">post</code> alone.
+A theme's pre_get_posts is invisible here; the filter
+<code class="prettyprint">jpkcom_postfilter_canonical_archive_indexable</code> covers that.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$taxonomy</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Taxonomy.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$post_type</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Post type of the filter page.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_term_archive_lists_post_type_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_term_archive_lists_post_type_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_seo_term_noindex">
+        jpkcom_postfilter_seo_term_noindex()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_seo_term_noindex" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">228</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether an active SEO plugin sends a term archive as noindex</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_seo_term_noindex</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type"><abbr title="\WP_Term">WP_Term</abbr>&nbsp;</span><span class="phpdocumentor-signature__argument__name">$term</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$term</span>
+                : <span class="phpdocumentor-argument-list__argument__type"><abbr title="\WP_Term">WP_Term</abbr></span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Term.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_seo_term_noindex_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_seo_term_noindex_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_term_archive_url">
+        jpkcom_postfilter_term_archive_url()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_term_archive_url" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">280</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">The term archive a single-term filter page may point at</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_term_archive_url</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$taxonomy</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$slug</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$post_type</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$taxonomy</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Taxonomy.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$slug</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Term slug.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$post_type</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Post type of the filter page.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_term_archive_url_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_term_archive_url_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Archive URL (page 1), or '' when it is no usable target.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_seo_base_noindex">
+        jpkcom_postfilter_seo_base_noindex()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_seo_base_noindex" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">336</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether an active SEO plugin sends the archive base of a post type as noindex</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_seo_base_noindex</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$post_type</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>The base is the posts page (a page), the front page when it shows the
+posts, or the post type archive - the same three cases
+jpkcom_postfilter_get_archive_base_url() distinguishes.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$post_type</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Post type.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_seo_base_noindex_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_seo_base_noindex_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_base_canonical_url">
+        jpkcom_postfilter_base_canonical_url()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_base_canonical_url" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">387</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">The archive base a filter combination may point at</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_base_canonical_url</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$post_type</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$post_type</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Post type of the filter page.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_base_canonical_url_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_base_canonical_url_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Base URL (page 1), or '' when it is no usable target.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_restrict_internal_query_vars">
         jpkcom_postfilter_restrict_internal_query_vars()
         <a href="namespaces/default.html#function_jpkcom_postfilter_restrict_internal_query_vars" class="headerlink"><i class="fas fa-link"></i></a>
@@ -8202,6 +9094,115 @@ bootstrap and nothing else.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_is_bot_filter_page">
+        jpkcom_postfilter_is_bot_filter_page()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_is_bot_filter_page" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">376</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether the current filter page is one only bots make</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_is_bot_filter_page</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>An unknown slug or no results on page 1. These pages stay <code class="prettyprint">noindex, nofollow</code> without a canonical whatever the canonical settings say.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_is_bot_filter_page_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_is_bot_filter_page_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_canonical_decision">
+        jpkcom_postfilter_canonical_decision()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_canonical_decision" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">404</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Where the canonical of the current filter page points</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_canonical_decision</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{kind: string, url: string}|null</span></code>
+
+        <section class="phpdocumentor-description"><p>Reads the canonical settings and the term count, never the robots
+directives - those are derived from this decision. Targets are always
+page 1: page N of a filter page is not page N of its target.</p>
+<ul>
+<li>bot page (unknown term, no results): none</li>
+<li>one term, <code class="prettyprint">canonical_single</code>: archive (the term archive when it is an
+indexable target, else as <code class="prettyprint">filter</code>) / filter / off</li>
+<li>two or more terms, <code class="prettyprint">canonical_multi</code>: home (the archive base when it
+is an indexable target, else as <code class="prettyprint">filter</code>) / filter / off</li>
+<li><code class="prettyprint">filter</code>: self when the page is within <code class="prettyprint">seo_index_max_terms</code>, else none</li>
+<li><code class="prettyprint">off</code>: none</li>
+</ul>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_canonical_decision_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_canonical_decision_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array{kind: string, url: string}|null</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Kind archive|home|self|none
+and URL ('' for none); null
+when not a filter request.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_robots_directives">
         jpkcom_postfilter_robots_directives()
         <a href="namespaces/default.html#function_jpkcom_postfilter_robots_directives" class="headerlink"><i class="fas fa-link"></i></a>
@@ -8210,7 +9211,7 @@ bootstrap and nothing else.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">382</span>
+    <span class="phpdocumentor-element-found-in__line">478</span>
 
     </aside>
 
@@ -8225,6 +9226,12 @@ bootstrap and nothing else.</p>
 header. A filter page is <code class="prettyprint">noindex, nofollow</code> when it combines more terms
 than <code class="prettyprint">seo_index_max_terms</code> (default 1), names an unknown slug, or has no
 results on page 1. Single-term pages stay <code class="prettyprint">index, follow</code>.</p>
+<p>Since 1.7.0 a canonical to another URL (the term archive or the archive
+base, see jpkcom_postfilter_canonical_decision()) replaces the noindex
+that comes from the term count: noindex next to a canonical pointing
+elsewhere is a contradiction search engines resolve unpredictably, at
+worst by carrying the noindex over to the target. <code class="prettyprint">follow</code> keeps
+following the term count. Bot pages are not affected.</p>
 <p><code class="prettyprint">nofollow</code> is deliberate: everything such a page links to is reachable
 from the archive, the single-term pages and the sitemap. Following its
 links only leads further into the combinations.</p>
@@ -8266,7 +9273,7 @@ links only leads further into the combinations.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">426</span>
+    <span class="phpdocumentor-element-found-in__line">526</span>
 
     </aside>
 
@@ -8305,6 +9312,53 @@ jpkcom_postfilter_robots_directives().</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_should_nofollow">
+        jpkcom_postfilter_should_nofollow()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_should_nofollow" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">544</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether links on the current filter page must not be followed</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_should_nofollow</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>Since 1.7.0 a combination can be <code class="prettyprint">index, nofollow</code> (its canonical points
+at the archive base), so <code class="prettyprint">nofollow</code> is no longer implied by <code class="prettyprint">noindex</code>.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_should_nofollow_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_should_nofollow_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_canonical_url">
         jpkcom_postfilter_canonical_url()
         <a href="namespaces/default.html#function_jpkcom_postfilter_canonical_url" class="headerlink"><i class="fas fa-link"></i></a>
@@ -8313,7 +9367,7 @@ jpkcom_postfilter_robots_directives().</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">583</span>
+    <span class="phpdocumentor-element-found-in__line">705</span>
 
     </aside>
 
@@ -8324,7 +9378,11 @@ jpkcom_postfilter_robots_directives().</p>
     <span class="phpdocumentor-signature__visibility"></span>
                     <span class="phpdocumentor-signature__name">jpkcom_postfilter_canonical_url</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string|null</span></code>
 
-    
+        <section class="phpdocumentor-description"><p>The target is jpkcom_postfilter_canonical_decision(). A page that ends
+up noindex - including through the <code class="prettyprint">jpkcom_postfilter_robots_directives</code>
+filter - never carries a canonical.</p>
+</section>
+
     
     
     <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_canonical_url_tags">
@@ -8347,7 +9405,7 @@ jpkcom_postfilter_robots_directives().</p>
         <span class="phpdocumentor-signature__response_type">string|null</span>
                     &mdash;
                 <section class="phpdocumentor-description"><p>Null when this is not a filter page, '' for &quot;no
-canonical&quot; (noindex pages), the URL otherwise.</p>
+canonical&quot;, the URL otherwise.</p>
 </section>
 
             </section>
@@ -8362,7 +9420,7 @@ canonical&quot; (noindex pages), the URL otherwise.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">683</span>
+    <span class="phpdocumentor-element-found-in__line">800</span>
 
     </aside>
 
@@ -8427,7 +9485,7 @@ active the base is added once per active language.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">762</span>
+    <span class="phpdocumentor-element-found-in__line">879</span>
 
     </aside>
 
@@ -8493,7 +9551,7 @@ fragment and query-var lines are emitted.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">866</span>
+    <span class="phpdocumentor-element-found-in__line">983</span>
 
     </aside>
 
@@ -8601,7 +9659,7 @@ narrow nothing further).</li>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">932</span>
+    <span class="phpdocumentor-element-found-in__line">1049</span>
 
     </aside>
 
@@ -8666,7 +9724,7 @@ narrow nothing further).</li>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">973</span>
+    <span class="phpdocumentor-element-found-in__line">1090</span>
 
     </aside>
 
@@ -18770,7 +19828,7 @@ long-running process (WP-CLI, cron) never reads a stale group.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">627</span>
+    <span class="phpdocumentor-element-found-in__line">630</span>
 
     </aside>
 
@@ -18838,7 +19896,7 @@ update_option_* actions still run and refresh the memo and cache file.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">747</span>
+    <span class="phpdocumentor-element-found-in__line">750</span>
 
     </aside>
 
@@ -18898,7 +19956,7 @@ update_option_* actions still run and refresh the memo and cache file.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">843</span>
+    <span class="phpdocumentor-element-found-in__line">846</span>
 
     </aside>
 
@@ -18958,7 +20016,7 @@ update_option_* actions still run and refresh the memo and cache file.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">921</span>
+    <span class="phpdocumentor-element-found-in__line">924</span>
 
     </aside>
 
@@ -19018,7 +20076,7 @@ update_option_* actions still run and refresh the memo and cache file.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">948</span>
+    <span class="phpdocumentor-element-found-in__line">951</span>
 
     </aside>
 
@@ -19078,7 +20136,7 @@ update_option_* actions still run and refresh the memo and cache file.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1005</span>
+    <span class="phpdocumentor-element-found-in__line">1008</span>
 
     </aside>
 
@@ -19126,7 +20184,7 @@ update_option_* actions still run and refresh the memo and cache file.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1079</span>
+    <span class="phpdocumentor-element-found-in__line">1082</span>
 
     </aside>
 
@@ -19186,7 +20244,7 @@ update_option_* actions still run and refresh the memo and cache file.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/settings.php"><a href="files/includes-settings.html"><abbr title="includes/settings.php">settings.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1153</span>
+    <span class="phpdocumentor-element-found-in__line">1156</span>
 
     </aside>
 
@@ -20260,7 +21318,7 @@ through a filter named <code class="prettyprint">jpkcom_postfilter_{key}</code>.
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">87</span>
+    <span class="phpdocumentor-element-found-in__line">89</span>
 
     </aside>
 
@@ -20333,7 +21391,7 @@ into the form.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">141</span>
+    <span class="phpdocumentor-element-found-in__line">149</span>
 
     </aside>
 
@@ -20389,7 +21447,7 @@ into the form.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">160</span>
+    <span class="phpdocumentor-element-found-in__line">168</span>
 
     </aside>
 
@@ -20452,7 +21510,7 @@ request, the rest is a handful of comparisons.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">210</span>
+    <span class="phpdocumentor-element-found-in__line">218</span>
 
     </aside>
 
@@ -20520,7 +21578,7 @@ entry.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">257</span>
+    <span class="phpdocumentor-element-found-in__line">265</span>
 
     </aside>
 
@@ -20576,7 +21634,7 @@ entry.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">280</span>
+    <span class="phpdocumentor-element-found-in__line">288</span>
 
     </aside>
 
@@ -20636,7 +21694,7 @@ Abilities API carried a hand-maintained copy of the parser's truncation.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">319</span>
+    <span class="phpdocumentor-element-found-in__line">327</span>
 
     </aside>
 
@@ -20684,7 +21742,7 @@ positions of later groups do not shift.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">341</span>
+    <span class="phpdocumentor-element-found-in__line">349</span>
 
     </aside>
 
@@ -20756,7 +21814,7 @@ empty position before a non-empty one, trailing empty positions dropped.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">387</span>
+    <span class="phpdocumentor-element-found-in__line">395</span>
 
     </aside>
 
@@ -20828,7 +21886,7 @@ same thing everywhere. (No hooks, which is why it lives here.)</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">442</span>
+    <span class="phpdocumentor-element-found-in__line">450</span>
 
     </aside>
 
@@ -20887,7 +21945,7 @@ jpkcom_postfilter_known_term_slugs().</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">480</span>
+    <span class="phpdocumentor-element-found-in__line">488</span>
 
     </aside>
 
@@ -20977,7 +22035,7 @@ so <code class="prettyprint">c%2b%2b%2Bzaeune</code> (two slugs joined by an enc
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">565</span>
+    <span class="phpdocumentor-element-found-in__line">573</span>
 
     </aside>
 
@@ -21082,7 +22140,7 @@ Null callable = no existence check.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/url-policy.php"><a href="files/includes-url-policy.html"><abbr title="includes/url-policy.php">url-policy.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">685</span>
+    <span class="phpdocumentor-element-found-in__line">693</span>
 
     </aside>
 
@@ -21717,6 +22775,7 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_archive_base_urls_all_languages">jpkcom_postfilter_archive_base_urls_all_languages()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_archive_query_string">jpkcom_postfilter_archive_query_string()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_array_flatten">jpkcom_postfilter_array_flatten()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_base_canonical_url">jpkcom_postfilter_base_canonical_url()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_block_apply_plus_minus">jpkcom_postfilter_block_apply_plus_minus()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_block_apply_show_more">jpkcom_postfilter_block_apply_show_more()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_block_pagination_preview">jpkcom_postfilter_block_pagination_preview()</a></li>
@@ -21731,6 +22790,9 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_cache_get">jpkcom_postfilter_cache_get()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_cache_set">jpkcom_postfilter_cache_set()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_cache_stats">jpkcom_postfilter_cache_stats()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_canonical_decision">jpkcom_postfilter_canonical_decision()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_canonical_target_memo">jpkcom_postfilter_canonical_target_memo()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_canonical_target_memo_reset">jpkcom_postfilter_canonical_target_memo_reset()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_canonical_url">jpkcom_postfilter_canonical_url()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_count_filter_terms">jpkcom_postfilter_count_filter_terms()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_debug_log">jpkcom_postfilter_debug_log()</a></li>
@@ -21740,6 +22802,8 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_extract_zones">jpkcom_postfilter_extract_zones()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_field_auto_inject">jpkcom_postfilter_field_auto_inject()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_field_cache_ttl">jpkcom_postfilter_field_cache_ttl()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_field_canonical_multi">jpkcom_postfilter_field_canonical_multi()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_field_canonical_single">jpkcom_postfilter_field_canonical_single()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_field_debug_mode">jpkcom_postfilter_field_debug_mode()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_field_enabled_post_types">jpkcom_postfilter_field_enabled_post_types()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_field_endpoint_empty_action">jpkcom_postfilter_field_endpoint_empty_action()</a></li>
@@ -21818,6 +22882,7 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_without_refusal">jpkcom_postfilter_htaccess_without_refusal()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_write">jpkcom_postfilter_htaccess_write()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_is_block_editor_request">jpkcom_postfilter_is_block_editor_request()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_is_bot_filter_page">jpkcom_postfilter_is_bot_filter_page()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_is_filter_request">jpkcom_postfilter_is_filter_request()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_is_fragment_request">jpkcom_postfilter_is_fragment_request()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_known_term_slugs">jpkcom_postfilter_known_term_slugs()</a></li>
@@ -21858,6 +22923,8 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_protect_settings_dir">jpkcom_postfilter_protect_settings_dir()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_query_cache_key">jpkcom_postfilter_query_cache_key()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_query_term_slugs">jpkcom_postfilter_query_term_slugs()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_rank_math_robots_noindex">jpkcom_postfilter_rank_math_robots_noindex()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_rank_math_titles_robots">jpkcom_postfilter_rank_math_titles_robots()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_rate_limits">jpkcom_postfilter_rate_limits()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_register_abilities">jpkcom_postfilter_register_abilities()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_register_ability_category">jpkcom_postfilter_register_ability_category()</a></li>
@@ -21879,6 +22946,10 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_general_settings">jpkcom_postfilter_sanitize_general_settings()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_layout_settings">jpkcom_postfilter_sanitize_layout_settings()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_send_reject">jpkcom_postfilter_send_reject()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_seo_base_noindex">jpkcom_postfilter_seo_base_noindex()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_seo_canonical_moved">jpkcom_postfilter_seo_canonical_moved()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_seo_switch_on">jpkcom_postfilter_seo_switch_on()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_seo_term_noindex">jpkcom_postfilter_seo_term_noindex()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_apache_rules">jpkcom_postfilter_server_apache_rules()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_check_after_add">jpkcom_postfilter_server_check_after_add()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_check_after_update">jpkcom_postfilter_server_check_after_update()</a></li>
@@ -21976,8 +23047,11 @@ the cache: the cache key is the taxonomy, never the requested slugs.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_shortcode_list">jpkcom_postfilter_shortcode_list()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_shortcode_pagination">jpkcom_postfilter_shortcode_pagination()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_should_auto_inject">jpkcom_postfilter_should_auto_inject()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_should_nofollow">jpkcom_postfilter_should_nofollow()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_should_noindex">jpkcom_postfilter_should_noindex()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_split_segment">jpkcom_postfilter_split_segment()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_term_archive_lists_post_type">jpkcom_postfilter_term_archive_lists_post_type()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_term_archive_url">jpkcom_postfilter_term_archive_url()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_term_href">jpkcom_postfilter_term_href()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_term_link_attributes">jpkcom_postfilter_term_link_attributes()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_terms_cache_key">jpkcom_postfilter_terms_cache_key()</a></li>

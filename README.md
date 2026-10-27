@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.6.1  
+**Version:** 1.7.0  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 7.0  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.6.1  
+**Stable tag:** 1.7.0  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -79,7 +79,9 @@ Filter any post type by taxonomy terms — SEO-friendly URLs, AJAX, and shortcod
 | Option | Default | Description |
 |--------|---------|-------------|
 | Filter Links for Crawlers | Single terms only | What a term button links to for clients without JavaScript: its own single-term page (`single`), the combination within the limits (`combo`), or nothing (`none`). Visitors with JavaScript can always combine terms. Constant `JPKCOM_POSTFILTER_LINK_MODE` |
-| Indexable Filter Pages | 1 | Filter pages with up to this many terms are `index, follow`; more terms, unknown terms or no results → `noindex, nofollow`, no canonical. Constant `JPKCOM_POSTFILTER_INDEX_MAX_TERMS` |
+| Indexable Filter Pages | 1 | Filter pages with up to this many terms are `index, follow`; more terms → `noindex, nofollow` without canonical, unless the canonical points to another page (below), which replaces the noindex; unknown terms or no results → always `noindex, nofollow`, no canonical. Constant `JPKCOM_POSTFILTER_INDEX_MAX_TERMS` |
+| Canonical: Single Term | Term archive | Canonical of a filter page with one term (since 1.7.0): `archive` = the term's category, tag or taxonomy archive - if that archive is public, lists the post type, is not noindex in Rank Math or Yoast and has no manual canonical pointing elsewhere there, else the filter URL; `filter` = the filter page itself; `off` = no canonical at all, also none from Rank Math or Yoast. Always page 1. Constant `JPKCOM_POSTFILTER_CANONICAL_SINGLE` |
+| Canonical: Multiple Terms | Archive base | Canonical of a filter page with two or more terms (since 1.7.0): `home` = the unfiltered blog page or post type archive - if it is not noindex in Rank Math or Yoast and has no manual canonical pointing elsewhere (a static front page without a posts page is no such archive); such pages are then `index, nofollow` instead of `noindex, nofollow`; otherwise, and with `filter`, *Indexable Filter Pages* decides as before; `off` = no canonical at all. Always page 1. Constant `JPKCOM_POSTFILTER_CANONICAL_MULTI` |
 | Max. Terms in Total | 0 (off) | Cap across all groups, enforced by the filter bar and the server. Constant `JPKCOM_POSTFILTER_MAX_TERMS_TOTAL` |
 | Strict Filter URLs | on | 301 every other spelling of a selection to its canonical URL; reject impossible paths before the database is queried. Constant `JPKCOM_POSTFILTER_STRICT_URLS` |
 | Invalid Combinations | 410 | Status for paths beyond the limits (410 or 404). Constant `JPKCOM_POSTFILTER_REJECT_STATUS` |
@@ -595,6 +597,9 @@ jpkcom_postfilter_get_terms_for_group( $group, $active_filters )
 
 - `jpkcom_postfilter_ability_meta( array $meta, string $ability_name )` — adjust the meta of an ability before registration. Set `show_in_rest` to `false` to hide it from the REST API, or `mcp.public` to `false` to hide it from MCP clients.
 - `jpkcom_postfilter_ability_capability( string $capability, string $ability_name )` — the capability required to run an ability. Defaults to `read`, which covers every logged-in user. Raise it to `edit_posts` to restrict bulk machine-readable access to published content.
+- `jpkcom_postfilter_canonical( string $url, string $kind, array $filters )` — the canonical of a filter page; `$kind` is `archive` (term archive), `home` (archive base) or `self`. Not called when the page has no canonical.
+- `jpkcom_postfilter_canonical_archive_indexable( bool $indexable, WP_Term $term, string $post_type )` — whether a term archive may be the canonical target (since 1.7.0). Use it for SEO plugins other than Rank Math and Yoast, or for a theme that changes what a term archive lists.
+- `jpkcom_postfilter_canonical_base_indexable( bool $indexable, string $post_type )` — the same for the archive base (since 1.7.0).
 
 ---
 
@@ -610,7 +615,7 @@ Yes. All registered taxonomies (including custom ones) appear in the Filter Grou
 Yes. Each filter term is a regular `<a>` link. Without JS the page reloads with the new filter URL. With JS, only the results zone is updated via AJAX.
 
 **Will the filter URLs be indexed by search engines?**
-Each filter combination has a unique, crawlable URL. The plugin registers WordPress rewrite rules and sets canonical URLs to avoid duplicate content.
+Single-term filter pages are indexable; by default (since 1.7.0) their canonical points to the term archive they duplicate, and the canonical of a combination points to the unfiltered blog or post type archive. Both are configurable under *Crawlers & SEO*. Combinations within one group are kept out of robots.txt, and every selection has exactly one URL.
 
 **Can I place shortcodes on any page?**
 No — shortcodes must be placed on the archive page for the configured post type (via a page builder/FSE template, or by using a WordPress page as the "Posts Page"). On an arbitrary custom page the filter links will navigate away to the archive URL. See the **Shortcodes** section above for details. The same applies to Gutenberg blocks, Elementor widgets, and Oxygen elements.
@@ -636,6 +641,19 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.7.0
+
+What changes on a running site after the update - read this first:
+
+* **Changed (behaviour, all sites):** the canonical of a filter page with **one term** (`/blog/filter/seo/`) now points to that term's archive (`/category/seo/`, `/tag/…/` or the archive of a custom taxonomy), which shows the same posts. Only when that archive is public, lists the filtered post type, is not set to noindex in Rank Math or Yoast and has no manual canonical of its own pointing elsewhere - otherwise the canonical stays on the filter page as before. Rank Math sets tag archives to noindex out of the box, so tag filter pages there keep their own canonical.
+* **Changed (behaviour, all sites):** a filter page with **two or more terms** now has a canonical to the unfiltered blog page (or post type archive) and is `index, nofollow` instead of `noindex, nofollow`: a noindex next to a canonical pointing elsewhere contradicts itself, and search engines may carry the noindex over to the target. If the blog page itself is set to noindex or has a manual canonical elsewhere in Rank Math or Yoast, or the site has a static front page and no posts page, nothing changes for these pages. Unknown terms and empty results stay `noindex, nofollow` without a canonical.
+* **Changed:** the canonical of a paginated filter page points to page 1 of its target. This also applies to the filter page's own canonical (`…/filter/seo/page/2/` → `…/filter/seo/`).
+* **The way back:** set *Canonical: Single Term* and *Canonical: Multiple Terms* to *Filter URL* for the canonicals of 1.6.1 (apart from page 1 above), or to *Off* for no canonical at all.
+* **Purge the page cache after updating** - cached filter pages keep the old canonical and robots until they are rendered again.
+* **Theme overrides of `partials/pagination/pagination.php`:** the plugin's copy now asks `jpkcom_postfilter_should_nofollow()` instead of `jpkcom_postfilter_should_noindex()`. An override keeps working, but its page links on combinations are no longer `nofollow` until it takes over that line.
+* **Added:** the settings *Canonical: Single Term* (`archive` / `filter` / `off`) and *Canonical: Multiple Terms* (`home` / `filter` / `off`) under *Crawlers & SEO*, the constants `JPKCOM_POSTFILTER_CANONICAL_SINGLE` / `JPKCOM_POSTFILTER_CANONICAL_MULTI`, the filters `jpkcom_postfilter_canonical_archive_indexable` and `jpkcom_postfilter_canonical_base_indexable`, and two more arguments for `jpkcom_postfilter_canonical` (the kind of target and the filters). The server rules and the managed `.htaccess` block are not affected.
+* **Translations:** German (de_DE and de_DE_formal) for every new string.
 
 ### 1.6.1
 

@@ -243,6 +243,20 @@ is the maze.</p>
 <dd>Whether the (already executed) main query found nothing on page 1</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_is_bot_filter_page">jpkcom_postfilter_is_bot_filter_page()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether the current filter page is one only bots make</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_canonical_decision">jpkcom_postfilter_canonical_decision()</a>
+    <span>
+                                &nbsp;: array{kind: string, url: string}|null    </span>
+</dt>
+<dd>Where the canonical of the current filter page points</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_robots_directives">jpkcom_postfilter_robots_directives()</a>
     <span>
                                 &nbsp;: array{index: bool, follow: bool}|null    </span>
@@ -255,6 +269,13 @@ is the maze.</p>
                                 &nbsp;: bool    </span>
 </dt>
 <dd>Whether the current filter page must not be indexed</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_should_nofollow">jpkcom_postfilter_should_nofollow()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether links on the current filter page must not be followed</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_canonical_url">jpkcom_postfilter_canonical_url()</a>
@@ -741,6 +762,115 @@ bootstrap and nothing else.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_is_bot_filter_page">
+        jpkcom_postfilter_is_bot_filter_page()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_is_bot_filter_page" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">376</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether the current filter page is one only bots make</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_is_bot_filter_page</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>An unknown slug or no results on page 1. These pages stay <code class="prettyprint">noindex, nofollow</code> without a canonical whatever the canonical settings say.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_is_bot_filter_page_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_is_bot_filter_page_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_canonical_decision">
+        jpkcom_postfilter_canonical_decision()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_canonical_decision" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">404</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Where the canonical of the current filter page points</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_canonical_decision</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{kind: string, url: string}|null</span></code>
+
+        <section class="phpdocumentor-description"><p>Reads the canonical settings and the term count, never the robots
+directives - those are derived from this decision. Targets are always
+page 1: page N of a filter page is not page N of its target.</p>
+<ul>
+<li>bot page (unknown term, no results): none</li>
+<li>one term, <code class="prettyprint">canonical_single</code>: archive (the term archive when it is an
+indexable target, else as <code class="prettyprint">filter</code>) / filter / off</li>
+<li>two or more terms, <code class="prettyprint">canonical_multi</code>: home (the archive base when it
+is an indexable target, else as <code class="prettyprint">filter</code>) / filter / off</li>
+<li><code class="prettyprint">filter</code>: self when the page is within <code class="prettyprint">seo_index_max_terms</code>, else none</li>
+<li><code class="prettyprint">off</code>: none</li>
+</ul>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_canonical_decision_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_canonical_decision_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array{kind: string, url: string}|null</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Kind archive|home|self|none
+and URL ('' for none); null
+when not a filter request.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_robots_directives">
         jpkcom_postfilter_robots_directives()
         <a href="namespaces/default.html#function_jpkcom_postfilter_robots_directives" class="headerlink"><i class="fas fa-link"></i></a>
@@ -749,7 +879,7 @@ bootstrap and nothing else.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">382</span>
+    <span class="phpdocumentor-element-found-in__line">478</span>
 
     </aside>
 
@@ -764,6 +894,12 @@ bootstrap and nothing else.</p>
 header. A filter page is <code class="prettyprint">noindex, nofollow</code> when it combines more terms
 than <code class="prettyprint">seo_index_max_terms</code> (default 1), names an unknown slug, or has no
 results on page 1. Single-term pages stay <code class="prettyprint">index, follow</code>.</p>
+<p>Since 1.7.0 a canonical to another URL (the term archive or the archive
+base, see jpkcom_postfilter_canonical_decision()) replaces the noindex
+that comes from the term count: noindex next to a canonical pointing
+elsewhere is a contradiction search engines resolve unpredictably, at
+worst by carrying the noindex over to the target. <code class="prettyprint">follow</code> keeps
+following the term count. Bot pages are not affected.</p>
 <p><code class="prettyprint">nofollow</code> is deliberate: everything such a page links to is reachable
 from the archive, the single-term pages and the sitemap. Following its
 links only leads further into the combinations.</p>
@@ -805,7 +941,7 @@ links only leads further into the combinations.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">426</span>
+    <span class="phpdocumentor-element-found-in__line">526</span>
 
     </aside>
 
@@ -844,6 +980,53 @@ jpkcom_postfilter_robots_directives().</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_should_nofollow">
+        jpkcom_postfilter_should_nofollow()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_should_nofollow" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">544</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether links on the current filter page must not be followed</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_should_nofollow</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>Since 1.7.0 a combination can be <code class="prettyprint">index, nofollow</code> (its canonical points
+at the archive base), so <code class="prettyprint">nofollow</code> is no longer implied by <code class="prettyprint">noindex</code>.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_should_nofollow_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_should_nofollow_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.0</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_canonical_url">
         jpkcom_postfilter_canonical_url()
         <a href="namespaces/default.html#function_jpkcom_postfilter_canonical_url" class="headerlink"><i class="fas fa-link"></i></a>
@@ -852,7 +1035,7 @@ jpkcom_postfilter_robots_directives().</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">583</span>
+    <span class="phpdocumentor-element-found-in__line">705</span>
 
     </aside>
 
@@ -863,7 +1046,11 @@ jpkcom_postfilter_robots_directives().</p>
     <span class="phpdocumentor-signature__visibility"></span>
                     <span class="phpdocumentor-signature__name">jpkcom_postfilter_canonical_url</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string|null</span></code>
 
-    
+        <section class="phpdocumentor-description"><p>The target is jpkcom_postfilter_canonical_decision(). A page that ends
+up noindex - including through the <code class="prettyprint">jpkcom_postfilter_robots_directives</code>
+filter - never carries a canonical.</p>
+</section>
+
     
     
     <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_canonical_url_tags">
@@ -886,7 +1073,7 @@ jpkcom_postfilter_robots_directives().</p>
         <span class="phpdocumentor-signature__response_type">string|null</span>
                     &mdash;
                 <section class="phpdocumentor-description"><p>Null when this is not a filter page, '' for &quot;no
-canonical&quot; (noindex pages), the URL otherwise.</p>
+canonical&quot;, the URL otherwise.</p>
 </section>
 
             </section>
@@ -901,7 +1088,7 @@ canonical&quot; (noindex pages), the URL otherwise.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">683</span>
+    <span class="phpdocumentor-element-found-in__line">800</span>
 
     </aside>
 
@@ -966,7 +1153,7 @@ active the base is added once per active language.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">762</span>
+    <span class="phpdocumentor-element-found-in__line">879</span>
 
     </aside>
 
@@ -1032,7 +1219,7 @@ fragment and query-var lines are emitted.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">866</span>
+    <span class="phpdocumentor-element-found-in__line">983</span>
 
     </aside>
 
@@ -1140,7 +1327,7 @@ narrow nothing further).</li>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">932</span>
+    <span class="phpdocumentor-element-found-in__line">1049</span>
 
     </aside>
 
@@ -1205,7 +1392,7 @@ narrow nothing further).</li>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">973</span>
+    <span class="phpdocumentor-element-found-in__line">1090</span>
 
     </aside>
 
@@ -1328,15 +1515,18 @@ only the data attributes and aria-pressed).</p>
                 <li>
                     <ul class="phpdocumentor-list -clean">
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_archive_base_urls_all_languages">jpkcom_postfilter_archive_base_urls_all_languages()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_canonical_decision">jpkcom_postfilter_canonical_decision()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_canonical_url">jpkcom_postfilter_canonical_url()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_filter_query_string">jpkcom_postfilter_filter_query_string()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_guard_request">jpkcom_postfilter_guard_request()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_is_bot_filter_page">jpkcom_postfilter_is_bot_filter_page()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_main_query_is_empty">jpkcom_postfilter_main_query_is_empty()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_request_verdict">jpkcom_postfilter_request_verdict()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_restrict_internal_query_vars">jpkcom_postfilter_restrict_internal_query_vars()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_robots_directives">jpkcom_postfilter_robots_directives()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_robots_txt_rules">jpkcom_postfilter_robots_txt_rules()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_send_reject">jpkcom_postfilter_send_reject()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_should_nofollow">jpkcom_postfilter_should_nofollow()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_should_noindex">jpkcom_postfilter_should_noindex()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_term_href">jpkcom_postfilter_term_href()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_term_link_attributes">jpkcom_postfilter_term_link_attributes()</a></li>
