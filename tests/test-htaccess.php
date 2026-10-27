@@ -543,6 +543,21 @@ chk( 'failed write half way: modify() false, the file is byte-identical to the o
 	$ok === false && ( Jpkpf_Recording_Stream::$files['jpkpfmem://roll'] ?? '' ) === $roll_old && Jpkpf_Recording_Stream::$plan === [],
 	json_encode( [ $ok, substr( Jpkpf_Recording_Stream::$files['jpkpfmem://roll'] ?? '', -60 ) ] ) );
 Jpkpf_Recording_Stream::$plan = [];
+chk( 'failed write, old content back: last_error() is write-failed', call( 'jpkcom_postfilter_htaccess_last_error' ) === 'write-failed', (string) call( 'jpkcom_postfilter_htaccess_last_error' ) );
+
+// T8-a: the rollback fails as well. The file now holds half the new content
+// over the old one - possibly half a directive, and Apache answers 500 - so
+// the caller must be able to tell this from a write that changed nothing.
+Jpkpf_Recording_Stream::$files = [ 'jpkpfmem://roll' => $roll_old ];
+Jpkpf_Recording_Stream::$plan  = [ 'half', 'fail', 'fail', 'fail' ];
+$ok = call( 'jpkcom_postfilter_htaccess_modify', 'jpkpfmem://roll', static fn( string $c ): string => $roll_new );
+chk( 'failed write, failed rollback: modify() false, last_error() is rollback-failed',
+	$ok === false && call( 'jpkcom_postfilter_htaccess_last_error' ) === 'rollback-failed' && ( Jpkpf_Recording_Stream::$files['jpkpfmem://roll'] ?? '' ) !== $roll_old,
+	json_encode( [ $ok, call( 'jpkcom_postfilter_htaccess_last_error' ) ] ) );
+Jpkpf_Recording_Stream::$plan  = [];
+Jpkpf_Recording_Stream::$files = [ 'jpkpfmem://roll' => $roll_old ];
+$ok = call( 'jpkcom_postfilter_htaccess_modify', 'jpkpfmem://roll', static fn( string $c ): string => $roll_new );
+chk( 'a write that succeeds clears last_error()', $ok === true && call( 'jpkcom_postfilter_htaccess_last_error' ) === '' );
 
 // T8-b: on a plain file a failed fwrite() raises E_NOTICE ("Write of N bytes
 // failed with errno=28 No space left on device"). With display_errors on that

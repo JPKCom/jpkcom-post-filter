@@ -273,6 +273,35 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_block_lines' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_last_error' ) ) {
+    /**
+     * How the last jpkcom_postfilter_htaccess_modify() call in this request failed
+     *
+     * - `''`: nothing failed while writing (the write succeeded, nothing had to
+     *   be written, or nothing was attempted - missing file, lock, refusal).
+     * - `write-failed`: the write failed and the old content is back.
+     * - `rollback-failed`: the write failed and putting the old content back
+     *   failed too. The file may now hold part of the new content over the
+     *   old one - possibly half a directive, for which Apache answers 500 -
+     *   so the caller has to tell the admin to check it (T8-a).
+     *
+     * @since 1.7.1
+     *
+     * @param string|null $set New value, or null to read.
+     * @return string
+     */
+    function jpkcom_postfilter_htaccess_last_error( ?string $set = null ): string {
+        static $error = '';
+
+        if ( $set !== null ) {
+            $error = $set;
+        }
+
+        return $error;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_modify' ) ) {
     /**
      * Read-modify-write a file under an exclusive lock, in place
@@ -281,7 +310,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_modify' ) ) {
      * to refuse (nothing is written, the result is false). Identical content
      * is not written at all, so the mtime stays. No rename: owner, group and
      * mode survive. Should the write fail half way, the old content is put
-     * back.
+     * back; jpkcom_postfilter_htaccess_last_error() says afterwards whether
+     * that worked.
      *
      * @since 1.6.0
      *
@@ -290,6 +320,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_modify' ) ) {
      * @return bool
      */
     function jpkcom_postfilter_htaccess_modify( string $file, callable $change ): bool {
+        jpkcom_postfilter_htaccess_last_error( set: '' );
         clearstatcache( true, $file );
         if ( ! is_file( $file ) ) {
             return false;   // a missing .htaccess is not ours to create
@@ -314,7 +345,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_modify' ) ) {
                 } else {
                     $ok = jpkcom_postfilter_htaccess_put( fh: $fh, content: $new );
                     if ( ! $ok ) {
-                        jpkcom_postfilter_htaccess_put( fh: $fh, content: $old );
+                        $restored = jpkcom_postfilter_htaccess_put( fh: $fh, content: $old );
+                        jpkcom_postfilter_htaccess_last_error( set: $restored ? 'write-failed' : 'rollback-failed' );
                     }
                 }
             }

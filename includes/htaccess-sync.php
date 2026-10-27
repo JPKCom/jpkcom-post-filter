@@ -479,16 +479,24 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_loosen' ) ) {
      * deactivation that could not remove it) is not brought to the inputs but
      * removed: nothing would keep it in step afterwards.
      *
+     * A write that failed half way and could not be undone
+     * (jpkcom_postfilter_htaccess_last_error() `rollback-failed`) is reported
+     * as `write-unrestored` ahead of every other reason: the file may be
+     * incomplete, and the admin has to check it, not just retry (T8-a).
+     *
      * @since 1.6.0
      *
      * @param array<string, mixed> $inputs Rule inputs (usually a union).
      * @param bool                 $orphan The block is in the file without the managed option.
-     * @return array{ok: bool, reason: string} Reason: `damaged`, `manual-block`, `not-writable` or `write-failed`.
+     * @return array{ok: bool, reason: string} Reason: `write-unrestored`, `damaged`, `manual-block`, `not-writable` or `write-failed`.
      */
     function jpkcom_postfilter_htaccess_loosen( array $inputs, bool $orphan = false ): array {
         $ok    = [ 'ok' => true, 'reason' => '' ];
         $file  = jpkcom_postfilter_htaccess_file();
         $state = jpkcom_postfilter_htaccess_state( file: $file );
+
+        // apply() can fail without reaching modify(); no earlier failure may count.
+        jpkcom_postfilter_htaccess_last_error( set: '' );
 
         if ( $orphan ) {
             if ( jpkcom_postfilter_htaccess_remove( file: $file ) ) {
@@ -499,10 +507,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_loosen' ) ) {
                 return $ok;
             }
         }
+        $unrestored = jpkcom_postfilter_htaccess_last_error() === 'rollback-failed';
 
         // A block on a server that never reads it cannot be stricter than the plugin.
         if ( ! jpkcom_postfilter_htaccess_server_reads() ) {
             return $ok;
+        }
+
+        if ( $unrestored ) {
+            return [ 'ok' => false, 'reason' => 'write-unrestored' ];
         }
 
         $state = jpkcom_postfilter_htaccess_state( file: $file );
@@ -541,11 +554,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_refusal_message' )
      * markers are fixed by hand, a manual block next to the managed one is
      * deleted, a read-only file is made writable.
      *
-     * @param string $reason `damaged`, `manual-block`, `not-writable`, `write-failed`, or a reason from jpkcom_postfilter_htaccess_available().
+     * @param string $reason `write-unrestored`, `damaged`, `manual-block`, `not-writable`, `write-failed`, or a reason from jpkcom_postfilter_htaccess_available().
      * @return string
      */
     function jpkcom_postfilter_htaccess_refusal_message( string $reason ): string {
         $reasons = [
+            'write-unrestored'     => __( 'writing the file failed, and its previous content could not be put back', 'jpkcom-post-filter' ),
             'not-writable'         => __( 'the file is not writable', 'jpkcom-post-filter' ),
             'no-file'              => __( 'the file does not exist', 'jpkcom-post-filter' ),
             'manual-block'         => __( 'it also contains a manually inserted block', 'jpkcom-post-filter' ),
@@ -559,10 +573,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_refusal_message' )
 
         // What fixes it depends on the reason: chmod does not repair markers (D3).
         $remedy = match ( $reason ) {
-            'damaged'      => __( 'Fix the file by hand: every # BEGIN JPKCom Post Filter line needs its own # END JPKCom Post Filter line, and WordPress\'s block (# BEGIN WordPress to # END WordPress) must stay outside it. Or delete the JPKCom Post Filter lines. Then save again.', 'jpkcom-post-filter' ),
-            'manual-block' => __( 'Delete one of the two blocks - the one inserted by hand (# BEGIN JPKCom Post Filter (manual)) or the managed one - then save again.', 'jpkcom-post-filter' ),
+            'write-unrestored' => __( 'The .htaccess may be incomplete: check it now and repair it by hand, or restore it from a backup - while Apache cannot parse it, it answers every request with an error. Then save again.', 'jpkcom-post-filter' ),
+            'damaged'          => __( 'Fix the file by hand: every # BEGIN JPKCom Post Filter line needs its own # END JPKCom Post Filter line, and WordPress\'s block (# BEGIN WordPress to # END WordPress) must stay outside it. Or delete the JPKCom Post Filter lines. Then save again.', 'jpkcom-post-filter' ),
+            'manual-block'     => __( 'Delete one of the two blocks - the one inserted by hand (# BEGIN JPKCom Post Filter (manual)) or the managed one - then save again.', 'jpkcom-post-filter' ),
             'not-writable', 'no-file' => __( 'Make the .htaccess writable, or remove the JPKCom Post Filter block from it, then save again.', 'jpkcom-post-filter' ),
-            default        => __( 'Check the .htaccess (permissions, free disk space), or remove the JPKCom Post Filter block from it, then save again.', 'jpkcom-post-filter' ),
+            default            => __( 'Check the .htaccess (permissions, free disk space), or remove the JPKCom Post Filter block from it, then save again.', 'jpkcom-post-filter' ),
         };
 
         $message = sprintf(

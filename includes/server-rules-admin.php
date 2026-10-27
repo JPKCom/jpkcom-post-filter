@@ -419,6 +419,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_message' ) ) {
             'htaccess-failed'          => [ 'error', __( 'Writing the .htaccess failed, nothing was set up. Check that the file is writable and that its JPKCom Post Filter markers pair up.', 'jpkcom-post-filter' ) ],
             'htaccess-removed'         => [ 'success', __( 'The .htaccess block is removed. The plugin no longer manages the file.', 'jpkcom-post-filter' ) ],
             'htaccess-remove-failed'   => [ 'error', __( 'The .htaccess block could not be removed: the file is not writable, or its JPKCom Post Filter markers do not pair up. The plugin keeps guarding the block, so saves that would leave it stricter than the plugin are refused. Fix the file, then remove the block again.', 'jpkcom-post-filter' ) ],
+            'htaccess-unrestored'      => [ 'error', __( 'Writing the .htaccess failed, and its previous content could not be put back: the file may be incomplete. Check it now and repair it by hand, or restore it from a backup - while Apache cannot parse it, it answers every request with an error.', 'jpkcom-post-filter' ) ],
         ];
 
         if ( ! isset( $messages[ $key ] ) ) {
@@ -469,6 +470,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_htaccess_actio
      * (and no damaged marker) remains, so a block that could not be removed
      * stays guarded.
      *
+     * Either way, a write that failed half way and could not be undone
+     * (jpkcom_postfilter_htaccess_last_error() `rollback-failed`) gives
+     * `htaccess-unrestored`: the file may be incomplete and has to be checked
+     * (T8-a).
+     *
      * The caller checks capability and nonce.
      *
      * @since 1.6.0
@@ -491,7 +497,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_htaccess_actio
             }
 
             if ( ! jpkcom_postfilter_htaccess_apply( file: $file, inputs: $inputs ) ) {
-                return 'htaccess-failed';
+                return jpkcom_postfilter_htaccess_last_error() === 'rollback-failed' ? 'htaccess-unrestored' : 'htaccess-failed';
             }
 
             // The resolved path: WP-CLI, cron and deactivation work on this file
@@ -502,10 +508,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_htaccess_actio
         }
 
         if ( $do === 'remove' ) {
+            jpkcom_postfilter_htaccess_last_error( set: '' );
             if ( jpkcom_postfilter_htaccess_state( file: $file )['managed'] ) {
                 jpkcom_postfilter_htaccess_remove( file: $file );
             }
 
+            // The option stays in every failure case, so the block is still guarded.
+            if ( jpkcom_postfilter_htaccess_last_error() === 'rollback-failed' ) {
+                return 'htaccess-unrestored';
+            }
             $state = jpkcom_postfilter_htaccess_state( file: $file );
             if ( $state['managed'] || $state['damaged'] ) {
                 return 'htaccess-remove-failed';

@@ -309,6 +309,66 @@ register_shutdown_function( 'cleanup' );
 function htaccess(): string { return $GLOBALS['__home_path'] . '.htaccess'; }
 
 /**
+ * An in-memory .htaccess whose writes can fail (T8-a): point the home path at
+ * `jpkpffail://home/` and put the content into $files. Writes follow $plan,
+ * one entry per stream_write() call: 'half' writes the first half of the
+ * data, 'fail' writes nothing; once the list is used up every write succeeds.
+ * PHP's stream layer retries a short write within the same fwrite(), so a
+ * write that fails half way and stays failed is [ 'half', 'fail', 'fail' ],
+ * and one whose rollback fails too needs one 'fail' more.
+ */
+final class Jpkpf_Failing_Stream {
+	public static array $files = [];
+	public static array $plan  = [];
+	public $context;
+	private string $path = '';
+	private int $pos = 0;
+
+	public function stream_open( $path, $mode, $options, &$opened ): bool {
+		if ( ! isset( self::$files[ $path ] ) ) {
+			return false;
+		}
+		$this->path = $path;
+		$this->pos  = 0;
+		return true;
+	}
+	public function stream_read( $count ) {
+		$out        = substr( self::$files[ $this->path ], $this->pos, $count );
+		$this->pos += strlen( $out );
+		return $out;
+	}
+	public function stream_write( $data ): int {
+		$step = array_shift( self::$plan ) ?? 'full';
+		if ( $step === 'fail' ) {
+			return 0;
+		}
+		if ( $step === 'half' ) {
+			$data = substr( $data, 0, intdiv( strlen( $data ), 2 ) );
+		}
+		$f                          = self::$files[ $this->path ];
+		self::$files[ $this->path ] = str_pad( substr( $f, 0, $this->pos ), $this->pos, "\0" ) . $data . (string) substr( $f, $this->pos + strlen( $data ) );
+		$this->pos                 += strlen( $data );
+		return strlen( $data );
+	}
+	public function stream_truncate( int $size ): bool {
+		self::$files[ $this->path ] = substr( self::$files[ $this->path ], 0, $size );
+		return true;
+	}
+	public function stream_eof(): bool { return $this->pos >= strlen( self::$files[ $this->path ] ); }
+	public function stream_tell(): int { return $this->pos; }
+	public function stream_seek( $offset, $whence ): bool { $this->pos = $whence === SEEK_SET ? (int) $offset : $this->pos; return true; }
+	public function stream_flush(): bool { return true; }
+	public function stream_lock( $operation ): bool { return true; }
+	public function stream_close(): void {}
+	// 0666: is_writable()/is_readable() read the "other" bits for a wrapper without an owner.
+	public function stream_stat(): array { return [ 'mode' => 0100666, 'size' => strlen( self::$files[ $this->path ] ) ]; }
+	public function url_stat( $path, $flags ) { return isset( self::$files[ $path ] ) ? [ 'mode' => 0100666, 'size' => strlen( self::$files[ $path ] ) ] : false; }
+	public function stream_metadata( $path, $option, $value ): bool { return false; }
+	public function stream_set_option( $option, $arg1, $arg2 ): bool { return false; }
+}
+stream_wrapper_register( 'jpkpffail', Jpkpf_Failing_Stream::class );
+
+/**
  * Take rights away from the fixture's .htaccess: 0444 (read-only) or 0000
  * (not even readable). Root - and anyone else the mode does not stop - can
  * still read and write it, so the failure path a check is about never runs.
@@ -837,6 +897,37 @@ if ( $have ) {
 	save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 	$msg = (string) ( $GLOBALS['__errors'][0]['message'] ?? '' );
 	chk( 'read-only file: the text says make it writable', str_contains( $msg, 'not writable' ) && str_contains( $msg, 'Make the .htaccess writable' ), $msg );
+
+	// T8-a: the write fails half way and the old content cannot be put back
+	// either. The refusal must say the file may be incomplete - not the
+	// generic "check permissions" of a write that changed nothing.
+	foreach ( [ 'rollback fails' => [ 'half', 'fail', 'fail', 'fail' ], 'rollback works' => [ 'half', 'fail', 'fail' ] ] as $label => $plan ) {
+		site( general() );
+		$old_stored = $GLOBALS['__options']['jpkcom_postfilter_general'];
+		$cache_was  = cache_array( 'general' );
+		$real       = htaccess();
+		$GLOBALS['__home_path']      = 'jpkpffail://home/';
+		Jpkpf_Failing_Stream::$files = [ 'jpkpffail://home/.htaccess' => bytes( $real ) ];
+		Jpkpf_Failing_Stream::$plan  = $plan;
+		try {
+			$ok  = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+			$msg = (string) ( $GLOBALS['__errors'][0]['message'] ?? '' );
+		} finally {
+			$GLOBALS['__home_path']      = dirname( $real ) . '/';
+			Jpkpf_Failing_Stream::$plan  = [];
+		}
+		$kept = $ok === false && $GLOBALS['__commits'] === [] && $GLOBALS['__options']['jpkcom_postfilter_general'] === $old_stored && cache_array( 'general' ) === $cache_was;
+		if ( $label === 'rollback fails' ) {
+			chk( 'write fails and the rollback fails too: refused, option and cache file unchanged, the text says the file may be incomplete',
+				$kept && str_contains( $msg, 'may be incomplete' ) && ! str_contains( $msg, 'permissions, free disk space' ), $msg );
+		} else {
+			chk( 'write fails, rollback works: refused with the generic text (nothing to repair)',
+				$kept && str_contains( $msg, 'permissions, free disk space' ) && ! str_contains( $msg, 'may be incomplete' ), $msg );
+		}
+	}
+	chk( 'refusal text for write-unrestored: names the reason and the remedy',
+		str_contains( (string) call( 'jpkcom_postfilter_htaccess_refusal_message', 'write-unrestored' ), 'could not be put back' )
+		&& str_contains( (string) call( 'jpkcom_postfilter_htaccess_refusal_message', 'write-unrestored' ), 'check it now' ) );
 
 	// Import (settings_save writes the cache file itself after update_option()).
 	site( general() );
