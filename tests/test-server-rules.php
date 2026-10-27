@@ -1833,7 +1833,7 @@ chk( 'check commands 1.6.1: exactly one cookie-less sequential loop per rate-lim
 	&& array_reduce( $evidence, static fn( bool $ok, array $l ): bool => $ok && isset( $l[0] ) && str_contains( $l[0], "grep -i '^retry-after:'" ) && str_contains( $l[0], 'first 429: ' ), true ),
 	show( $evidence ) );
 chk( 'check commands 1.6.1: cookie loops unchanged (codes only, expect no 429), mod_qos still parallel',
-	str_contains( $cc['nginx'], "#    Any cookie exempts a request: expect no 429.\nfor i in \$(seq 1 25); do curl -s -o /dev/null -w '%{http_code} ' -H 'Cookie: jpkpf-check=1' " )
+	str_contains( $cc['nginx'], "#    Any cookie exempts a request: expect no 429.\n( for i in \$(seq 1 25); do curl -s -o /dev/null -w '%{http_code} ' -H 'Cookie: jpkpf-check=1' " )
 	&& substr_count( $cc['apache'], 'xargs -P 8' ) === 2 && ! str_contains( $cc['apache'], 'then Retry-After' ) );
 
 /**
@@ -1883,6 +1883,37 @@ if ( $loop_runs['nginx'][0] === null ) {
 		$runs_ok = $runs_ok && $a === $expect_429 && $b === $expect_200 && $c === $expect_nra;
 	}
 	chk( 'check commands 1.6.1: the loop runs under POSIX sh and prints the codes plus the first 429\'s Retry-After (or none / no header)', $runs_ok, show( $loop_runs ) );
+}
+
+// R161-6: the admin pastes these lines into an interactive shell. A loop that
+// runs there leaves its variables behind (first, h, c, i, u) - harmless, but
+// not ours to set. Every printed loop runs in a subshell: after it, in the
+// same parent sh, each of them is still unset. All servers, every loop line.
+$leak_lines = [];
+foreach ( $cc as $server => $c ) {
+	foreach ( explode( "\n", $c ) as $l ) {
+		if ( preg_match( '/^[^#]*\bfor [a-z]+ in /', $l ) === 1 ) {
+			$leak_lines[] = [ $server, $l ];
+		}
+	}
+}
+$leak_probe = 'echo "vars:${first-unset},${h-unset},${c-unset},${i-unset},${u-unset}"';
+$leak_runs  = [];
+$leak_ok    = $leak_lines !== [] && count( array_unique( array_column( $leak_lines, 0 ) ) ) === count( $cc );
+foreach ( $leak_lines as [ $server, $l ] ) {
+	$out = run_rate_loop( $l . "\n" . $leak_probe, 7, true );
+	if ( $out === null ) {
+		$leak_runs = null;
+		break;
+	}
+	$last        = trim( (string) strrchr( "\n" . rtrim( $out ), "\n" ) );
+	$leak_runs[] = [ $server, $last ];
+	$leak_ok     = $leak_ok && $last === 'vars:unset,unset,unset,unset,unset';
+}
+if ( $leak_runs === null ) {
+	echo "  SKIP  check commands: printed loops leave no variables behind (no /bin/sh or proc_open)\n";
+} else {
+	chk( 'check commands: every printed loop (all servers) runs in a subshell - first, h, c, i, u stay unset in the parent sh (R161-6)', $leak_ok, show( $leak_runs ) );
 }
 
 // =====================================================================================

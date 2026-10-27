@@ -1565,10 +1565,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
         $out[]  = '';
         if ( $headers ) {
             $out[] = '# ' . ( ++$n ) . ') Never stricter than the plugin: every line must end in 0';
-            $out[] = 'for u in ' . $within . '; do printf \'%s \' "$u"; curl -s -o /dev/null -D - "$u" | grep -ciE \'^x-jpkpf-reject: *server-\'; done';
+            $out[] = '( for u in ' . $within . '; do printf \'%s \' "$u"; curl -s -o /dev/null -D - "$u" | grep -ciE \'^x-jpkpf-reject: *server-\'; done )';
         } else {
             $out[] = '# ' . ( ++$n ) . ') Never stricter than the plugin: no line may show ' . $status . ' without X-Jpkpf-Reject';
-            $out[] = 'for u in ' . $within . '; do printf \'%s \' "$u"; curl -s -o /dev/null -D - "$u" | grep -iE \'^(HTTP|x-jpkpf-reject)\' | tr -d \'\\r\' | tr \'\\n\' \' \'; echo; done';
+            $out[] = '( for u in ' . $within . '; do printf \'%s \' "$u"; curl -s -o /dev/null -D - "$u" | grep -iE \'^(HTTP|x-jpkpf-reject)\' | tr -d \'\\r\' | tr \'\\n\' \' \'; echo; done )';
         }
 
         $out[] = '';
@@ -1582,11 +1582,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
             // One command that is its own evidence: the status codes, then the
             // Retry-After header of the first 429 inside the loop. A request
             // sent after the loop proved nothing - the site-wide bucket
-            // refills in between (lab: 200 at 3 r/s).
-            $proof  = 'first=; for i in $(seq 1 25); do h=$(curl -s -o /dev/null -D - -w \'%{http_code}\' ' . $target . '"$i"); '
+            // refills in between (lab: 200 at 3 r/s). Every loop runs in a
+            // subshell `( … )`: the admin pastes it into an interactive shell,
+            // and first, h, c, i (u in the loops above) must not stay set there.
+            $proof  = '( first=; for i in $(seq 1 25); do h=$(curl -s -o /dev/null -D - -w \'%{http_code}\' ' . $target . '"$i"); '
                 . 'c=$(printf \'%s\' "$h" | tail -n 1); printf \'%s \' "$c"; '
                 . 'if [ "$c" = 429 ] && [ -z "$first" ]; then first=$(printf \'%s\n\' "$h" | grep -i \'^retry-after:\' | tr -d \'\r\'); first="${first:-no Retry-After header}"; fi; '
-                . 'done; echo; echo "first 429: ${first:-none}"';
+                . 'done; echo; echo "first 429: ${first:-none}" )';
+            $cookie = '( ' . $seq . '-H \'Cookie: jpkpf-check=1\' ' . $target . '"$i"; done; echo )';
             $par    = 'seq 1 8 | xargs -P 8 -I{} curl -s -o /dev/null -w \'%{http_code} \' ';
             $out[]  = '';
             $out[]  = '# ' . ( ++$n ) . ') Rate limit. This uses up the shared budget of cookie-less visitors: run it off-peak.';
@@ -1595,7 +1598,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
                 $out[] = '#    The last line shows the Retry-After header of the first 429.';
                 $out[] = $proof;
                 $out[] = '#    Any cookie exempts a request: expect no 429.';
-                $out[] = $seq . '-H \'Cookie: jpkpf-check=1\' ' . $target . '"$i"; done; echo';
+                $out[] = $cookie;
             } elseif ( $server !== 'apache' ) {
                 if ( $server === 'ferron3' ) {
                     $out[] = '#    a) The FastCGI bulkhead makes CONCURRENT requests wait instead of answering 429:';
@@ -1608,7 +1611,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
                 $out[] = '#    The last line shows the Retry-After header of the first 429, where the server sends one.';
                 $out[] = $proof;
                 $out[] = '#    Any cookie exempts a request: expect no 429.';
-                $out[] = $seq . '-H \'Cookie: jpkpf-check=1\' ' . $target . '"$i"; done; echo';
+                $out[] = $cookie;
             } else {
                 $out[] = '#    a) mod_qos caps CONCURRENT requests: send 8 at once. Expect some 429 when more';
                 $out[] = '#       than the cap overlap (they only overlap while PHP is busy rendering).';
@@ -1621,7 +1624,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
                 $out[] = '#    Any cookie exempts a request from both: expect no 429 (wait 30 s first).';
                 $out[] = 'sleep 30';
                 $out[] = $par . '-H \'Cookie: jpkpf-check=1\' ' . $url( $base . '?rl=p{}' ) . '; echo';
-                $out[] = $seq . '-H \'Cookie: jpkpf-check=1\' ' . $target . '"$i"; done; echo';
+                $out[] = $cookie;
             }
         }
 
