@@ -299,6 +299,20 @@ $u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
 chk( 'a site that discourages search engines has no indexable target', $u === '', var_export( $u, true ) );
 seo_reset();
 
+// A manual canonical on the archive would make ours a chain (review, 1.7.0).
+$GLOBALS['__term_meta'][ $t->term_id ]['rank_math_canonical_url'] = 'https://example.test/zaeune-ratgeber/';
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Rank Math: an archive with its own canonical elsewhere is no target', $u === '', var_export( $u, true ) );
+$GLOBALS['__term_meta'][ $t->term_id ]['rank_math_canonical_url'] = $zaeune;
+call( 'jpkcom_postfilter_canonical_target_memo_reset' );
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Rank Math: a manual canonical equal to the archive is fine', $u === $zaeune, var_export( $u, true ) );
+seo_reset();
+$GLOBALS['__options']['wpseo_taxonomy_meta'] = [ 'category' => [ $t->term_id => [ 'wpseo_canonical' => 'https://example.test/zaeune-ratgeber/' ] ] ];
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Yoast: an archive with its own canonical elsewhere is no target', $u === '', var_export( $u, true ) );
+seo_reset();
+
 // The filter has the last word; it is applied through the test's own runner.
 $GLOBALS['__options']['rank-math-options-titles'] = [ 'tax_category_custom_robots' => 'on', 'tax_category_robots' => [ 'noindex' ] ];
 $GLOBALS['__run_filters']['jpkcom_postfilter_canonical_archive_indexable'] = static fn( bool $indexable ): bool => true;
@@ -345,6 +359,24 @@ $GLOBALS['__options']['rank-math-options-titles'] = [ 'homepage_custom_robots' =
 call( 'jpkcom_postfilter_canonical_target_memo_reset' );
 $u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
 chk( 'Rank Math: a front-page blog set to noindex is no target', $u === '', var_export( $u, true ) );
+seo_reset();
+
+$GLOBALS['__post_meta'][5]['rank_math_canonical_url'] = 'https://example.test/ratgeber/';
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'Rank Math: a posts page with its own canonical elsewhere is no target', $u === '', var_export( $u, true ) );
+seo_reset();
+$GLOBALS['__post_meta'][5]['_yoast_wpseo_canonical'] = 'https://example.test/ratgeber/';
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'Yoast: a posts page with its own canonical elsewhere is no target', $u === '', var_export( $u, true ) );
+seo_reset();
+
+// A static front page without a posts page: home_url('/') is that page, not a
+// listing of posts - no base to point a combination at (review, 1.7.0).
+$GLOBALS['__options']['page_for_posts'] = 0;
+$GLOBALS['__options']['show_on_front']  = 'page';
+call( 'jpkcom_postfilter_canonical_target_memo_reset' );
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'a static front page without a posts page is no base', $u === '', var_export( $u, true ) );
 seo_reset();
 
 $u = call( 'jpkcom_postfilter_base_canonical_url', 'produkt' );

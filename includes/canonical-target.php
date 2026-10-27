@@ -137,6 +137,51 @@ if ( ! function_exists( function: 'jpkcom_postfilter_rank_math_titles_robots' ) 
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_seo_canonical_moved' ) ) {
+    /**
+     * Whether an active SEO plugin gives a target a canonical of its own elsewhere
+     *
+     * An editor can point a term archive or the posts page at another URL
+     * (Rank Math `rank_math_canonical_url`, Yoast `wpseo_canonical` /
+     * `_yoast_wpseo_canonical`). A canonical to such a target would be a chain;
+     * the target is then unusable and the filter page keeps its own canonical.
+     *
+     * @since 1.7.0
+     *
+     * @param string        $url     Target URL.
+     * @param \WP_Term|null $term    Term of a term archive, or null.
+     * @param int           $page_id Page of the archive base (posts page), or 0.
+     * @return bool
+     */
+    function jpkcom_postfilter_seo_canonical_moved( string $url, ?\WP_Term $term, int $page_id ): bool {
+        $overrides = [];
+
+        if ( defined( 'RANK_MATH_VERSION' ) ) {
+            $overrides[] = $term !== null
+                ? get_term_meta( $term->term_id, 'rank_math_canonical_url', true )
+                : ( $page_id > 0 ? get_post_meta( $page_id, 'rank_math_canonical_url', true ) : '' );
+        }
+
+        if ( defined( 'WPSEO_VERSION' ) ) {
+            if ( $term !== null ) {
+                $meta        = get_option( 'wpseo_taxonomy_meta', [] );
+                $overrides[] = is_array( $meta ) ? ( $meta[ $term->taxonomy ][ $term->term_id ]['wpseo_canonical'] ?? '' ) : '';
+            } elseif ( $page_id > 0 ) {
+                $overrides[] = get_post_meta( $page_id, '_yoast_wpseo_canonical', true );
+            }
+        }
+
+        foreach ( $overrides as $override ) {
+            if ( is_string( $override ) && trim( $override ) !== '' && untrailingslashit( trim( $override ) ) !== untrailingslashit( $url ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_term_archive_lists_post_type' ) ) {
     /**
      * Whether the archive of a taxonomy's terms lists a post type
@@ -250,7 +295,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_term_archive_url' ) ) {
             $link = get_term_link( $term );
 
             if ( is_string( $link ) && $link !== '' ) {
-                $indexable = (int) get_option( 'blog_public', 1 ) !== 0 && ! jpkcom_postfilter_seo_term_noindex( $term );
+                $indexable = (int) get_option( 'blog_public', 1 ) !== 0
+                    && ! jpkcom_postfilter_seo_term_noindex( $term )
+                    && ! jpkcom_postfilter_seo_canonical_moved( $link, $term, 0 );
 
                 /**
                  * Filter whether a term archive is an indexable canonical target.
@@ -344,11 +391,21 @@ if ( ! function_exists( function: 'jpkcom_postfilter_base_canonical_url' ) ) {
             return $cached;
         }
 
-        $url  = '';
-        $base = jpkcom_postfilter_get_archive_base_url( $post_type );
+        $url     = '';
+        $base    = jpkcom_postfilter_get_archive_base_url( $post_type );
+        $page_id = $post_type === 'post' ? (int) get_option( 'page_for_posts' ) : 0;
+
+        // Without a posts page the base of `post` is home_url('/'). That lists
+        // the posts only when the front page shows them; a static front page
+        // is a page of its own, not the original of a combination.
+        if ( $post_type === 'post' && $page_id <= 0 && get_option( 'show_on_front' ) !== 'posts' ) {
+            $base = '';
+        }
 
         if ( $base !== '' ) {
-            $indexable = (int) get_option( 'blog_public', 1 ) !== 0 && ! jpkcom_postfilter_seo_base_noindex( $post_type );
+            $indexable = (int) get_option( 'blog_public', 1 ) !== 0
+                && ! jpkcom_postfilter_seo_base_noindex( $post_type )
+                && ! jpkcom_postfilter_seo_canonical_moved( $base, null, $page_id );
 
             /**
              * Filter whether the archive base is an indexable canonical target.
