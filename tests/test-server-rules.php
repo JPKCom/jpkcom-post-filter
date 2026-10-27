@@ -111,8 +111,8 @@ if ( ! function_exists( 'sanitize_key' ) ) {
 	function sanitize_key( $k ) { return strtolower( preg_replace( '/[^a-zA-Z0-9_\-]/', '', (string) $k ) ); }
 }
 if ( ! function_exists( 'sanitize_title' ) ) {
-	// Same stub as tests/bootstrap.php: keeps percent escapes like the real one.
-	function sanitize_title( $t ) { return strtolower( preg_replace( '/[^a-zA-Z0-9_\-%]/', '', (string) $t ) ); }
+	// Same stub as tests/bootstrap.php: keeps percent escapes and trims dashes at both ends like the real one.
+	function sanitize_title( $t ) { return trim( strtolower( preg_replace( '/[^a-zA-Z0-9_\-%]/', '', (string) $t ) ), '-' ); }
 }
 if ( ! function_exists( 'sanitize_text_field' ) ) {
 	function sanitize_text_field( $s ) { return is_string( $s ) ? trim( strip_tags( $s ) ) : ''; }

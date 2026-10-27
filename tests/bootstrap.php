@@ -21,8 +21,9 @@ $GLOBALS['__filters']    = [];
 $GLOBALS['__query_vars'] = [];
 
 function sanitize_key( $k ) { return strtolower( preg_replace( '/[^a-zA-Z0-9_\-]/', '', (string) $k ) ); }
-// Keeps percent escapes like the real sanitize_title_with_dashes() does.
-function sanitize_title( $t ) { return strtolower( preg_replace( '/[^a-zA-Z0-9_\-%]/', '', (string) $t ) ); }
+// Keeps percent escapes like the real sanitize_title_with_dashes() does, and
+// trims dashes at both ends like it (sanitize_title( '-' ) is '').
+function sanitize_title( $t ) { return trim( strtolower( preg_replace( '/[^a-zA-Z0-9_\-%]/', '', (string) $t ) ), '-' ); }
 function sanitize_text_field( $s ) { return is_string( $s ) ? trim( strip_tags( $s ) ) : ''; }
 function absint( $v ) { return abs( (int) $v ); }
 function taxonomy_exists( $t ) { return in_array( $t, $GLOBALS['__taxonomies'], true ); }

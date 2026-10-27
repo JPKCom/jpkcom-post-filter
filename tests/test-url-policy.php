@@ -212,6 +212,13 @@ $validate = static fn( string $path, ?array $known = null, array $groups = [ 'ca
 chk( 'raw: a+a+b over cap 2 is per-group',   ( $validate( 'a+a+b' )['reason'] ?? '' ) === 'per-group' );
 chk( 'raw: A+a+b over cap 2 is per-group',   ( $validate( 'A+a+b' )['reason'] ?? '' ) === 'per-group' );
 chk( 'raw: a+-+- over cap 2 is per-group',   ( $validate( 'a+-+-' )['reason'] ?? '' ) === 'per-group' );
+// T1-a: a piece that sanitizes to nothing still counts. Core's
+// sanitize_title( '-' ) is '' (sanitize_title_with_dashes() trims dashes), so
+// a count after sanitizing would see a+b and let a+b+- through at N = 2; the
+// raw count sees three pieces. The precondition makes sure the stub can tell
+// the two apart - with a stub that keeps '-' both counts would reject.
+chk( 'stub precondition: sanitize_title( \'-\' ) is empty, as in core', sanitize_title( '-' ) === '' && sanitize_title( '-a-' ) === 'a' );
+chk( 'raw: a+b+- over cap 2 is per-group (the empty-sanitizing piece counts)', ( $validate( 'a+b+-' )['reason'] ?? '' ) === 'per-group' );
 chk( 'raw: a+a within cap stays ok',         ( $validate( 'a+a' )['action'] ?? '' ) === 'ok' );
 chk( 'raw: a++b empty pieces not counted',   ( $validate( 'a++b' )['action'] ?? '' ) === 'ok' );
 chk( 'raw: +a+b+ empty ends not counted',    ( $validate( '+a+b+' )['action'] ?? '' ) === 'ok' );
