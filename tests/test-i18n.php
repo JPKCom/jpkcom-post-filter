@@ -271,6 +271,38 @@ foreach ( glob( $root . '/languages/*-*.po' ) as $po_path ) {
 		. 'are not being served. Run `wp i18n make-php languages` and `msgfmt` the .mo.'
 	);
 
+	// A translation must use the placeholders its msgid uses - argument numbers
+	// and types, unnumbered ones counted in order. Before 1.7.1 both German
+	// files rendered `For the built-in "post" post type: … %1$s … %2$s` as
+	// `Beitragstyp "%s": … %1$s … %2$s`: the bare %s took argument 1, so the
+	// German showed the Reading settings link where "post" belonged (M-8).
+	// msgfmt -c lets a mix of numbered and bare placeholders through.
+	$placeholders = static function ( string $text ): array {
+		preg_match_all( '/%(?:(\d+)\$)?[-+ 0]*\d*(?:\.\d+)?([bcdeEfFgGosuxX%])/', $text, $m, PREG_SET_ORDER );
+		$out  = [];
+		$next = 1;
+		foreach ( $m as $p ) {
+			if ( $p[2] === '%' ) {
+				continue;
+			}
+			$out[] = ( $p[1] !== '' ? (int) $p[1] : $next++ ) . $p[2];
+		}
+		sort( $out );
+		return $out;
+	};
+	$mismatch = [];
+	foreach ( $translated as $key => $str ) {
+		$id = (string) substr( (string) $key, (int) strrpos( (string) $key, chr( 4 ) ) + ( str_contains( (string) $key, chr( 4 ) ) ? 1 : 0 ) );
+		if ( $placeholders( $id ) !== $placeholders( $str ) ) {
+			$mismatch[] = substr( $id, 0, 60 );
+		}
+	}
+	i18n_chk(
+		$locale . ': every translation uses the placeholders of its msgid',
+		$mismatch === [],
+		count( $mismatch ) . ' translation(s) use other placeholders: ' . implode( ' | ', $mismatch )
+	);
+
 	// Deliberately NOT an assertion. A .l10n.php carrying more than its .po is a
 	// legitimate state in this plugin family - some locales are authored directly
 	// in that format, which is the one WordPress loads first. Failing on it would
