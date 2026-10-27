@@ -69,7 +69,7 @@ try {
 	chk( resp.status() === 200, `archive returns ${ resp.status() }` );
 
 	const before = await page.evaluate( () => ( {
-		articles: document.querySelectorAll( '[data-jpkpf-results] article' ).length,
+		articles: ( document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ).length ? document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ) : document.querySelectorAll( '[data-jpkpf-results] article' ) ).length,
 		buttons:  document.querySelectorAll( '.jpkpf-filter-btn' ).length,
 		url:      location.pathname,
 		firstTerm: document.querySelector( '.jpkpf-filter-btn[data-filter-term]' )
@@ -103,7 +103,7 @@ try {
 	);
 
 	const after = await page.evaluate( () => ( {
-		articles:  document.querySelectorAll( '[data-jpkpf-results] article' ).length,
+		articles:  ( document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ).length ? document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ) : document.querySelectorAll( '[data-jpkpf-results] article' ) ).length,
 		url:       location.pathname,
 		hasMarker: document.body.innerHTML.includes( 'data-jpkpf-zone' ),
 		barExists: !! document.querySelector( '[data-jpkpf-filter-bar]' ),
@@ -121,7 +121,7 @@ try {
 	await wait( 2000 );
 
 	const back = await page.evaluate( () => ( {
-		articles: document.querySelectorAll( '[data-jpkpf-results] article' ).length,
+		articles: ( document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ).length ? document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ) : document.querySelectorAll( '[data-jpkpf-results] article' ) ).length,
 		url:      location.pathname,
 		pressed:  document.querySelectorAll( '.jpkpf-filter-btn[aria-pressed="true"]' ).length,
 	} ) );
@@ -262,12 +262,12 @@ try {
 		};
 		page.on( 'request', on503 );
 		requests.length = 0;
-		const articlesBefore = await page.evaluate( () => document.querySelectorAll( '[data-jpkpf-results] article' ).length );
+		const articlesBefore = await page.evaluate( () => ( document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ).length ? document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ) : document.querySelectorAll( '[data-jpkpf-results] article' ) ).length );
 		await click( a );
 		await wait( 1500 );
 		const busy = await page.evaluate( () => ( {
 			notice:   document.querySelector( '.jpkpf-fetch-error' )?.textContent ?? '',
-			articles: document.querySelectorAll( '[data-jpkpf-results] article' ).length,
+			articles: ( document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ).length ? document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ) : document.querySelectorAll( '[data-jpkpf-results] article' ) ).length,
 		} ) );
 		page.off( 'request', on503 );
 		await page.setRequestInterception( false );
@@ -295,7 +295,7 @@ try {
 		const popped = await page.evaluate( () => ( {
 			url:      location.pathname,
 			pressed:  document.querySelectorAll( '.jpkpf-filter-btn[aria-pressed="true"]' ).length,
-			articles: document.querySelectorAll( '[data-jpkpf-results] article' ).length,
+			articles: ( document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ).length ? document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ) : document.querySelectorAll( '[data-jpkpf-results] article' ) ).length,
 		} ) );
 		chk( popped.url === new URL( SITE ).pathname && popped.pressed === 0 && popped.articles === articlesBefore, `address bar, buttons and list agree after the failed back (${ popped.url }, ${ popped.pressed } pressed, ${ popped.articles } articles)` );
 
@@ -322,9 +322,9 @@ try {
 		const expected = await page.evaluate( async ( u ) => {
 			const r   = await fetch( u, { headers: { 'X-Requested-With': 'XMLHttpRequest' } } );
 			const doc = new DOMParser().parseFromString( await r.text(), 'text/html' );
-			return Array.from( doc.querySelectorAll( '[data-jpkpf-results] article' ) ).map( ( x ) => x.id ).join( ',' );
+			return Array.from( ( doc.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ).length ? doc.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ) : doc.querySelectorAll( '[data-jpkpf-results] article' ) ) ).map( ( x ) => x.id || x.className ).join( ',' );
 		}, new URL( SITE ).origin + dbl.url.replace( /\/?$/, '/' ) + 'jpkpf-fragment/' ).catch( () => '' );
-		const shown = await page.evaluate( () => Array.from( document.querySelectorAll( '[data-jpkpf-results] article' ) ).map( ( x ) => x.id ).join( ',' ) );
+		const shown = await page.evaluate( () => Array.from( ( document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ).length ? document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ) : document.querySelectorAll( '[data-jpkpf-results] article' ) ) ).map( ( x ) => x.id || x.className ).join( ',' ) );
 		chk( dbl.pressed === dbl.url.split( '/' ).filter( Boolean ).pop().split( '+' ).sort().join( ',' ), `buttons match ${ dbl.url } (${ dbl.pressed })` );
 		chk( shown === expected && shown !== '', `the list is the one of ${ dbl.url }` );
 
@@ -358,7 +358,7 @@ try {
 		await wait( 2500 );
 		const announced = await page.evaluate( () => ( {
 			live:     document.querySelector( '[data-jpkpf-live-region]' )?.textContent ?? '',
-			articles: document.querySelectorAll( '[data-jpkpf-results] article' ).length,
+			articles: ( document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ).length ? document.querySelectorAll( '[data-jpkpf-results] .wp-block-post' ) : document.querySelectorAll( '[data-jpkpf-results] article' ) ).length,
 		} ) );
 		chk(
 			announced.articles > 0 && /^\d+ /.test( announced.live ),

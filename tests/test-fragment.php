@@ -443,6 +443,13 @@ check(
 $js = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/post-filter.js' );
 
 check(
+	'the live region counts block theme posts (li.wp-block-post) too (1.7.1)',
+	(bool) preg_match( "/querySelectorAll\\( '\\[data-jpkpf-post\\]' \\)\\.length\\s*\\|\\|\\s*resultZone\\.querySelectorAll\\( '\\.wp-block-post' \\)\\.length\\s*\\|\\|\\s*resultZone\\.querySelectorAll\\( 'article' \\)\\.length/", $js ),
+	'Twenty Twenty-Five renders the inherited query as <li class="wp-block-post">, no <article>: '
+	. 'every successful click was announced without a count.'
+);
+
+check(
 	'popstate falls back to location.href when the entry carries no state',
 	str_contains( $js, "( e.state && e.state.jpkpf ) ? e.state.url : location.href" ),
 	'The history entry created by the initial page load has no state at all. '
