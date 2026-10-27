@@ -49,6 +49,13 @@ define( 'WPSEO_VERSION', '28.2' );
 
 class WP_Error {}
 
+// The main query, for the "no results on page 1" bot page.
+class WP_Query {
+	public array $posts = [ 1 ];
+	public bool $paged  = false;
+	public function is_paged(): bool { return $this->paged; }
+}
+
 // Taxonomy objects: name => public / publicly_queryable.
 $GLOBALS['__tax_objects'] = [
 	'category'   => [ 'public' => true, 'publicly_queryable' => true ],
@@ -515,20 +522,48 @@ $rm_blog_noindex = static function (): void {
 };
 
 row( 'one term, defaults: the term archive', $one, [], 'archive', $zaeune, $if );
-row( 'one term, page 2: the archive, page 1', $one, [], 'archive', $zaeune, $if, 2 );
+// 1.7.1: page 2+ points to itself (was: the archive, page 1).
+row( 'one term, page 2: itself, with the page', $one, [], 'self', $base . 'filter/zaeune/page/2/', $if, 2 );
 row( 'one term, archive noindex: falls back to the filter URL', $one, [], 'self', $base . 'filter/zaeune/', $if, 0, $rm_cat_noindex );
 row( 'one term, archive noindex, nothing indexable: noindex without canonical', $one, [ 'seo_index_max_terms' => 0 ], 'none', '', $ninf, 0, $rm_cat_noindex );
 row( 'one term, nothing indexable: the archive, and the noindex goes', $one, [ 'seo_index_max_terms' => 0 ], 'archive', $zaeune, $inf );
-row( 'one term, filter: self, page 1', $one, [ 'canonical_single' => 'filter' ], 'self', $base . 'filter/zaeune/', $if, 2 );
+// 1.7.1: with the page again (1.7.0: page 1).
+row( 'one term, filter, page 2: itself, with the page', $one, [ 'canonical_single' => 'filter' ], 'self', $base . 'filter/zaeune/page/2/', $if, 2 );
 row( 'one term, off: no canonical, robots as before', $one, [ 'canonical_single' => 'off' ], 'none', '', $if );
 row( 'two terms, defaults: the archive base, index, nofollow', $two, [], 'home', $base, $inf );
 row( 'two groups, defaults: the archive base', [ 'category' => [ 'zaeune' ], 'post_tag' => [ 'privat' ] ], [], 'home', $base, $inf );
-row( 'two terms, page 2: the base, page 1', $two, [], 'home', $base, $inf, 2 );
+// 1.7.1: a self canonical lifts no noindex - page 2 of a combination is noindex again.
+row( 'two terms, page 2: noindex, no canonical', $two, [], 'none', '', $ninf, 2 );
 row( 'two terms, base noindex: falls back to filter, which is noindex', $two, [], 'none', '', $ninf, 0, $rm_blog_noindex );
 row( 'two terms, filter: as in 1.6.1', $two, [ 'canonical_multi' => 'filter' ], 'none', '', $ninf );
-row( 'two terms, filter, two indexable: self, page 1', $two, [ 'canonical_multi' => 'filter', 'seo_index_max_terms' => 2 ], 'self', $base . 'filter/sichtschutz+zaeune/', $if, 2 );
+row( 'two terms, filter, two indexable, page 2: itself, with the page', $two, [ 'canonical_multi' => 'filter', 'seo_index_max_terms' => 2 ], 'self', $base . 'filter/sichtschutz+zaeune/page/2/', $if, 2 );
 row( 'two terms, off: no canonical, robots as before', $two, [ 'canonical_multi' => 'off' ], 'none', '', $ninf );
 row( 'an unknown term: a bot page, whatever the settings', [ 'category' => [ 'gibt-es-nicht' ] ], [], 'none', '', $ninf );
+row( 'one term, page 2, single off: no canonical', $one, [ 'canonical_single' => 'off' ], 'none', '', $if, 2 );
+row( 'one term, page 2, nothing indexable: noindex', $one, [ 'seo_index_max_terms' => 0 ], 'none', '', $ninf, 2 );
+row( 'two terms, page 2, two indexable: itself, with the page', $two, [ 'seo_index_max_terms' => 2 ], 'self', $base . 'filter/sichtschutz+zaeune/page/2/', $if, 2 );
+row( 'two terms, two indexable, page 1: the base, index, follow', $two, [ 'seo_index_max_terms' => 2 ], 'home', $base, $if );
+row( 'one term, nothing indexable, single off: noindex, no canonical', $one, [ 'seo_index_max_terms' => 0, 'canonical_single' => 'off' ], 'none', '', $ninf );
+row(
+	'no results on page 1: a bot page',
+	$one, [], 'none', '', $ninf, 0,
+	static function (): void { $GLOBALS['wp_query'] = new WP_Query(); $GLOBALS['wp_query']->posts = []; }
+);
+unset( $GLOBALS['wp_query'] );
+
+// 1.7.1: the canonical filter decides inside the decision - an empty value is no canonical.
+seo_reset();
+$GLOBALS['__run_filters']['jpkcom_postfilter_canonical'] = static fn( string $url, string $kind = '' ): string => $kind === 'home' ? '' : $url;
+as_filter_page( $two );
+$d = call( 'jpkcom_postfilter_canonical_decision' );
+chk( 'an empty filtered canonical makes the decision none (1.7.1)', is_array( $d ) && $d['kind'] === 'none' && $d['url'] === '', json_encode( $d ) );
+chk( '... no canonical', call( 'jpkcom_postfilter_canonical_url' ) === '' );
+chk( '... and the term-count noindex stays', call( 'jpkcom_postfilter_robots_directives' ) === $ninf, json_encode( call( 'jpkcom_postfilter_robots_directives' ) ) );
+$GLOBALS['__run_filters']['jpkcom_postfilter_canonical'] = static fn( string $url ): string => 'https://example.test/eigene-url/';
+$d = call( 'jpkcom_postfilter_canonical_decision' );
+chk( 'a filtered canonical is used as it is', call( 'jpkcom_postfilter_canonical_url' ) === 'https://example.test/eigene-url/' && call( 'jpkcom_postfilter_robots_directives' ) === $inf, json_encode( $d ) );
+unset( $GLOBALS['__run_filters']['jpkcom_postfilter_canonical'] );
+
 
 seo_reset();
 as_filter_page( [] );
@@ -551,6 +586,15 @@ $GLOBALS['__run_filters']['jpkcom_postfilter_canonical'] = static function ( str
 as_filter_page( $two );
 call( 'jpkcom_postfilter_canonical_url' );
 chk( 'jpkcom_postfilter_canonical gets the kind and the filters', $seen === [ 'home', $two ], json_encode( $seen ) );
+unset( $GLOBALS['__run_filters']['jpkcom_postfilter_canonical'] );
+
+// A callback that asks for the canonical itself must not recurse forever.
+$GLOBALS['__run_filters']['jpkcom_postfilter_canonical'] = static function ( string $url ): string {
+	$inner = jpkcom_postfilter_canonical_url();
+	return is_string( $inner ) && $inner !== '' ? $url : $url;
+};
+as_filter_page( $one );
+chk( 'a canonical filter that asks for the canonical itself does not recurse', call( 'jpkcom_postfilter_canonical_url' ) === $zaeune );
 unset( $GLOBALS['__run_filters']['jpkcom_postfilter_canonical'] );
 
 // ---------------------------------------------------------------------------
