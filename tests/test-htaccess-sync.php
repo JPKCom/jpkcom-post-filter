@@ -265,15 +265,32 @@ function jpkcom_postfilter_archive_base_urls_all_languages( string $post_type ):
  * on as JSON, so nothing is parsed out of SQL text.
  */
 final class Jpkpf_Wpdb {
-	public string $options = 'wp_options';
-	public array $log      = [];
+	public string $options    = 'wp_options';
+	public array $log         = [];
+	public string $last_error = '';
+	/** Statements that fail like a broken options table: 'INSERT', 'SELECT', ... ([] = none). */
+	public array $fail        = [];
 
 	public function prepare( string $query, ...$args ): string {
 		return (string) json_encode( [ $query, $args ] );
 	}
+	/** What wpdb::query() does on a database error: last_error set, false back. */
+	private function failed( string $q ): bool {
+		foreach ( $this->fail as $verb ) {
+			if ( str_starts_with( $q, $verb ) ) {
+				$this->last_error = "Table 'wp.wp_options' doesn't exist";
+				return true;
+			}
+		}
+		$this->last_error = '';
+		return false;
+	}
 	public function query( string $prepared ) {
 		[ $q, $a ]   = json_decode( $prepared, true );
 		$this->log[] = $q;
+		if ( $this->failed( $q ) ) {
+			return false;
+		}
 		$rows        = &$GLOBALS['__options'];
 		if ( str_starts_with( $q, 'INSERT IGNORE' ) ) {         // name, value
 			if ( array_key_exists( $a[0], $rows ) ) {
@@ -301,6 +318,9 @@ final class Jpkpf_Wpdb {
 	public function get_var( string $prepared ) {
 		[ $q, $a ]   = json_decode( $prepared, true );
 		$this->log[] = $q;
+		if ( $this->failed( $q ) ) {
+			return null;
+		}
 		$v           = $GLOBALS['__options'][ $a[0] ] ?? null;
 		return $v === null ? null : (string) $v;
 	}
@@ -1631,6 +1651,38 @@ if ( $have ) {
 	$GLOBALS['wpdb']->log = [];
 	save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 	chk( 'not managed: no lock, not a single query', $GLOBALS['wpdb']->log === [] && ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+
+	// M-6: a database error is not another request's lock. INSERT IGNORE turns
+	// a duplicate key into a warning, so an error means the statement failed -
+	// refused with its own reason, not "another save is running".
+	foreach ( [ 'INSERT' => [ 'INSERT' ], 'INSERT + SELECT' => [ 'INSERT', 'SELECT' ] ] as $label => $fail ) {
+		site( general() );
+		$file_was  = bytes( htaccess() );
+		$stored    = $GLOBALS['__options']['jpkcom_postfilter_general'];
+		$cache_was = cache_array( 'general' );
+		$GLOBALS['wpdb']->fail = $fail;
+		$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+		$GLOBALS['wpdb']->fail = [];
+		$msg = (string) ( $GLOBALS['__errors'][0]['message'] ?? '' );
+		chk( "M-6 lock statement fails ({$label}): refused with the database reason, not 'another save'",
+			$ok === false && str_contains( $msg, 'database' ) && ! str_contains( $msg, 'another save' ), $msg );
+		chk( "M-6 ({$label}): option, cache file and .htaccess unchanged, no lock row",
+			$GLOBALS['__options']['jpkcom_postfilter_general'] === $stored && cache_array( 'general' ) === $cache_was
+			&& bytes( htaccess() ) === $file_was && ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+	}
+
+	// M-6: a lock another request has taken over (ours went stale) is not ours
+	// any more; save_unlock() leaves its row and forgets that it held one.
+	site( general() );
+	call( 'jpkcom_postfilter_htaccess_save_lock' );
+	$GLOBALS['__options'][ LOCK ] = time() . '|X';
+	call( 'jpkcom_postfilter_htaccess_save_unlock' );
+	chk( 'M-6 lock taken over by another request: unlock leaves its row and resets the taken flag',
+		( $GLOBALS['__options'][ LOCK ] ?? '' ) === time() . '|X' && call( 'jpkcom_postfilter_htaccess_save_lock_taken' ) === false );
+	$GLOBALS['wpdb']->log = [];
+	call( 'jpkcom_postfilter_htaccess_save_unlock' );
+	chk( 'M-6 after that, unlock on further option events sends no query', $GLOBALS['wpdb']->log === [] );
+	unset( $GLOBALS['__options'][ LOCK ] );
 
 	// I-1: B loaded its options before A committed (alloptions at request
 	// start), so B's get_option() still says N5 after A stored N2. B's refused

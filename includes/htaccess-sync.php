@@ -630,12 +630,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_refusal_message' )
      * markers are fixed by hand, a manual block next to the managed one is
      * deleted, a read-only file is made writable, an unreadable one readable.
      *
-     * @param string $reason `busy`, `write-unrestored`, `damaged`, `not-readable`, `manual-block`, `not-writable`, `write-failed`, or a reason from jpkcom_postfilter_htaccess_available().
+     * @param string $reason `busy`, `db-error`, `write-unrestored`, `damaged`, `not-readable`, `manual-block`, `not-writable`, `write-failed`, or a reason from jpkcom_postfilter_htaccess_available().
      * @return string
      */
     function jpkcom_postfilter_htaccess_refusal_message( string $reason ): string {
         if ( $reason === 'busy' ) {
             return __( 'Settings not saved: another save of the JPKCom Post Filter settings is updating the .htaccess rules at this moment, and two saves at once could leave the rules stricter than the plugin. Wait a few seconds, then save again.', 'jpkcom-post-filter' );
+        }
+        if ( $reason === 'db-error' ) {
+            return __( 'Settings not saved: the database answered with an error when the plugin tried to reserve the .htaccess rules for this save, so it could not rule out a second save at the same time. Check the database (the options table), then save again.', 'jpkcom-post-filter' );
         }
 
         $reasons = [
@@ -737,13 +740,16 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_lock_taken' )
      * @return bool
      */
     function jpkcom_postfilter_htaccess_save_lock_taken( ?bool $set = null ): bool {
-        static $taken = false;
+        static $taken = [];
 
+        // Keyed by the request id: one per request in WordPress, and the
+        // tests play two requests in one process.
+        $rid = jpkcom_postfilter_htaccess_request_id();
         if ( $set !== null ) {
-            $taken = $set;
+            $taken[ $rid ] = $set;
         }
 
-        return $taken;
+        return $taken[ $rid ] ?? false;
     }
 }
 
@@ -771,33 +777,48 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_lock' ) ) {
      * Without $wpdb (never the case in WordPress) there is nothing to lock
      * with, and the save goes on.
      *
+     * A statement that fails (`$wpdb->last_error`, a false result) is not
+     * another request's lock: INSERT IGNORE turns a duplicate key into a
+     * warning, so an error means the options table could not be used. That
+     * is `db-error` (M-6) - before, it ended as `busy`, and the admin was told
+     * to wait for a save that did not exist.
+     *
      * @since 1.7.1
      *
-     * @return bool False when another request holds it.
+     * @return string '' when this request holds it now, `busy` when another
+     *                request holds it, `db-error` when a statement failed.
      */
-    function jpkcom_postfilter_htaccess_save_lock(): bool {
+    function jpkcom_postfilter_htaccess_save_lock(): string {
         global $wpdb;
         static $shutdown = false;
 
         if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
-            return true;
+            return '';
         }
 
-        $name  = 'jpkcom_postfilter_htaccess_save_lock';
-        $mine  = jpkcom_postfilter_htaccess_request_id();
-        $now   = time();
-        $value = $now . '|' . $mine;
-        $taken = false;
+        $name   = 'jpkcom_postfilter_htaccess_save_lock';
+        $mine   = jpkcom_postfilter_htaccess_request_id();
+        $now    = time();
+        $value  = $now . '|' . $mine;
+        $taken  = false;
+        $failed = static fn( mixed $result ): bool => $result === false || (string) ( $wpdb->last_error ?? '' ) !== '';
 
         // Twice: the holder may release it between the INSERT and the SELECT.
         for ( $try = 0; $try < 2 && ! $taken; $try++ ) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the table name only
-            if ( (int) $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO `{$wpdb->options}` ( `option_name`, `option_value`, `autoload` ) VALUES ( %s, %s, 'off' )", $name, $value ) ) === 1 ) {
+            $inserted = $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO `{$wpdb->options}` ( `option_name`, `option_value`, `autoload` ) VALUES ( %s, %s, 'off' )", $name, $value ) );
+            if ( $failed( $inserted ) ) {
+                return 'db-error';
+            }
+            if ( (int) $inserted === 1 ) {
                 $taken = true;
                 break;
             }
 
             $row = jpkcom_postfilter_htaccess_save_lock_row();
+            if ( (string) ( $wpdb->last_error ?? '' ) !== '' ) {
+                return 'db-error';
+            }
             if ( $row === null ) {
                 continue;
             }
@@ -805,15 +826,19 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_lock' ) ) {
 
             if ( $owner === $mine ) {
                 jpkcom_postfilter_htaccess_save_lock_taken( set: true );
-                return true;
+                return '';
             }
             if ( $since > $now - 60 ) {
-                return false;
+                return 'busy';
             }
 
             // Stale: replace exactly that value, so of two takers only one wins.
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the table name only
-            $taken = (int) $wpdb->query( $wpdb->prepare( "UPDATE `{$wpdb->options}` SET `option_value` = %s WHERE `option_name` = %s AND `option_value` = %s", $value, $name, $held ) ) === 1;
+            $updated = $wpdb->query( $wpdb->prepare( "UPDATE `{$wpdb->options}` SET `option_value` = %s WHERE `option_name` = %s AND `option_value` = %s", $value, $name, $held ) );
+            if ( $failed( $updated ) ) {
+                return 'db-error';
+            }
+            $taken = (int) $updated === 1;
             break;
         }
 
@@ -825,7 +850,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_lock' ) ) {
             }
         }
 
-        return $taken;
+        return $taken ? '' : 'busy';
     }
 }
 
@@ -849,14 +874,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_unlock' ) ) {
         }
 
         $row = jpkcom_postfilter_htaccess_save_lock_row();
-        if ( $row === null ) {
-            jpkcom_postfilter_htaccess_save_lock_taken( set: false );
-            return;
-        }
-        if ( $row[2] !== jpkcom_postfilter_htaccess_request_id() ) {
-            return;
-        }
+        // Gone, or taken over by another request once ours went stale: either
+        // way this request holds nothing any more (M-6 - the flag stayed set
+        // after a takeover, and every later option event sent a query).
         jpkcom_postfilter_htaccess_save_lock_taken( set: false );
+        if ( $row === null || $row[2] !== jpkcom_postfilter_htaccess_request_id() ) {
+            return;
+        }
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the table name only
         $wpdb->query( $wpdb->prepare( "DELETE FROM `{$wpdb->options}` WHERE `option_name` = %s AND `option_value` = %s", 'jpkcom_postfilter_htaccess_save_lock', $row[0] ) );
@@ -918,8 +942,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_prepare_save' ) ) 
             }
         }
 
-        if ( ! jpkcom_postfilter_htaccess_save_lock() && ! jpkcom_postfilter_htaccess_without_refusal() ) {
-            $result = [ 'ok' => false, 'reason' => 'busy' ];
+        // Taken inside jpkcom_postfilter_htaccess_without_refusal() too; only
+        // its answer does not count there.
+        $lock = jpkcom_postfilter_htaccess_save_lock();
+        if ( $lock !== '' && ! jpkcom_postfilter_htaccess_without_refusal() ) {
+            $result = [ 'ok' => false, 'reason' => $lock ];
         } else {
             // "Current" three times over: what the plugin runs with (the settings
             // cache file first) and what is stored. They differ during a save - the
