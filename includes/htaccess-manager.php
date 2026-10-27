@@ -199,13 +199,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_state' ) ) {
      */
     function jpkcom_postfilter_htaccess_state( string $file ): array {
         $state = [
-            'exists'   => false,
-            'writable' => false,
-            'readable' => false,
-            'managed'  => false,
-            'manual'   => false,
-            'hash'     => null,
-            'wp_block' => false,
+            'exists'    => false,
+            'writable'  => false,
+            'readable'  => false,
+            'managed'   => false,
+            'manual'    => false,
+            'hash'      => null,
+            'wp_block'  => false,
             'damaged'   => false,
             'misplaced' => false,
         ];
@@ -224,10 +224,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_state' ) ) {
         }
         $state['readable'] = true;
 
-        $parsed            = jpkcom_postfilter_htaccess_parse( content: $content );
-        $state['manual']   = $parsed['manual'];
-        $state['damaged']  = $parsed['damaged'];
-        $state['wp_block'] = $parsed['wp'] !== null;
+        $parsed             = jpkcom_postfilter_htaccess_parse( content: $content );
+        $state['manual']    = $parsed['manual'];
+        $state['damaged']   = $parsed['damaged'];
+        $state['wp_block']  = $parsed['wp'] !== null;
         $state['managed']   = ! $parsed['damaged'] && $parsed['blocks'] !== [];
         $state['misplaced'] = $state['managed'] && $parsed['misplaced'];
 
@@ -454,9 +454,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_write' ) ) {
      * further copy of it) - unless it sits below `# BEGIN WordPress`, where it
      * never takes effect: then it is removed there and the block goes directly
      * before WordPress's (ruling R15). Without a managed block it is inserted
-     * directly before `# BEGIN WordPress`, or at the top when there is none. Refuses (false,
-     * nothing written) when the file is missing, holds a manual block, holds
-     * managed markers that do not pair up, or `$block` is not a managed block.
+     * directly before `# BEGIN WordPress`, or at the top when there is none.
+     * Refuses (false, nothing written) when the file is missing, holds a
+     * manual block, holds managed markers that do not pair up, or `$block` is
+     * not a managed block.
      *
      * @since 1.6.0
      *

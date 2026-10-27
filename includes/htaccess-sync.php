@@ -849,7 +849,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_prepare_save' ) ) 
      * removes an orphaned managed block (markers in the file without the
      * option). On failure adds a settings error for `$setting` (default: the
      * messages of the option's admin page), a warning under WP-CLI - or,
-     * otherwise outside wp-admin, a debug log line - and returns false: the caller must then not save. Inside
+     * otherwise outside wp-admin, a debug log line - and returns false: the
+     * caller must then not save. Inside
      * jpkcom_postfilter_htaccess_without_refusal() it never returns false.
      *
      * First it takes the save lock (jpkcom_postfilter_htaccess_save_lock());
@@ -1059,11 +1060,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_maybe_resync' ) ) 
      * A block below WordPress's (it never takes effect) is moved, too. Only on
      * admin page loads - not on admin-ajax (heartbeat), REST or cron requests
      * (ruling R18), and only for a user who can manage_options (not for an
-     * anonymous request to admin-post.php). Known limit: a constant that loosens between two requests
-     * leaves the block stricter until the next admin page load. No write while
-     * another request is between its loosen and its tighten (T9-d): this
-     * request may still read the values before that save, and the save's
-     * own tighten writes the current state anyway.
+     * anonymous request to admin-post.php). Known limit: a constant that
+     * loosens between two requests leaves the block stricter until the next
+     * admin page load. No write while another request is between its loosen
+     * and its tighten (T9-d): this request may still read the values before
+     * that save, and the save's own tighten writes the current state anyway.
      *
      * Cheapest first, since this runs on every admin page (1.7.1): the site
      * checks before the managed flag (not autoloaded, so a query - T9-b),
