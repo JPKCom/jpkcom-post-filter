@@ -857,7 +857,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_lock' ) ) {
             jpkcom_postfilter_htaccess_save_lock_taken( set: true );
             if ( ! $shutdown ) {
                 $shutdown = true;
-                register_shutdown_function( 'jpkcom_postfilter_htaccess_save_unlock' );
+                register_shutdown_function( 'jpkcom_postfilter_htaccess_save_unlock', true );
             }
         }
 
@@ -871,18 +871,27 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_unlock' ) ) {
      * Release the save lock, if this request holds it
      *
      * Deletes exactly the value this request wrote: a lock another request
-     * has taken over meanwhile stays.
+     * has taken over meanwhile stays. While an import holds it
+     * (jpkcom_postfilter_htaccess_save_lock_held()) only `$force` - the
+     * shutdown function - releases it.
      *
      * @since 1.7.1
      *
+     * @param bool $force Release a lock held for an import, too.
      * @return void
      */
-    function jpkcom_postfilter_htaccess_save_unlock(): void {
+    function jpkcom_postfilter_htaccess_save_unlock( bool $force = false ): void {
         global $wpdb;
 
         if ( ! jpkcom_postfilter_htaccess_save_lock_taken() ) {
             return;
         }
+        // Held for a whole import (M-5): only its end - or the shutdown
+        // function, after a fatal error in between - lets it go.
+        if ( jpkcom_postfilter_htaccess_save_lock_held() && ! $force ) {
+            return;
+        }
+        jpkcom_postfilter_htaccess_save_lock_held( set: false );
 
         $row = jpkcom_postfilter_htaccess_save_lock_row();
         // Gone, or taken over by another request once ours went stale: either
@@ -911,6 +920,114 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_locked_elsewh
         $row = jpkcom_postfilter_htaccess_save_lock_row();
 
         return $row !== null && $row[2] !== jpkcom_postfilter_htaccess_request_id() && $row[1] > time() - 60;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_guarded' ) ) {
+    /**
+     * Is there a block a save has to keep in step - and lock for?
+     *
+     * The option `jpkcom_postfilter_htaccess_managed`, or managed markers in
+     * the file without it (a removal that failed must not leave a block
+     * nothing guards).
+     *
+     * @since 1.7.1
+     *
+     * @return array{guarded: bool, managed: bool} `managed`: the option says so.
+     */
+    function jpkcom_postfilter_htaccess_guarded(): array {
+        if ( jpkcom_postfilter_htaccess_is_managed() ) {
+            return [ 'guarded' => true, 'managed' => true ];
+        }
+        $state = jpkcom_postfilter_htaccess_state( file: jpkcom_postfilter_htaccess_file() );
+
+        return [ 'guarded' => $state['managed'] || $state['damaged'], 'managed' => false ];
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_lock_held' ) ) {
+    /**
+     * Is the save lock held for a whole import right now?
+     *
+     * While it is, the release points of a single save (after the tighten,
+     * after one option of the import) leave the lock alone;
+     * jpkcom_postfilter_htaccess_import_end() releases it.
+     *
+     * @since 1.7.1
+     *
+     * @param bool|null $set New state, or null to read.
+     * @return bool
+     */
+    function jpkcom_postfilter_htaccess_save_lock_held( ?bool $set = null ): bool {
+        static $held = [];
+
+        // Keyed by the request id: the tests play two requests in one process.
+        $rid = jpkcom_postfilter_htaccess_request_id();
+        if ( $set !== null ) {
+            $held[ $rid ] = $set;
+        }
+
+        return $held[ $rid ] ?? false;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_import_begin' ) ) {
+    /**
+     * Take the save lock for a whole import, before its first option (M-5)
+     *
+     * An import saves General and Filter Groups one after the other. Taken
+     * and released per option, the lock was free in between: another save
+     * could take it, and the import was refused half way - General imported,
+     * Filter Groups not. Now it is taken once and held until
+     * jpkcom_postfilter_htaccess_import_end(); when another request holds it
+     * (or the lock statement fails), the whole import is refused: an error
+     * for `$setting`, nothing imported.
+     *
+     * Nothing to lock - no General or Filter Groups in the data, or no block
+     * to guard - is true without a query.
+     *
+     * @since 1.7.1
+     *
+     * @param array<string, mixed> $data    The decoded import, group => settings.
+     * @param string               $setting Settings error slug.
+     * @return bool True when the import may run.
+     */
+    function jpkcom_postfilter_htaccess_import_begin( array $data, string $setting ): bool {
+        $shapes_rule = ( isset( $data['general'] ) && is_array( $data['general'] ) )
+            || ( isset( $data['filter_groups'] ) && is_array( $data['filter_groups'] ) );
+        if ( ! $shapes_rule || ! jpkcom_postfilter_htaccess_guarded()['guarded'] ) {
+            return true;
+        }
+
+        $lock = jpkcom_postfilter_htaccess_save_lock();
+        if ( $lock === '' ) {
+            jpkcom_postfilter_htaccess_save_lock_held( set: true );
+            return true;
+        }
+
+        if ( function_exists( function: 'add_settings_error' ) ) {
+            add_settings_error( $setting, 'jpkcom_postfilter_htaccess', jpkcom_postfilter_htaccess_refusal_message( reason: $lock ), 'error' );
+        }
+
+        return false;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_import_end' ) ) {
+    /**
+     * Release the save lock an import held (M-5)
+     *
+     * @since 1.7.1
+     *
+     * @return void
+     */
+    function jpkcom_postfilter_htaccess_import_end(): void {
+        jpkcom_postfilter_htaccess_save_lock_held( set: false );
+        jpkcom_postfilter_htaccess_save_unlock();
     }
 }
 
@@ -945,13 +1062,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_prepare_save' ) ) 
         }
         // Managed: the option, or managed markers in the file without it (a
         // removal that failed must not leave a block nothing guards).
-        $managed = jpkcom_postfilter_htaccess_is_managed();
-        if ( ! $managed ) {
-            $state = jpkcom_postfilter_htaccess_state( file: jpkcom_postfilter_htaccess_file() );
-            if ( ! $state['managed'] && ! $state['damaged'] ) {
-                return true;
-            }
+        $guarded = jpkcom_postfilter_htaccess_guarded();
+        if ( ! $guarded['guarded'] ) {
+            return true;
         }
+        $managed = $guarded['managed'];
 
         // Taken inside jpkcom_postfilter_htaccess_without_refusal() too; only
         // its answer does not count there.

@@ -1674,6 +1674,77 @@ if ( $have ) {
 		chk( "M-1 {$label} once the lock is gone: writes (N2)", n_of( bytes( htaccess() ) ) === 'N2', n_of( bytes( htaccess() ) ) );
 	}
 
+	// M-5: an import saves General and Filter Groups one after the other. It
+	// takes the save lock once, before the first group, and keeps it until the
+	// last: released in between, another save can take it, and the import is
+	// refused half way - General imported, Filter Groups not.
+	$import = static function ( array $data ): bool {   // jpkcom_postfilter_page_import_export(), its loop
+		if ( function_exists( 'jpkcom_postfilter_htaccess_import_begin' ) && ! jpkcom_postfilter_htaccess_import_begin( $data, 'jpkcom_postfilter_import_messages' ) ) {
+			return false;
+		}
+		try {
+			foreach ( [ 'general', 'layout', 'cache', 'filter_groups' ] as $group ) {
+				if ( isset( $data[ $group ] ) && is_array( $data[ $group ] ) ) {
+					if ( ! jpkcom_postfilter_htaccess_prepare_save( option: 'jpkcom_postfilter_' . $group, raw: $data[ $group ], setting: 'jpkcom_postfilter_import_messages' ) ) {
+						continue;
+					}
+					jpkcom_postfilter_settings_write_file( $group, $data[ $group ] );   // the sanitizer's cache write
+					jpkcom_postfilter_settings_memo_reset();
+					jpkcom_postfilter_settings_save( $group, $data[ $group ] );
+				}
+			}
+		} finally {
+			if ( function_exists( 'jpkcom_postfilter_htaccess_import_end' ) ) {
+				jpkcom_postfilter_htaccess_import_end();
+			}
+		}
+		return true;
+	};
+	$data = [ 'general' => general( [ 'max_filters_per_group' => 3 ] ), 'filter_groups' => $three_groups ];
+
+	site( general() );
+	$x_got = null;
+	$x     = static function ( string $group ) use ( &$x_got ): void {
+		if ( $group === 'general' && $x_got === null ) {
+			$GLOBALS['__request_id'] = 'X';
+			$x_got = call( 'jpkcom_postfilter_htaccess_save_lock' );
+			$GLOBALS['__request_id'] = 'A';
+		}
+	};
+	add_action( 'jpkcom_postfilter_settings_saved', $x, 20, 1 );
+	$import( $data );
+	remove_action( 'jpkcom_postfilter_settings_saved', $x, 20 );
+	chk( 'M-5 import: another save between General and Filter Groups finds the lock held (busy)', $x_got === 'busy', json_encode( $x_got ) );
+	chk( 'M-5 import: not half-applied - General (N3) and Filter Groups (3 groups) both stored, no error',
+		( $GLOBALS['__options']['jpkcom_postfilter_general']['max_filters_per_group'] ?? null ) === 3
+		&& count( $GLOBALS['__options']['jpkcom_postfilter_filter_groups']['groups'] ?? [] ) === 3 && $GLOBALS['__errors'] === [],
+		json_encode( [ $GLOBALS['__options']['jpkcom_postfilter_general']['max_filters_per_group'] ?? null, count( $GLOBALS['__options']['jpkcom_postfilter_filter_groups']['groups'] ?? [] ), $GLOBALS['__errors'] ] ) );
+	chk( 'M-5 import done: block follows (N3, 3 groups), lock released',
+		rule_hash( bytes( htaccess() ) ) === jpkcom_postfilter_server_rule_inputs()['hash'] && ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+	unset( $GLOBALS['__options'][ LOCK ] );
+
+	// Busy before the first group: the whole import is refused, nothing stored.
+	site( general() );
+	$GLOBALS['__options'][ LOCK ] = time() . '|X';
+	$before = $GLOBALS['__options'];
+	$cache_was = [ cache_array( 'general' ), cache_array( 'filter_groups' ) ];
+	$file_was  = bytes( htaccess() );
+	$ran = $import( $data );
+	chk( 'M-5 import while another save holds the lock: refused as a whole with the "another save" text, nothing stored',
+		$ran === false && $GLOBALS['__options'] === $before && [ cache_array( 'general' ), cache_array( 'filter_groups' ) ] === $cache_was && bytes( htaccess() ) === $file_was
+		&& count( $GLOBALS['__errors'] ) === 1 && str_contains( (string) ( $GLOBALS['__errors'][0]['message'] ?? '' ), 'another save' )
+		&& ( $GLOBALS['__errors'][0]['setting'] ?? '' ) === 'jpkcom_postfilter_import_messages',
+		json_encode( [ $ran, $GLOBALS['__errors'] ] ) );
+	unset( $GLOBALS['__options'][ LOCK ] );
+
+	// The page calls them: begin before the loop, end after it.
+	$src      = (string) file_get_contents( __DIR__ . '/../includes/admin-pages.php' );
+	$at_begin = strpos( $src, 'jpkcom_postfilter_htaccess_import_begin(' );
+	$at_loop  = strpos( $src, 'foreach ( $valid_groups as $group )' );
+	$at_end   = strpos( $src, 'jpkcom_postfilter_htaccess_import_end()' );
+	chk( 'M-5 admin-pages.php: the import takes the lock before its loop and releases it after',
+		$at_begin !== false && $at_loop !== false && $at_end !== false && $at_begin < $at_loop && $at_loop < $at_end );
+
 	// M-6: a database error is not another request's lock. INSERT IGNORE turns
 	// a duplicate key into a warning, so an error means the statement failed -
 	// refused with its own reason, not "another save is running".

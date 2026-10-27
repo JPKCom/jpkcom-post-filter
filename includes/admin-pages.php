@@ -2652,6 +2652,15 @@ function jpkcom_postfilter_page_import_export(): void {
                     'filter_groups' => 'jpkcom_postfilter_sanitize_filter_groups_settings',
                 ];
 
+                // 1.7.1 (M-5): one save lock for the whole import, so another
+                // save cannot take it between two groups and leave the import
+                // half applied. Busy: nothing is imported (the error says why).
+                $may_import = ! function_exists( 'jpkcom_postfilter_htaccess_import_begin' )
+                    || jpkcom_postfilter_htaccess_import_begin( $data, 'jpkcom_postfilter_import_messages' );
+                if ( ! $may_import ) {
+                    $valid_groups = [];
+                }
+
                 foreach ( $valid_groups as $group ) {
                     if ( isset( $data[ $group ] ) && is_array( $data[ $group ] ) ) {
                         // 1.6.0: the sanitizer below writes the settings cache file, so a
@@ -2673,12 +2682,18 @@ function jpkcom_postfilter_page_import_export(): void {
                     }
                 }
 
-                $import_message = sprintf(
-                    /* translators: %d: number of imported settings groups */
-                    __( 'Successfully imported %d settings groups.', 'jpkcom-post-filter' ),
-                    $imported
-                );
-                add_settings_error( 'jpkcom_postfilter_import_messages', 'imported', $import_message, 'success' );
+                if ( function_exists( 'jpkcom_postfilter_htaccess_import_end' ) ) {
+                    jpkcom_postfilter_htaccess_import_end();
+                }
+
+                if ( $may_import ) {
+                    $import_message = sprintf(
+                        /* translators: %d: number of imported settings groups */
+                        __( 'Successfully imported %d settings groups.', 'jpkcom-post-filter' ),
+                        $imported
+                    );
+                    add_settings_error( 'jpkcom_postfilter_import_messages', 'imported', $import_message, 'success' );
+                }
             } else {
                 add_settings_error( 'jpkcom_postfilter_import_messages', 'invalid', __( 'Invalid JSON file. Import aborted.', 'jpkcom-post-filter' ), 'error' );
             }
