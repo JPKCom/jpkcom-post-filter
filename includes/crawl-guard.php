@@ -821,6 +821,21 @@ add_filter( 'wpseo_canonical', static function ( $canonical ) {
     return $url !== '' ? $url : false;
 }, 99 );
 
+/**
+ * A filter page past its last page stays a 404
+ *
+ * WordPress's canonical redirect does not know the filter path: for
+ * `/blog/filter/x/page/99/` it answered 301 to the unfiltered `/blog/`, while
+ * `/blog/page/99/` and `/category/x/page/99/` are a 404 (measured in the
+ * 1.7.1 lab). Only a filter request that is a 404 loses the redirect; on
+ * existing filter pages it keeps its work (trailing slash and the like).
+ *
+ * @since 1.7.1
+ */
+add_filter( 'redirect_canonical', static function ( $redirect_url ) {
+    return jpkcom_postfilter_is_filter_request() && is_404() ? false : $redirect_url;
+}, 99 );
+
 // Rank Math's and Yoast's prev/next on a filter page point into the unfiltered
 // archive (Yoast since 1.7.1: page 2+ of a filter page is indexable now).
 add_filter( 'rank_math/frontend/disable_adjacent_rel_links', static function ( $disable ) {

@@ -48,6 +48,7 @@ define( 'RANK_MATH_VERSION', '1.0.280' );
 define( 'WPSEO_VERSION', '28.2' );
 
 class WP_Error {}
+function is_404() { return (bool) ( $GLOBALS['__is_404'] ?? false ); }
 
 // The main query, for the "no results on page 1" bot page.
 class WP_Query {
@@ -671,6 +672,19 @@ as_filter_page( $one );
 chk( 'Yoast adjacent rel links are off on a filter page', run_cbs( 'wpseo_disable_adjacent_rel_links', false ) === true );
 as_filter_page( [] );
 chk( '... and untouched elsewhere', run_cbs( 'wpseo_disable_adjacent_rel_links', false ) === false );
+
+// A filter page past its last page is a 404 like /blog/page/99/; WordPress's
+// canonical redirect sent it with a 301 to the unfiltered blog (1.7.1).
+seo_reset();
+as_filter_page( $one, 99 );
+$GLOBALS['__is_404'] = true;
+chk( 'a filter page past the last page: no canonical redirect (stays a 404)', run_cbs( 'redirect_canonical', 'https://example.test/blog/' ) === false );
+$GLOBALS['__is_404'] = false;
+chk( '... a filter page that exists keeps WordPress\'s canonical redirect (trailing slash etc.)', run_cbs( 'redirect_canonical', 'https://example.test/blog/filter/zaeune' ) === 'https://example.test/blog/filter/zaeune' );
+as_filter_page( [] );
+$GLOBALS['__is_404'] = true;
+chk( '... and a 404 outside the filter pages is left to WordPress', run_cbs( 'redirect_canonical', 'https://example.test/x/' ) === 'https://example.test/x/' );
+$GLOBALS['__is_404'] = false;
 
 // ---------------------------------------------------------------------------
 section( 'Output paths' );
