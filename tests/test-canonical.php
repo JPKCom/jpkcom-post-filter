@@ -32,7 +32,7 @@ define( 'JPKCOM_POSTFILTER_SETTINGS_DIR', WP_CONTENT_DIR . '/.ht.jpkcom-post-fil
 function trailingslashit( $s ) { return rtrim( (string) $s, '/\\' ) . '/'; }
 function untrailingslashit( $s ) { return rtrim( (string) $s, '/\\' ); }
 function home_url( $path = '' ) { return 'https://example.test' . ( $path !== '' ? '/' . ltrim( (string) $path, '/' ) : '' ); }
-function get_permalink( $id ) { return (int) $id === 5 ? 'https://example.test/blog/' : false; }
+function get_permalink( $id ) { return $GLOBALS['__permalinks'][ (int) $id ] ?? ( (int) $id === 5 ? 'https://example.test/blog/' : false ); }
 function get_post_type_archive_link( $pt ) { return $GLOBALS['__pt_archives'][ $pt ] ?? false; }
 function wp_parse_url( $url, $component = -1 ) { return parse_url( (string) $url, $component ); }
 function esc_url( $u ) { return htmlspecialchars( (string) $u, ENT_QUOTES ); }
@@ -102,6 +102,11 @@ function get_term_link( $term, $taxonomy = '' ) {
 	}
 	$base = [ 'category' => 'kategorie', 'post_tag' => 'tag' ][ $term->taxonomy ] ?? $term->taxonomy;
 	return 'https://example.test/' . $base . '/' . $term->slug . '/';
+}
+// Children lookup the way Rank Math asks it (parent, number 1, fields ids).
+function get_terms( $args = [] ) {
+	$GLOBALS['__get_terms_args'] = $args;
+	return $GLOBALS['__term_children'][ (int) ( $args['parent'] ?? 0 ) ] ?? [];
 }
 function get_term_meta( $id, $key = '', $single = false ) { return $GLOBALS['__term_meta'][ $id ][ $key ] ?? ''; }
 function get_post_meta( $id, $key = '', $single = false ) { return $GLOBALS['__post_meta'][ $id ][ $key ] ?? ''; }
@@ -211,6 +216,9 @@ function seo_reset(): void {
 	$GLOBALS['__post_meta']       = [];
 	$GLOBALS['__term_count']      = [];
 	$GLOBALS['__term_link_error'] = false;
+	$GLOBALS['__permalinks']      = [];
+	$GLOBALS['__term_children']   = [];
+	$GLOBALS['__pt_archives']     = [ 'produkt' => 'https://example.test/produkte/' ];
 	unset( $GLOBALS['__options']['rank-math-options-titles'], $GLOBALS['__options']['wpseo_titles'], $GLOBALS['__options']['wpseo_taxonomy_meta'] );
 	$GLOBALS['__options']['blog_public']    = 1;
 	$GLOBALS['__options']['page_for_posts'] = 5;
@@ -313,6 +321,23 @@ $u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
 chk( 'Yoast: an archive with its own canonical elsewhere is no target', $u === '', var_export( $u, true ) );
 seo_reset();
 
+// 1.7.1: Rank Math leaves an empty term with children indexable (Paper\Taxonomy::noindex_term()).
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'noindex_empty_taxonomies' => 'on' ];
+$GLOBALS['__term_count']['category:zaeune']       = 0;
+$GLOBALS['__term_children'][ $t->term_id ]        = [ 9 ];
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Rank Math: an empty term with children stays a target (1.7.1)', $u === $zaeune, var_export( $u, true ) );
+$a = $GLOBALS['__get_terms_args'] ?? [];
+chk( '... asked like Rank Math asks it', ( $a['parent'] ?? null ) === $t->term_id && ( $a['number'] ?? null ) === 1 && ( $a['fields'] ?? null ) === 'ids' && ! array_key_exists( 'hide_empty', $a ), json_encode( $a ) );
+seo_reset();
+
+// 1.7.1: custom robots on with an empty list - Taxonomy and Singular combine with
+// index as the default, Archive and Blog do not (Rank Math 1.0.280).
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'tax_category_custom_robots' => 'on', 'tax_category_robots' => [], 'robots_global' => [ 'noindex' ] ];
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Rank Math: taxonomy custom robots on with an empty list means index (1.7.1)', $u === $zaeune, var_export( $u, true ) );
+seo_reset();
+
 // The filter has the last word; it is applied through the test's own runner.
 $GLOBALS['__options']['rank-math-options-titles'] = [ 'tax_category_custom_robots' => 'on', 'tax_category_robots' => [ 'noindex' ] ];
 $GLOBALS['__run_filters']['jpkcom_postfilter_canonical_archive_indexable'] = static fn( bool $indexable ): bool => true;
@@ -377,6 +402,32 @@ $GLOBALS['__options']['show_on_front']  = 'page';
 call( 'jpkcom_postfilter_canonical_target_memo_reset' );
 $u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
 chk( 'a static front page without a posts page is no base', $u === '', var_export( $u, true ) );
+seo_reset();
+
+// 1.7.1: the base is the URL the page itself prints - no forced trailing slash.
+$GLOBALS['__permalinks'][5] = 'https://example.test/blog';
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'a slashless posts page permalink is the target as it is (1.7.1)', $u === 'https://example.test/blog', var_export( $u, true ) );
+seo_reset();
+$GLOBALS['__pt_archives']['produkt'] = 'https://example.test/produkte';
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'produkt' );
+chk( 'a slashless post type archive link is the target as it is (1.7.1)', $u === 'https://example.test/produkte', var_export( $u, true ) );
+seo_reset();
+
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'pt_page_custom_robots' => 'on', 'pt_page_robots' => [], 'robots_global' => [ 'noindex' ] ];
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'Rank Math: page custom robots on with an empty list means index (Singular, 1.7.1)', $u === $base, var_export( $u, true ) );
+seo_reset();
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'pt_produkt_custom_robots' => 'on', 'pt_produkt_robots' => [], 'robots_global' => [ 'noindex' ] ];
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'produkt' );
+chk( 'Rank Math: archive custom robots on with an empty list falls to the global robots (Archive)', $u === '', var_export( $u, true ) );
+seo_reset();
+$GLOBALS['__options']['page_for_posts'] = 0;
+$GLOBALS['__options']['show_on_front']  = 'posts';
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'homepage_custom_robots' => 'on', 'homepage_robots' => [], 'robots_global' => [ 'noindex' ] ];
+call( 'jpkcom_postfilter_canonical_target_memo_reset' );
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'Rank Math: homepage custom robots on with an empty list falls to the global robots (Blog)', $u === '', var_export( $u, true ) );
 seo_reset();
 
 $u = call( 'jpkcom_postfilter_base_canonical_url', 'produkt' );

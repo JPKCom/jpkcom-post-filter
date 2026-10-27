@@ -118,12 +118,19 @@ if ( ! function_exists( function: 'jpkcom_postfilter_rank_math_titles_robots' ) 
     /**
      * A Rank Math `{prefix}_robots` list, if its `{prefix}_custom_robots` is on
      *
-     * @since 1.7.0
+     * Rank Math combines that list with index as the default in
+     * Paper\Taxonomy and Paper\Singular (`robots_combine( …, true )`), but not in
+     * Paper\Archive and Paper\Blog: there an empty list falls through to the
+     * global robots.
      *
-     * @param string $prefix e.g. `tax_category`, `pt_page`, `homepage`.
+     * @since 1.7.0
+     * @since 1.7.1 `$empty_means_index`.
+     *
+     * @param string $prefix            e.g. `tax_category`, `pt_page`, `homepage`.
+     * @param bool   $empty_means_index An empty list while custom robots are on means index.
      * @return array<int, string> Empty when custom robots are off.
      */
-    function jpkcom_postfilter_rank_math_titles_robots( string $prefix ): array {
+    function jpkcom_postfilter_rank_math_titles_robots( string $prefix, bool $empty_means_index = false ): array {
         $titles = get_option( 'rank-math-options-titles', [] );
         $titles = is_array( $titles ) ? $titles : [];
 
@@ -132,7 +139,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_rank_math_titles_robots' ) 
         }
 
         $robots = $titles[ $prefix . '_robots' ] ?? [];
-        return is_array( $robots ) ? $robots : [];
+        $robots = is_array( $robots ) ? $robots : [];
+
+        return $robots === [] && $empty_means_index ? [ 'index' ] : $robots;
     }
 }
 
@@ -229,18 +238,28 @@ if ( ! function_exists( function: 'jpkcom_postfilter_seo_term_noindex' ) ) {
         if ( defined( 'RANK_MATH_VERSION' ) ) {
             // Paper\Taxonomy::robots(): term meta, else the taxonomy's robots
             // when custom robots are on, else the global robots; an empty term
-            // is noindex with noindex_empty_taxonomies.
+            // without children is noindex with noindex_empty_taxonomies
+            // (noindex_term(), asked with exactly its get_terms() arguments).
             $titles = get_option( 'rank-math-options-titles', [] );
             $titles = is_array( $titles ) ? $titles : [];
 
             if ( (int) $term->count === 0 && jpkcom_postfilter_seo_switch_on( $titles['noindex_empty_taxonomies'] ?? false ) ) {
-                return true;
+                $children = get_terms( [
+                    'taxonomy' => $term->taxonomy,
+                    'parent'   => $term->term_id,
+                    'number'   => 1,
+                    'fields'   => 'ids',
+                ] );
+
+                if ( empty( $children ) ) {
+                    return true;
+                }
             }
 
             $meta = get_term_meta( $term->term_id, 'rank_math_robots', true );
             $meta = is_array( $meta ) ? $meta : [];
 
-            if ( jpkcom_postfilter_rank_math_robots_noindex( [ $meta, jpkcom_postfilter_rank_math_titles_robots( 'tax_' . $term->taxonomy ) ] ) ) {
+            if ( jpkcom_postfilter_rank_math_robots_noindex( [ $meta, jpkcom_postfilter_rank_math_titles_robots( prefix: 'tax_' . $term->taxonomy, empty_means_index: true ) ] ) ) {
                 return true;
             }
         }
@@ -340,7 +359,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_seo_base_noindex' ) ) {
             if ( $page_id > 0 ) {
                 // Paper\Singular: post meta, else the page post type's robots.
                 $meta       = get_post_meta( $page_id, 'rank_math_robots', true );
-                $candidates = [ is_array( $meta ) ? $meta : [], jpkcom_postfilter_rank_math_titles_robots( 'pt_page' ) ];
+                $candidates = [ is_array( $meta ) ? $meta : [], jpkcom_postfilter_rank_math_titles_robots( prefix: 'pt_page', empty_means_index: true ) ];
             } elseif ( $post_type === 'post' ) {
                 // Paper\Blog: the homepage robots.
                 $candidates = [ jpkcom_postfilter_rank_math_titles_robots( 'homepage' ) ];
@@ -392,15 +411,22 @@ if ( ! function_exists( function: 'jpkcom_postfilter_base_canonical_url' ) ) {
         }
 
         $url     = '';
-        $base    = jpkcom_postfilter_get_archive_base_url( $post_type );
         $page_id = $post_type === 'post' ? (int) get_option( 'page_for_posts' ) : 0;
 
+        // The URL the base prints as its own canonical: no trailingslashit()
+        // as in jpkcom_postfilter_get_archive_base_url(), which on a slashless
+        // permalink structure would point at a 301 (1.7.1).
         // Without a posts page the base of `post` is home_url('/'). That lists
         // the posts only when the front page shows them; a static front page
         // is a page of its own, not the original of a combination.
-        if ( $post_type === 'post' && $page_id <= 0 && get_option( 'show_on_front' ) !== 'posts' ) {
-            $base = '';
+        if ( $post_type === 'post' && $page_id > 0 ) {
+            $base = get_permalink( $page_id );
+        } elseif ( $post_type === 'post' ) {
+            $base = get_option( 'show_on_front' ) === 'posts' ? home_url( '/' ) : '';
+        } else {
+            $base = get_post_type_archive_link( $post_type );
         }
+        $base = is_string( $base ) ? $base : '';
 
         if ( $base !== '' ) {
             $indexable = (int) get_option( 'blog_public', 1 ) !== 0
