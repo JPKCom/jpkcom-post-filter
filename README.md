@@ -189,7 +189,9 @@ Each tab contains, as far as the server allows:
 
 **The rules never reject a URL the plugin serves with the current settings.** Rules pasted into a server configuration do not change by themselves, so follow the order on the page: when *tightening* the settings, change the plugin first, purge the page cache, then update the server; when *loosening*, update the server first, then the plugin. After every save that loosens the filter URL settings the plugin reminds you to update deployed server rules.
 
-**Managed `.htaccess` (Apache only).** On Apache, single site, with a writable `.htaccess` and without `DISALLOW_FILE_MODS`, *Set up* lets the plugin write its block itself - directly before WordPress's own block, between `# BEGIN JPKCom Post Filter` and `# END JPKCom Post Filter` - and keep it in step with the settings from then on - every save in wp-admin and the import. A loosening `wp option update` under WP-CLI loosens the block before the change is stored; tightening through WP-CLI, `wp-config.php` constants or code filters follows on the next admin page load (until then the block is only looser than the plugin, never stricter). A save that would loosen the settings is refused while the block cannot be updated, so the block is never stricter than the plugin. *Remove*, or deactivating the plugin, deletes the block. The plugin never writes the file without that click and never touches a block you pasted yourself (those carry `(manual)` markers). Not available on LiteSpeed/OpenLiteSpeed or multisite.
+**Managed `.htaccess` (Apache only).** On Apache, single site, with a writable `.htaccess` and without `DISALLOW_FILE_MODS`, *Set up* lets the plugin write its block itself - directly before WordPress's own block, between `# BEGIN JPKCom Post Filter` and `# END JPKCom Post Filter` - and keep it in step with the settings from then on - every save in wp-admin and the import. A loosening `wp option update` under WP-CLI loosens the block before the change is stored; tightening through WP-CLI, `wp-config.php` constants or code filters follows on the next admin page load (until then the block is only looser than the plugin, never stricter). A save that would loosen the settings is refused while the block cannot be updated - the error names the reason and what to do -, so the block is never stricter than the plugin; a second save while another one is still updating the block is refused the same way. *Remove*, or deactivating the plugin, deletes the block. The plugin never writes the file without that click and never touches a block you pasted yourself (those carry `(manual)` markers). Not available on LiteSpeed/OpenLiteSpeed or multisite.
+
+**`DISALLOW_FILE_MODS` and multisite stop setting up and tightening, not loosening.** If the block was set up before `DISALLOW_FILE_MODS` was set (or before the site became part of a network) and the file is still writable, the plugin keeps writing it in three cases: a save that loosens the settings writes the looser block first, *Remove* deletes the block, and so does deactivation. Each of them only lets more filter URLs through to PHP. Skipping them would leave the server rejecting URLs the plugin now serves, or - since a loosening save is refused while the block cannot follow - block every loosening save for as long as the constant is set. *Set up*, tightening and the update on admin page loads stop. To keep the plugin out of the file entirely, click *Remove*; it works with the constant set.
 
 **Check now** sends a few requests to your own site without cookies and shows whether robots.txt reaches WordPress, whether the server rule is deployed and current, and - as a red alarm - whether it is stricter than the plugin. The rate limit is not tested, because that would use up the budget all cookie-less visitors share. If the site cannot reach itself (HTTP authentication, firewall, maintenance mode) the result says "could not be checked", never "missing".
 
@@ -537,13 +539,41 @@ See `CLAUDE.md` in the plugin root for the full developer reference including ar
 
 | Constant | Default | Purpose |
 |----------|---------|---------|
-| `JPKCOM_POSTFILTER_VERSION` | `'1.0.0'` | Plugin version |
-| `JPKCOM_POSTFILTER_DEBUG` | `WP_DEBUG` | Enables debug mode and debug templates |
+| `JPKCOM_POSTFILTER_VERSION` | the header `Version:` | Plugin version - do not override |
+| `JPKCOM_POSTFILTER_BASENAME` | `plugin_basename(__FILE__)` | Plugin basename |
+| `JPKCOM_POSTFILTER_PLUGIN_PATH` | `plugin_dir_path(__FILE__)` | Absolute plugin path |
+| `JPKCOM_POSTFILTER_PLUGIN_URL` | `plugin_dir_url(__FILE__)` | Plugin URL |
+| `JPKCOM_POSTFILTER_SETTINGS_DIR` | `WP_CONTENT_DIR . '/.ht.jpkcom-post-filter-settings'` | Settings file cache location (must stay inside `wp-content`) |
 | `JPKCOM_POSTFILTER_CACHE_ENABLED` | `true` | Master cache toggle |
+| `JPKCOM_POSTFILTER_DEBUG` | `WP_DEBUG` | Enables debug mode and debug templates |
 | `JPKCOM_POSTFILTER_URL_ENDPOINT` | `'filter'` | URL path segment |
-| `JPKCOM_POSTFILTER_SETTINGS_DIR` | `WP_CONTENT_DIR . '/.ht.jpkcom-post-filter-settings'` | Settings file cache location |
-| `JPKCOM_POSTFILTER_MAX_FILTER_COMBOS` | `3` | Default max filter group combinations |
 | `JPKCOM_POSTFILTER_ABILITIES` | `true` | Registers the WordPress Abilities API integration. Set to `false` to withdraw both abilities from REST and MCP entirely. |
+
+URL and crawler settings: each of these also exists as a setting under **General**; a defined constant wins and locks the field. Every value also passes the filter `jpkcom_postfilter_{setting key}`.
+
+| Constant | Setting key | Default | Purpose |
+|----------|-------------|---------|---------|
+| `JPKCOM_POSTFILTER_MAX_FILTERS_PER_GROUP` | `max_filters_per_group` | `2` (new installations since 1.6.0; existing ones keep `3`) | Terms per group as they appear in the URL (0 = unlimited) |
+| `JPKCOM_POSTFILTER_MAX_FILTER_COMBOS` | `max_filter_combos` | `3` | Active filter groups (0 = unlimited) |
+| `JPKCOM_POSTFILTER_MAX_TERMS_TOTAL` | `max_terms_total` | `0` | Terms across all groups (0 = off) |
+| `JPKCOM_POSTFILTER_LINK_MODE` | `filter_link_mode` | `'single'` | `single` / `combo` / `none` - what term buttons link to |
+| `JPKCOM_POSTFILTER_INDEX_MAX_TERMS` | `seo_index_max_terms` | `1` | Filter pages with up to N terms are `index, follow` (0 = none) |
+| `JPKCOM_POSTFILTER_STRICT_URLS` | `strict_urls` | `true` | Request guard on/off |
+| `JPKCOM_POSTFILTER_REJECT_STATUS` | `reject_status` | `410` | `404` or `410` for impossible filter URLs |
+| `JPKCOM_POSTFILTER_UNKNOWN_TERMS_ACTION` | `unknown_terms_action` | `'redirect'` | `redirect` / `noindex` / `reject` |
+| `JPKCOM_POSTFILTER_ROBOTS_TXT` | `robots_txt_mode` | `'deep'` | `deep` / `all` / `off` |
+| `JPKCOM_POSTFILTER_STRIP_QUERY` | `strip_query` | `false` | 301 filter URLs with a query string to the bare path |
+| `JPKCOM_POSTFILTER_CANONICAL_SINGLE` | `canonical_single` | `'archive'` | `archive` / `filter` / `off` - canonical of a one-term page |
+| `JPKCOM_POSTFILTER_CANONICAL_MULTI` | `canonical_multi` | `'home'` | `home` / `filter` / `off` - canonical of a page with two or more terms |
+
+Constant only, no setting:
+
+| Constant | Default | Purpose |
+|----------|---------|---------|
+| `JPKCOM_POSTFILTER_ROBOTS_HEADER` | `true` | Sends `X-Robots-Tag` on filter pages that are not `index, follow` |
+| `JPKCOM_POSTFILTER_LINK_MAX_TERMS` | `0` (no extra limit) | Depth limit for links in `combo` mode |
+| `JPKCOM_POSTFILTER_PAGECACHE_MAX_TERMS` | `0` (off) | Above N terms the page sets `DONOTCACHEPAGE` |
+| `JPKCOM_POSTFILTER_QUERY_CACHE_MAX_TERMS` | `1` | Selections with more terms skip the query cache |
 
 ### JavaScript data attributes
 
