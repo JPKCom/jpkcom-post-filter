@@ -34,7 +34,7 @@ function apply_filters( $tag, $val, ...$args ) {
 	return $cb === null ? $val : $cb( $val, ...$args );
 }
 function add_filter( $tag, $cb, $p = 10, $a = 1 ) { $GLOBALS['__filters'][ $tag ][] = $cb; }
-function add_action( $tag, $cb, $p = 10, $a = 1 ) {}
+function add_action( $tag, $cb, $p = 10, $a = 1 ) { $GLOBALS['__actions'][ $tag ][] = $cb; }
 function remove_action( $tag, $cb, $p = 10 ) {}
 function is_wp_error( $t ) { return false; }
 function jpkcom_postfilter_debug_log( $msg, $ctx = [] ) {}

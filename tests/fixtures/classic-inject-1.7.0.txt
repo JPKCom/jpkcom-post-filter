@@ -1,0 +1,8 @@
+== posts, pagination below
+<div data-jpkpf-wrapper data-jpkpf-base-url="https://example.test/blog/" data-jpkpf-post-type="post" data-jpkpf-layout="bar">[tpl partials/filter/filter-bar][zone><div data-jpkpf-results aria-live="polite" aria-atomic="false"><POSTS>[tpl partials/pagination/pagination class=]</div><zone]</div>
+max_num_pages 1
+== posts, pagination both
+<div data-jpkpf-wrapper data-jpkpf-base-url="https://example.test/blog/" data-jpkpf-post-type="post" data-jpkpf-layout="bar">[tpl partials/filter/filter-bar][zone><div data-jpkpf-results aria-live="polite" aria-atomic="false">[tpl partials/pagination/pagination class=jpkpf-pagination--above]<POSTS>[tpl partials/pagination/pagination class=]</div><zone]</div>
+max_num_pages 1
+== zero results
+<div data-jpkpf-wrapper data-jpkpf-base-url="https://example.test/blog/" data-jpkpf-post-type="post" data-jpkpf-layout="bar" class="jpkpf-zero-results-wrapper">[tpl partials/filter/filter-bar][zone><div data-jpkpf-results aria-live="polite" aria-atomic="false"><p class="jpkpf-no-results">No posts found.</p></div><zone]</div>

@@ -122,8 +122,142 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_injected_post_type' ) )
 // loop_start — open wrappers and output filter bar
 // ---------------------------------------------------------------------------
 
+if ( ! function_exists( function: 'jpkcom_postfilter_inject_via_blocks' ) ) {
+    /**
+     * Whether auto-injection goes around the query block instead of the loop hooks
+     *
+     * A block theme renders the main loop inside get_the_block_template_html(),
+     * before template-canvas.php prints the doctype: everything the loop hooks
+     * echo lands in front of `<!DOCTYPE html>` (measured with Twenty
+     * Twenty-Five up to 1.7.0). There the markup is collected and wrapped
+     * around the inherited core/post-template block instead.
+     *
+     * @since 1.7.1
+     *
+     * @return bool
+     */
+    function jpkcom_postfilter_inject_via_blocks(): bool {
+        /**
+         * Filter whether auto-injection wraps the inherited query block.
+         *
+         * @since 1.7.1
+         *
+         * @param bool $via_blocks Default: wp_is_block_theme().
+         */
+        return (bool) apply_filters( 'jpkcom_postfilter_inject_via_blocks', function_exists( 'wp_is_block_theme' ) && wp_is_block_theme() );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_auto_inject_open_html' ) ) {
+    /**
+     * Opening markup of auto-injection: wrapper, filter bar, results zone
+     *
+     * What the loop_start callback printed up to 1.7.0, as a string.
+     *
+     * @since 1.7.1
+     *
+     * @param \WP_Query $query The main query.
+     * @return string
+     */
+    function jpkcom_postfilter_auto_inject_open_html( \WP_Query $query ): string {
+        ob_start();
+
+        $post_type      = jpkcom_postfilter_get_injected_post_type( $query );
+        $base_url       = jpkcom_postfilter_get_archive_base_url( $post_type );
+        $active_filters = jpkcom_postfilter_get_active_filters();
+
+        $enabled_pt_general = array_map(
+            'sanitize_key',
+            (array) jpkcom_postfilter_settings_get( 'general', 'enabled_post_types', [ 'post' ] )
+        );
+
+        // Only include groups that are configured for the current post type.
+        // Groups without an explicit post_types list fall back to the global enabled list.
+        $groups = array_values( array_filter(
+            jpkcom_postfilter_get_filter_groups_enabled(),
+            static function ( array $group ) use ( $post_type, $enabled_pt_general ): bool {
+                $group_pts = ! empty( $group['post_types'] ) && is_array( $group['post_types'] )
+                    ? $group['post_types']
+                    : $enabled_pt_general;
+                return in_array( $post_type, $group_pts, true );
+            }
+        ) );
+
+        $layout      = jpkcom_postfilter_settings_get( 'layout', 'filter_layout', 'bar' );
+        $layout      = in_array( $layout, [ 'bar', 'sidebar', 'dropdown', 'columns' ], true ) ? $layout : 'bar';
+        $reset_mode  = jpkcom_postfilter_settings_get( 'layout', 'reset_button_mode', 'on_selection' );
+        $reset_mode  = in_array( $reset_mode, [ 'always', 'on_selection', 'never' ], true ) ? $reset_mode : 'on_selection';
+
+        // Build filter_groups with terms fetched and enriched with active state
+        $filter_groups = [];
+        foreach ( $groups as $group ) {
+            $enriched = jpkcom_postfilter_get_terms_for_group( $group, $active_filters );
+            if ( empty( $enriched ) ) {
+                continue;
+            }
+            $filter_groups[] = array_merge( $group, [
+                'terms' => array_map( static fn( array $item ): \WP_Term => $item['term'], $enriched ),
+            ] );
+        }
+
+        // Outer wrapper — carries data attributes for the JS module
+        printf(
+            '<div data-jpkpf-wrapper data-jpkpf-base-url="%s" data-jpkpf-post-type="%s" data-jpkpf-layout="%s">',
+            esc_url( $base_url ),
+            esc_attr( $post_type ),
+            esc_attr( $layout )
+        );
+
+        // Render the filter bar template
+        jpkcom_postfilter_get_template_part(
+            'partials/filter/filter-' . $layout,
+            '',
+            [
+                'filter_groups'  => $filter_groups,
+                'active_filters' => $active_filters,
+                'base_url'       => $base_url,
+                'post_type'      => $post_type,
+                'show_reset'     => $reset_mode !== 'never',
+                'reset_mode'     => $reset_mode,
+            ]
+        );
+
+        $pagination_pos = jpkcom_postfilter_settings_get( 'layout', 'pagination_position', 'below' );
+        $pagination_pos = in_array( $pagination_pos, [ 'above', 'below', 'both' ], true ) ? $pagination_pos : 'below';
+
+        // Open the results region (AJAX swaps the contents of this element).
+        // The zone marker sits outside the div so the div itself travels with the
+        // fragment — the script looks the element up by selector in the response.
+        jpkcom_postfilter_zone_open();
+
+        echo '<div data-jpkpf-results aria-live="polite" aria-atomic="false">';
+
+        // Render above-pagination inside the results div so it gets refreshed on AJAX
+        if ( in_array( $pagination_pos, [ 'above', 'both' ], true ) ) {
+            jpkcom_postfilter_get_template_part(
+                'partials/pagination/pagination',
+                '',
+                [
+                    'query'          => $query,
+                    'base_url'       => $base_url,
+                    'active_filters' => $active_filters,
+                    'post_type'      => $post_type,
+                    'extra_class'    => 'jpkpf-pagination--above',
+                ]
+            );
+        }
+
+        return (string) ob_get_clean();
+    }
+}
+
+
 /**
  * Before the loop: open the jpkpf-wrapper, output filter bar, open results div
+ *
+ * In a block theme the markup is kept for the core/post-template wrapper
+ * below (1.7.1).
  *
  * @since 1.0.0
  */
@@ -133,93 +267,20 @@ add_action( 'loop_start', static function ( \WP_Query $query ): void {
         return;
     }
 
+    if ( jpkcom_postfilter_inject_via_blocks() ) {
+        // One bar per page: a second inherited post template stays as it is.
+        if ( ( $GLOBALS['_jpkpf_block_injected'] ?? false ) || isset( $GLOBALS['_jpkpf_block_open'] ) ) {
+            return;
+        }
+        $GLOBALS['_jpkpf_auto_injected'] = true;
+        $GLOBALS['_jpkpf_block_open']    = jpkcom_postfilter_auto_inject_open_html( $query );
+        return;
+    }
+
     // Mark that auto-injection happened (used by the wp_footer 0-results fallback).
     $GLOBALS['_jpkpf_auto_injected'] = true;
 
-    $post_type      = jpkcom_postfilter_get_injected_post_type( $query );
-    $base_url       = jpkcom_postfilter_get_archive_base_url( $post_type );
-    $active_filters = jpkcom_postfilter_get_active_filters();
-
-    $enabled_pt_general = array_map(
-        'sanitize_key',
-        (array) jpkcom_postfilter_settings_get( 'general', 'enabled_post_types', [ 'post' ] )
-    );
-
-    // Only include groups that are configured for the current post type.
-    // Groups without an explicit post_types list fall back to the global enabled list.
-    $groups = array_values( array_filter(
-        jpkcom_postfilter_get_filter_groups_enabled(),
-        static function ( array $group ) use ( $post_type, $enabled_pt_general ): bool {
-            $group_pts = ! empty( $group['post_types'] ) && is_array( $group['post_types'] )
-                ? $group['post_types']
-                : $enabled_pt_general;
-            return in_array( $post_type, $group_pts, true );
-        }
-    ) );
-
-    $layout      = jpkcom_postfilter_settings_get( 'layout', 'filter_layout', 'bar' );
-    $layout      = in_array( $layout, [ 'bar', 'sidebar', 'dropdown', 'columns' ], true ) ? $layout : 'bar';
-    $reset_mode  = jpkcom_postfilter_settings_get( 'layout', 'reset_button_mode', 'on_selection' );
-    $reset_mode  = in_array( $reset_mode, [ 'always', 'on_selection', 'never' ], true ) ? $reset_mode : 'on_selection';
-
-    // Build filter_groups with terms fetched and enriched with active state
-    $filter_groups = [];
-    foreach ( $groups as $group ) {
-        $enriched = jpkcom_postfilter_get_terms_for_group( $group, $active_filters );
-        if ( empty( $enriched ) ) {
-            continue;
-        }
-        $filter_groups[] = array_merge( $group, [
-            'terms' => array_map( static fn( array $item ): \WP_Term => $item['term'], $enriched ),
-        ] );
-    }
-
-    // Outer wrapper — carries data attributes for the JS module
-    printf(
-        '<div data-jpkpf-wrapper data-jpkpf-base-url="%s" data-jpkpf-post-type="%s" data-jpkpf-layout="%s">',
-        esc_url( $base_url ),
-        esc_attr( $post_type ),
-        esc_attr( $layout )
-    );
-
-    // Render the filter bar template
-    jpkcom_postfilter_get_template_part(
-        'partials/filter/filter-' . $layout,
-        '',
-        [
-            'filter_groups'  => $filter_groups,
-            'active_filters' => $active_filters,
-            'base_url'       => $base_url,
-            'post_type'      => $post_type,
-            'show_reset'     => $reset_mode !== 'never',
-            'reset_mode'     => $reset_mode,
-        ]
-    );
-
-    $pagination_pos = jpkcom_postfilter_settings_get( 'layout', 'pagination_position', 'below' );
-    $pagination_pos = in_array( $pagination_pos, [ 'above', 'below', 'both' ], true ) ? $pagination_pos : 'below';
-
-    // Open the results region (AJAX swaps the contents of this element).
-    // The zone marker sits outside the div so the div itself travels with the
-    // fragment — the script looks the element up by selector in the response.
-    jpkcom_postfilter_zone_open();
-
-    echo '<div data-jpkpf-results aria-live="polite" aria-atomic="false">';
-
-    // Render above-pagination inside the results div so it gets refreshed on AJAX
-    if ( in_array( $pagination_pos, [ 'above', 'both' ], true ) ) {
-        jpkcom_postfilter_get_template_part(
-            'partials/pagination/pagination',
-            '',
-            [
-                'query'          => $query,
-                'base_url'       => $base_url,
-                'active_filters' => $active_filters,
-                'post_type'      => $post_type,
-                'extra_class'    => 'jpkpf-pagination--above',
-            ]
-        );
-    }
+    echo jpkcom_postfilter_auto_inject_open_html( $query ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped while rendering
 
 }, 10 );
 
@@ -227,6 +288,59 @@ add_action( 'loop_start', static function ( \WP_Query $query ): void {
 // ---------------------------------------------------------------------------
 // loop_end — close results div and outer wrapper
 // ---------------------------------------------------------------------------
+
+if ( ! function_exists( function: 'jpkcom_postfilter_auto_inject_close_html' ) ) {
+    /**
+     * Closing markup of auto-injection: pagination, end of zone and wrapper
+     *
+     * What the loop_end callback printed up to 1.7.0, as a string.
+     *
+     * @since 1.7.1
+     *
+     * @param \WP_Query $query The main query.
+     * @return string
+     */
+    function jpkcom_postfilter_auto_inject_close_html( \WP_Query $query ): string {
+        ob_start();
+
+        // Render pagination inside the results div so it:
+        //   1. appears below the posts (not in the sidebar grid column), and
+        //   2. gets replaced on every AJAX filter swap.
+        $post_type      = jpkcom_postfilter_get_injected_post_type( $query );
+        $base_url       = jpkcom_postfilter_get_archive_base_url( $post_type );
+        $active_filters = jpkcom_postfilter_get_active_filters();
+
+        $pagination_pos = jpkcom_postfilter_settings_get( 'layout', 'pagination_position', 'below' );
+        $pagination_pos = in_array( $pagination_pos, [ 'above', 'below', 'both' ], true ) ? $pagination_pos : 'below';
+
+        if ( in_array( $pagination_pos, [ 'below', 'both' ], true ) ) {
+            jpkcom_postfilter_get_template_part(
+                'partials/pagination/pagination',
+                '',
+                [
+                    'query'          => $query,
+                    'base_url'       => $base_url,
+                    'active_filters' => $active_filters,
+                    'post_type'      => $post_type,
+                    'extra_class'    => '',
+                ]
+            );
+        }
+
+        // Close <div data-jpkpf-results>
+        echo '</div>';
+
+        // Close the zone here, not after the wrapper: the wrapper also contains the
+        // filter bar, which the script does not swap and must not receive twice.
+        jpkcom_postfilter_zone_close();
+
+        // Close outer <div data-jpkpf-wrapper>
+        echo '</div>';
+
+        return (string) ob_get_clean();
+    }
+}
+
 
 /**
  * After the loop: close results div and outer wrapper
@@ -239,39 +353,14 @@ add_action( 'loop_end', static function ( \WP_Query $query ): void {
         return;
     }
 
-    // Render pagination inside the results div so it:
-    //   1. appears below the posts (not in the sidebar grid column), and
-    //   2. gets replaced on every AJAX filter swap.
-    $post_type      = jpkcom_postfilter_get_injected_post_type( $query );
-    $base_url       = jpkcom_postfilter_get_archive_base_url( $post_type );
-    $active_filters = jpkcom_postfilter_get_active_filters();
-
-    $pagination_pos = jpkcom_postfilter_settings_get( 'layout', 'pagination_position', 'below' );
-    $pagination_pos = in_array( $pagination_pos, [ 'above', 'below', 'both' ], true ) ? $pagination_pos : 'below';
-
-    if ( in_array( $pagination_pos, [ 'below', 'both' ], true ) ) {
-        jpkcom_postfilter_get_template_part(
-            'partials/pagination/pagination',
-            '',
-            [
-                'query'          => $query,
-                'base_url'       => $base_url,
-                'active_filters' => $active_filters,
-                'post_type'      => $post_type,
-                'extra_class'    => '',
-            ]
-        );
+    if ( jpkcom_postfilter_inject_via_blocks() ) {
+        if ( ! isset( $GLOBALS['_jpkpf_block_open'] ) || isset( $GLOBALS['_jpkpf_block_close'] ) ) {
+            return;
+        }
+        $GLOBALS['_jpkpf_block_close'] = jpkcom_postfilter_auto_inject_close_html( $query );
+    } else {
+        echo jpkcom_postfilter_auto_inject_close_html( $query ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped while rendering
     }
-
-    // Close <div data-jpkpf-results>
-    echo '</div>';
-
-    // Close the zone here, not after the wrapper: the wrapper also contains the
-    // filter bar, which the script does not swap and must not receive twice.
-    jpkcom_postfilter_zone_close();
-
-    // Close outer <div data-jpkpf-wrapper>
-    echo '</div>';
 
     // Our pagination is fully rendered. Now suppress theme/plugin pagination
     // that runs after this hook via two complementary strategies:
@@ -282,6 +371,80 @@ add_action( 'loop_end', static function ( \WP_Query $query ): void {
     $query->max_num_pages                  = 1;
 
 }, 10 );
+
+
+// ---------------------------------------------------------------------------
+// Block themes: wrap the inherited query block (1.7.1)
+// ---------------------------------------------------------------------------
+
+if ( ! function_exists( function: 'jpkcom_postfilter_block_inherits_query' ) ) {
+    /**
+     * Whether a rendered block belongs to a query block that inherits the main query
+     *
+     * @since 1.7.1
+     *
+     * @param mixed $instance The WP_Block instance render_block passes.
+     * @return bool
+     */
+    function jpkcom_postfilter_block_inherits_query( mixed $instance ): bool {
+        return is_object( $instance )
+            && isset( $instance->context ) && is_array( $instance->context )
+            && ! empty( $instance->context['query']['inherit'] );
+    }
+}
+
+/**
+ * Put the collected markup around the inherited post template
+ *
+ * loop_start and loop_end run inside its render, so both halves are there
+ * when this filter sees the block's HTML.
+ *
+ * @since 1.7.1
+ */
+add_filter( 'render_block_core/post-template', static function ( $content, $block = [], $instance = null ) {
+
+    if ( ! jpkcom_postfilter_inject_via_blocks() || ! jpkcom_postfilter_block_inherits_query( $instance ) || ! isset( $GLOBALS['_jpkpf_block_open'] ) ) {
+        return $content;
+    }
+
+    $content = $GLOBALS['_jpkpf_block_open'] . $content . ( $GLOBALS['_jpkpf_block_close'] ?? '' );
+
+    unset( $GLOBALS['_jpkpf_block_open'], $GLOBALS['_jpkpf_block_close'] );
+    $GLOBALS['_jpkpf_block_injected'] = true;
+
+    return $content;
+}, 10, 3 );
+
+/**
+ * The plugin paginates inside the results zone; the theme's query pagination goes
+ *
+ * @since 1.7.1
+ */
+add_filter( 'render_block_core/query-pagination', static function ( $content, $block = [], $instance = null ) {
+
+    if ( jpkcom_postfilter_inject_via_blocks() && ( $GLOBALS['_jpkpf_suppress_pagination'] ?? false ) && jpkcom_postfilter_block_inherits_query( $instance ) ) {
+        return '';
+    }
+
+    return $content;
+}, 10, 3 );
+
+/**
+ * Zero results in a block theme: the bar and the results zone take the place of
+ * the inherited query's no-results block
+ *
+ * @since 1.7.1
+ */
+add_filter( 'render_block_core/query-no-results', static function ( $content, $block = [], $instance = null ) {
+
+    if ( ! jpkcom_postfilter_inject_via_blocks() || ! jpkcom_postfilter_block_inherits_query( $instance ) ) {
+        return $content;
+    }
+
+    $html = jpkcom_postfilter_zero_results_html();
+
+    return $html !== '' ? $html : $content;
+}, 10, 3 );
 
 
 // ---------------------------------------------------------------------------
@@ -348,20 +511,37 @@ add_filter( 'previous_posts_link_attributes', static function ( string $attr ): 
  */
 function jpkcom_postfilter_render_zero_results_fallback(): void {
 
+    echo jpkcom_postfilter_zero_results_html(); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped while rendering
+
+}
+
+/**
+ * The zero-results markup, once per request
+ *
+ * The guards and markup of jpkcom_postfilter_render_zero_results_fallback()
+ * up to 1.7.0, as a string, so the block theme path can return it from a
+ * render_block filter.
+ *
+ * @since 1.7.1
+ *
+ * @return string '' when it does not apply or was already rendered.
+ */
+function jpkcom_postfilter_zero_results_html(): string {
+
     // Already injected via loop_start — nothing to do.
     if ( $GLOBALS['_jpkpf_auto_injected'] ?? false ) {
-        return;
+        return '';
     }
 
     // Attached to several hooks, and on most themes more than one of them fires.
     if ( $GLOBALS['_jpkpf_zero_results_rendered'] ?? false ) {
-        return;
+        return '';
     }
 
     global $wp_query;
 
     if ( ! jpkcom_postfilter_should_auto_inject( $wp_query ) ) {
-        return;
+        return '';
     }
 
     // Only when the loop will not run at all. This check is what makes it safe
@@ -370,10 +550,12 @@ function jpkcom_postfilter_render_zero_results_fallback(): void {
     // actually belongs. Without it, a page that does have posts would render
     // the filter bar twice: once here and once from loop_start.
     if ( (int) $wp_query->post_count > 0 ) {
-        return;
+        return '';
     }
 
     $GLOBALS['_jpkpf_zero_results_rendered'] = true;
+
+    ob_start();
 
     $post_type      = jpkcom_postfilter_get_injected_post_type( $wp_query );
     $base_url       = jpkcom_postfilter_get_archive_base_url( $post_type );
@@ -439,6 +621,8 @@ function jpkcom_postfilter_render_zero_results_fallback(): void {
     jpkcom_postfilter_zone_close();
 
     echo '</div>';
+
+    return (string) ob_get_clean();
 
 }
 
