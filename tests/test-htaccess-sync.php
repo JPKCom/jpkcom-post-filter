@@ -247,12 +247,21 @@ do_action( 'admin_init' );
 
 // --- harness ----------------------------------------------------------------------------
 
-$GLOBALS['__pass'] = 0;
-$GLOBALS['__fail'] = 0;
+$GLOBALS['__pass']        = 0;
+$GLOBALS['__fail']        = 0;
+$GLOBALS['__skip']        = 0;
+$GLOBALS['__skip_reason'] = '';
 
 function section( string $title ): void { echo "\n" . $title . "\n"; }
 
 function chk( string $name, bool $cond, string $detail = '' ): void {
+	// A check after read_only() whose mode did not hold (root): the failure
+	// path never ran, so it must not count as a pass (T9-f).
+	if ( $GLOBALS['__skip_reason'] !== '' ) {
+		$GLOBALS['__skip']++;
+		echo "  SKIP  {$name}  ({$GLOBALS['__skip_reason']})\n";
+		return;
+	}
 	if ( $cond ) {
 		$GLOBALS['__pass']++;
 		echo "  PASS  {$name}\n";
@@ -263,6 +272,9 @@ function chk( string $name, bool $cond, string $detail = '' ): void {
 }
 
 function summary(): int {
+	if ( $GLOBALS['__skip'] > 0 ) {
+		printf( "\n  %d skipped (file modes do not hold for this user)", $GLOBALS['__skip'] );
+	}
 	printf( "\n  %d passed, %d failed\n", $GLOBALS['__pass'], $GLOBALS['__fail'] );
 	return $GLOBALS['__fail'] > 0 ? 1 : 0;
 }
@@ -295,6 +307,25 @@ function cleanup(): void {
 register_shutdown_function( 'cleanup' );
 
 function htaccess(): string { return $GLOBALS['__home_path'] . '.htaccess'; }
+
+/**
+ * Take rights away from the fixture's .htaccess: 0444 (read-only) or 0000
+ * (not even readable). Root - and anyone else the mode does not stop - can
+ * still read and write it, so the failure path a check is about never runs.
+ * Then every check until the next site() is reported as SKIP with the reason,
+ * never as PASS (T9-f).
+ */
+function read_only( int $mode = 0444 ): void {
+	chmod( htaccess(), $mode );
+	clearstatcache();
+	$root  = function_exists( 'posix_geteuid' ) && posix_geteuid() === 0;
+	$holds = ! is_writable( htaccess() ) && ( ( $mode & 0444 ) !== 0 || ! is_readable( htaccess() ) );
+	if ( $root ) {
+		$GLOBALS['__skip_reason'] = sprintf( 'running as root: chmod %04o does not stop root', $mode );
+	} elseif ( ! $holds ) {
+		$GLOBALS['__skip_reason'] = sprintf( 'this user can still use a file with mode %04o', $mode );
+	}
+}
 
 function bytes( string $f ): string {
 	clearstatcache();
@@ -360,6 +391,7 @@ function group( string $taxonomy, int $order, array $over = [] ): array {
  */
 function site( ?array $general = null, ?array $groups = null, bool $managed = true, bool $block = true, string $extra = '' ): array {
 	@chmod( htaccess(), 0644 );
+	$GLOBALS['__skip_reason'] = '';
 	foreach ( glob( JPKCOM_POSTFILTER_SETTINGS_DIR . '/*.php' ) ?: [] as $f ) {
 		@unlink( $f );
 	}
@@ -723,7 +755,7 @@ if ( $have ) {
 	$old_stored = $GLOBALS['__options']['jpkcom_postfilter_general'];
 	$cache_was  = cache_array( 'general' );
 	$file_was   = bytes( htaccess() );
-	chmod( htaccess(), 0444 );
+	read_only();
 	$GLOBALS['__fired'] = [];
 	$ok       = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3', 'auto_inject' => [] ] ) );
 	$returned = $GLOBALS['__seen'];
@@ -741,7 +773,7 @@ if ( $have ) {
 	// Stored value the sanitizer would change: the refusal must not rewrite it either.
 	$partial = [ 'max_filters_per_group' => 2 ];
 	site( $partial );
-	chmod( htaccess(), 0444 );
+	read_only();
 	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 	chk( 'write fails on a partial stored value: no commit, stored array untouched',
 		$ok === false && $GLOBALS['__commits'] === [] && $GLOBALS['__options']['jpkcom_postfilter_general'] === $partial
@@ -749,14 +781,14 @@ if ( $have ) {
 
 	// First-ever save refused: nothing is added, no cache file appears.
 	site( null );
-	chmod( htaccess(), 0444 );
+	read_only();
 	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 	chk( 'write fails on the first save: option still absent, no cache file',
 		$ok === false && ! array_key_exists( 'jpkcom_postfilter_general', $GLOBALS['__options'] ) && cache_array( 'general' ) === null && $GLOBALS['__commits'] === [] );
 
 	site( general() );
 	$groups_was = $GLOBALS['__options']['jpkcom_postfilter_filter_groups'];
-	chmod( htaccess(), 0444 );
+	read_only();
 	$ok = save( 'jpkcom_postfilter_filter_groups', [ 'groups' => [ group( 'category', 0 ), group( 'post_tag', 1 ), group( 'color', 2 ) ] ] );
 	chk( 'write fails on the Filter Groups page: refused there too, error on that page',
 		$ok === false && $GLOBALS['__options']['jpkcom_postfilter_filter_groups'] === $groups_was
@@ -765,21 +797,21 @@ if ( $have ) {
 
 	// A tightening save needs no write before the commit: it goes through.
 	site( general( [ 'max_filters_per_group' => 3 ] ) );
-	chmod( htaccess(), 0444 );
+	read_only();
 	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '2' ] ) );
 	chk( 'read-only file, tightening N 3->2: saved, no error, block stays looser (N=3)',
 		$ok === true && $GLOBALS['__errors'] === [] && n_of( bytes( htaccess() ) ) === 'N3' );
 
 	// A managed block that the file no longer has: nothing could be stricter.
 	site( general(), null, true, false );
-	chmod( htaccess(), 0444 );
+	read_only();
 	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 	chk( 'read-only file without a managed block: saved', $ok === true && $GLOBALS['__errors'] === [] );
 
 	// Fix wave item 7: strictness, not the full hash. A pure 404 <-> 410 switch
 	// rejects the same URLs (ruling R20) - nothing to refuse on a read-only file.
 	site( general() );
-	chmod( htaccess(), 0444 );
+	read_only();
 	$ok = save( 'jpkcom_postfilter_general', general( [ 'reject_status' => 404 ] ) );
 	chk( 'read-only file, only reject_status 410->404: saved, no error (not stricter)',
 		$ok === true && $GLOBALS['__errors'] === [] && ( $GLOBALS['__options']['jpkcom_postfilter_general']['reject_status'] ?? null ) === 404,
@@ -801,7 +833,7 @@ if ( $have ) {
 		$ok === false && str_contains( $msg, '(manual)' ) && ! str_contains( $msg, 'Make the .htaccess writable' ), json_encode( [ $ok, $msg, n_of( bytes( htaccess() ) ) ] ) );
 
 	site( general() );
-	chmod( htaccess(), 0444 );
+	read_only();
 	save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 	$msg = (string) ( $GLOBALS['__errors'][0]['message'] ?? '' );
 	chk( 'read-only file: the text says make it writable', str_contains( $msg, 'not writable' ) && str_contains( $msg, 'Make the .htaccess writable' ), $msg );
@@ -809,7 +841,7 @@ if ( $have ) {
 	// Import (settings_save writes the cache file itself after update_option()).
 	site( general() );
 	$old_stored = $GLOBALS['__options']['jpkcom_postfilter_general'];
-	chmod( htaccess(), 0444 );
+	read_only();
 	jpkcom_postfilter_settings_save( 'general', general( [ 'max_filters_per_group' => 3 ] ) );
 	jpkcom_postfilter_settings_memo_reset();
 	chk( 'refused through settings_save() (import): cache file back on the stored value',
@@ -878,7 +910,7 @@ if ( $have ) {
 	site( general() );
 	$_SERVER['SERVER_SOFTWARE'] = 'nginx/1.26.3';
 	$was = bytes( htaccess() );
-	chmod( htaccess(), 0444 );
+	read_only();
 	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 	chk( 'R17 nginx, managed + unwritable, loosening: saved, no write, no error',
 		$ok === true && $GLOBALS['__errors'] === [] && bytes( htaccess() ) === $was
@@ -888,7 +920,7 @@ if ( $have ) {
 		site( general() );
 		$_SERVER['SERVER_SOFTWARE'] = $software;
 		$was = bytes( htaccess() );
-		chmod( htaccess(), 0444 );
+		read_only();
 		$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 		chk( "R17 {$software}, managed + unwritable, loosening: refused",
 			$ok === false && ( $GLOBALS['__errors'][0]['type'] ?? '' ) === 'error' && bytes( htaccess() ) === $was
@@ -994,7 +1026,7 @@ if ( $have ) {
 	// Empty SERVER_SOFTWARE + read-only: unknown counts as reading .htaccess.
 	site( general() );
 	$was = bytes( htaccess() );
-	chmod( htaccess(), 0444 );
+	read_only();
 	$ok = as_cli( static fn() => save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => 5 ] ) ) );
 	chk( 'CLI, managed + read-only, loosening: refused, option and file unchanged',
 		$ok === false && bytes( htaccess() ) === $was && ( $GLOBALS['__options']['jpkcom_postfilter_general']['max_filters_per_group'] ?? null ) === 2 );
@@ -1002,14 +1034,14 @@ if ( $have ) {
 	foreach ( [ '', 'Microsoft-IIS/10.0', 'SomeProxy/1.0' ] as $software ) {
 		site( general() );
 		$_SERVER['SERVER_SOFTWARE'] = $software;
-		chmod( htaccess(), 0444 );
+		read_only();
 		$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 		chk( "R22 unknown server '{$software}', managed + read-only, loosening: refused", $ok === false && ( $GLOBALS['__errors'][0]['type'] ?? '' ) === 'error' );
 	}
 	foreach ( [ 'Caddy', 'FrankenPHP v1.4', 'ferron/3.0.0' ] as $software ) {
 		site( general() );
 		$_SERVER['SERVER_SOFTWARE'] = $software;
-		chmod( htaccess(), 0444 );
+		read_only();
 		$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 		chk( "R22 '{$software}' (positively identified), managed + read-only, loosening: saved", $ok === true && $GLOBALS['__errors'] === [] );
 	}
@@ -1055,7 +1087,7 @@ if ( $have ) {
 
 	site( $legacy );
 	$GLOBALS['__options']['jpkcom_postfilter_rewrite_version'] = '1.5.0';
-	chmod( htaccess(), 0444 );
+	read_only();
 	call( 'jpkcom_postfilter_htaccess_without_refusal', 'jpkcom_postfilter_migrate_pin_per_group_cap' );
 	chk( 'migration with a read-only .htaccess: still succeeds, no error',
 		( $GLOBALS['__options']['jpkcom_postfilter_general'] ?? null ) === $legacy + [ 'max_filters_per_group' => 3 ] && $GLOBALS['__errors'] === [] );
@@ -1077,7 +1109,7 @@ if ( $have ) {
 
 	// A block that cannot be removed stays guarded (fix round 1).
 	site( general() );
-	chmod( htaccess(), 0444 );
+	read_only();
 	$was = bytes( htaccess() );
 	call( 'jpkcom_postfilter_htaccess_deactivate' );
 	chk( 'deactivate, read-only file: block and option stay',
@@ -1097,7 +1129,7 @@ if ( $have ) {
 
 	// An orphan: managed markers in the file, the option gone.
 	site( general(), null, false, true );
-	chmod( htaccess(), 0444 );
+	read_only();
 	$was = bytes( htaccess() );
 	$ok  = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 	chk( 'orphaned block, read-only, loosening save on Apache: refused', $ok === false && bytes( htaccess() ) === $was && ( $GLOBALS['__errors'][0]['type'] ?? '' ) === 'error' );
@@ -1108,7 +1140,7 @@ if ( $have ) {
 		$ok === true && ! str_contains( $GLOBALS['__commits'][0]['htaccess'] ?? 'R=410', 'R=410' ) && bytes( htaccess() ) === $GLOBALS['__wp_block'] );
 
 	site( general(), null, false, true );
-	chmod( htaccess(), 0444 );
+	read_only();
 	$_SERVER['SERVER_SOFTWARE'] = 'nginx/1.26.3';
 	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 	chk( 'orphaned block, read-only, nginx: saved (R17)', $ok === true && $GLOBALS['__errors'] === [] );
@@ -1158,7 +1190,7 @@ if ( $have ) {
 
 	// WP-CLI: a refusal says why (`wp option update` alone only says it could not update).
 	site( general() );
-	chmod( htaccess(), 0444 );
+	read_only();
 	define( 'WP_CLI', true );
 	$GLOBALS['__cli_warnings'] = [];
 	// N is locked by the constant above: add a group instead.
