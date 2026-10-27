@@ -887,13 +887,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
      * prefixes (decoded path - fine for a rate limit), including `SecRuleEngine
      * On`, so OWASP CRS is not switched to blocking for the rest of the site.
      * Phase 2, because Apache maps a request to its Location only after phase 1
-     * rules ran (post_read_request). Fixed-window counters. The window starts with the
-     * first request (`expirevar` only when the counter is created); research
-     * set expirevar on every hit, which re-arms it - steady traffic then never
-     * resets a site-wide counter, and a visitor clicking every few seconds is
-     * blocked for good. Every deny rule is chained to its own class (cookie-
-     * less visitor or search engine), so a counter another rule set keeps
-     * cannot trigger it.
+     * rules ran (post_read_request). Fixed-window counters. The window starts
+     * with the first request (`expirevar` only when the counter is created);
+     * research set expirevar on every hit, which re-arms it - steady traffic
+     * then never resets a site-wide counter, and a visitor clicking every few
+     * seconds is blocked for good. Every deny rule is chained to its own class
+     * (cookie-less visitor or search engine), so a counter another rule set
+     * keeps cannot trigger it.
      *
      * A 429 writes no audit-log entry (1.7.1, T6-a): `ctl:auditEngine=Off` on
      * the chained threshold rule, which runs only when the chain matches, so a
@@ -924,7 +924,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
      * on Debian 13 (CRS 3.3.7, modsecurity.conf active): a new User-Agent per
      * request walked past the per-IP limit, and one VirtualHost's site-wide
      * counter answered 429 on another. Custom collection names are not
-     * addressable in ModSecurity 2 ("Unknown variable").
+     * addressable in ModSecurity 2 ("Unknown variable"), so RESOURCE and USER
+     * are the last two left (T6-b): a rule set of the site's own that opens
+     * either of them earlier in the request, under another key, would take
+     * these counters along in the same way, and nothing in this snippet can
+     * prevent that. CRS 3.3.7 opens neither (measured: every limit held with
+     * it loaded).
      *
      * @since 1.6.0
      *
