@@ -277,9 +277,16 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_warnings' ) ) 
             // per-group rule also on positions without taxonomy and the terms
             // per group; both patterns carry every archive base, so a length
             // problem also shrinks with fewer post types or languages.
-            $levers = [ 'groups' => __( 'fewer filter groups', 'jpkcom-post-filter' ) ];
-            if ( isset( $dropped['per_group'] ) && $dropped['per_group'] !== 'with-segments' ) {
-                $levers['skip']  = __( 'fewer positions without taxonomy', 'jpkcom-post-filter' );
+            // Per reason, measured: `nesting` only drops at one term per group
+            // (two or more reach the length limit first), and `repeat` follows
+            // the number of groups alone - fewer terms per group helps only
+            // with `pcre` and `length`.
+            $levers  = [ 'groups' => __( 'fewer filter groups', 'jpkcom-post-filter' ) ];
+            $pg_why  = (string) ( $dropped['per_group'] ?? '' );
+            if ( in_array( $pg_why, [ 'pcre', 'length', 'nesting' ], true ) ) {
+                $levers['skip'] = __( 'fewer positions without taxonomy', 'jpkcom-post-filter' );
+            }
+            if ( in_array( $pg_why, [ 'pcre', 'length' ], true ) ) {
                 $levers['terms'] = __( 'a lower number of terms per group', 'jpkcom-post-filter' );
             }
             if ( in_array( 'length', $dropped, true ) ) {

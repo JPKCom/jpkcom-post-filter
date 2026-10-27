@@ -438,6 +438,11 @@ chk( 'warning 1.7.1: a per_group rule failing on its own names terms per group a
 chk( '... but not post types or languages (no length problem)', ! str_contains( remedy( $w ), 'post types' ), remedy( $w ) );
 $w = warning( warnings( inputs( [ 'max_per_group' => 20, 'groups' => 40, 'skip_positions' => $odd40 ] ) ), 'patterns-dropped' );
 chk( 'warning 1.7.1: a length problem also names fewer filterable post types or languages', str_contains( remedy( $w ), 'post types or languages' ), remedy( $w ) );
+// Nesting only drops at one term per group (two or more hit the length limit
+// first), so fewer terms per group cannot bring it back.
+$odd160 = array_values( array_filter( range( 0, 159 ), static fn( int $p ): bool => $p % 2 === 1 ) );
+$w      = warning( warnings( inputs( [ 'max_per_group' => 1, 'groups' => 160, 'skip_positions' => $odd160 ] ) ), 'patterns-dropped' );
+chk( 'warning 1.7.1: a nesting drop names groups and positions without taxonomy, not terms per group', str_contains( remedy( $w ), 'without taxonomy' ) && str_contains( remedy( $w ), 'fewer filter groups' ) && ! str_contains( remedy( $w ), 'terms per group' ), remedy( $w ) );
 
 $w = warning( (array) call( 'jpkcom_postfilter_server_rules_warnings', inputs( [ 'groups' => 3 ] ), [ 'category', 'post_tag', 'category' ] ), 'duplicate-taxonomies' );
 chk( 'info: two groups on one taxonomy (taxonomies passed in)', ( $w['level'] ?? '' ) === 'info' && str_contains( $w['text'], 'category' ) && ! str_contains( $w['text'], 'post_tag' ) );

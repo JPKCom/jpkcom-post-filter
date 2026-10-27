@@ -651,6 +651,22 @@ as_filter_page( $one, 2 );
 chk( '... the blog on the front page (Blog): page 2 is noindex', call( 'jpkcom_postfilter_robots_directives' ) === $noindex_follow, json_encode( call( 'jpkcom_postfilter_robots_directives' ) ) );
 seo_reset();
 
+// A search on a filter URL and a replytocom link stay noindex, as both SEO
+// plugins and core send them; the plugin must not force index there.
+seo_reset();
+as_filter_page( $one );
+$GLOBALS['__query_vars']['s'] = 'zaun';
+chk( 'a search on a filter page is noindex (follow stays)', call( 'jpkcom_postfilter_robots_directives' ) === [ 'index' => false, 'follow' => true ], json_encode( call( 'jpkcom_postfilter_robots_directives' ) ) );
+chk( '... without a canonical', call( 'jpkcom_postfilter_canonical_url' ) === '' );
+unset( $GLOBALS['__query_vars']['s'] );
+$_GET['replytocom'] = '12';
+chk( 'replytocom on a filter page is noindex, nofollow', call( 'jpkcom_postfilter_robots_directives' ) === $ninf, json_encode( call( 'jpkcom_postfilter_robots_directives' ) ) );
+unset( $_GET['replytocom'] );
+chk( '... and without either the page is index again', call( 'jpkcom_postfilter_robots_directives' ) === $if );
+
+$cg = (string) file_get_contents( __DIR__ . '/../includes/crawl-guard.php' );
+chk( 'the jpkcom_postfilter_canonical hook docblock sits directly above its apply_filters call', (bool) preg_match( "#\*/\n[ \t]*\\\$url = apply_filters\( 'jpkcom_postfilter_canonical'#", $cg ) );
+
 as_filter_page( $one );
 chk( 'Yoast adjacent rel links are off on a filter page', run_cbs( 'wpseo_disable_adjacent_rel_links', false ) === true );
 as_filter_page( [] );

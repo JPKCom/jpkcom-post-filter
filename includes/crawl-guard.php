@@ -391,20 +391,6 @@ if ( ! function_exists( function: 'jpkcom_postfilter_canonical_filtered' ) ) {
      * @return array{kind: string, url: string} Kind none when the filter empties the URL.
      */
     function jpkcom_postfilter_canonical_filtered( string $kind, string $url, array $filters ): array {
-        /**
-         * Filter the canonical URL of a filter page.
-         *
-         * Since 1.7.0 it also receives term archive (`archive`) and archive
-         * base (`home`) URLs; since 1.7.1 `self` carries the page from page 2
-         * on, and an empty return value means no canonical (the page keeps the
-         * noindex of its term count).
-         *
-         * @since 1.5.0
-         *
-         * @param string                  $url     Canonical URL.
-         * @param string                  $kind    archive, home or self (since 1.7.0).
-         * @param array<string, string[]> $filters Active filters (since 1.7.0).
-         */
         // A callback that asks for the canonical or the robots itself would
         // re-enter the decision; inside that call the target goes unfiltered.
         static $running = false;
@@ -414,6 +400,20 @@ if ( ! function_exists( function: 'jpkcom_postfilter_canonical_filtered' ) ) {
 
         $running = true;
         try {
+            /**
+             * Filter the canonical URL of a filter page.
+             *
+             * Since 1.7.0 it also receives term archive (`archive`) and archive
+             * base (`home`) URLs; since 1.7.1 `self` carries the page from page 2
+             * on, and an empty return value means no canonical (the page keeps the
+             * noindex of its term count).
+             *
+             * @since 1.5.0
+             *
+             * @param string                  $url     Canonical URL.
+             * @param string                  $kind    archive, home or self (since 1.7.0).
+             * @param array<string, string[]> $filters Active filters (since 1.7.0).
+             */
             $url = apply_filters( 'jpkcom_postfilter_canonical', $url, $kind, $filters );
         } finally {
             $running = false;
@@ -548,7 +548,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_robots_directives' ) ) {
         // Since 1.7.1 the SEO plugins get this decision on every filter page,
         // so the two settings that must still win over it are read here:
         // "discourage search engines", and Rank Math's noindex for page 2+.
-        if ( jpkcom_postfilter_is_bot_filter_page() || (int) get_option( 'blog_public', 1 ) === 0 ) {
+        // A replytocom link is noindex, nofollow and a search noindex in core
+        // and both SEO plugins; the plugin keeps that instead of forcing index.
+        $replytocom = isset( $_GET['replytocom'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- presence only
+
+        if ( jpkcom_postfilter_is_bot_filter_page() || (int) get_option( 'blog_public', 1 ) === 0 || $replytocom ) {
             $directives = [ 'index' => false, 'follow' => false ];
         } elseif ( $terms > $max ) {
             $decision   = jpkcom_postfilter_canonical_decision();
@@ -559,7 +563,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_robots_directives' ) ) {
         $post_type = (string) get_query_var( 'jpkcom_filter_post_type', 'post' );
         $post_type = $post_type !== '' ? $post_type : 'post';
 
-        if ( jpkcom_postfilter_seo_paged_noindex( $post_type, max( 1, (int) get_query_var( 'paged' ) ) ) ) {
+        if ( (string) get_query_var( 's' ) !== '' || jpkcom_postfilter_seo_paged_noindex( $post_type, max( 1, (int) get_query_var( 'paged' ) ) ) ) {
             $directives['index'] = false;
         }
 
