@@ -445,10 +445,29 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_as_strict_as' ) ) 
             return false;
         }
 
+        return jpkcom_postfilter_htaccess_hash_rejects_as( hash: $state['hash'], inputs: $inputs );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_hash_rejects_as' ) ) {
+    /**
+     * Does a rule hash stand for the same rejects as the given inputs?
+     *
+     * The hash of the inputs, with the reject status left out of the
+     * comparison (ruling R20): 404 and 410 reject the same URLs.
+     *
+     * @since 1.7.1
+     *
+     * @param string               $hash   A rule hash (12 hex characters).
+     * @param array<string, mixed> $inputs Rule inputs.
+     * @return bool
+     */
+    function jpkcom_postfilter_htaccess_hash_rejects_as( string $hash, array $inputs ): bool {
         $statuses = array_unique( [ (int) ( $inputs['reject_status'] ?? 0 ), 404, 410 ] );
         foreach ( $statuses as $status ) {
             $inputs['reject_status'] = $status;
-            if ( jpkcom_postfilter_server_rule_hash( inputs: $inputs ) === $state['hash'] ) {
+            if ( jpkcom_postfilter_server_rule_hash( inputs: $inputs ) === $hash ) {
                 return true;
             }
         }
@@ -484,13 +503,20 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_loosen' ) ) {
      * as `write-unrestored` ahead of every other reason: the file may be
      * incomplete, and the admin has to check it, not just retry (T8-a).
      *
+     * A file that exists but cannot be read (T9-e) holds a block nobody can
+     * see, possibly stricter than anything: `not-readable`, like damaged
+     * markers - unless `$current` is given and the inputs reject exactly what
+     * it rejects (the save loosens nothing, so whatever the block is, it is
+     * not made stricter than the plugin by this save).
+     *
      * @since 1.6.0
      *
-     * @param array<string, mixed> $inputs Rule inputs (usually a union).
-     * @param bool                 $orphan The block is in the file without the managed option.
-     * @return array{ok: bool, reason: string} Reason: `write-unrestored`, `damaged`, `manual-block`, `not-writable` or `write-failed`.
+     * @param array<string, mixed>      $inputs  Rule inputs (usually a union).
+     * @param bool                      $orphan  The block is in the file without the managed option.
+     * @param array<string, mixed>|null $current Inputs the plugin runs with before the save (1.7.1).
+     * @return array{ok: bool, reason: string} Reason: `write-unrestored`, `damaged`, `not-readable`, `manual-block`, `not-writable` or `write-failed`.
      */
-    function jpkcom_postfilter_htaccess_loosen( array $inputs, bool $orphan = false ): array {
+    function jpkcom_postfilter_htaccess_loosen( array $inputs, bool $orphan = false, ?array $current = null ): array {
         $ok    = [ 'ok' => true, 'reason' => '' ];
         $file  = jpkcom_postfilter_htaccess_file();
         $state = jpkcom_postfilter_htaccess_state( file: $file );
@@ -523,6 +549,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_loosen' ) ) {
         if ( $state['damaged'] ) {
             return [ 'ok' => false, 'reason' => 'damaged' ];
         }
+        if ( $state['exists'] && ! $state['readable'] ) {
+            $loosens = $current === null || ! jpkcom_postfilter_htaccess_hash_rejects_as( hash: (string) ( $current['hash'] ?? '' ), inputs: $inputs );
+            return $loosens ? [ 'ok' => false, 'reason' => 'not-readable' ] : $ok;
+        }
         if ( ! $state['managed'] ) {
             return $ok;
         }
@@ -552,15 +582,16 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_refusal_message' )
      *
      * The sentence that says what to do depends on the reason: damaged
      * markers are fixed by hand, a manual block next to the managed one is
-     * deleted, a read-only file is made writable.
+     * deleted, a read-only file is made writable, an unreadable one readable.
      *
-     * @param string $reason `write-unrestored`, `damaged`, `manual-block`, `not-writable`, `write-failed`, or a reason from jpkcom_postfilter_htaccess_available().
+     * @param string $reason `write-unrestored`, `damaged`, `not-readable`, `manual-block`, `not-writable`, `write-failed`, or a reason from jpkcom_postfilter_htaccess_available().
      * @return string
      */
     function jpkcom_postfilter_htaccess_refusal_message( string $reason ): string {
         $reasons = [
             'write-unrestored'     => __( 'writing the file failed, and its previous content could not be put back', 'jpkcom-post-filter' ),
             'not-writable'         => __( 'the file is not writable', 'jpkcom-post-filter' ),
+            'not-readable'         => __( 'the file is not readable', 'jpkcom-post-filter' ),
             'no-file'              => __( 'the file does not exist', 'jpkcom-post-filter' ),
             'manual-block'         => __( 'it also contains a manually inserted block', 'jpkcom-post-filter' ),
             'file-mods-disallowed' => __( 'DISALLOW_FILE_MODS is set', 'jpkcom-post-filter' ),
@@ -576,6 +607,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_refusal_message' )
             'write-unrestored' => __( 'The .htaccess may be incomplete: check it now and repair it by hand, or restore it from a backup - while Apache cannot parse it, it answers every request with an error. Then save again.', 'jpkcom-post-filter' ),
             'damaged'          => __( 'Fix the file by hand: every # BEGIN JPKCom Post Filter line needs its own # END JPKCom Post Filter line, and WordPress\'s block (# BEGIN WordPress to # END WordPress) must stay outside it. Or delete the JPKCom Post Filter lines. Then save again.', 'jpkcom-post-filter' ),
             'manual-block'     => __( 'Delete one of the two blocks - the one inserted by hand (# BEGIN JPKCom Post Filter (manual)) or the managed one - then save again.', 'jpkcom-post-filter' ),
+            'not-readable'     => __( 'Make the .htaccess readable and writable for the web server user, or remove the JPKCom Post Filter block from it, then save again.', 'jpkcom-post-filter' ),
             'not-writable', 'no-file' => __( 'Make the .htaccess writable, or remove the JPKCom Post Filter block from it, then save again.', 'jpkcom-post-filter' ),
             default            => __( 'Check the .htaccess (permissions, free disk space), or remove the JPKCom Post Filter block from it, then save again.', 'jpkcom-post-filter' ),
         };
@@ -638,7 +670,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_prepare_save' ) ) 
             old: $current,
             new: jpkcom_postfilter_server_inputs_from_raw( option: $option, raw: $raw )
         );
-        $result  = jpkcom_postfilter_htaccess_loosen( inputs: $union, orphan: ! $managed );
+        $result  = jpkcom_postfilter_htaccess_loosen( inputs: $union, orphan: ! $managed, current: $current );
 
         if ( $result['ok'] || jpkcom_postfilter_htaccess_without_refusal() ) {
             return true;
@@ -870,8 +902,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_deactivate' ) ) {
      * Reactivating sets nothing up again (spec 12, decision 7). Removing only
      * loosens, so it runs whenever the file is writable, whatever
      * jpkcom_postfilter_htaccess_available() says. When the block cannot be
-     * removed (read-only file, damaged markers) the option stays, so the block
-     * is still guarded after a reactivation.
+     * removed (read-only file, damaged markers) - or the file cannot even be
+     * read, so nobody knows whether a block is there (T9-e) - the option
+     * stays, so the block is still guarded after a reactivation.
      *
      * @since 1.6.0
      *
@@ -886,7 +919,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_deactivate' ) ) {
         // Forget it only when it is gone: a block that could not be removed
         // stays managed, so a later loosening save is still refused for it.
         $state = jpkcom_postfilter_htaccess_state( file: $file );
-        if ( ! $state['managed'] && ! $state['damaged'] ) {
+        if ( ! $state['managed'] && ! $state['damaged'] && ( $state['readable'] || ! $state['exists'] ) ) {
             delete_option( 'jpkcom_postfilter_htaccess_managed' );
         }
     }

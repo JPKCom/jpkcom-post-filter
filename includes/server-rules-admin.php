@@ -418,7 +418,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_message' ) ) {
             'htaccess-unavailable'     => [ 'error', __( 'The .htaccess block was not set up. The reason is shown in the .htaccess box below.', 'jpkcom-post-filter' ) ],
             'htaccess-failed'          => [ 'error', __( 'Writing the .htaccess failed, nothing was set up. Check that the file is writable and that its JPKCom Post Filter markers pair up.', 'jpkcom-post-filter' ) ],
             'htaccess-removed'         => [ 'success', __( 'The .htaccess block is removed. The plugin no longer manages the file.', 'jpkcom-post-filter' ) ],
-            'htaccess-remove-failed'   => [ 'error', __( 'The .htaccess block could not be removed: the file is not writable, or its JPKCom Post Filter markers do not pair up. The plugin keeps guarding the block, so saves that would leave it stricter than the plugin are refused. Fix the file, then remove the block again.', 'jpkcom-post-filter' ) ],
+            'htaccess-remove-failed'   => [ 'error', __( 'The .htaccess block could not be removed: the file is not readable or not writable, or its JPKCom Post Filter markers do not pair up. The plugin keeps guarding the block, so saves that would leave it stricter than the plugin are refused. Fix the file, then remove the block again.', 'jpkcom-post-filter' ) ],
             'htaccess-unrestored'      => [ 'error', __( 'Writing the .htaccess failed, and its previous content could not be put back: the file may be incomplete. Check it now and repair it by hand, or restore it from a backup - while Apache cannot parse it, it answers every request with an error.', 'jpkcom-post-filter' ) ],
         ];
 
@@ -448,6 +448,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_htaccess_reaso
             'file-mods-disallowed' => __( 'DISALLOW_FILE_MODS is set in wp-config.php, so the plugin does not change files. Copy the block by hand.', 'jpkcom-post-filter' ),
             'no-file'              => __( 'There is no .htaccess in the WordPress directory. Save the permalink settings once so that WordPress creates it, then come back.', 'jpkcom-post-filter' ),
             'not-writable'         => __( 'WordPress cannot write the .htaccess. Make it writable for the web server user, or copy the block by hand.', 'jpkcom-post-filter' ),
+            'not-readable'         => __( 'WordPress cannot read the .htaccess, so it cannot tell what the file contains. Make it readable for the web server user, or copy the block by hand.', 'jpkcom-post-filter' ),
             'manual-block'         => __( 'The .htaccess already contains a block inserted by hand (# BEGIN JPKCom Post Filter (manual)). Delete that block first: two blocks would apply the same rules twice.', 'jpkcom-post-filter' ),
             default                => __( 'The plugin cannot manage the .htaccess on this site. Copy the block by hand.', 'jpkcom-post-filter' ),
         };
@@ -467,8 +468,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_htaccess_actio
      * remove: whenever the file can be written, whatever available() says -
      * removing only loosens, and after a server move it is the only way to
      * get rid of a leftover block. The option goes only when no managed block
-     * (and no damaged marker) remains, so a block that could not be removed
-     * stays guarded.
+     * (and no damaged marker) remains and the file could be read, so a block
+     * that could not be removed - or not even seen - stays guarded.
      *
      * Either way, a write that failed half way and could not be undone
      * (jpkcom_postfilter_htaccess_last_error() `rollback-failed`) gives
@@ -518,7 +519,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_htaccess_actio
                 return 'htaccess-unrestored';
             }
             $state = jpkcom_postfilter_htaccess_state( file: $file );
-            if ( $state['managed'] || $state['damaged'] ) {
+            if ( $state['managed'] || $state['damaged'] || ( $state['exists'] && ! $state['readable'] ) ) {
                 return 'htaccess-remove-failed';
             }
 
@@ -1024,6 +1025,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_render_htacces
                     <?php
                     if ( ! $state['exists'] ) {
                         $file_state = __( 'does not exist', 'jpkcom-post-filter' );
+                    } elseif ( ! $state['readable'] ) {
+                        $file_state = __( 'not readable', 'jpkcom-post-filter' );
                     } elseif ( $state['writable'] ) {
                         $file_state = __( 'writable', 'jpkcom-post-filter' );
                     } else {

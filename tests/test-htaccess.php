@@ -649,6 +649,25 @@ if ( is_writable( $ht ) ) {
 }
 chmod( $ht, 0644 );
 
+// T9-e: a file that exists but cannot be read says nothing about its block.
+$st = call( 'jpkcom_postfilter_htaccess_state', $ht );
+chk( 'state(): a readable file is readable', is_array( $st ) && ( $st['readable'] ?? null ) === true, json_encode( $st ) );
+chmod( $ht, 0000 );
+clearstatcache();
+if ( ( function_exists( 'posix_geteuid' ) && posix_geteuid() === 0 ) || is_readable( $ht ) ) {
+	echo "  SKIP  state()/available(): unreadable .htaccess (running as a user who can read a 0000 file)\n";
+} else {
+	$st = call( 'jpkcom_postfilter_htaccess_state', $ht );
+	chk( 'state(): unreadable file - exists, readable false, managed false',
+		is_array( $st ) && $st['exists'] === true && ( $st['readable'] ?? null ) === false && $st['managed'] === false, json_encode( $st ) );
+	chmod( $ht, 0200 );   // writable, still not readable
+	$a = avail( 'Apache/2.4.66' );
+	chk( 'available(): writable but unreadable .htaccess is not-readable', $a['ok'] === false && $a['reason'] === 'not-readable', json_encode( $a ) );
+}
+chmod( $ht, 0644 );
+$st = call( 'jpkcom_postfilter_htaccess_state', $GLOBALS['__tmp'] . '/no-such-file' );
+chk( 'state(): a missing file is not readable', is_array( $st ) && $st['exists'] === false && ( $st['readable'] ?? null ) === false, json_encode( $st ) );
+
 file_put_contents( $ht, $manual_original );
 $a = avail( 'Apache/2.4.66' );
 chk( 'available(): manual block refused', $a['ok'] === false && $a['reason'] === 'manual-block', json_encode( $a ) );

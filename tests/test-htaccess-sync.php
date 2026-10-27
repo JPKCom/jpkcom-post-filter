@@ -389,7 +389,7 @@ function read_only( int $mode = 0444 ): void {
 
 function bytes( string $f ): string {
 	clearstatcache();
-	return is_file( $f ) ? (string) file_get_contents( $f ) : '__no_file__';
+	return is_file( $f ) ? (string) @file_get_contents( $f ) : '__no_file__';   // @: unreadable fixtures (T9-e)
 }
 
 /** The settings cache file of a group as the array it returns, or null when there is none. */
@@ -929,6 +929,38 @@ if ( $have ) {
 		str_contains( (string) call( 'jpkcom_postfilter_htaccess_refusal_message', 'write-unrestored' ), 'could not be put back' )
 		&& str_contains( (string) call( 'jpkcom_postfilter_htaccess_refusal_message', 'write-unrestored' ), 'check it now' ) );
 
+	// T9-e: an .htaccess that exists but cannot be read. Its block is unknown -
+	// it may be stricter than anything - so a loosening save is refused like
+	// for damaged markers, and option, cache file and file stay as they were.
+	site( general() );
+	$old_stored = $GLOBALS['__options']['jpkcom_postfilter_general'];
+	$cache_was  = cache_array( 'general' );
+	$file_was   = bytes( htaccess() );
+	read_only( 0000 );
+	$ok  = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	$msg = (string) ( $GLOBALS['__errors'][0]['message'] ?? '' );
+	chmod( htaccess(), 0644 );
+	chk( 'unreadable file, loosening N 2->3: refused, option, cache file and file unchanged',
+		$ok === false && $GLOBALS['__commits'] === [] && $GLOBALS['__options']['jpkcom_postfilter_general'] === $old_stored
+		&& cache_array( 'general' ) === $cache_was && bytes( htaccess() ) === $file_was, json_encode( [ $ok, $GLOBALS['__errors'] ] ) );
+	chk( 'unreadable file: the text names the reason and says make it readable',
+		str_contains( $msg, 'not readable' ) && str_contains( $msg, 'Make the .htaccess readable' ), $msg );
+
+	foreach ( [
+		'tightening N 3->2'                => [ general( [ 'max_filters_per_group' => 3 ] ), general( [ 'max_filters_per_group' => '2' ] ) ],
+		'a setting the rule does not read' => [ general(), general( [ 'filter_link_mode' => 'combo' ] ) ],
+	] as $label => [ $stored, $submitted ] ) {
+		site( $stored );
+		read_only( 0000 );
+		$ok = save( 'jpkcom_postfilter_general', $submitted );
+		chk( "unreadable file, {$label}: saved (needs no loosening), no error", $ok === true && $GLOBALS['__errors'] === [], json_encode( $GLOBALS['__errors'] ) );
+	}
+
+	site( general(), null, false, true );   // not set up: nothing known to guard
+	read_only( 0000 );
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	chk( 'unreadable file, not set up: saved', $ok === true && $GLOBALS['__errors'] === [] );
+
 	// Import (settings_save writes the cache file itself after update_option()).
 	site( general() );
 	$old_stored = $GLOBALS['__options']['jpkcom_postfilter_general'];
@@ -1209,6 +1241,16 @@ if ( $have ) {
 	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 	chk( 'deactivate (read-only) -> reactivate -> loosening save on Apache: refused',
 		$ok === false && ( $GLOBALS['__errors'][0]['type'] ?? '' ) === 'error' && bytes( htaccess() ) === $was );
+
+	// T9-e: an unreadable file. state() cannot see the block, which is not the
+	// same as "no block": the option stays, and the block stays guarded.
+	site( general() );
+	read_only( 0000 );
+	call( 'jpkcom_postfilter_htaccess_deactivate' );
+	chk( 'deactivate, unreadable file: option kept', ( $GLOBALS['__options']['jpkcom_postfilter_htaccess_managed'] ?? '' ) === '1' );
+	call( 'jpkcom_postfilter_htaccess_lifecycle' );
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	chk( 'deactivate (unreadable) -> reactivate -> loosening save on Apache: refused', $ok === false && ( $GLOBALS['__errors'][0]['type'] ?? '' ) === 'error' );
 
 	site( general() );
 	call( 'jpkcom_postfilter_htaccess_deactivate' );

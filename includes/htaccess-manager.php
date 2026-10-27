@@ -187,15 +187,21 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_state' ) ) {
      * managed block sits below WordPress's and never takes effect; the next
      * write moves it, ruling R15).
      *
+     * `readable` (1.7.1, T9-e): the content could be read. An existing file
+     * that cannot be read reports `managed` false - not because there is no
+     * block, but because nothing about it is known; callers that guard the
+     * block must treat `exists && ! readable` as "a block may be there".
+     *
      * @since 1.6.0
      *
      * @param string $file Path of the .htaccess.
-     * @return array{exists: bool, writable: bool, managed: bool, manual: bool, hash: ?string, wp_block: bool, damaged: bool, misplaced: bool}
+     * @return array{exists: bool, writable: bool, readable: bool, managed: bool, manual: bool, hash: ?string, wp_block: bool, damaged: bool, misplaced: bool}
      */
     function jpkcom_postfilter_htaccess_state( string $file ): array {
         $state = [
             'exists'   => false,
             'writable' => false,
+            'readable' => false,
             'managed'  => false,
             'manual'   => false,
             'hash'     => null,
@@ -216,6 +222,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_state' ) ) {
         if ( ! is_string( $content ) ) {
             return $state;
         }
+        $state['readable'] = true;
 
         $parsed            = jpkcom_postfilter_htaccess_parse( content: $content );
         $state['manual']   = $parsed['manual'];
@@ -646,7 +653,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_available' ) ) {
      *   FrankenPHP, Ferron, IIS, none).
      * - `multisite`: one .htaccess serves the whole network.
      * - `file-mods-disallowed`: DISALLOW_FILE_MODS is set.
-     * - `no-file`, `not-writable`: jpkcom_postfilter_htaccess_file().
+     * - `no-file`, `not-writable`, `not-readable`: jpkcom_postfilter_htaccess_file().
      * - `manual-block`: a pasted block with the manual markers is present;
      *   a second, managed one would apply the same rules twice.
      *
@@ -674,6 +681,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_available' ) ) {
                 $reason = 'no-file';
             } elseif ( ! $state['writable'] ) {
                 $reason = 'not-writable';
+            } elseif ( ! $state['readable'] ) {
+                $reason = 'not-readable';
             } elseif ( $state['manual'] ) {
                 $reason = 'manual-block';
             }

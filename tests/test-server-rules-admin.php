@@ -578,9 +578,11 @@ chk( 'unknown key -> no message', call( 'jpkcom_postfilter_server_rules_message'
 section( '.htaccess: Set up / Remove' );
 // =============================================================================
 
-$reasons = [ 'not-apache', 'litespeed', 'multisite', 'file-mods-disallowed', 'no-file', 'not-writable', 'manual-block' ];
+$reasons = [ 'not-apache', 'litespeed', 'multisite', 'file-mods-disallowed', 'no-file', 'not-writable', 'not-readable', 'manual-block' ];
 $texts   = array_map( static fn( $r ) => call( 'jpkcom_postfilter_server_rules_htaccess_reason', $r ), $reasons );
-chk( 'every availability reason has its own text', count( array_unique( array_filter( $texts, 'is_string' ) ) ) === 7 && ! in_array( 'not-apache', $texts, true ) );
+chk( 'every availability reason has its own text, none the fallback',
+	count( array_unique( array_filter( $texts, 'is_string' ) ) ) === 8 && ! in_array( 'not-apache', $texts, true )
+	&& ! in_array( call( 'jpkcom_postfilter_server_rules_htaccess_reason', 'no-such-reason' ), $texts, true ) );
 
 file_put_contents( htaccess(), $GLOBALS['__wp_block'] );
 $key = call( 'jpkcom_postfilter_server_rules_htaccess_action', 'install', inputs() );
@@ -628,6 +630,23 @@ if ( function_exists( 'posix_geteuid' ) && posix_geteuid() === 0 ) {
 	chk( 'remove on a read-only file: failed, option kept (block still guarded)', $key === 'htaccess-remove-failed' && get_option( 'jpkcom_postfilter_htaccess_managed' ) === htaccess() );
 	chmod( htaccess(), 0644 );
 }
+call( 'jpkcom_postfilter_server_rules_htaccess_action', 'remove', inputs() );
+
+// T9-e: Remove on a file that cannot be read: state() cannot see the block,
+// which is not "no block" - the option stays, the block stays guarded.
+file_put_contents( htaccess(), $GLOBALS['__wp_block'] );
+call( 'jpkcom_postfilter_server_rules_htaccess_action', 'install', inputs() );
+chmod( htaccess(), 0000 );
+clearstatcache();
+if ( ( function_exists( 'posix_geteuid' ) && posix_geteuid() === 0 ) || is_readable( htaccess() ) ) {
+	echo "  SKIP  remove on an unreadable file (running as a user who can read a 0000 file)\n";
+} else {
+	$key = call( 'jpkcom_postfilter_server_rules_htaccess_action', 'remove', inputs() );
+	chk( 'remove on an unreadable file: failed, option kept (block still guarded)', $key === 'htaccess-remove-failed' && get_option( 'jpkcom_postfilter_htaccess_managed' ) === htaccess(), (string) $key );
+	$text = (string) ( call( 'jpkcom_postfilter_server_rules_message', 'htaccess-remove-failed' )['text'] ?? '' );
+	chk( 'remove-failed message names an unreadable file too', str_contains( $text, 'not readable' ), $text );
+}
+chmod( htaccess(), 0644 );
 call( 'jpkcom_postfilter_server_rules_htaccess_action', 'remove', inputs() );
 
 // T8-a: Set up / Remove whose write fails half way and cannot be undone.
