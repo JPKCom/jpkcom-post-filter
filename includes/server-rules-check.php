@@ -148,9 +148,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_blocked' ) ) {
      * authentication, a firewall, a rate limit, maintenance mode or another
      * server error, and - unless `$redirect_ok` - a redirect (`redirection`
      * is 0, so a redirect to https or another host is not followed). For the
-     * at-cap probe a redirect is the plugin's normal answer (unknown probe
-     * slugs, 301 to the archive). Plain text, untrusted parts (error message,
-     * Location) included - the page escapes it.
+     * at-cap probe the plugin's own redirect is its normal answer (unknown
+     * probe slugs, 301 to the archive); the caller passes `$redirect_ok` only
+     * for a 3xx that carries the plugin's `X-Redirect-By`. Plain text,
+     * untrusted parts (error message, Location) included - the page escapes
+     * it.
      *
      * @since 1.6.0
      *
@@ -232,8 +234,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_classify' ) ) 
      * route), a hedged warning, never the alarm (ruling R19).
      * stricter_checked: false when the at-cap probe did not get through
      * (timeout, 401, 429 - the loopback sends no cookies, so a rate limit
-     * catches it -, 5xx, ...) or there was nothing to check; the detail then
-     * says why.
+     * catches it -, 5xx, ...), when it was answered with a 3xx that does not
+     * carry `X-Redirect-By: jpkcom-post-filter` (the crawl guard's redirect
+     * sends it through wp_safe_redirect(); any other redirect - to https, to
+     * another host name, from a proxy - may have been sent before the server
+     * rules apply, so it proves nothing about them; a site that filters
+     * `x_redirect_by` away only loses the check, it never gets a false
+     * alarm), or there was nothing to check; the detail then says why.
      *
      * @since 1.6.0
      *
@@ -337,12 +344,20 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_classify' ) ) 
             if ( is_array( $responses['at_cap'] ?? null ) ) {
                 $at_cap         = jpkcom_postfilter_server_check_response( response: $responses['at_cap'] );
                 $at_cap_reject  = strtolower( $at_cap['headers']['x-jpkpf-reject'] ?? '' );
-                $at_cap_blocked = jpkcom_postfilter_server_check_blocked( response: $at_cap, redirect_ok: true );
+                $by_plugin      = strtolower( $at_cap['headers']['x-redirect-by'] ?? '' ) === 'jpkcom-post-filter';
+                $at_cap_blocked = jpkcom_postfilter_server_check_blocked( response: $at_cap, redirect_ok: $by_plugin );
+                $redirected     = $at_cap['status'] >= 300 && $at_cap['status'] < 400;
 
                 if ( str_starts_with( $at_cap_reject, 'server-' ) ) {
                     $checked  = true;
                     $stricter = true;
                     $detail[] = __( 'Alarm: the server rejects a filter URL within the plugin\'s limits, which the plugin serves. The deployed server rules are stricter than the plugin and break filter pages: replace or remove them now.', 'jpkcom-post-filter' );
+                } elseif ( $at_cap_reject === '' && $at_cap_blocked !== null && $redirected ) {
+                    $detail[] = sprintf(
+                        /* translators: %s: the redirect, e.g. "HTTP 301: redirected to https://example.com/blog/filter/a/" */
+                        __( 'The check whether the server is stricter than the plugin could not run: %s, and that redirect does not come from this plugin. It may have been sent before the server rules apply (a redirect to https or to another host name, a proxy), so it says nothing about them.', 'jpkcom-post-filter' ),
+                        $at_cap_blocked
+                    );
                 } elseif ( $at_cap_reject === '' && $at_cap_blocked !== null ) {
                     $detail[] = sprintf(
                         /* translators: %s: why the request did not get through, e.g. "HTTP 429: too many requests (a rate limit)" */

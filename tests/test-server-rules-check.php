@@ -427,6 +427,10 @@ function hdr( string $reject, string $rule = '', int $status = 410 ): array {
 	}
 	return resp( $status, $headers );
 }
+/** The crawl guard's own redirect: wp_safe_redirect( ..., 'jpkcom-post-filter' ) sends X-Redirect-By. */
+function plugin_301( string $location = 'https://example.test/blog/' ): array {
+	return resp( 301, [ 'location' => $location, 'x-redirect-by' => 'jpkcom-post-filter' ] );
+}
 function err( string $message ): array {
 	return [ 'error' => $message, 'status' => 0, 'headers' => [], 'body' => '' ];
 }
@@ -445,7 +449,7 @@ function classify( ?array $robots = null, ?array $over = null, ?array $at_cap = 
 		[
 			'robots' => $robots ?? resp( 200, [ 'content-type' => 'text/plain' ], robots_body() ),
 			'over'   => $over ?? hdr( 'server-per-group', $inputs['hash'] ),
-			'at_cap' => $at_cap ?? resp( 301, [ 'location' => 'https://example.test/blog/' ] ),
+			'at_cap' => $at_cap ?? plugin_301(),
 		],
 		$inputs,
 		$software,
@@ -531,7 +535,7 @@ section( 'classify(): stricter than the plugin' );
 
 chk( 'at_cap server-* = stricter alarm',       classify( at_cap: hdr( 'server-per-group', $h ) )['stricter'] === true );
 chk( 'at_cap server-* with other hash = stricter alarm', classify( at_cap: hdr( 'server-per-group', 'aaaaaaaaaaaa' ) )['stricter'] === true );
-chk( 'at_cap 301 from PHP = not stricter',     classify( at_cap: resp( 301 ) )['stricter'] === false );
+chk( 'at_cap 301 from PHP = not stricter',     classify( at_cap: plugin_301() )['stricter'] === false );
 chk( 'at_cap PHP reject (unknown terms) = not stricter', classify( at_cap: hdr( 'unknown' ) )['stricter'] === false );
 $r = classify( at_cap: err( 'cURL error 28: Operation timed out' ) );
 chk( 'at_cap timeout: no alarm, but marked as not checked', $r['stricter'] === false && ( $r['stricter_checked'] ?? null ) === false, json_encode( $r ) );
@@ -541,7 +545,23 @@ $r = classify( at_cap: resp( 429 ) );
 chk( 'at_cap 429 (the loopback hit a rate limit): not checked', ( $r['stricter_checked'] ?? null ) === false && str_contains( $r['detail'], '429' ), $r['detail'] );
 $r = classify( at_cap: resp( 503 ) );
 chk( 'at_cap 503: not checked', ( $r['stricter_checked'] ?? null ) === false );
-chk( 'at_cap 301 from PHP: checked', ( classify( at_cap: resp( 301, [ 'location' => 'https://example.test/blog/' ] ) )['stricter_checked'] ?? null ) === true );
+chk( 'at_cap 301 from PHP: checked', ( classify( at_cap: plugin_301() )['stricter_checked'] ?? null ) === true );
+// T10-a: a 3xx is the plugin's answer only when the plugin sent it. A redirect
+// from somewhere else (http -> https, another host name, a proxy, WordPress's
+// canonical redirect) means the probe never reached the code path that
+// decides, so it proves nothing about the server rules. Missed check, never a
+// false alarm.
+$r = classify( at_cap: resp( 301, [ 'location' => 'https://www.example.test/blog/filter/jpkpf-probe-1+jpkpf-probe-2/' ] ) );
+chk( 'at_cap 301 without X-Redirect-By: not checked, no alarm', ( $r['stricter_checked'] ?? null ) === false && $r['stricter'] === false && ( $r['stricter_suspected'] ?? null ) === false, json_encode( $r ) );
+chk( 'at_cap 301 without X-Redirect-By: the detail names the redirect and its target',
+	stripos( $r['detail'], 'could not run' ) !== false && str_contains( $r['detail'], 'HTTP 301' ) && str_contains( $r['detail'], 'https://www.example.test/blog/filter/' ), $r['detail'] );
+$r = classify( at_cap: resp( 302, [ 'location' => 'https://example.test/blog/', 'x-redirect-by' => 'WordPress' ] ) );
+chk( 'at_cap 302 by WordPress (not the plugin): not checked', ( $r['stricter_checked'] ?? null ) === false && str_contains( $r['detail'], 'HTTP 302' ), $r['detail'] );
+chk( 'at_cap 308 from a proxy: not checked', ( classify( at_cap: resp( 308, [ 'location' => 'https://example.test/' ] ) )['stricter_checked'] ?? null ) === false );
+chk( 'at_cap 301 by the plugin, header name and value in other case: checked',
+	( classify( at_cap: resp( 301, [ 'location' => 'https://example.test/blog/', 'X-Redirect-By' => 'JPKCom-Post-Filter' ] ) )['stricter_checked'] ?? null ) === true );
+chk( 'at_cap 307 by the plugin: checked', ( classify( at_cap: resp( 307, [ 'location' => 'https://example.test/blog/', 'x-redirect-by' => 'jpkcom-post-filter' ] ) )['stricter_checked'] ?? null ) === true );
+chk( 'at_cap 200: checked (the plugin served it)', ( classify( at_cap: resp( 200 ) )['stricter_checked'] ?? null ) === true );
 chk( 'at_cap server-*: checked', ( classify( at_cap: hdr( 'server-per-group', $h ) )['stricter_checked'] ?? null ) === true );
 chk( 'no patterns: nothing to check', ( classify( inputs: with( [ 'strict' => false ] ) )['stricter_checked'] ?? null ) === false );
 
@@ -552,7 +572,7 @@ chk( 'LiteSpeed at_cap 410 without header: suspected, not the alarm',
 	$r['stricter'] === false && ( $r['stricter_suspected'] ?? null ) === true && ( $r['stricter_checked'] ?? null ) === true, json_encode( $r ) );
 chk( 'LiteSpeed suspicion: hedged detail', stripos( $r['detail'], 'may' ) !== false && stripos( $r['detail'], 'Alarm' ) === false, $r['detail'] );
 chk( 'LiteSpeed at_cap 404 without header: suspected', ( classify( at_cap: resp( 404 ), software: 'LiteSpeed' )['stricter_suspected'] ?? null ) === true );
-chk( 'LiteSpeed at_cap 301: no suspicion', ( classify( at_cap: resp( 301 ), software: 'LiteSpeed' )['stricter_suspected'] ?? null ) === false );
+chk( 'LiteSpeed at_cap 301: no suspicion', ( classify( at_cap: plugin_301(), software: 'LiteSpeed' )['stricter_suspected'] ?? null ) === false );
 chk( 'nginx at_cap 410 without header = no alarm, no suspicion', ( $x = classify( at_cap: resp( 410 ) ) )['stricter'] === false && ( $x['stricter_suspected'] ?? null ) === false );
 chk( 'at_cap server-*: the alarm, not a suspicion', ( classify( at_cap: hdr( 'server-per-group', $h ) )['stricter_suspected'] ?? null ) === false );
 $r = classify( at_cap: hdr( 'server-per-group', $h ) );
@@ -614,7 +634,7 @@ if ( $have && function_exists( 'jpkcom_postfilter_server_check_run' ) ) {
 		if ( str_contains( $url, 'jpkpf-probe-3' ) ) {
 			return http( 410, [ 'X-Jpkpf-Reject' => 'server-per-group', 'X-Jpkpf-Rule' => $inputs['hash'] ] );
 		}
-		return http( 301, [ 'Location' => 'https://example.test/blog/' ] );
+		return http( 301, [ 'Location' => 'https://example.test/blog/', 'X-Redirect-By' => 'jpkcom-post-filter' ] );
 	};
 	$before = time();
 	$out    = jpkcom_postfilter_server_check_run();
@@ -632,6 +652,7 @@ if ( $have && function_exists( 'jpkcom_postfilter_server_check_run' ) ) {
 	chk( 'run: only URLs of home_url()', $only_home );
 	chk( 'run: timeout 5, no redirects, no cookies, sslverify as core\'s loopbacks (https_local_ssl_verify, default false)', $args_ok, json_encode( $GLOBALS['__http'][0][2] ?? null ) );
 	chk( 'run: classified', ( $out['result']['rule'] ?? null ) === 'active' && ( $out['result']['robots'] ?? null ) === 'ok' && ( $out['result']['stricter'] ?? null ) === false, json_encode( $out ) );
+	chk( 'run: the plugin\'s 301 on the at-cap probe (X-Redirect-By kept through the header loop) = checked', ( $out['result']['stricter_checked'] ?? null ) === true, json_encode( $out ) );
 	chk( 'run: {time, result} stored', is_array( $stored ) && ( $stored['time'] ?? 0 ) >= $before && ( $stored['result'] ?? null ) === ( $out['result'] ?? false ), json_encode( $stored ) );
 	chk( 'run: option not autoloaded', array_key_exists( 'jpkcom_postfilter_server_rules_check', $GLOBALS['__autoload'] ) && $GLOBALS['__autoload']['jpkcom_postfilter_server_rules_check'] === false );
 
