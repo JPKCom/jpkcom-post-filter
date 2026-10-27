@@ -1620,6 +1620,10 @@ chk( 'apache: ModSecurity context explains CRS without a global engine and the H
 	str_contains( $modsec_ctx, 'without a global SecRuleEngine' ) && str_contains( $modsec_ctx, 'logs rule 911100 for every filter request' )
 	&& str_contains( $modsec_ctx, 'SecRuleEngine DetectionOnly' ) && str_contains( $modsec_ctx, 'UseCanonicalName On' )
 	&& ! str_contains( $modsec_ctx, 'If OWASP CRS is loaded, it then also enforces' ), $modsec_ctx );
+// T6-b: RESOURCE and USER are the last addressable collections; a site's own
+// rule set that opens either first takes the counters along (docblock).
+chk( 'apache: ModSecurity context names the RESOURCE and USER collections and a site rule set opening them first',
+	str_contains( $modsec_ctx, 'RESOURCE and USER collections' ) && str_contains( $modsec_ctx, 'opens RESOURCE or USER' ), $modsec_ctx );
 chk( 'apache: context names apachectl -M', str_contains( context_of( $all['apache'] ), 'apachectl -M' ) );
 
 // --- .htaccess -------------------------------------------------------------------
