@@ -261,6 +261,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_warnings' ) ) 
                     $limits['repeat']
                 ),
                 'nesting' => __( 'it is nested deeper than the regular expressions of Ferron 3 allow', 'jpkcom-post-filter' ),
+                // 1.7.1: per_group itself is loadable, but the guard checks
+                // segments first, so it goes with it.
+                'with-segments' => __( 'its own pattern would load, but it is left out together with the segment count rule', 'jpkcom-post-filter' ),
             ];
             $parts = [];
             foreach ( [ 'per_group', 'segments' ] as $key ) {
@@ -268,10 +271,26 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_warnings' ) ) 
                     $parts[] = $rules[ $key ] . ': ' . ( $reasons[ $dropped[ $key ] ] ?? $dropped[ $key ] );
                 }
             }
+
+            // Only the settings that move the dropped rules (1.7.1): the segment
+            // count rule depends on the number of filter groups alone, the
+            // per-group rule also on positions without taxonomy and the terms
+            // per group; both patterns carry every archive base, so a length
+            // problem also shrinks with fewer post types or languages.
+            $levers = [ 'groups' => __( 'fewer filter groups', 'jpkcom-post-filter' ) ];
+            if ( isset( $dropped['per_group'] ) && $dropped['per_group'] !== 'with-segments' ) {
+                $levers['skip']  = __( 'fewer positions without taxonomy', 'jpkcom-post-filter' );
+                $levers['terms'] = __( 'a lower number of terms per group', 'jpkcom-post-filter' );
+            }
+            if ( in_array( 'length', $dropped, true ) ) {
+                $levers['bases'] = __( 'fewer filterable post types or languages', 'jpkcom-post-filter' );
+            }
+
             $add( 'patterns-dropped', 'warning', sprintf(
-                /* translators: %s: the rules left out and why, e.g. "terms per group: PCRE (nginx, Apache, OpenLiteSpeed) cannot compile its pattern, it is too large" */
-                __( 'A server could not load every reject rule for these settings, so these are left out of every snippet, the check and a managed .htaccess block: %s. The plugin still rejects those URLs itself; the server only passes them on to PHP. Fewer filter groups, fewer positions without taxonomy or a lower number of terms per group bring the rule back.', 'jpkcom-post-filter' ),
-                implode( '; ', $parts )
+                /* translators: 1: the rules left out and why, e.g. "terms per group: PCRE (nginx, Apache, OpenLiteSpeed) cannot compile its pattern, it is too large"; 2: semicolon-separated settings, e.g. "fewer filter groups; a lower number of terms per group" */
+                __( 'A server could not load every reject rule for these settings, so these are left out of every snippet, the check and a managed .htaccess block: %1$s. The plugin still rejects those URLs itself; the server only passes them on to PHP. Only these bring the rules back: %2$s.', 'jpkcom-post-filter' ),
+                implode( '; ', $parts ),
+                implode( '; ', $levers )
             ) );
         }
 

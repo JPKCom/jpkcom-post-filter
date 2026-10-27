@@ -643,13 +643,16 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_patterns_dropped' ) 
      * which rule exists. A pattern that is dropped is looser, never
      * stricter: the plugin still rejects those URLs in PHP. per_group is
      * also dropped when segments is, so a URL over both caps never gets
-     * another reason from the server than from PHP.
+     * another reason from the server than from PHP. Its reason is then its
+     * own problem, or `with-segments` when its own pattern would load.
      *
      * @since 1.6.1
+     * @since 1.7.1 Reason `with-segments`.
      *
      * @param array<string, mixed> $inputs As returned by jpkcom_postfilter_server_rule_inputs().
      * @return array<string, string> Pattern key (`per_group`, `segments`) => reason
-     *                               (see jpkcom_postfilter_server_pattern_problem()); empty when nothing is dropped.
+     *                               (see jpkcom_postfilter_server_pattern_problem(), plus
+     *                               `with-segments`); empty when nothing is dropped.
      */
     function jpkcom_postfilter_server_patterns_dropped( array $inputs ): array {
         $uri  = jpkcom_postfilter_server_reject_patterns_unchecked( inputs: $inputs );
@@ -661,8 +664,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_patterns_dropped' ) 
                 continue;
             }
             $problem = jpkcom_postfilter_server_pattern_problem( uri: $uri[ $key ], line: $line[ $key ] );
+            // The guard checks segments before per_group, so per_group goes
+            // with it. Its own pattern is loadable: say so instead of
+            // borrowing the segments reason (1.7.1).
             if ( $problem === null && $key === 'per_group' && isset( $out['segments'] ) ) {
-                $problem = $out['segments'];
+                $problem = 'with-segments';
             }
             if ( $problem !== null ) {
                 $out[ $key ] = $problem;

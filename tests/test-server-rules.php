@@ -2016,6 +2016,37 @@ foreach ( [ 1, 2, 5, 10, 20 ] as $n ) {
 }
 chk( 'sweep N 1-20, G 1-998: every pattern left compiles, is at most 4000 characters, RE2- and nesting-safe; null exactly where a reason is given', $sweep_ok && $sweep_drops > 0, $sweep_seen . ' patterns, ' . $sweep_drops . ' dropped' );
 
+// 1.7.1: per_group that only falls because segments falls says so (with-segments),
+// instead of borrowing the segments reason; one that fails on its own keeps its reason.
+$reason_ok  = $guard_ok;
+$with_seen  = 0;
+$own_seen   = 0;
+$reason_bad = '';
+foreach ( [ 1, 2, 5, 10, 20 ] as $n ) {
+	foreach ( array_merge( range( 47, 130, 9 ), [ 996, 997, 998 ] ) as $g ) {
+		foreach ( [ [], [ $g - 1 ], $odd( $g ) ] as $skip ) {
+			if ( ! $reason_ok ) {
+				break 3;
+			}
+			$in      = layout_inputs( $n, $g, $skip, [ '/blog/', '/news/' ] );
+			$dropped = jpkcom_postfilter_server_patterns_dropped( $in );
+			if ( ! isset( $dropped['per_group'] ) ) {
+				continue;
+			}
+			$uri  = jpkcom_postfilter_server_reject_patterns_unchecked( $in );
+			$line = jpkcom_postfilter_server_reject_patterns_unchecked( $in, 'request_line' );
+			$own  = jpkcom_postfilter_server_pattern_problem( (string) $uri['per_group'], (string) $line['per_group'] );
+			$want = $own ?? ( isset( $dropped['segments'] ) ? 'with-segments' : '?' );
+			$own === null ? $with_seen++ : $own_seen++;
+			if ( $dropped['per_group'] !== $want ) {
+				$reason_ok  = false;
+				$reason_bad = "N{$n} G{$g}: " . show( $dropped ) . " want per_group {$want}";
+			}
+		}
+	}
+}
+chk( 'per_group falling only with segments is reported as with-segments (1.7.1)', $reason_ok && $with_seen > 0 && $own_seen > 0, $reason_bad . " ({$with_seen} with-segments, {$own_seen} own)" );
+
 // --- normal layouts: unchanged byte for byte ---
 /** Normal layouts: N 1-5, G 1-8, four skip shapes, four base sets. */
 function guard_layouts(): array {

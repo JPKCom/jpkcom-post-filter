@@ -423,6 +423,22 @@ chk( 'warning 1.6.1: both rules dropped: one warning, both named', $w !== null &
 	&& count( array_filter( warnings( inputs( [ 'groups' => 1000 ] ) ), static fn( array $x ): bool => $x['id'] === 'patterns-dropped' ) ) === 1, $w['text'] ?? '' );
 chk( 'normal layout: no patterns-dropped warning', warning( $base, 'patterns-dropped' ) === null );
 
+// 1.7.1: the reason and the remedy follow the rule that was dropped.
+/** The remedy part of the patterns-dropped warning. */
+function remedy( ?array $w ): string {
+	$t = (string) ( $w['text'] ?? '' );
+	$i = strpos( $t, 'Only these bring the rules back:' );
+	return $i === false ? '' : substr( $t, $i );
+}
+$w = warning( warnings( inputs( [ 'max_per_group' => 1, 'groups' => 996 ] ) ), 'patterns-dropped' );
+chk( 'warning 1.7.1: per_group falling with segments says so', str_contains( $w['text'] ?? '', 'left out together with the segment count rule' ), $w['text'] ?? '' );
+chk( '... and its remedy names only what moves the segment count rule', str_contains( remedy( $w ), 'fewer filter groups' ) && ! str_contains( remedy( $w ), 'terms per group' ) && ! str_contains( remedy( $w ), 'without taxonomy' ), remedy( $w ) );
+$w = warning( warnings( inputs( [ 'max_per_group' => 20, 'groups' => 71 ] ) ), 'patterns-dropped' );
+chk( 'warning 1.7.1: a per_group rule failing on its own names terms per group and positions without taxonomy as the remedy', str_contains( remedy( $w ), 'terms per group' ) && str_contains( remedy( $w ), 'without taxonomy' ), remedy( $w ) );
+chk( '... but not post types or languages (no length problem)', ! str_contains( remedy( $w ), 'post types' ), remedy( $w ) );
+$w = warning( warnings( inputs( [ 'max_per_group' => 20, 'groups' => 40, 'skip_positions' => $odd40 ] ) ), 'patterns-dropped' );
+chk( 'warning 1.7.1: a length problem also names fewer filterable post types or languages', str_contains( remedy( $w ), 'post types or languages' ), remedy( $w ) );
+
 $w = warning( (array) call( 'jpkcom_postfilter_server_rules_warnings', inputs( [ 'groups' => 3 ] ), [ 'category', 'post_tag', 'category' ] ), 'duplicate-taxonomies' );
 chk( 'info: two groups on one taxonomy (taxonomies passed in)', ( $w['level'] ?? '' ) === 'info' && str_contains( $w['text'], 'category' ) && ! str_contains( $w['text'], 'post_tag' ) );
 chk( 'two groups without taxonomy are not duplicates',
