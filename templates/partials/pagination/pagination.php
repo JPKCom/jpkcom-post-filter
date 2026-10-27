@@ -36,9 +36,10 @@ $filter_url = ( ! empty( $active_filters ) && function_exists( 'jpkcom_postfilte
 // `…/page/1/` - a duplicate of page 1 linked from every paginated list.
 $page_base = trailingslashit( $filter_url ) . '%_%';
 
-// Pages that are not indexable (see jpkcom_postfilter_robots_directives())
-// pass no link equity into further combinations.
-$nofollow = function_exists( 'jpkcom_postfilter_should_noindex' ) && jpkcom_postfilter_should_noindex();
+// Pages that are nofollow (see jpkcom_postfilter_robots_directives()) pass no
+// link equity into further combinations. Since 1.7.0 a combination can be
+// index, nofollow, so this follows the follow decision, not the noindex.
+$nofollow = function_exists( 'jpkcom_postfilter_should_nofollow' ) && jpkcom_postfilter_should_nofollow();
 ?>
 <nav class="jpkpf-pagination<?php echo ! empty( $extra_class ) ? ' ' . esc_attr( $extra_class ) : ''; ?>"
      data-jpkpf-pagination

@@ -375,4 +375,153 @@ chk( 'jpkcom_postfilter_canonical_base_indexable has the last word', $u === 'htt
 unset( $GLOBALS['__run_filters']['jpkcom_postfilter_canonical_base_indexable'] );
 seo_reset();
 
+// ---------------------------------------------------------------------------
+section( 'Decision matrix' );
+
+/**
+ * Set the request up as a filter page for the given selection.
+ */
+function as_filter_page( array $filters, int $paged = 0, string $post_type = 'post' ): void {
+	$segments = [];
+	foreach ( $filters as $t => $sl ) {
+		$segments[ $t ] = implode( '+', $sl );
+	}
+	$GLOBALS['__query_vars'] = [
+		'jpkcom_filter_active'    => $filters ? '1' : '',
+		'jpkcom_filter_segments'  => $segments,
+		'jpkcom_filter_post_type' => $post_type,
+		'paged'                   => $paged,
+	];
+}
+
+/**
+ * One row: selection, settings, setup -> kind, canonical, robots.
+ *
+ * @param array<string, string[]> $filters
+ * @param array<string, mixed>    $general
+ */
+function row( string $name, array $filters, array $general, string $kind, string $canonical, array $robots, int $paged = 0, ?callable $setup = null ): void {
+	seo_reset();
+	set_general( $general );
+	if ( $setup !== null ) {
+		$setup();
+		call( 'jpkcom_postfilter_canonical_target_memo_reset' );
+	}
+	as_filter_page( $filters, $paged );
+	$d = call( 'jpkcom_postfilter_canonical_decision' );
+	$c = call( 'jpkcom_postfilter_canonical_url' );
+	$r = call( 'jpkcom_postfilter_robots_directives' );
+	$got_kind = is_array( $d ) ? ( $d['kind'] ?? '?' ) : var_export( $d, true );
+	chk(
+		$name,
+		$got_kind === $kind && $c === $canonical && $r === $robots,
+		'kind ' . $got_kind . ', canonical ' . var_export( $c, true ) . ', robots ' . json_encode( $r )
+	);
+}
+
+$if   = [ 'index' => true, 'follow' => true ];
+$inf  = [ 'index' => true, 'follow' => false ];
+$ninf = [ 'index' => false, 'follow' => false ];
+$one  = [ 'category' => [ 'zaeune' ] ];
+$two  = [ 'category' => [ 'sichtschutz', 'zaeune' ] ];
+$rm_cat_noindex = static function (): void {
+	$GLOBALS['__options']['rank-math-options-titles'] = [ 'tax_category_custom_robots' => 'on', 'tax_category_robots' => [ 'noindex' ] ];
+};
+$rm_blog_noindex = static function (): void {
+	$GLOBALS['__post_meta'][5]['rank_math_robots'] = [ 'noindex' ];
+};
+
+row( 'one term, defaults: the term archive', $one, [], 'archive', $zaeune, $if );
+row( 'one term, page 2: the archive, page 1', $one, [], 'archive', $zaeune, $if, 2 );
+row( 'one term, archive noindex: falls back to the filter URL', $one, [], 'self', $base . 'filter/zaeune/', $if, 0, $rm_cat_noindex );
+row( 'one term, archive noindex, nothing indexable: noindex without canonical', $one, [ 'seo_index_max_terms' => 0 ], 'none', '', $ninf, 0, $rm_cat_noindex );
+row( 'one term, nothing indexable: the archive, and the noindex goes', $one, [ 'seo_index_max_terms' => 0 ], 'archive', $zaeune, $inf );
+row( 'one term, filter: self, page 1', $one, [ 'canonical_single' => 'filter' ], 'self', $base . 'filter/zaeune/', $if, 2 );
+row( 'one term, off: no canonical, robots as before', $one, [ 'canonical_single' => 'off' ], 'none', '', $if );
+row( 'two terms, defaults: the archive base, index, nofollow', $two, [], 'home', $base, $inf );
+row( 'two groups, defaults: the archive base', [ 'category' => [ 'zaeune' ], 'post_tag' => [ 'privat' ] ], [], 'home', $base, $inf );
+row( 'two terms, page 2: the base, page 1', $two, [], 'home', $base, $inf, 2 );
+row( 'two terms, base noindex: falls back to filter, which is noindex', $two, [], 'none', '', $ninf, 0, $rm_blog_noindex );
+row( 'two terms, filter: as in 1.6.1', $two, [ 'canonical_multi' => 'filter' ], 'none', '', $ninf );
+row( 'two terms, filter, two indexable: self, page 1', $two, [ 'canonical_multi' => 'filter', 'seo_index_max_terms' => 2 ], 'self', $base . 'filter/sichtschutz+zaeune/', $if, 2 );
+row( 'two terms, off: no canonical, robots as before', $two, [ 'canonical_multi' => 'off' ], 'none', '', $ninf );
+row( 'an unknown term: a bot page, whatever the settings', [ 'category' => [ 'gibt-es-nicht' ] ], [], 'none', '', $ninf );
+
+seo_reset();
+as_filter_page( [] );
+chk( 'a non-filter request has no decision', call( 'jpkcom_postfilter_canonical_decision' ) === null && call( 'jpkcom_postfilter_canonical_url' ) === null );
+
+// A final noindex from the robots filter always drops the canonical.
+seo_reset();
+$GLOBALS['__run_filters']['jpkcom_postfilter_robots_directives'] = static fn( array $d ): array => [ 'index' => false, 'follow' => true ];
+as_filter_page( $one );
+chk( 'a noindex set by the robots filter drops the archive canonical', call( 'jpkcom_postfilter_canonical_url' ) === '', var_export( call( 'jpkcom_postfilter_canonical_url' ), true ) );
+unset( $GLOBALS['__run_filters']['jpkcom_postfilter_robots_directives'] );
+
+// The canonical filter sees the kind of target.
+seo_reset();
+$seen = null;
+$GLOBALS['__run_filters']['jpkcom_postfilter_canonical'] = static function ( string $url, string $kind = '', array $filters = [] ) use ( &$seen ): string {
+	$seen = [ $kind, $filters ];
+	return $url;
+};
+as_filter_page( $two );
+call( 'jpkcom_postfilter_canonical_url' );
+chk( 'jpkcom_postfilter_canonical gets the kind and the filters', $seen === [ 'home', $two ], json_encode( $seen ) );
+unset( $GLOBALS['__run_filters']['jpkcom_postfilter_canonical'] );
+
+// ---------------------------------------------------------------------------
+section( 'Output paths' );
+
+seo_reset();
+as_filter_page( $two );
+$rm = [ 'index' => 'index', 'follow' => 'follow' ];
+foreach ( $GLOBALS['__filters']['rank_math/frontend/robots'] ?? [] as $cb ) {
+	$rm = $cb( $rm );
+}
+chk( 'Rank Math robots of a combination: index, nofollow', ( $rm['index'] ?? '' ) === 'index' && ( $rm['follow'] ?? '' ) === 'nofollow', json_encode( $rm ) );
+$rc = 'https://example.test/blog/';
+foreach ( $GLOBALS['__filters']['rank_math/frontend/canonical'] ?? [] as $cb ) {
+	$rc = $cb( 'https://example.test/somewhere-else/' );
+}
+chk( 'Rank Math canonical of a combination: the base', $rc === $base, var_export( $rc, true ) );
+
+$y = [ 'index' => 'index', 'follow' => 'follow' ];
+foreach ( $GLOBALS['__filters']['wpseo_robots_array'] ?? [] as $cb ) {
+	$y = $cb( $y );
+}
+chk( 'Yoast robots of a combination: index, nofollow', ( $y['index'] ?? '' ) === 'index' && ( $y['follow'] ?? '' ) === 'nofollow', json_encode( $y ) );
+
+$core = [ 'max-image-preview' => 'large' ];
+foreach ( $GLOBALS['__filters']['wp_robots'] ?? [] as $cb ) {
+	$core = $cb( $core );
+}
+chk( 'core robots of a combination: nofollow without noindex', ! empty( $core['nofollow'] ) && empty( $core['noindex'] ), json_encode( $core ) );
+
+seo_reset();
+set_general( [ 'canonical_single' => 'off' ] );
+as_filter_page( $one );
+$yc = 'https://example.test/blog/';
+foreach ( $GLOBALS['__filters']['wpseo_canonical'] ?? [] as $cb ) {
+	$yc = $cb( $yc );
+}
+chk( 'Yoast canonical with off: none', $yc === false, var_export( $yc, true ) );
+$rc = 'https://example.test/blog/';
+foreach ( $GLOBALS['__filters']['rank_math/frontend/canonical'] ?? [] as $cb ) {
+	$rc = $cb( $rc );
+}
+chk( 'Rank Math canonical with off: empty', $rc === '', var_export( $rc, true ) );
+seo_reset();
+as_filter_page( [] );
+
+chk( 'jpkcom_postfilter_should_nofollow exists', function_exists( 'jpkcom_postfilter_should_nofollow' ) );
+foreach ( [ 'templates', 'debug-templates' ] as $dir ) {
+	$src = (string) file_get_contents( __DIR__ . '/../' . $dir . '/partials/pagination/pagination.php' );
+	chk(
+		"{$dir}: pagination nofollow follows the follow decision",
+		str_contains( $src, 'jpkcom_postfilter_should_nofollow()' ) && ! str_contains( $src, 'jpkcom_postfilter_should_noindex()' ),
+		'A combination is index, nofollow since 1.7.0 - keyed on noindex its page links would lose nofollow.'
+	);
+}
+
 exit( summary() );

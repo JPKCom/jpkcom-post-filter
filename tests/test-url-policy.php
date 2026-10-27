@@ -27,6 +27,11 @@ define( 'JPKCOM_POSTFILTER_URL_ENDPOINT', 'filter' );
 define( 'JPKCOM_POSTFILTER_DEBUG', false );
 define( 'WP_CONTENT_DIR', sys_get_temp_dir() . '/jpkpf-policy-' . getmypid() );
 define( 'JPKCOM_POSTFILTER_SETTINGS_DIR', WP_CONTENT_DIR . '/.ht.jpkcom-post-filter-settings' );
+// 1.7.0: these checks pin the 1.5.0 robots rules, which the canonical setting
+// "filter" keeps unchanged. The 1.7.0 targets (term archive, archive base) and
+// their effect on robots are tested in tests/test-canonical.php.
+define( 'JPKCOM_POSTFILTER_CANONICAL_SINGLE', 'filter' );
+define( 'JPKCOM_POSTFILTER_CANONICAL_MULTI', 'filter' );
 
 @mkdir( WP_CONTENT_DIR, 0755, true );
 
@@ -57,7 +62,7 @@ function jpkcom_postfilter_get_filter_groups_enabled(): array { return $GLOBALS[
 require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/settings.php';
 
-foreach ( [ 'url-policy.php', 'url-routing.php', 'crawl-guard.php' ] as $file ) {
+foreach ( [ 'url-policy.php', 'url-routing.php', 'canonical-target.php', 'crawl-guard.php' ] as $file ) {
 	if ( is_file( __DIR__ . '/../includes/' . $file ) ) {
 		require_once __DIR__ . '/../includes/' . $file;
 	}

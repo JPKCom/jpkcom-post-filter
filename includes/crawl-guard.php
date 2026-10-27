@@ -362,6 +362,95 @@ if ( ! function_exists( function: 'jpkcom_postfilter_main_query_is_empty' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_is_bot_filter_page' ) ) {
+    /**
+     * Whether the current filter page is one only bots make
+     *
+     * An unknown slug or no results on page 1. These pages stay `noindex,
+     * nofollow` without a canonical whatever the canonical settings say.
+     *
+     * @since 1.7.0
+     *
+     * @return bool
+     */
+    function jpkcom_postfilter_is_bot_filter_page(): bool {
+        return jpkcom_postfilter_has_unknown_terms() || jpkcom_postfilter_main_query_is_empty();
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_canonical_decision' ) ) {
+    /**
+     * Where the canonical of the current filter page points
+     *
+     * Reads the canonical settings and the term count, never the robots
+     * directives - those are derived from this decision. Targets are always
+     * page 1: page N of a filter page is not page N of its target.
+     *
+     *  - bot page (unknown term, no results): none
+     *  - one term, `canonical_single`: archive (the term archive when it is an
+     *    indexable target, else as `filter`) / filter / off
+     *  - two or more terms, `canonical_multi`: home (the archive base when it
+     *    is an indexable target, else as `filter`) / filter / off
+     *  - `filter`: self when the page is within `seo_index_max_terms`, else none
+     *  - `off`: none
+     *
+     * @since 1.7.0
+     *
+     * @return array{kind: string, url: string}|null Kind archive|home|self|none
+     *                                              and URL ('' for none); null
+     *                                              when not a filter request.
+     */
+    function jpkcom_postfilter_canonical_decision(): ?array {
+        if ( ! jpkcom_postfilter_is_filter_request() ) {
+            return null;
+        }
+
+        $none = [ 'kind' => 'none', 'url' => '' ];
+
+        if ( jpkcom_postfilter_is_bot_filter_page() ) {
+            return $none;
+        }
+
+        $filters   = jpkcom_postfilter_get_active_filters();
+        $terms     = jpkcom_postfilter_count_filter_terms( $filters );
+        $post_type = (string) get_query_var( 'jpkcom_filter_post_type', 'post' );
+        $post_type = $post_type !== '' ? $post_type : 'post';
+        $mode_key  = $terms > 1 ? 'canonical_multi' : 'canonical_single';
+        $mode      = (string) jpkcom_postfilter_policy( $mode_key );
+
+        if ( $mode === 'off' || $terms === 0 ) {
+            return $none;
+        }
+
+        if ( $mode === 'archive' && $terms === 1 ) {
+            $taxonomy = (string) array_key_first( $filters );
+            $url      = jpkcom_postfilter_term_archive_url( $taxonomy, (string) $filters[ $taxonomy ][0], $post_type );
+            if ( $url !== '' ) {
+                return [ 'kind' => 'archive', 'url' => $url ];
+            }
+        }
+
+        if ( $mode === 'home' ) {
+            $url = jpkcom_postfilter_base_canonical_url( $post_type );
+            if ( $url !== '' ) {
+                return [ 'kind' => 'home', 'url' => $url ];
+            }
+        }
+
+        // `filter`, and the fallback of an unusable archive or base.
+        if ( $terms > (int) jpkcom_postfilter_policy( 'seo_index_max_terms' ) ) {
+            return $none;
+        }
+
+        return [
+            'kind' => 'self',
+            'url'  => jpkcom_postfilter_get_filter_url( jpkcom_postfilter_get_archive_base_url( $post_type ), $filters, 0 ),
+        ];
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_robots_directives' ) ) {
     /**
      * Robots directives for the current filter page
@@ -370,6 +459,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_robots_directives' ) ) {
      * header. A filter page is `noindex, nofollow` when it combines more terms
      * than `seo_index_max_terms` (default 1), names an unknown slug, or has no
      * results on page 1. Single-term pages stay `index, follow`.
+     *
+     * Since 1.7.0 a canonical to another URL (the term archive or the archive
+     * base, see jpkcom_postfilter_canonical_decision()) replaces the noindex
+     * that comes from the term count: noindex next to a canonical pointing
+     * elsewhere is a contradiction search engines resolve unpredictably, at
+     * worst by carrying the noindex over to the target. `follow` keeps
+     * following the term count. Bot pages are not affected.
      *
      * `nofollow` is deliberate: everything such a page links to is reachable
      * from the archive, the single-term pages and the sitemap. Following its
@@ -390,8 +486,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_robots_directives' ) ) {
 
         $directives = [ 'index' => true, 'follow' => true ];
 
-        if ( $terms > $max || jpkcom_postfilter_has_unknown_terms() || jpkcom_postfilter_main_query_is_empty() ) {
+        if ( jpkcom_postfilter_is_bot_filter_page() ) {
             $directives = [ 'index' => false, 'follow' => false ];
+        } elseif ( $terms > $max ) {
+            $decision   = jpkcom_postfilter_canonical_decision();
+            $elsewhere  = $decision !== null && in_array( $decision['kind'], [ 'archive', 'home' ], true );
+            $directives = [ 'index' => $elsewhere, 'follow' => false ];
         }
 
         /**
@@ -426,6 +526,24 @@ if ( ! function_exists( function: 'jpkcom_postfilter_should_noindex' ) ) {
     function jpkcom_postfilter_should_noindex(): bool {
         $directives = jpkcom_postfilter_robots_directives();
         return $directives !== null && ! $directives['index'];
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_should_nofollow' ) ) {
+    /**
+     * Whether links on the current filter page must not be followed
+     *
+     * Since 1.7.0 a combination can be `index, nofollow` (its canonical points
+     * at the archive base), so `nofollow` is no longer implied by `noindex`.
+     *
+     * @since 1.7.0
+     *
+     * @return bool
+     */
+    function jpkcom_postfilter_should_nofollow(): bool {
+        $directives = jpkcom_postfilter_robots_directives();
+        return $directives !== null && ! $directives['follow'];
     }
 }
 
@@ -575,39 +693,38 @@ if ( ! function_exists( function: 'jpkcom_postfilter_canonical_url' ) ) {
     /**
      * Canonical URL of the current filter page
      *
+     * The target is jpkcom_postfilter_canonical_decision(). A page that ends
+     * up noindex - including through the `jpkcom_postfilter_robots_directives`
+     * filter - never carries a canonical.
+     *
      * @since 1.5.0
      *
      * @return string|null Null when this is not a filter page, '' for "no
-     *                     canonical" (noindex pages), the URL otherwise.
+     *                     canonical", the URL otherwise.
      */
     function jpkcom_postfilter_canonical_url(): ?string {
-        if ( ! jpkcom_postfilter_is_filter_request() ) {
+        $decision = jpkcom_postfilter_canonical_decision();
+        if ( $decision === null ) {
             return null;
         }
 
         $directives = jpkcom_postfilter_robots_directives();
-        if ( $directives !== null && ! $directives['index'] ) {
+        if ( $decision['url'] === '' || ( $directives !== null && ! $directives['index'] ) ) {
             return '';
         }
 
-        $post_type = (string) get_query_var( 'jpkcom_filter_post_type', 'post' );
-        $post_type = $post_type !== '' ? $post_type : 'post';
-        $page      = max( 1, (int) get_query_var( 'paged' ) );
-
-        $url = jpkcom_postfilter_get_filter_url(
-            jpkcom_postfilter_get_archive_base_url( $post_type ),
-            jpkcom_postfilter_get_active_filters(),
-            $page > 1 ? $page : 0
-        );
-
         /**
-         * Filter the canonical URL of an indexable filter page.
+         * Filter the canonical URL of a filter page.
+         *
+         * Since 1.7.0 it runs for every target, not only the page itself.
          *
          * @since 1.5.0
          *
-         * @param string $url Canonical URL.
+         * @param string                  $url     Canonical URL.
+         * @param string                  $kind    archive (term archive), home (archive base) or self (since 1.7.0).
+         * @param array<string, string[]> $filters Active filters (since 1.7.0).
          */
-        return (string) apply_filters( 'jpkcom_postfilter_canonical', $url );
+        return (string) apply_filters( 'jpkcom_postfilter_canonical', $decision['url'], $decision['kind'], jpkcom_postfilter_get_active_filters() );
     }
 }
 
