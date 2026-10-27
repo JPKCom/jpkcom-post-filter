@@ -176,13 +176,21 @@ try {
 				comboLinks:   Array.from( document.querySelectorAll( 'a.jpkpf-filter-btn[href*="+"]' ) ).length,
 				robots:       document.querySelector( 'meta[name="robots"]' )?.content ?? '',
 				canonicals:   document.querySelectorAll( 'link[rel="canonical"]' ).length,
+				canonical:    document.querySelector( 'link[rel="canonical"]' )?.href ?? '',
 			};
 		}, [ a, b ] );
 
 		chk( markup.comboLinks === 0, `no term links to a combination (${ markup.comboLinks })` );
 		chk( markup.activeHref === `${ SITE }filter/${ b }/`, `deselecting ${ a } links to the single term ${ b } (${ markup.activeHref })` );
-		chk( /noindex/.test( markup.robots ) && /nofollow/.test( markup.robots ), `two terms are "${ markup.robots }"` );
-		chk( markup.canonicals === 0, `no canonical on a noindex page (${ markup.canonicals })` );
+		// 1.7.0: with the default canonical_multi (home) a combination points at
+		// the archive base and is index, nofollow; with an archive base that is
+		// itself noindex it stays noindex, nofollow without a canonical. Never
+		// noindex next to a canonical, never two canonicals.
+		chk( /nofollow/.test( markup.robots ), `two terms are nofollow ("${ markup.robots }")` );
+		chk(
+			/noindex/.test( markup.robots ) ? markup.canonicals === 0 : markup.canonicals === 1 && markup.canonical === SITE,
+			`two terms: canonical to the archive base, or none on a noindex page (${ markup.canonicals }, ${ markup.canonical })`
+		);
 
 		if ( sameTax.length >= 3 ) {
 			const c = sameTax.slice().sort()[ 2 ];
