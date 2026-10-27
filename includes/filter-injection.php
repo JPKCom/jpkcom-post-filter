@@ -126,11 +126,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_inject_via_blocks' ) ) {
     /**
      * Whether auto-injection goes around the query block instead of the loop hooks
      *
-     * A block theme renders the main loop inside get_the_block_template_html(),
-     * before template-canvas.php prints the doctype: everything the loop hooks
-     * echo lands in front of `<!DOCTYPE html>` (measured with Twenty
-     * Twenty-Five up to 1.7.0). There the markup is collected and wrapped
-     * around the inherited core/post-template block instead.
+     * A block template renders the main loop inside
+     * get_the_block_template_html(), before template-canvas.php prints the
+     * doctype and runs wp_head: everything the loop hooks echo lands in front
+     * of `<!DOCTYPE html>` (measured with Twenty Twenty-Five up to 1.7.0).
+     * There the markup is collected and wrapped around the inherited
+     * core/post-template block instead. The signal is "wp_head has not run
+     * yet", not wp_is_block_theme(): a PHP archive template served in a block
+     * theme runs its loop in the body and prints as before, and a classic
+     * theme rendering a block template is covered as well.
      *
      * @since 1.7.1
      *
@@ -142,9 +146,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_inject_via_blocks' ) ) {
          *
          * @since 1.7.1
          *
-         * @param bool $via_blocks Default: wp_is_block_theme().
+         * @param bool $via_blocks Default: true while wp_head has not run.
          */
-        return (bool) apply_filters( 'jpkcom_postfilter_inject_via_blocks', function_exists( 'wp_is_block_theme' ) && wp_is_block_theme() );
+        return (bool) apply_filters( 'jpkcom_postfilter_inject_via_blocks', ! did_action( 'wp_head' ) );
     }
 }
 
@@ -354,13 +358,17 @@ add_action( 'loop_end', static function ( \WP_Query $query ): void {
     }
 
     if ( jpkcom_postfilter_inject_via_blocks() ) {
-        if ( ! isset( $GLOBALS['_jpkpf_block_open'] ) || isset( $GLOBALS['_jpkpf_block_close'] ) ) {
-            return;
+        // The pagination is suppressed only once the wrap happened (the
+        // post-template filter below), and max_num_pages stays: in a block
+        // template the SEO plugins read it in wp_head afterwards for
+        // "Page N of M" and rel=next.
+        if ( isset( $GLOBALS['_jpkpf_block_open'] ) && ! isset( $GLOBALS['_jpkpf_block_close'] ) ) {
+            $GLOBALS['_jpkpf_block_close'] = jpkcom_postfilter_auto_inject_close_html( $query );
         }
-        $GLOBALS['_jpkpf_block_close'] = jpkcom_postfilter_auto_inject_close_html( $query );
-    } else {
-        echo jpkcom_postfilter_auto_inject_close_html( $query ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped while rendering
+        return;
     }
+
+    echo jpkcom_postfilter_auto_inject_close_html( $query ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped while rendering
 
     // Our pagination is fully rendered. Now suppress theme/plugin pagination
     // that runs after this hook via two complementary strategies:
@@ -397,20 +405,24 @@ if ( ! function_exists( function: 'jpkcom_postfilter_block_inherits_query' ) ) {
  * Put the collected markup around the inherited post template
  *
  * loop_start and loop_end run inside its render, so both halves are there
- * when this filter sees the block's HTML.
+ * when this filter sees the block's HTML. An inherited query rendered inside
+ * the main loop (in a post) is filtered before loop_end: without the closing
+ * half it is left alone and the main post template keeps the wrap.
  *
  * @since 1.7.1
  */
 add_filter( 'render_block_core/post-template', static function ( $content, $block = [], $instance = null ) {
 
-    if ( ! jpkcom_postfilter_inject_via_blocks() || ! jpkcom_postfilter_block_inherits_query( $instance ) || ! isset( $GLOBALS['_jpkpf_block_open'] ) ) {
+    if ( ! jpkcom_postfilter_inject_via_blocks() || ! jpkcom_postfilter_block_inherits_query( $instance )
+        || ! isset( $GLOBALS['_jpkpf_block_open'], $GLOBALS['_jpkpf_block_close'] ) ) {
         return $content;
     }
 
-    $content = $GLOBALS['_jpkpf_block_open'] . $content . ( $GLOBALS['_jpkpf_block_close'] ?? '' );
+    $content = $GLOBALS['_jpkpf_block_open'] . $content . $GLOBALS['_jpkpf_block_close'];
 
     unset( $GLOBALS['_jpkpf_block_open'], $GLOBALS['_jpkpf_block_close'] );
-    $GLOBALS['_jpkpf_block_injected'] = true;
+    $GLOBALS['_jpkpf_block_injected']      = true;
+    $GLOBALS['_jpkpf_suppress_pagination'] = true;
 
     return $content;
 }, 10, 3 );
@@ -422,11 +434,17 @@ add_filter( 'render_block_core/post-template', static function ( $content, $bloc
  */
 add_filter( 'render_block_core/query-pagination', static function ( $content, $block = [], $instance = null ) {
 
-    if ( jpkcom_postfilter_inject_via_blocks() && ( $GLOBALS['_jpkpf_suppress_pagination'] ?? false ) && jpkcom_postfilter_block_inherits_query( $instance ) ) {
-        return '';
+    if ( ! jpkcom_postfilter_inject_via_blocks() || ! jpkcom_postfilter_block_inherits_query( $instance ) ) {
+        return $content;
     }
 
-    return $content;
+    // Also when the theme places it before the post template, i.e. before
+    // the wrap: the plugin paginates whenever the main query has posts.
+    global $wp_query;
+    $paginates = ( $GLOBALS['_jpkpf_suppress_pagination'] ?? false )
+        || ( $wp_query instanceof \WP_Query && (int) $wp_query->post_count > 0 && jpkcom_postfilter_should_auto_inject( $wp_query ) );
+
+    return $paginates ? '' : $content;
 }, 10, 3 );
 
 /**

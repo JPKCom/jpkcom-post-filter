@@ -402,7 +402,7 @@ The pagination position for auto-inject mode is configurable (Below / Above / Bo
 
 Auto-inject works by hooking into `loop_start` and `loop_end` on archive/blog pages. It does not run on singular posts, search results, or pages.
 
-In block themes (since 1.7.1) the same markup is placed around the post template of the query block that inherits the main query, the theme's query pagination is replaced by the plugin's, and with zero results the bar and the message take the place of the query's no-results block. Templates without such a query block get the zero-results bar in the footer as before. The filter `jpkcom_postfilter_inject_via_blocks` (default: `wp_is_block_theme()`) switches between the two ways.
+In block themes (since 1.7.1) the same markup is placed around the post template of the query block that inherits the main query, the theme's query pagination is replaced by the plugin's, and with zero results the bar and the message take the place of the query's no-results block. Templates without such a query block get the zero-results bar in the footer as before. A PHP archive template in a block theme runs its loop in the page body and gets the classic markup. The filter `jpkcom_postfilter_inject_via_blocks` (default: true while `wp_head` has not run, i.e. inside a block template) switches between the two ways.
 
 ---
 
@@ -600,7 +600,7 @@ jpkcom_postfilter_get_terms_for_group( $group, $active_filters )
 - `jpkcom_postfilter_ability_meta( array $meta, string $ability_name )` — adjust the meta of an ability before registration. Set `show_in_rest` to `false` to hide it from the REST API, or `mcp.public` to `false` to hide it from MCP clients.
 - `jpkcom_postfilter_ability_capability( string $capability, string $ability_name )` — the capability required to run an ability. Defaults to `read`, which covers every logged-in user. Raise it to `edit_posts` to restrict bulk machine-readable access to published content.
 - `jpkcom_postfilter_canonical( string $url, string $kind, array $filters )` — the canonical of a filter page; `$kind` is `archive` (term archive), `home` (archive base) or `self`. Not called when the page has no canonical. Since 1.7.0 it receives term archive and archive base URLs as well, not only the filter page's own URL; since 1.7.1 `self` carries the page from page 2 on, and returning an empty string means no canonical - the page then keeps the noindex of its term count.
-- `jpkcom_postfilter_inject_via_blocks( bool $via_blocks )` — whether auto-injection wraps the inherited query block (block themes) instead of printing from the loop hooks (since 1.7.1).
+- `jpkcom_postfilter_inject_via_blocks( bool $via_blocks )` — whether auto-injection wraps the inherited query block instead of printing from the loop hooks; default true while `wp_head` has not run (since 1.7.1).
 - `jpkcom_postfilter_canonical_archive_indexable( bool $indexable, WP_Term $term, string $post_type )` — whether a term archive may be the canonical target (since 1.7.0). Use it for SEO plugins other than Rank Math and Yoast, or for a theme that changes what a term archive lists.
 - `jpkcom_postfilter_canonical_base_indexable( bool $indexable, string $post_type )` — the same for the archive base (since 1.7.0).
 
