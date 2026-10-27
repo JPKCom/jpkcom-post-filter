@@ -680,6 +680,29 @@ chk( 'damaged markers -> not provable, not even a removal', $looser( $damaged, $
 chk( 'no managed block -> nothing to loosen', $looser( $original, $block ) === false );
 chk( 'CRLF file -> compared without line endings', $looser( str_replace( "\n", "\r\n", $file_with( with_unit( $block, $extra, 'RewriteEngine On' ) ) ), $block ) === true );
 
+// M-3: a reject unit is recognised by its exact shape only - the three lines
+// as jpkcom_postfilter_server_apache_rules() writes them, flags E, R, L and
+// nothing else. A rule with more flags is not one the plugin wrote: S=2 skips
+// the next rules, C chains the next rule to it, PT hands the URL on - deleting
+// it changes what the rules around it do, so the deletion is not provable.
+foreach ( [ ',S=2' => 'skips the next two rules', ',PT' => 'passes through', ',C' => 'chains the next rule' ] as $flag => $what ) {
+	$odd = str_replace( ',L]', ',L' . $flag . ']', reject_unit( 'legacy', '^GET /blog/filter/legacy' ) );
+	chk( "M-3 a reject rule with {$flag} ({$what}) deleted -> not provable",
+		$looser( $file_with( with_unit( $block, $odd, 'RewriteEngine On' ) ), $block ) === false );
+}
+$quoted = str_replace( '"^GET /blog/filter/legacy"', '"^GET /blog/filter/legacy" "x"', reject_unit( 'legacy', '^GET /blog/filter/legacy' ) );
+chk( 'M-3 a THE_REQUEST condition that is not one quoted pattern, deleted -> not provable',
+	$looser( $file_with( with_unit( $block, $quoted, 'RewriteEngine On' ) ), $block ) === false );
+chk( 'M-3 a reject rule as the plugin writes it, deleted -> still provable', $looser( $file_with( with_unit( $block, $extra, 'RewriteEngine On' ) ), $block ) === true );
+// The shape is taken from the renderer, both forms: .htaccess (`RewriteRule ^`)
+// and server configuration (`RewriteRule ^/`).
+foreach ( [ true => '.htaccess', false => 'server config' ] as $per_dir => $form ) {
+	$rendered = (string) call( 'jpkcom_postfilter_server_apache_rules', inputs( 3, [ 'bases' => [ '/blog/', '/' ] ] ), (bool) $per_dir );
+	$units    = (array) call( 'jpkcom_postfilter_htaccess_rule_units', explode( "\n", $rendered ) );
+	chk( "M-3 the renderer's {$form} rules are recognised as two reject units",
+		count( array_filter( $units, static fn( $u ): bool => is_array( $u ) && $u['reject'] ) ) === 2, $rendered );
+}
+
 // loosen_to(): writes under the lock only what is provably looser.
 $f = fixture( 'loosen-to', $file_with( $old_big ) );
 chk( 'loosen_to(): provably looser -> written, exactly as write() would',

@@ -580,9 +580,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_rule_units' ) ) {
      * The lines of a managed block as comparable units
      *
      * A reject rule - the three lines `RewriteCond %{ENV:REDIRECT_STATUS} ^$`,
-     * `RewriteCond %{THE_REQUEST} "…"`, `RewriteRule … [E=JPKPF_REJECT:server-…`
-     * that jpkcom_postfilter_server_apache_rules() writes per reason - is one
-     * unit; every other line is a unit of its own. The rule hash is taken out:
+     * `RewriteCond %{THE_REQUEST} "<pattern>"`,
+     * `RewriteRule ^ - [E=JPKPF_REJECT:server-<reason>,R=<status>,L]` (or
+     * `^/`) that jpkcom_postfilter_server_apache_rules() writes per reason,
+     * in exactly that shape (1.7.1, M-3) - is one unit; every other line is a
+     * unit of its own. The rule hash is taken out:
      * the `# rule <hash>` line is dropped and the hash of an `X-Jpkpf-Rule`
      * header line blanked. It names the rule set; what is rejected does not
      * depend on it. So is the text of a string `ErrorDocument <status> "…"`
@@ -607,11 +609,16 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_rule_units' ) ) {
                 continue;
             }
 
+            // Exactly the shape jpkcom_postfilter_server_apache_rules() writes
+            // (M-3): one quoted pattern, flags E, R, L and nothing else - in
+            // the .htaccess form (`^`) and the server configuration form
+            // (`^/`). A rule with another flag (S skips, C chains, PT hands
+            // on) is not one of its rules; deleting it would change what the
+            // rules around it do, so it is compared line by line instead.
             $is_rule = $line === 'RewriteCond %{ENV:REDIRECT_STATUS} ^$'
                 && $i + 2 < $count
-                && str_starts_with( $lines[ $i + 1 ], 'RewriteCond %{THE_REQUEST} ' )
-                && str_starts_with( $lines[ $i + 2 ], 'RewriteRule ' )
-                && str_contains( $lines[ $i + 2 ], '[E=JPKPF_REJECT:server-' );
+                && preg_match( '/^RewriteCond %\{THE_REQUEST\} "[^"]*"$/D', $lines[ $i + 1 ] ) === 1
+                && preg_match( '/^RewriteRule \^\/? - \[E=JPKPF_REJECT:server-[a-z-]+,R=[0-9]{3},L\]$/D', $lines[ $i + 2 ] ) === 1;
 
             if ( $is_rule ) {
                 $units[] = [ 'reject' => true, 'text' => $line . "\n" . $lines[ $i + 1 ] . "\n" . $lines[ $i + 2 ] ];
