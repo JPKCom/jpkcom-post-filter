@@ -675,7 +675,7 @@ function jpkcom_postfilter_field_canonical_single(): void {
         'off'     => __( 'Off', 'jpkcom-post-filter' ),
     ] );
     ?>
-    <p class="description"><?php esc_html_e( 'Where the canonical of a filter page with exactly one term points. "Term archive": the category, tag or custom taxonomy archive of that term, which shows the same posts - as long as that archive is public, lists this post type and is not set to noindex in Rank Math or Yoast; otherwise the filter URL. "Filter URL": the filter page itself. "Off": no canonical at all, also none from Rank Math or Yoast. Paginated pages always point to page 1.', 'jpkcom-post-filter' ); ?></p>
+    <p class="description"><?php esc_html_e( 'Where the canonical of a filter page with exactly one term points. "Term archive": the category, tag or custom taxonomy archive of that term, which shows the same posts - as long as that archive is public, lists this post type and is not set to noindex in Rank Math or Yoast; otherwise the filter URL. "Filter URL": the filter page itself. "Off": no canonical at all, also none from Rank Math or Yoast. From page 2 on, the canonical is the paginated filter page itself.', 'jpkcom-post-filter' ); ?></p>
     <?php
     jpkcom_postfilter_policy_lock_note( 'canonical_single' );
 }

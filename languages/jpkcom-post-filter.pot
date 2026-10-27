@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-27T20:03:15+01:00\n"
+"POT-Creation-Date: 2026-10-27T20:14:24+01:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: jpkcom-post-filter\n"
@@ -485,7 +485,7 @@ msgid "Off"
 msgstr ""
 
 #: includes/admin-pages.php:678
-msgid "Where the canonical of a filter page with exactly one term points. \"Term archive\": the category, tag or custom taxonomy archive of that term, which shows the same posts - as long as that archive is public, lists this post type and is not set to noindex in Rank Math or Yoast; otherwise the filter URL. \"Filter URL\": the filter page itself. \"Off\": no canonical at all, also none from Rank Math or Yoast. Paginated pages always point to page 1."
+msgid "Where the canonical of a filter page with exactly one term points. \"Term archive\": the category, tag or custom taxonomy archive of that term, which shows the same posts - as long as that archive is public, lists this post type and is not set to noindex in Rank Math or Yoast; otherwise the filter URL. \"Filter URL\": the filter page itself. \"Off\": no canonical at all, also none from Rank Math or Yoast. From page 2 on, the canonical is the paginated filter page itself."
 msgstr ""
 
 #: includes/admin-pages.php:690

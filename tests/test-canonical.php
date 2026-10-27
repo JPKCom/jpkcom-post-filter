@@ -755,6 +755,8 @@ foreach ( [ 'canonical_single' => [ 'archive', 'filter', 'off' ], 'canonical_mul
 	chk( "{$key}: a select with exactly " . implode( '|', $values ), $ok && str_contains( $body, "jpkcom_postfilter_policy_select( '{$key}'" ) && $opts[1] === $values, json_encode( $opts[1] ?? [] ) );
 	chk( "{$key}: shows the lock note", str_contains( $body, "jpkcom_postfilter_policy_lock_note( '{$key}' )" ) );
 }
+preg_match( '/function jpkcom_postfilter_field_canonical_single\(\): void \{(.*?)\n\}/s', $admin_src, $single_m );
+chk( 'canonical_single text: page 2 and later point to themselves (1.7.1), no "always page 1"', isset( $single_m[1] ) && ! str_contains( $single_m[1], 'always point to page 1' ) && str_contains( $single_m[1], 'From page 2 on' ) );
 chk(
 	'the Indexable Filter Pages text no longer promises "no canonical" for every combination',
 	! str_contains( $admin_src, 'Pages with more terms, unknown terms or no results are sent as noindex, nofollow and have no canonical.' )
