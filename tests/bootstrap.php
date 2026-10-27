@@ -28,7 +28,11 @@ function absint( $v ) { return abs( (int) $v ); }
 function taxonomy_exists( $t ) { return in_array( $t, $GLOBALS['__taxonomies'], true ); }
 function get_option( $k, $d = false ) { return $GLOBALS['__options'][ $k ] ?? $d; }
 function get_query_var( $k, $d = '' ) { return $GLOBALS['__query_vars'][ $k ] ?? $d; }
-function apply_filters( $tag, $val ) { return $val; }
+// A suite that needs a filter to run registers it in $GLOBALS['__run_filters'][ $tag ].
+function apply_filters( $tag, $val, ...$args ) {
+	$cb = $GLOBALS['__run_filters'][ $tag ] ?? null;
+	return $cb === null ? $val : $cb( $val, ...$args );
+}
 function add_filter( $tag, $cb, $p = 10, $a = 1 ) { $GLOBALS['__filters'][ $tag ][] = $cb; }
 function add_action( $tag, $cb, $p = 10, $a = 1 ) {}
 function remove_action( $tag, $cb, $p = 10 ) {}
@@ -64,7 +68,10 @@ function jpkcom_postfilter_transient_get( string $key ): mixed { return false; }
 function jpkcom_postfilter_transient_set( string $key, mixed $value, int $ttl = 0 ): bool { return true; }
 
 class WP_Term {
-	public string $slug = '';
+	public string $slug     = '';
+	public int    $term_id  = 0;
+	public string $taxonomy = '';
+	public int    $count    = 0;
 }
 
 // --- assertion harness ------------------------------------------------------

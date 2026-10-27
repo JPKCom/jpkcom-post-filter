@@ -42,6 +42,70 @@ function update_option( $k, $v, $a = null ) { $GLOBALS['__options'][ $k ] = $v; 
 function jpkcom_postfilter_cache_flush_group(): void {}
 function jpkcom_postfilter_fragment_segment(): string { return 'jpkpf-fragment'; }
 
+// Rank Math and Yoast are only consulted while active; both "are" here, and
+// each check sets only its own plugin's data.
+define( 'RANK_MATH_VERSION', '1.0.280' );
+define( 'WPSEO_VERSION', '28.2' );
+
+class WP_Error {}
+
+// Taxonomy objects: name => public / publicly_queryable.
+$GLOBALS['__tax_objects'] = [
+	'category'   => [ 'public' => true, 'publicly_queryable' => true ],
+	'post_tag'   => [ 'public' => true, 'publicly_queryable' => true ],
+	'region'     => [ 'public' => true, 'publicly_queryable' => true ],
+	'internal'   => [ 'public' => false, 'publicly_queryable' => false ],
+	'quiet'      => [ 'public' => true, 'publicly_queryable' => false ],
+];
+// Post types: name => exclude_from_search, taxonomies.
+$GLOBALS['__post_types'] = [
+	'post'    => [ 'exclude_from_search' => false, 'taxonomies' => [ 'category', 'post_tag', 'region' ] ],
+	'produkt' => [ 'exclude_from_search' => false, 'taxonomies' => [ 'category', 'region', 'internal', 'quiet' ] ],
+	'akte'    => [ 'exclude_from_search' => true, 'taxonomies' => [ 'region' ] ],
+];
+$GLOBALS['__pt_archives'] = [ 'produkt' => 'https://example.test/produkte/' ];
+$GLOBALS['__term_meta']   = [];   // term_id => [ key => value ]
+$GLOBALS['__post_meta']   = [];   // post_id => [ key => value ]
+$GLOBALS['__term_link_error'] = false;
+
+function get_taxonomy( $t ) {
+	$o = $GLOBALS['__tax_objects'][ $t ] ?? null;
+	return $o === null ? false : (object) ( $o + [ 'name' => $t ] );
+}
+function get_post_types( $args = [], $output = 'names' ) {
+	$out = [];
+	foreach ( $GLOBALS['__post_types'] as $name => $pt ) {
+		if ( isset( $args['exclude_from_search'] ) && $pt['exclude_from_search'] !== $args['exclude_from_search'] ) {
+			continue;
+		}
+		$out[ $name ] = $name;
+	}
+	return $out;
+}
+function get_object_taxonomies( $pt ) { return $GLOBALS['__post_types'][ $pt ]['taxonomies'] ?? []; }
+function get_term_by( $field, $value, $taxonomy ) {
+	$slugs = $GLOBALS['__terms'][ $taxonomy ] ?? [];
+	$i     = array_search( $value, $slugs, true );
+	if ( $field !== 'slug' || $i === false ) {
+		return false;
+	}
+	$t           = new WP_Term();
+	$t->slug     = (string) $value;
+	$t->taxonomy = (string) $taxonomy;
+	$t->term_id  = 100 + (int) $i + 10 * (int) array_search( $taxonomy, array_keys( $GLOBALS['__terms'] ), true );
+	$t->count    = $GLOBALS['__term_count'][ $taxonomy . ':' . $value ] ?? 3;
+	return $t;
+}
+function get_term_link( $term, $taxonomy = '' ) {
+	if ( $GLOBALS['__term_link_error'] ) {
+		return new WP_Error();
+	}
+	$base = [ 'category' => 'kategorie', 'post_tag' => 'tag' ][ $term->taxonomy ] ?? $term->taxonomy;
+	return 'https://example.test/' . $base . '/' . $term->slug . '/';
+}
+function get_term_meta( $id, $key = '', $single = false ) { return $GLOBALS['__term_meta'][ $id ][ $key ] ?? ''; }
+function get_post_meta( $id, $key = '', $single = false ) { return $GLOBALS['__post_meta'][ $id ][ $key ] ?? ''; }
+
 $GLOBALS['__groups'] = [
 	[ 'taxonomy' => 'category', 'enabled' => true, 'order' => 0 ],
 	[ 'taxonomy' => 'post_tag', 'enabled' => true, 'order' => 1 ],
@@ -89,7 +153,11 @@ $GLOBALS['__taxonomies']                         = [ 'category', 'post_tag' ];
 $GLOBALS['__terms']                              = [
 	'category' => [ 'sichtschutz', 'tueren-tore', 'zaeune' ],
 	'post_tag' => [ 'einbruchschutz', 'privat' ],
+	'region'   => [ 'nord' ],
+	'internal' => [ 'geheim' ],
+	'quiet'    => [ 'leise' ],
 ];
+$GLOBALS['__taxonomies'] = array_keys( $GLOBALS['__terms'] );
 
 $base = 'https://example.test/blog/';
 
@@ -131,5 +199,180 @@ chk(
 	'the General sanitizer handles both keys in its policy loop',
 	(bool) preg_match( "/foreach \\( \\[[^\\]]*'canonical_single'[^\\]]*'canonical_multi'[^\\]]*\\] as \\\$policy_key \\)/", $settings_src )
 );
+
+// ---------------------------------------------------------------------------
+section( 'Term archive' );
+
+/**
+ * Reset the SEO-plugin data and the target memo between checks.
+ */
+function seo_reset(): void {
+	$GLOBALS['__term_meta']       = [];
+	$GLOBALS['__post_meta']       = [];
+	$GLOBALS['__term_count']      = [];
+	$GLOBALS['__term_link_error'] = false;
+	unset( $GLOBALS['__options']['rank-math-options-titles'], $GLOBALS['__options']['wpseo_titles'], $GLOBALS['__options']['wpseo_taxonomy_meta'] );
+	$GLOBALS['__options']['blog_public']    = 1;
+	$GLOBALS['__options']['page_for_posts'] = 5;
+	$GLOBALS['__options']['show_on_front']  = 'page';
+	set_general( [] );
+}
+
+$zaeune = 'https://example.test/kategorie/zaeune/';
+
+seo_reset();
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'a public category archive of posts is a target', $u === $zaeune, var_export( $u, true ) );
+
+$u = call( 'jpkcom_postfilter_term_archive_url', 'internal', 'geheim', 'produkt' );
+chk( 'a taxonomy that is not public has no archive', $u === '', var_export( $u, true ) );
+$u = call( 'jpkcom_postfilter_term_archive_url', 'quiet', 'leise', 'produkt' );
+chk( 'a taxonomy that is not publicly queryable has no archive', $u === '', var_export( $u, true ) );
+
+$GLOBALS['__term_link_error'] = true;
+call( 'jpkcom_postfilter_canonical_target_memo_reset' ); // memoised per request
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'get_term_link() failing means no target', $u === '', var_export( $u, true ) );
+seo_reset();
+
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'produkt' );
+chk( 'a category archive lists posts only - not the target of a produkt filter page', $u === '', var_export( $u, true ) );
+chk( '... category archives list post', call( 'jpkcom_postfilter_term_archive_lists_post_type', 'category', 'post' ) === true );
+chk( '... and not produkt', call( 'jpkcom_postfilter_term_archive_lists_post_type', 'category', 'produkt' ) === false );
+
+$u = call( 'jpkcom_postfilter_term_archive_url', 'region', 'nord', 'produkt' );
+chk( 'a custom taxonomy archive lists every searchable post type it belongs to (a superset is fine)', $u === 'https://example.test/region/nord/', var_export( $u, true ) );
+$u = call( 'jpkcom_postfilter_term_archive_url', 'region', 'nord', 'akte' );
+chk( 'a post type excluded from search is not on the archive', $u === '', var_export( $u, true ) );
+
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'gibt-es-nicht', 'post' );
+chk( 'an unknown term has no archive', $u === '', var_export( $u, true ) );
+
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'tax_category_custom_robots' => 'on', 'tax_category_robots' => [ 'noindex' ] ];
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Rank Math: a taxonomy set to noindex is no target', $u === '', var_export( $u, true ) );
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'tax_category_custom_robots' => 'off', 'tax_category_robots' => [ 'noindex' ] ];
+call( 'jpkcom_postfilter_canonical_target_memo_reset' );
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Rank Math: the taxonomy robots count only with custom robots on', $u === $zaeune, var_export( $u, true ) );
+seo_reset();
+
+$t = get_term_by( 'slug', 'zaeune', 'category' );
+$GLOBALS['__term_meta'][ $t->term_id ]['rank_math_robots'] = [ 'noindex', 'follow' ];
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Rank Math: a term set to noindex is no target', $u === '', var_export( $u, true ) );
+$GLOBALS['__term_meta'][ $t->term_id ]['rank_math_robots']        = [ 'index' ];
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'tax_category_custom_robots' => 'on', 'tax_category_robots' => [ 'noindex' ] ];
+call( 'jpkcom_postfilter_canonical_target_memo_reset' );
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Rank Math: a term set to index overrides its taxonomy', $u === $zaeune, var_export( $u, true ) );
+seo_reset();
+
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'robots_global' => [ 'noindex' ] ];
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Rank Math: the global robots apply when nothing more specific is set', $u === '', var_export( $u, true ) );
+seo_reset();
+
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'noindex_empty_taxonomies' => 'on' ];
+$GLOBALS['__term_count']['category:zaeune']       = 0;
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Rank Math: an empty term with "noindex empty taxonomies" is no target', $u === '', var_export( $u, true ) );
+seo_reset();
+
+$GLOBALS['__options']['wpseo_titles'] = [ 'noindex-tax-category' => true ];
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Yoast: a taxonomy set to noindex is no target', $u === '', var_export( $u, true ) );
+seo_reset();
+
+$GLOBALS['__options']['wpseo_taxonomy_meta'] = [ 'category' => [ $t->term_id => [ 'wpseo_noindex' => 'noindex' ] ] ];
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Yoast: a term set to noindex is no target', $u === '', var_export( $u, true ) );
+$GLOBALS['__options']['wpseo_taxonomy_meta'] = [ 'category' => [ $t->term_id => [ 'wpseo_noindex' => 'index' ] ] ];
+$GLOBALS['__options']['wpseo_titles']        = [ 'noindex-tax-category' => true ];
+call( 'jpkcom_postfilter_canonical_target_memo_reset' );
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'Yoast: a term set to index overrides its taxonomy', $u === $zaeune, var_export( $u, true ) );
+seo_reset();
+
+$GLOBALS['__options']['blog_public'] = 0;
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'a site that discourages search engines has no indexable target', $u === '', var_export( $u, true ) );
+seo_reset();
+
+// The filter has the last word; it is applied through the test's own runner.
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'tax_category_custom_robots' => 'on', 'tax_category_robots' => [ 'noindex' ] ];
+$GLOBALS['__run_filters']['jpkcom_postfilter_canonical_archive_indexable'] = static fn( bool $indexable ): bool => true;
+$u = call( 'jpkcom_postfilter_term_archive_url', 'category', 'zaeune', 'post' );
+chk( 'jpkcom_postfilter_canonical_archive_indexable has the last word', $u === $zaeune, var_export( $u, true ) );
+unset( $GLOBALS['__run_filters']['jpkcom_postfilter_canonical_archive_indexable'] );
+seo_reset();
+
+// ---------------------------------------------------------------------------
+section( 'Archive base' );
+
+seo_reset();
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'the posts page is the base of post', $u === $base, var_export( $u, true ) );
+
+$GLOBALS['__post_meta'][5]['rank_math_robots'] = [ 'noindex' ];
+call( 'jpkcom_postfilter_canonical_target_memo_reset' ); // memoised per request
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'Rank Math: a posts page set to noindex is no target', $u === '', var_export( $u, true ) );
+seo_reset();
+
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'pt_page_custom_robots' => 'on', 'pt_page_robots' => [ 'noindex' ] ];
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'Rank Math: pages set to noindex make the posts page no target', $u === '', var_export( $u, true ) );
+seo_reset();
+
+$GLOBALS['__post_meta'][5]['_yoast_wpseo_meta-robots-noindex'] = '1';
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'Yoast: a posts page set to noindex is no target', $u === '', var_export( $u, true ) );
+$GLOBALS['__post_meta'][5]['_yoast_wpseo_meta-robots-noindex'] = '2';
+$GLOBALS['__options']['wpseo_titles'] = [ 'noindex-page' => true ];
+call( 'jpkcom_postfilter_canonical_target_memo_reset' );
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'Yoast: a posts page set to index overrides the page default', $u === $base, var_export( $u, true ) );
+seo_reset();
+
+// The blog on the front page: Rank Math's homepage robots decide.
+$GLOBALS['__options']['page_for_posts'] = 0;
+$GLOBALS['__options']['show_on_front']  = 'posts';
+call( 'jpkcom_postfilter_canonical_target_memo_reset' );
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'the front page is the base when it shows the posts', $u === 'https://example.test/', var_export( $u, true ) );
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'homepage_custom_robots' => 'on', 'homepage_robots' => [ 'noindex' ] ];
+call( 'jpkcom_postfilter_canonical_target_memo_reset' );
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'Rank Math: a front-page blog set to noindex is no target', $u === '', var_export( $u, true ) );
+seo_reset();
+
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'produkt' );
+chk( 'a post type archive is the base of its post type', $u === 'https://example.test/produkte/', var_export( $u, true ) );
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'akte' );
+chk( 'a post type without an archive has no base', $u === '', var_export( $u, true ) );
+
+$GLOBALS['__options']['wpseo_titles'] = [ 'noindex-ptarchive-produkt' => true ];
+call( 'jpkcom_postfilter_canonical_target_memo_reset' ); // memoised per request
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'produkt' );
+chk( 'Yoast: a post type archive set to noindex is no target', $u === '', var_export( $u, true ) );
+seo_reset();
+
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'pt_produkt_custom_robots' => 'on', 'pt_produkt_robots' => [ 'noindex' ] ];
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'produkt' );
+chk( 'Rank Math: a post type archive set to noindex is no target', $u === '', var_export( $u, true ) );
+seo_reset();
+
+$GLOBALS['__options']['blog_public'] = 0;
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'post' );
+chk( 'a site that discourages search engines has no indexable base', $u === '', var_export( $u, true ) );
+seo_reset();
+
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'pt_produkt_custom_robots' => 'on', 'pt_produkt_robots' => [ 'noindex' ] ];
+$GLOBALS['__run_filters']['jpkcom_postfilter_canonical_base_indexable'] = static fn( bool $indexable ): bool => true;
+$u = call( 'jpkcom_postfilter_base_canonical_url', 'produkt' );
+chk( 'jpkcom_postfilter_canonical_base_indexable has the last word', $u === 'https://example.test/produkte/', var_export( $u, true ) );
+unset( $GLOBALS['__run_filters']['jpkcom_postfilter_canonical_base_indexable'] );
+seo_reset();
 
 exit( summary() );

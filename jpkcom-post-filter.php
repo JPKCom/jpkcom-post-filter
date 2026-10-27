@@ -83,6 +83,7 @@ $jpkcom_postfilter_includes = [
     'includes/taxonomies.php',
     'includes/url-policy.php',
     'includes/url-routing.php',
+    'includes/canonical-target.php',
     'includes/crawl-guard.php',
     'includes/server-rules.php',
     'includes/server-rules-render.php',
