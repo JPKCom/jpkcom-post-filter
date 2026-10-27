@@ -380,8 +380,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_rate_limits' ) ) {
      *   rate          = max(1, round(0.4 conn/t)) requests/s site-wide: keeps those
      *                                           workers 40 % busy on average
      *   burst         = 2 rate
-     *   ip_per_minute = 30, ip_burst = 10       a visitor without cookie gets 11
-     *                                           quick clicks, then one every 2 s
+     *   ip_per_minute = 30, ip_burst = 10       a visitor without cookie gets 10
+     *                                           or 11 quick clicks (see below),
+     *                                           then one every 2 s
      *   bot_rate      = max(1, round(2 rate/3)), bot_burst = 20
      *                                           search engines' own bucket
      *   retry_after   = 10 s
@@ -389,6 +390,33 @@ if ( ! function_exists( function: 'jpkcom_postfilter_rate_limits' ) ) {
      * Anchor (spec 6, research report 3 §3, production: 8 workers, 0.4 s):
      * conn 3, 3 r/s burst 6, 30 r/min burst 10 per IP, search engines 2 r/s
      * burst 20.
+     *
+     * ip_burst is one number, and every renderer emits it unchanged as that
+     * server's own burst parameter. How many back-to-back requests that lets
+     * through is the server's semantics, not the plugin's (T5-b, lab 1.6.0):
+     *
+     *   nginx `limit_req burst=ip_burst nodelay`  ip_burst + 1  burst counts the
+     *       "excessive" requests (nginx docs); the first one in an empty
+     *       bucket is within the rate, so it is not part of the burst
+     *   Ferron 3 `rate_limit rate 1 burst ip_burst`  ip_burst + 1  token
+     *       bucket of capacity burst + 1, as nginx (measured: 11×200 at
+     *       burst 10)
+     *   Caddy `events ip_burst` / `window W`      ip_burst  sliding window: at
+     *       most `events` in the last W seconds (caddy-ratelimit README)
+     *   ModSecurity `@gt ip_burst` per window W   ip_burst  fixed-window
+     *       counter (measured: 10×200 at 10)
+     *   Ferron 2 `limit rate=1 burst=ip_burst`    ip_burst  bucket of
+     *       capacity burst (measured: 10×200 at 10)
+     *
+     * with W = ceil(ip_burst * 60 / ip_per_minute), so the window-based
+     * servers keep exactly ip_per_minute in the long run. The difference of
+     * one request is deliberately not evened out: nginx/Ferron 3 at
+     * ip_burst - 1 would tighten rules already deployed on re-paste, and
+     * Caddy/ModSecurity/Ferron 2 at ip_burst + 1 would also raise their
+     * long-run rate (11 per 20 s = 33 per minute) unless W grew with it.
+     * Both sides are well inside what the formula is for - a quick series of
+     * clicks passes, a flood does not - and none of this touches a reject
+     * rule or the rule hash (the limits are not hash inputs).
      *
      * @since 1.6.0
      *

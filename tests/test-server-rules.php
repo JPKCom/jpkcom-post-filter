@@ -1794,6 +1794,39 @@ chk( 'caddy/ferron: a left-out nested base still blocks the reject part', $ncf !
 $none = layout_inputs( 2, 2, [], [] );
 chk( 'caddy/ferron without bases: only the hints, no code', trim( code_of( snips( 'caddy', $none ) ) . code_of( snips( 'ferron3', $none ) ) . code_of( snips( 'ferron2', $none ) ) ) === '' && snips( 'caddy', $none ) !== [] );
 
+// --- T5-b: one ip_burst, every server's own spelling of it -----------------------
+// The formula has one per-IP burst. Every renderer emits that number as its
+// own burst parameter, unchanged - none adds or subtracts one to even out the
+// servers' semantics (nginx and Ferron 3 then let ip_burst + 1 through,
+// Caddy, ModSecurity and Ferron 2 exactly ip_burst; see the docblock of
+// jpkcom_postfilter_rate_limits()). A value other than the anchor shows that
+// each renderer takes the formula's number and nothing else; the window-based
+// servers derive their window from it so the long-run rate stays ip_per_minute.
+$burst_limits = array_merge( lim( 8, 0.4 ), [ 'ip_burst' => 7 ] );
+$burst_in     = layout_inputs( 2, 2, [], [ '/blog/', '/news/' ] );
+$burst_code   = [];
+foreach ( [ 'nginx', 'apache', 'caddy', 'ferron3', 'ferron2' ] as $server ) {
+	$r = call( 'jpkcom_postfilter_server_snippets', $server, $burst_in, $burst_limits, '' );
+	$burst_code[ $server ] = is_array( $r ) ? code_of( $r ) : '';
+}
+chk( 'T5-b nginx: limit_req burst = ip_burst (nodelay: ip_burst + 1 requests pass)',
+	str_contains( $burst_code['nginx'], 'limit_req  zone=jpkpf_ip burst=7 nodelay;' ), $burst_code['nginx'] );
+chk( 'T5-b ferron3: rate_limit burst = ip_burst (bucket capacity ip_burst + 1, measured 11 at 10)',
+	str_contains( $burst_code['ferron3'], "        rate 1\n        burst 7\n" ), $burst_code['ferron3'] );
+chk( 'T5-b ferron2: limit burst = ip_burst (capacity ip_burst, measured 10 at 10)',
+	str_contains( $burst_code['ferron2'], 'limit rate=1 burst=7' ), $burst_code['ferron2'] );
+chk( 'T5-b caddy: per-IP zone events = ip_burst over window ceil(ip_burst * 60 / ip_per_minute) s',
+	preg_match( '/zone jpkpf_ip \{.*?\n\t\t\tevents 7\n\t\t\twindow 14s\n/s', $burst_code['caddy'] ) === 1, $burst_code['caddy'] );
+chk( 'T5-b ModSecurity: per-IP counter denies above ip_burst in a window of ceil(ip_burst * 60 / ip_per_minute) s',
+	str_contains( $burst_code['apache'], 'SecRule RESOURCE:JPKPF_HITS "@gt 7"' ) && str_contains( $burst_code['apache'], 'expirevar:resource.jpkpf_hits=14' ), $burst_code['apache'] );
+$burst_doc = (string) file_get_contents( dirname( __DIR__ ) . '/includes/server-rules-render.php' );
+$burst_doc = substr( $burst_doc, 0, (int) strpos( $burst_doc, 'function jpkcom_postfilter_rate_limits(' ) );
+$burst_doc = substr( $burst_doc, (int) strrpos( $burst_doc, '/**' ) );
+chk( 'T5-b: the formula docblock says per server how many quick requests ip_burst means, and why they differ',
+	str_contains( $burst_doc, 'ip_burst + 1' ) && str_contains( $burst_doc, 'nginx' ) && str_contains( $burst_doc, 'Ferron 3' )
+	&& str_contains( $burst_doc, 'Caddy' ) && str_contains( $burst_doc, 'ModSecurity' ) && str_contains( $burst_doc, 'Ferron 2' )
+	&& ! str_contains( $burst_doc, 'a visitor without cookie gets 11' ), $burst_doc );
+
 // --- check commands --------------------------------------------------------------
 foreach ( [ 'caddy', 'ferron3', 'ferron2' ] as $server ) {
 	$cc[ $server ] = (string) call( 'jpkcom_postfilter_server_check_commands', $server, $inputs );
