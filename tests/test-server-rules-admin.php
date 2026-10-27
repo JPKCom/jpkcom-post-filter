@@ -567,7 +567,7 @@ chk( 'no check yet: says so', $out !== '' && str_contains( strtolower( $out ), '
 section( 'Messages after admin-post (key in the URL, text from a fixed list)' );
 // =============================================================================
 
-foreach ( [ 'checked', 'htaccess-installed', 'htaccess-installed-empty', 'htaccess-unavailable', 'htaccess-failed', 'htaccess-removed', 'htaccess-remove-failed', 'htaccess-unrestored' ] as $key ) {
+foreach ( [ 'checked', 'htaccess-installed', 'htaccess-installed-empty', 'htaccess-unavailable', 'htaccess-failed', 'htaccess-removed', 'htaccess-remove-failed', 'htaccess-unrestored', 'htaccess-busy' ] as $key ) {
 	$m = call( 'jpkcom_postfilter_server_rules_message', $key );
 	chk( "message '{$key}'", is_array( $m ) && in_array( $m['type'] ?? '', [ 'success', 'error', 'warning', 'info' ], true ) && ( $m['text'] ?? '' ) !== '' );
 }
@@ -674,6 +674,33 @@ foreach ( [ 'install' => $GLOBALS['__wp_block'], 'remove' => null ] as $do => $c
 $GLOBALS['__home_path'] = dirname( $real ) . '/';
 
 chk( 'unknown action: no message', call( 'jpkcom_postfilter_server_rules_htaccess_action', 'format-disk', inputs() ) === '' );
+
+// M-1: Set up while another request is between its loosen and its tighten
+// (the save lock, read straight from the options table): no write - that
+// save's tighten writes the current state - and a "busy, try again" message.
+$GLOBALS['wpdb'] = new class() {
+	public string $options    = 'wp_options';
+	public string $last_error = '';
+	public function prepare( string $query, ...$args ): string { return (string) json_encode( [ $query, $args ] ); }
+	public function get_var( string $prepared ) {
+		$a = json_decode( $prepared, true )[1];
+		return isset( $GLOBALS['__options'][ $a[0] ] ) ? (string) $GLOBALS['__options'][ $a[0] ] : null;
+	}
+	public function query( string $prepared ) { return 0; }
+};
+file_put_contents( htaccess(), $GLOBALS['__wp_block'] );
+$GLOBALS['__options']['jpkcom_postfilter_htaccess_save_lock'] = time() . '|someone-else';
+$key  = call( 'jpkcom_postfilter_server_rules_htaccess_action', 'install', inputs() );
+$text = (string) ( call( 'jpkcom_postfilter_server_rules_message', (string) $key )['text'] ?? '' );
+chk( 'M-1 install while another save holds the lock: refused as busy, file unchanged, nothing set up',
+	$key === 'htaccess-busy' && (string) file_get_contents( htaccess() ) === $GLOBALS['__wp_block'] && get_option( 'jpkcom_postfilter_htaccess_managed', null ) === null,
+	(string) $key );
+chk( 'M-1 busy message: an error that says to try again', ( call( 'jpkcom_postfilter_server_rules_message', 'htaccess-busy' )['type'] ?? '' ) === 'error' && str_contains( $text, 'try again' ), $text );
+unset( $GLOBALS['__options']['jpkcom_postfilter_htaccess_save_lock'] );
+$key = call( 'jpkcom_postfilter_server_rules_htaccess_action', 'install', inputs() );
+chk( 'M-1 install once the lock is gone: set up', $key === 'htaccess-installed' );
+call( 'jpkcom_postfilter_server_rules_htaccess_action', 'remove', inputs() );
+unset( $GLOBALS['wpdb'] );
 
 
 // =============================================================================

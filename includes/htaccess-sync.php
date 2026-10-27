@@ -325,13 +325,24 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_sync' ) ) {
      * jpkcom_postfilter_settings_memo_reset(), so a value saved earlier in the
      * same request is seen.
      *
+     * Nothing is written while another request holds the save lock (M-1):
+     * that request is between its loosen and its tighten, the block is its
+     * union, and this request may still read the values from before that
+     * save - writing them could leave the block stricter than what that save
+     * commits. Its own tighten writes the current state. The holder itself
+     * syncs as before (its tighten goes through here).
+     *
      * @since 1.6.0
+     * @since 1.7.1 Returns false while another request holds the save lock.
      *
      * @param array<string, mixed>|null $inputs Rule inputs, null for the current ones.
      * @return bool True when the block was brought to the inputs.
      */
     function jpkcom_postfilter_htaccess_sync( ?array $inputs = null ): bool {
         if ( ! jpkcom_postfilter_htaccess_is_managed() || ! jpkcom_postfilter_htaccess_available()['ok'] ) {
+            return false;
+        }
+        if ( jpkcom_postfilter_htaccess_save_locked_elsewhere() ) {
             return false;
         }
 
@@ -1200,7 +1211,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_maybe_resync' ) ) 
         // there is none, only if a managed block is still in the file.
         $stale = jpkcom_postfilter_htaccess_block( inputs: $inputs ) === '' ? $state['managed'] : true;
 
-        if ( $stale && ! jpkcom_postfilter_htaccess_save_locked_elsewhere() ) {
+        // sync() writes nothing while another request holds the save lock.
+        if ( $stale ) {
             jpkcom_postfilter_htaccess_sync( inputs: $inputs );
         }
     }

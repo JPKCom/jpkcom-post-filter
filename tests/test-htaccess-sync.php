@@ -1652,6 +1652,28 @@ if ( $have ) {
 	save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 	chk( 'not managed: no lock, not a single query', $GLOBALS['wpdb']->log === [] && ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
 
+	// M-1: every other writer of the block waits for the holder too. While A
+	// is between its loosen and its tighten, the block is A's union (here N5)
+	// and this request may still read the values from before A's save (N2).
+	$writers = [
+		'version change (lifecycle -> sync)'   => static fn() => call( 'jpkcom_postfilter_htaccess_lifecycle' ),
+		'update_option_page_for_posts'         => static fn() => do_action( 'update_option_page_for_posts', 0, 7, 'page_for_posts' ),
+		'update_option_permalink_structure'    => static fn() => do_action( 'update_option_permalink_structure', '', '/%postname%/', 'permalink_structure' ),
+		'permalink_structure_changed'          => static fn() => do_action( 'permalink_structure_changed', '', '/%postname%/' ),
+		'jpkcom_postfilter_htaccess_sync()'    => static fn() => call( 'jpkcom_postfilter_htaccess_sync' ),
+	];
+	foreach ( $writers as $label => $write ) {
+		site( general() );
+		jpkcom_postfilter_htaccess_write( htaccess(), jpkcom_postfilter_htaccess_block( with( [ 'max_per_group' => 5 ] ) ) );
+		$GLOBALS['__options'][ LOCK ] = time() . '|X';
+		$file_was = bytes( htaccess() );
+		$write();
+		chk( "M-1 {$label} while another request holds the save lock: no write", bytes( htaccess() ) === $file_was, n_of( bytes( htaccess() ) ) );
+		unset( $GLOBALS['__options'][ LOCK ] );
+		$write();
+		chk( "M-1 {$label} once the lock is gone: writes (N2)", n_of( bytes( htaccess() ) ) === 'N2', n_of( bytes( htaccess() ) ) );
+	}
+
 	// M-6: a database error is not another request's lock. INSERT IGNORE turns
 	// a duplicate key into a warning, so an error means the statement failed -
 	// refused with its own reason, not "another save is running".

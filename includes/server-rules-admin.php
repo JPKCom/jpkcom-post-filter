@@ -420,6 +420,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_message' ) ) {
             'htaccess-removed'         => [ 'success', __( 'The .htaccess block is removed. The plugin no longer manages the file.', 'jpkcom-post-filter' ) ],
             'htaccess-remove-failed'   => [ 'error', __( 'The .htaccess block could not be removed: the file is not readable or not writable, or its JPKCom Post Filter markers do not pair up. The plugin keeps guarding the block, so saves that would leave it stricter than the plugin are refused. Fix the file, then remove the block again.', 'jpkcom-post-filter' ) ],
             'htaccess-unrestored'      => [ 'error', __( 'Writing the .htaccess failed, and its previous content could not be put back: the file may be incomplete. Check it now and repair it by hand, or restore it from a backup - while Apache cannot parse it, it answers every request with an error.', 'jpkcom-post-filter' ) ],
+            'htaccess-busy'            => [ 'error', __( 'The .htaccess block was not set up: a save of the JPKCom Post Filter settings is updating the .htaccess rules at this moment. Wait a few seconds, then try again.', 'jpkcom-post-filter' ) ],
         ];
 
         if ( ! isset( $messages[ $key ] ) ) {
@@ -477,6 +478,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_htaccess_actio
      * `htaccess-unrestored`: the file may be incomplete and has to be checked
      * (T8-a).
      *
+     * install while another request holds the save lock gives
+     * `htaccess-busy` and writes nothing (M-1): that save is between its
+     * loosen and its tighten, and the values this request reads may predate
+     * it. Remove only loosens and is never held up.
+     *
      * The caller checks capability and nonce.
      *
      * @since 1.6.0
@@ -491,6 +497,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_htaccess_actio
         if ( $do === 'install' ) {
             if ( ! jpkcom_postfilter_htaccess_available()['ok'] ) {
                 return 'htaccess-unavailable';
+            }
+            if ( jpkcom_postfilter_htaccess_save_locked_elsewhere() ) {
+                return 'htaccess-busy';
             }
 
             if ( $inputs === null ) {
