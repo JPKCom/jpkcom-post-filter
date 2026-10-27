@@ -108,6 +108,13 @@ $GLOBALS['__errors']     = [];
 function get_option( $k, $d = false ) {
 	// Every read is counted: an option that is not autoloaded is a query (T9-b).
 	$GLOBALS['__option_reads'][ $k ] = ( $GLOBALS['__option_reads'][ $k ] ?? 0 ) + 1;
+	// Two requests at once: a request with a snapshot reads the options as they
+	// were when it loaded them (alloptions at request start), not what another
+	// request committed since. The save lock is read past it, through $wpdb.
+	$snapshot = $GLOBALS['__snapshots'][ $GLOBALS['__request_id'] ?? 'A' ] ?? null;
+	if ( is_array( $snapshot ) && array_key_exists( $k, $snapshot ) ) {
+		return $snapshot[ $k ];
+	}
 	if ( array_key_exists( $k, $GLOBALS['__options'] ) ) {
 		return $GLOBALS['__options'][ $k ];
 	}
@@ -127,6 +134,14 @@ function record_commit( string $option ): void {
 		'cache'    => cache_array( substr( $option, strlen( 'jpkcom_postfilter_' ) ) ),
 	];
 }
+/** The row, and the writing request's own view of it (its snapshot, if it has one). */
+function store_option( string $option, mixed $value ): void {
+	$GLOBALS['__options'][ $option ] = $value;
+	$rid = $GLOBALS['__request_id'] ?? 'A';
+	if ( isset( $GLOBALS['__snapshots'][ $rid ] ) ) {
+		$GLOBALS['__snapshots'][ $rid ][ $option ] = $value;
+	}
+}
 function update_option( $option, $value, $autoload = null ) {
 	$value = sanitize_option( $option, $value );
 	$old   = get_option( $option );
@@ -138,7 +153,7 @@ function update_option( $option, $value, $autoload = null ) {
 		return add_option( $option, $value, '', $autoload );
 	}
 	record_commit( $option );
-	$GLOBALS['__options'][ $option ] = $value;
+	store_option( $option, $value );
 	do_action( "update_option_{$option}", $old, $value, $option );
 	return true;
 }
@@ -150,7 +165,7 @@ function add_option( $option, $value = '', $deprecated = '', $autoload = null ) 
 		return false;
 	}
 	record_commit( $option );
-	$GLOBALS['__options'][ $option ] = $value;
+	store_option( $option, $value );
 	do_action( "add_option_{$option}", $option, $value );
 	return true;
 }
@@ -1616,6 +1631,72 @@ if ( $have ) {
 	$GLOBALS['wpdb']->log = [];
 	save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
 	chk( 'not managed: no lock, not a single query', $GLOBALS['wpdb']->log === [] && ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+
+	// I-1: B loaded its options before A committed (alloptions at request
+	// start), so B's get_option() still says N5 after A stored N2. B's refused
+	// save must not write that stale copy into the settings cache file - the
+	// plugin reads the file before the database, and A's tighten then builds
+	// the block from it.
+	// General: A tightens N5 -> N2, B saves General from its N5 copy.
+	site( general( [ 'max_filters_per_group' => 5 ] ) );
+	$GLOBALS['__snapshots']['B'] = $GLOBALS['__options'];
+	$b = null;
+	$GLOBALS['__after_commit'] = static function () use ( &$b ) {
+		$b = as_b( static fn() => update_option( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '5', 'seo_index_max_terms' => 2 ] ) ), 'jpkcom_postfilter_general' );
+	};
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '2' ] ) );
+	unset( $GLOBALS['__snapshots'] );
+	jpkcom_postfilter_settings_memo_reset();
+	$cache = cache_array( 'general' );
+	chk( 'I-1 General: B (options loaded before A\'s commit) refused while A holds the lock',
+		$ok === true && is_array( $b ) && $b['ok'] === false && str_contains( $b['msg'], 'another save' ), json_encode( $b ) );
+	chk( 'I-1 General: after B\'s refusal the settings cache file holds A\'s committed N2, not B\'s stale N5',
+		( $cache['max_filters_per_group'] ?? null ) === 2 && $GLOBALS['__options']['jpkcom_postfilter_general']['max_filters_per_group'] === 2,
+		'cache N' . json_encode( $cache['max_filters_per_group'] ?? null ) );
+	chk( 'I-1 General: block N2 == the rules the plugin runs with',
+		n_of( bytes( htaccess() ) ) === 'N2' && rule_hash( bytes( htaccess() ) ) === jpkcom_postfilter_server_rule_inputs()['hash'],
+		'block ' . n_of( bytes( htaccess() ) ) . ', plugin N' . jpkcom_postfilter_server_rule_inputs()['max_per_group'] );
+
+	// The other side of I-1: a cache file an ACCEPTED step of the same save
+	// rewrote is still put back when a later step is refused. The import runs
+	// prepare_save() and the sanitizer itself, then update_option() - here the
+	// block changes in between and the file turns read-only.
+	site( general() );
+	$cache_was = cache_array( 'general' );
+	$stored    = $GLOBALS['__options']['jpkcom_postfilter_general'];
+	$raw       = general( [ 'max_filters_per_group' => 4 ] );
+	jpkcom_postfilter_htaccess_prepare_save( 'jpkcom_postfilter_general', $raw, 'jpkcom_postfilter_import_messages' );
+	jpkcom_postfilter_settings_write_file( 'general', $raw );   // the cache write of the import's own sanitizer call
+	jpkcom_postfilter_settings_memo_reset();
+	$wrote = ( cache_array( 'general' )['max_filters_per_group'] ?? null ) === 4;
+	jpkcom_postfilter_htaccess_write( htaccess(), jpkcom_postfilter_htaccess_block( with( [ 'max_per_group' => 1 ] ) ) );
+	read_only();
+	jpkcom_postfilter_settings_save( 'general', $raw );
+	chk( 'import step accepted, its update_option() refused: cache file back on the stored value, option unchanged',
+		$wrote && cache_array( 'general' ) === $cache_was && $GLOBALS['__options']['jpkcom_postfilter_general'] === $stored
+		&& ! array_key_exists( LOCK, $GLOBALS['__options'] ),
+		json_encode( [ $wrote, cache_array( 'general' )['max_filters_per_group'] ?? null ] ) );
+
+	// Filter Groups: A drops a group (3 -> 2, tighter), B saves Filter Groups from its 3-group copy.
+	site( general(), $three_groups['groups'] );
+	$GLOBALS['__snapshots']['B'] = $GLOBALS['__options'];
+	$b = null;
+	$GLOBALS['__after_commit'] = static function () use ( &$b, $three_groups ) {
+		$b_raw                           = $three_groups;
+		$b_raw['groups'][2]['label']     = 'Colour';
+		$b = as_b( static fn() => update_option( 'jpkcom_postfilter_filter_groups', $b_raw ), 'jpkcom_postfilter_filter_groups' );
+	};
+	$ok = save( 'jpkcom_postfilter_filter_groups', [ 'groups' => [ group( 'category', 0 ), group( 'post_tag', 1 ) ] ] );
+	unset( $GLOBALS['__snapshots'] );
+	jpkcom_postfilter_settings_memo_reset();
+	$cache = cache_array( 'filter_groups' );
+	chk( 'I-1 Filter Groups: B (options loaded before A\'s commit) refused while A holds the lock',
+		$ok === true && is_array( $b ) && $b['ok'] === false && str_contains( $b['msg'], 'another save' ), json_encode( $b ) );
+	chk( 'I-1 Filter Groups: after B\'s refusal the settings cache file holds A\'s two groups, not B\'s stale three',
+		count( (array) ( $cache['groups'] ?? [] ) ) === 2, 'cache groups ' . count( (array) ( $cache['groups'] ?? [] ) ) );
+	chk( 'I-1 Filter Groups: block G2 == the rules the plugin runs with',
+		rule_hash( bytes( htaccess() ) ) === jpkcom_postfilter_server_rule_inputs()['hash'] && jpkcom_postfilter_server_rule_inputs()['groups'] === 2,
+		'block ' . g_of( bytes( htaccess() ) ) . ', plugin G' . jpkcom_postfilter_server_rule_inputs()['groups'] );
 }
 
 // =====================================================================================

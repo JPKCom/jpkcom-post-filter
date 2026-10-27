@@ -401,6 +401,45 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_refused' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_cache_pending' ) ) {
+    /**
+     * Has an accepted step of the current save let the sanitizer rewrite the
+     * settings cache file, with the commit still to come?
+     *
+     * Only then does a refusal have a cache file to put back: a refused step
+     * writes nothing (the sanitizers and jpkcom_postfilter_settings_save()
+     * skip the file, I-1). It happens when add_option() sanitizes a second
+     * time and that step is refused, or when the import's own sanitizer call
+     * went through and its update_option() is refused. Set by
+     * jpkcom_postfilter_htaccess_prepare_save() when it lets a save of a
+     * guarded block go on; cleared after the commit and when a refusal has
+     * been settled.
+     *
+     * @since 1.7.1
+     *
+     * @param string    $option Option name, '*' with `$set` false to clear every option.
+     * @param bool|null $set    New state, or null to read.
+     * @return bool
+     */
+    function jpkcom_postfilter_htaccess_cache_pending( string $option, ?bool $set = null ): bool {
+        static $pending = [];
+
+        // Keyed by the request id as well: one id per request in WordPress,
+        // and the tests play two requests in one process.
+        $rid = jpkcom_postfilter_htaccess_request_id();
+        if ( $set === false && $option === '*' ) {
+            $pending[ $rid ] = [];
+            return false;
+        }
+        if ( $set !== null ) {
+            $pending[ $rid ][ $option ] = $set;
+        }
+
+        return $pending[ $rid ][ $option ] ?? false;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_server_reads' ) ) {
     /**
      * May the web server read .htaccess?
@@ -900,6 +939,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_prepare_save' ) ) 
         }
 
         if ( $result['ok'] || jpkcom_postfilter_htaccess_without_refusal() ) {
+            // The sanitizer is about to rewrite the cache file for this save.
+            jpkcom_postfilter_htaccess_cache_pending( $option, true );
             return true;
         }
 
@@ -982,11 +1023,20 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_settle_refusal' ) 
      *
      * Returns exactly what update_option() compares with (get_option() without
      * a default, i.e. the registered default for an option not stored yet), so
-     * nothing is written and no update_option_* / add_option_* fires, puts
-     * the settings cache file back on the stored value, and releases the save
-     * lock (only if this request holds it - a `busy` refusal never took it).
+     * nothing is written and no update_option_* / add_option_* fires, and
+     * releases the save lock (only if this request holds it - a `busy`
+     * refusal never took it).
+     *
+     * The settings cache file is put back on the stored value only when an
+     * accepted earlier step of this save rewrote it
+     * (jpkcom_postfilter_htaccess_cache_pending()); the refused step itself
+     * wrote nothing. Rewriting it regardless (up to 1.7.1-dev) wrote this
+     * request's copy of the option, which may predate another request's
+     * commit: a `busy` save loaded before A committed N2 put N5 back into the
+     * file, and A's tighten then built an N5 block (I-1).
      *
      * @since 1.6.0
+     * @since 1.7.1 Puts the cache file back only after an accepted step wrote it.
      *
      * @param mixed  $value  Sanitized value.
      * @param string $option Option name.
@@ -997,7 +1047,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_settle_refusal' ) 
             return $value;
         }
 
-        jpkcom_postfilter_htaccess_restore_cache( option: $option );
+        if ( jpkcom_postfilter_htaccess_cache_pending( $option ) ) {
+            jpkcom_postfilter_htaccess_restore_cache( option: $option );
+            jpkcom_postfilter_htaccess_cache_pending( $option, false );
+        }
         jpkcom_postfilter_htaccess_save_unlock();
 
         return get_option( $option );
@@ -1007,15 +1060,17 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_settle_refusal' ) 
 
 if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_after_settings_saved' ) ) {
     /**
-     * jpkcom_postfilter_settings_saved: undo settings_save()'s own cache write
+     * jpkcom_postfilter_settings_saved: settle the import of one option
      *
-     * jpkcom_postfilter_settings_save() (the import) writes the cache file
-     * itself after update_option(); after a refused save that file would hold
-     * the values that were just refused. The import of this option is done
-     * then, so the save lock goes, too - also when nothing changed and no
-     * update_option_* hook released it.
+     * jpkcom_postfilter_settings_save() (the import) skips its own cache
+     * write after a refused save (I-1). The import's direct sanitizer call
+     * may have rewritten the file before update_option() was refused; then
+     * it is put back on the stored value (jpkcom_postfilter_htaccess_cache_pending()).
+     * The import of this option is done then, so the save lock goes, too -
+     * also when nothing changed and no update_option_* hook released it.
      *
      * @since 1.6.0
+     * @since 1.7.1 Puts the cache file back only when this save rewrote it.
      *
      * @param string $group Settings group.
      * @return void
@@ -1023,9 +1078,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_after_settings_sav
     function jpkcom_postfilter_htaccess_after_settings_saved( string $group ): void {
         $option = 'jpkcom_postfilter_' . $group;
 
-        if ( jpkcom_postfilter_htaccess_refused( $option ) ) {
+        if ( jpkcom_postfilter_htaccess_refused( $option ) && jpkcom_postfilter_htaccess_cache_pending( $option ) ) {
             jpkcom_postfilter_htaccess_restore_cache( option: $option );
         }
+        jpkcom_postfilter_htaccess_cache_pending( $option, false );
 
         jpkcom_postfilter_htaccess_save_unlock();
     }
@@ -1045,6 +1101,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_after_save' ) ) {
      * @return void
      */
     function jpkcom_postfilter_htaccess_after_save(): void {
+        // Committed: the cache file holds the stored value now.
+        jpkcom_postfilter_htaccess_cache_pending( '*', false );
         jpkcom_postfilter_settings_memo_reset();
         jpkcom_postfilter_htaccess_sync();
         jpkcom_postfilter_htaccess_save_unlock();

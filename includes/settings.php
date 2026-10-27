@@ -462,6 +462,27 @@ if ( ! function_exists( function: 'jpkcom_postfilter_settings_get_group' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_settings_save_refused' ) ) {
+    /**
+     * Has the .htaccess sync refused the current save of a settings group?
+     *
+     * A refused save hands this request's copy of the stored value through
+     * the sanitizer. That copy is what this request loaded - possibly before
+     * another request committed - so it must not be written to the settings
+     * cache file, which every request reads before the database (I-1).
+     *
+     * @since 1.7.1
+     *
+     * @param string $group Settings group slug.
+     * @return bool
+     */
+    function jpkcom_postfilter_settings_save_refused( string $group ): bool {
+        return function_exists( function: 'jpkcom_postfilter_htaccess_refused' )
+            && jpkcom_postfilter_htaccess_refused( 'jpkcom_postfilter_' . $group );
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_settings_save' ) ) {
     /**
      * Save settings to wp_options AND update the file cache
@@ -479,8 +500,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_settings_save' ) ) {
 
         jpkcom_postfilter_settings_memo_reset();
 
-        // Update file cache
-        jpkcom_postfilter_settings_write_file( $group, $settings );
+        // Update file cache - unless the .htaccess sync refused the save: the
+        // file keeps what the plugin runs with (I-1).
+        if ( ! jpkcom_postfilter_settings_save_refused( $group ) ) {
+            jpkcom_postfilter_settings_write_file( $group, $settings );
+        }
 
         // Also flush object cache
         jpkcom_postfilter_cache_flush_group();
@@ -826,8 +850,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_sanitize_general_settings' 
             }
         }
 
-        // On save: update file cache
-        jpkcom_postfilter_settings_write_file( 'general', $output );
+        // On save: update file cache - not for a save the .htaccess sync has
+        // refused: $input is then this request's copy of the stored value,
+        // which may predate another request's commit (I-1).
+        if ( ! jpkcom_postfilter_settings_save_refused( 'general' ) ) {
+            jpkcom_postfilter_settings_write_file( 'general', $output );
+        }
 
         return $output;
     }
@@ -986,7 +1014,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_sanitize_filter_groups_sett
 
         $output = [ 'groups' => $sanitized_groups ];
 
-        jpkcom_postfilter_settings_write_file( 'filter_groups', $output );
+        // Not for a refused save (I-1, see the General sanitizer).
+        if ( ! jpkcom_postfilter_settings_save_refused( 'filter_groups' ) ) {
+            jpkcom_postfilter_settings_write_file( 'filter_groups', $output );
+        }
 
         return $output;
     }
