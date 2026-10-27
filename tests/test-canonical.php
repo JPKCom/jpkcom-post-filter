@@ -757,6 +757,11 @@ foreach ( [ 'canonical_single' => [ 'archive', 'filter', 'off' ], 'canonical_mul
 }
 preg_match( '/function jpkcom_postfilter_field_canonical_single\(\): void \{(.*?)\n\}/s', $admin_src, $single_m );
 chk( 'canonical_single text: page 2 and later point to themselves (1.7.1), no "always page 1"', isset( $single_m[1] ) && ! str_contains( $single_m[1], 'always point to page 1' ) && str_contains( $single_m[1], 'From page 2 on' ) );
+// M-7: only while a one-term page may be indexed (seo_index_max_terms >= 1),
+// and never with "Off" - the decision says `none` there (tested above).
+chk( 'canonical_single text: page 2 points to itself only while one-term pages may be indexed, and not with "Off"',
+	isset( $single_m[1] ) && str_contains( $single_m[1], 'From page 2 on, as long as one-term filter pages may be indexed' ) && str_contains( $single_m[1], 'with "Off" there is none' ),
+	$single_m[1] ?? '' );
 chk(
 	'the Indexable Filter Pages text no longer promises "no canonical" for every combination',
 	! str_contains( $admin_src, 'Pages with more terms, unknown terms or no results are sent as noindex, nofollow and have no canonical.' )
