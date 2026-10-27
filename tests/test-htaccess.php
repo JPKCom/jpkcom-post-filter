@@ -368,6 +368,26 @@ chk( 'damaged block: remove refuses, file unchanged', call( 'jpkcom_postfilter_h
 $st = call( 'jpkcom_postfilter_htaccess_state', $f );
 chk( 'damaged block: state managed false, damaged true', is_array( $st ) && $st['managed'] === false && ( $st['damaged'] ?? null ) === true, json_encode( $st ) );
 
+// T8-e: the other two ways managed markers fail to pair up. Each guard in
+// parse() is load-bearing here: without the END-without-BEGIN guard the stray
+// END leaves `damaged` false and no block, so write() inserts a second block
+// before WordPress's and remove() reports success - bytes or return value
+// change. Without the BEGIN-inside-a-block guard, BEGIN BEGIN END reads as one
+// block from the second BEGIN, and write()/remove() leave the first BEGIN line
+// behind. Either removal turns these checks red.
+$marker_cases = [
+	'END without BEGIN' => $head . "# END JPKCom Post Filter\n" . $wp_block . $tail,
+	'BEGIN inside a block (nested)' => $head . "# BEGIN JPKCom Post Filter\n# rule 0123456789ab\n# BEGIN JPKCom Post Filter\nRewriteEngine On\n# END JPKCom Post Filter\n" . $wp_block . $tail,
+];
+foreach ( $marker_cases as $case => $content ) {
+	$f  = fixture( 'markers-' . md5( $case ), $content );
+	$st = call( 'jpkcom_postfilter_htaccess_state', $f );
+	chk( "{$case}: state damaged, not managed",
+		is_array( $st ) && ( $st['damaged'] ?? null ) === true && ( $st['managed'] ?? null ) === false, json_encode( $st ) );
+	chk( "{$case}: write refuses, file unchanged", call( 'jpkcom_postfilter_htaccess_write', $f, $block ) === false && bytes( $f ) === $content );
+	chk( "{$case}: remove refuses, file unchanged", call( 'jpkcom_postfilter_htaccess_remove', $f ) === false && bytes( $f ) === $content );
+}
+
 // A managed block that spans WordPress's markers (fix wave A2). C1: what an admin
 // gets who adds the missing END at the bottom after WordPress appended its own
 // block; C2: the other interleaving. Splicing [BEGIN JPK .. END JPK] would take
@@ -405,6 +425,13 @@ final class Jpkpf_Recording_Stream {
 	public static array $files = [];
 	public static array $snaps = [];
 	public static array $modes = [];
+	/**
+	 * What the next stream_write() calls do, one entry per call: 'half' writes
+	 * the first half of the data, 'fail' writes nothing, 'notice' raises an
+	 * E_USER_NOTICE (as PHP does for ENOSPC on a plain file) and writes
+	 * nothing. Once the list is used up, every write succeeds in full.
+	 */
+	public static array $plan = [];
 	public $context;
 	private string $path = '';
 	private int $pos = 0;
@@ -425,6 +452,17 @@ final class Jpkpf_Recording_Stream {
 		return $out;
 	}
 	public function stream_write( $data ): int {
+		$step = array_shift( self::$plan ) ?? 'full';
+		if ( $step === 'notice' ) {
+			trigger_error( 'fwrite(): Write of ' . strlen( $data ) . ' bytes failed with errno=28 No space left on device', E_USER_NOTICE );
+			return 0;
+		}
+		if ( $step === 'fail' ) {
+			return 0;
+		}
+		if ( $step === 'half' ) {
+			$data = substr( $data, 0, intdiv( strlen( $data ), 2 ) );
+		}
 		$f                         = self::$files[ $this->path ];
 		$f                         = str_pad( substr( $f, 0, $this->pos ), $this->pos, "\0" ) . $data . (string) substr( $f, $this->pos + strlen( $data ) );
 		self::$files[ $this->path ] = $f;
@@ -483,6 +521,22 @@ chk( 'padded(): no trailing newline - the padding starts on a new line', only_co
 chk( 'padded(): one byte short, and growing or equal content stays as it is',
 	call( 'jpkcom_postfilter_htaccess_padded', "a\n", 3 ) === "a\n\n" && call( 'jpkcom_postfilter_htaccess_padded', "a", 2 ) === "a\n"
 	&& call( 'jpkcom_postfilter_htaccess_padded', "abc\n", 2 ) === "abc\n" && call( 'jpkcom_postfilter_htaccess_padded', "abc\n", 4 ) === "abc\n" );
+
+// T8-e: the rollback. The first write gets half of the new content into the
+// file and the next ones fail (PHP's stream layer retries a short write within
+// the same fwrite(), so that takes two 'fail' entries before put() sees one),
+// so put() gives up with the file holding a mix of new and old bytes.
+// modify() must put the old content back - without the rollback put() the
+// file would end as that mix and the byte check fails.
+$roll_old = $head . $block_b . "\n" . $wp_block . $tail;
+$roll_new = $head . $block . "\n" . $wp_block . $tail . str_repeat( "# longer than before\n", 20 );
+Jpkpf_Recording_Stream::$files = [ 'jpkpfmem://roll' => $roll_old ];
+Jpkpf_Recording_Stream::$plan  = [ 'half', 'fail', 'fail' ];
+$ok = call( 'jpkcom_postfilter_htaccess_modify', 'jpkpfmem://roll', static fn( string $c ): string => $roll_new );
+chk( 'failed write half way: modify() false, the file is byte-identical to the original (rollback)',
+	$ok === false && ( Jpkpf_Recording_Stream::$files['jpkpfmem://roll'] ?? '' ) === $roll_old && Jpkpf_Recording_Stream::$plan === [],
+	json_encode( [ $ok, substr( Jpkpf_Recording_Stream::$files['jpkpfmem://roll'] ?? '', -60 ) ] ) );
+Jpkpf_Recording_Stream::$plan = [];
 
 Jpkpf_Recording_Stream::$files = [];
 Jpkpf_Recording_Stream::$modes = [];
