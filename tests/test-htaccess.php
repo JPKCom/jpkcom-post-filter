@@ -645,8 +645,30 @@ chk( 'another N (2 -> 3): patterns differ -> not provable, even though N 3 is lo
 	$looser( $file_with( (string) call( 'jpkcom_postfilter_htaccess_block', inputs( 2 ) ) ), (string) call( 'jpkcom_postfilter_htaccess_block', inputs( 3 ) ) ) === false );
 chk( 'another reject status (410 -> 404) next to a dropped rule -> not provable',
 	$looser( $file_with( with_unit( $block, $extra, 'RewriteEngine On' ) ), (string) call( 'jpkcom_postfilter_htaccess_block', inputs( 3, [ 'reject_status' => 404 ] ) ) ) === false );
-chk( 'another ErrorDocument text -> not provable',
-	$looser( $file_with( (string) preg_replace( '/^ErrorDocument .*$/m', 'ErrorDocument 410 "gone"', with_unit( $block, $extra, 'RewriteEngine On' ) ) ), $block ) === false );
+// The ErrorDocument text is translated in the locale of whoever wrote the
+// block; a body cannot make a rule stricter, so it is compared as directive
+// and status with any quoted text (ruling after G1).
+/** $block with the ErrorDocument text of a German site (lang de-DE, translated strings, entities). */
+function german( string $block ): string {
+	return (string) preg_replace(
+		'/^ErrorDocument ([0-9]{3}) ".*"$/m',
+		'ErrorDocument $1 "<!doctype html><html lang=\\"de-DE\\"><head><meta charset=\\"utf-8\\"><meta name=\\"robots\\" content=\\"noindex, nofollow\\"><title>$1</title></head><body><p>Diese Filterkombination ist nicht verf&#252;gbar.</p><p><a href=\\"/blog/\\">Alle Beitr&#228;ge anzeigen</a></p></body></html>"',
+		$block
+	);
+}
+chk( 'fixture: the German ErrorDocument text differs from the English one, nothing else does',
+	german( $old_big ) !== $old_big && str_contains( german( $old_big ), 'verf&#252;gbar' )
+	&& preg_replace( '/^ErrorDocument .*$/m', '', german( $old_big ) ) === preg_replace( '/^ErrorDocument .*$/m', '', $old_big ) );
+chk( 'German block with the rule the guard now drops, English new block -> provably looser', $looser( $file_with( german( $old_big ) ), $new_big ) === true );
+chk( 'English block with a dropped rule, German new block -> provably looser', $looser( $file_with( $old_big ), german( $new_big ) ) === true );
+chk( 'another ErrorDocument text, same rules -> not stricter', $looser( $file_with( german( $block ) ), $block ) === true );
+chk( 'German block, the new English block adds a rule -> still not provable', $looser( $file_with( german( $block ) ), with_unit( $block, $extra, 'RewriteEngine On' ) ) === false );
+chk( 'another ErrorDocument status next to a dropped rule -> not provable',
+	$looser( $file_with( (string) preg_replace( '/^ErrorDocument 410 /m', 'ErrorDocument 404 ', german( $old_big ) ) ), $new_big ) === false );
+chk( 'ErrorDocument as a URL instead of a text -> not provable',
+	$looser( $file_with( (string) preg_replace( '/^ErrorDocument 410 .*$/m', 'ErrorDocument 410 /index.php', $old_big ) ), $new_big ) === false );
+chk( 'ErrorDocument text left open (no closing quote) -> not provable',
+	$looser( $file_with( (string) preg_replace( '/^(ErrorDocument 410 ".*)"$/m', '$1', $old_big ) ), $new_big ) === false );
 chk( 'a line edited by hand inside the block -> not provable',
 	$looser( $file_with( str_replace( 'RewriteEngine On', 'RewriteEngine on', with_unit( $block, $extra, 'RewriteEngine On' ) ) ), $block ) === false );
 chk( 'block below WordPress\'s (never took effect): moving it up would make it count -> not provable',

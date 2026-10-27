@@ -584,7 +584,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_rule_units' ) ) {
      * unit; every other line is a unit of its own. The rule hash is taken out:
      * the `# rule <hash>` line is dropped and the hash of an `X-Jpkpf-Rule`
      * header line blanked. It names the rule set; what is rejected does not
-     * depend on it.
+     * depend on it. So is the text of a string `ErrorDocument <status> "…"`
+     * line (a complete quoted string, escapes allowed): it is the page's body
+     * in the locale of whoever wrote the block, and a body cannot reject
+     * anything. Directive and status stay; an ErrorDocument that is not one
+     * complete quoted string (a URL, an open quote) is compared as it is.
      *
      * @since 1.7.1
      *
@@ -614,7 +618,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_rule_units' ) ) {
                 continue;
             }
 
-            $units[] = [ 'reject' => false, 'text' => (string) preg_replace( '/^(Header always set X-Jpkpf-Rule ")[0-9a-f]{12}(")/', '$1$2', $line ) ];
+            $text = (string) preg_replace( '/^(Header always set X-Jpkpf-Rule ")[0-9a-f]{12}(")/', '$1$2', $line );
+            // The body is translated in the locale of whoever wrote the
+            // block; directive and status stay, the quoted text goes.
+            $text    = (string) preg_replace( '/^(ErrorDocument [0-9]{3} ")(?:[^"\\\\]|\\\\.)*(")$/D', '$1$2', $text );
+            $units[] = [ 'reject' => false, 'text' => $text ];
         }
 
         return $units;
@@ -641,12 +649,13 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_provably_looser' )
      *   managed block with zero or more whole reject rules deleted: same
      *   order, every other unit byte for byte the same - the patterns of the
      *   rules that stay, the reject status, the header lines, the
-     *   ErrorDocument text, `RewriteEngine` and `<IfModule>` lines.
+     *   ErrorDocument directive and status (its quoted text may differ: a
+     *   translation), `RewriteEngine` and `<IfModule>` lines.
      *
      * So the new block rejects a subset of what the old one rejects. Anything
      * else - a rule added, a pattern changed (even to a looser one), another
-     * status, another ErrorDocument text (a translation), a line edited by
-     * hand - is not provable, and the answer is false. Further managed blocks
+     * status, an ErrorDocument that is no longer a quoted text, a line edited
+     * by hand - is not provable, and the answer is false. Further managed blocks
      * in the file are dropped by write(), which only loosens.
      *
      * The reject rules of one block carry different reasons, so matching the
