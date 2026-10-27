@@ -450,3 +450,43 @@ if ( ! function_exists( function: 'jpkcom_postfilter_base_canonical_url' ) ) {
         return $url;
     }
 }
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_seo_paged_noindex' ) ) {
+    /**
+     * Whether Rank Math sends page 2+ of this filter page as noindex
+     *
+     * Rank Math treats a filter page like the page it routes to:
+     * `noindex_archive_subpages` applies to every paginated page
+     * (Paper::respect_settings_for_robots()), `noindex_paginated_pages` only
+     * in Paper\Singular (a static posts page) and Paper\Blog (the front page
+     * shows the posts), not in Paper\Archive (post type archives). Rank Math
+     * 1.0.280. Yoast has no such setting.
+     *
+     * @since 1.7.1
+     *
+     * @param string $post_type Post type of the filter page.
+     * @param int    $page      Current page, 1-based.
+     * @return bool
+     */
+    function jpkcom_postfilter_seo_paged_noindex( string $post_type, int $page ): bool {
+        if ( $page < 2 || ! defined( 'RANK_MATH_VERSION' ) ) {
+            return false;
+        }
+
+        $titles = get_option( 'rank-math-options-titles', [] );
+        $titles = is_array( $titles ) ? $titles : [];
+
+        if ( jpkcom_postfilter_seo_switch_on( $titles['noindex_archive_subpages'] ?? false ) ) {
+            return true;
+        }
+
+        if ( $post_type !== 'post' || ! jpkcom_postfilter_seo_switch_on( $titles['noindex_paginated_pages'] ?? false ) ) {
+            return false;
+        }
+
+        $front = get_option( 'show_on_front' );
+
+        return ( $front === 'page' && (int) get_option( 'page_for_posts' ) > 0 ) || $front === 'posts';
+    }
+}

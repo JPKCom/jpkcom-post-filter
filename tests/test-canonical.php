@@ -598,6 +598,65 @@ chk( 'a canonical filter that asks for the canonical itself does not recurse', c
 unset( $GLOBALS['__run_filters']['jpkcom_postfilter_canonical'] );
 
 // ---------------------------------------------------------------------------
+section( 'Robots ownership (1.7.1)' );
+
+/** Run every registered callback of a filter on a value. */
+function run_cbs( string $hook, mixed $value ): mixed {
+	foreach ( $GLOBALS['__filters'][ $hook ] ?? [] as $cb ) {
+		$value = $cb( $value );
+	}
+	return $value;
+}
+
+seo_reset();
+as_filter_page( $one );
+$rm = run_cbs( 'rank_math/frontend/robots', [ 'index' => 'noindex', 'follow' => 'follow' ] );
+chk( 'Rank Math: a noindex inherited from the posts page is overruled on a filter page', ( $rm['index'] ?? '' ) === 'index' && ( $rm['follow'] ?? '' ) === 'follow', json_encode( $rm ) );
+$y = run_cbs( 'wpseo_robots_array', [ 'index' => 'noindex', 'follow' => 'follow' ] );
+chk( 'Yoast: a noindex inherited from the posts page is overruled on a filter page', ( $y['index'] ?? '' ) === 'index' && ( $y['follow'] ?? '' ) === 'follow', json_encode( $y ) );
+
+as_filter_page( [] );
+$rm = run_cbs( 'rank_math/frontend/robots', [ 'index' => 'noindex', 'follow' => 'follow' ] );
+chk( '... a non-filter page is left alone', ( $rm['index'] ?? '' ) === 'noindex', json_encode( $rm ) );
+
+seo_reset();
+$GLOBALS['__options']['blog_public'] = 0;
+as_filter_page( $one );
+chk( 'blog_public = 0: noindex, nofollow', call( 'jpkcom_postfilter_robots_directives' ) === $ninf, json_encode( call( 'jpkcom_postfilter_robots_directives' ) ) );
+chk( '... without a canonical', call( 'jpkcom_postfilter_canonical_url' ) === '' );
+$rm = run_cbs( 'rank_math/frontend/robots', [ 'index' => 'noindex', 'follow' => 'nofollow' ] );
+chk( '... and no index forced into Rank Math', ( $rm['index'] ?? '' ) === 'noindex', json_encode( $rm ) );
+seo_reset();
+
+$noindex_follow = [ 'index' => false, 'follow' => true ];
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'noindex_archive_subpages' => 'on' ];
+as_filter_page( $one, 2 );
+chk( 'Rank Math noindex_archive_subpages: page 2 is noindex, follow', call( 'jpkcom_postfilter_robots_directives' ) === $noindex_follow, json_encode( call( 'jpkcom_postfilter_robots_directives' ) ) );
+chk( '... without a canonical', call( 'jpkcom_postfilter_canonical_url' ) === '' );
+as_filter_page( $one, 0 );
+chk( '... page 1 stays index', call( 'jpkcom_postfilter_robots_directives' ) === $if );
+seo_reset();
+
+$GLOBALS['__options']['rank-math-options-titles'] = [ 'noindex_paginated_pages' => 'on' ];
+as_filter_page( $one, 2 );
+chk( 'Rank Math noindex_paginated_pages, posts page (Singular): page 2 is noindex', call( 'jpkcom_postfilter_robots_directives' ) === $noindex_follow, json_encode( call( 'jpkcom_postfilter_robots_directives' ) ) );
+as_filter_page( $one, 2, 'produkt' );
+chk( '... a post type archive (Archive) does not know it: index', call( 'jpkcom_postfilter_robots_directives' ) === $if, json_encode( call( 'jpkcom_postfilter_robots_directives' ) ) );
+as_filter_page( $one, 0 );
+chk( '... page 1 stays index', call( 'jpkcom_postfilter_robots_directives' ) === $if );
+$GLOBALS['__options']['page_for_posts'] = 0;
+$GLOBALS['__options']['show_on_front']  = 'posts';
+call( 'jpkcom_postfilter_canonical_target_memo_reset' );
+as_filter_page( $one, 2 );
+chk( '... the blog on the front page (Blog): page 2 is noindex', call( 'jpkcom_postfilter_robots_directives' ) === $noindex_follow, json_encode( call( 'jpkcom_postfilter_robots_directives' ) ) );
+seo_reset();
+
+as_filter_page( $one );
+chk( 'Yoast adjacent rel links are off on a filter page', run_cbs( 'wpseo_disable_adjacent_rel_links', false ) === true );
+as_filter_page( [] );
+chk( '... and untouched elsewhere', run_cbs( 'wpseo_disable_adjacent_rel_links', false ) === false );
+
+// ---------------------------------------------------------------------------
 section( 'Output paths' );
 
 seo_reset();

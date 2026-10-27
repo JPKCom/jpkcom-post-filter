@@ -545,12 +545,22 @@ if ( ! function_exists( function: 'jpkcom_postfilter_robots_directives' ) ) {
 
         $directives = [ 'index' => true, 'follow' => true ];
 
-        if ( jpkcom_postfilter_is_bot_filter_page() ) {
+        // Since 1.7.1 the SEO plugins get this decision on every filter page,
+        // so the two settings that must still win over it are read here:
+        // "discourage search engines", and Rank Math's noindex for page 2+.
+        if ( jpkcom_postfilter_is_bot_filter_page() || (int) get_option( 'blog_public', 1 ) === 0 ) {
             $directives = [ 'index' => false, 'follow' => false ];
         } elseif ( $terms > $max ) {
             $decision   = jpkcom_postfilter_canonical_decision();
             $elsewhere  = $decision !== null && in_array( $decision['kind'], [ 'archive', 'home' ], true );
             $directives = [ 'index' => $elsewhere, 'follow' => false ];
+        }
+
+        $post_type = (string) get_query_var( 'jpkcom_filter_post_type', 'post' );
+        $post_type = $post_type !== '' ? $post_type : 'post';
+
+        if ( jpkcom_postfilter_seo_paged_noindex( $post_type, max( 1, (int) get_query_var( 'paged' ) ) ) ) {
+            $directives['index'] = false;
         }
 
         /**
@@ -651,7 +661,10 @@ add_filter( 'rank_math/frontend/robots', static function ( $robots ) {
 
     $directives = jpkcom_postfilter_robots_directives();
 
-    if ( $directives === null || ( $directives['index'] && $directives['follow'] ) ) {
+    // Since 1.7.1 on every filter page, not only on noindex ones: the SEO
+    // plugin treats a filter page as the posts page and would carry that
+    // page's noindex over.
+    if ( $directives === null ) {
         return $robots;
     }
 
@@ -674,7 +687,10 @@ add_filter( 'wpseo_robots_array', static function ( $robots ) {
 
     $directives = jpkcom_postfilter_robots_directives();
 
-    if ( $directives === null || ( $directives['index'] && $directives['follow'] ) ) {
+    // Since 1.7.1 on every filter page, not only on noindex ones: the SEO
+    // plugin treats a filter page as the posts page and would carry that
+    // page's noindex over.
+    if ( $directives === null ) {
         return $robots;
     }
 
@@ -801,8 +817,13 @@ add_filter( 'wpseo_canonical', static function ( $canonical ) {
     return $url !== '' ? $url : false;
 }, 99 );
 
-// Rank Math's prev/next on a filter page point into the unfiltered archive.
+// Rank Math's and Yoast's prev/next on a filter page point into the unfiltered
+// archive (Yoast since 1.7.1: page 2+ of a filter page is indexable now).
 add_filter( 'rank_math/frontend/disable_adjacent_rel_links', static function ( $disable ) {
+    return jpkcom_postfilter_is_filter_request() ? true : $disable;
+}, 99 );
+
+add_filter( 'wpseo_disable_adjacent_rel_links', static function ( $disable ) {
     return jpkcom_postfilter_is_filter_request() ? true : $disable;
 }, 99 );
 
