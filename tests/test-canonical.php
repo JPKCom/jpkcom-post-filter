@@ -524,4 +524,24 @@ foreach ( [ 'templates', 'debug-templates' ] as $dir ) {
 	);
 }
 
+// ---------------------------------------------------------------------------
+section( 'Admin fields' );
+
+$admin_src = (string) file_get_contents( __DIR__ . '/../includes/admin-pages.php' );
+chk(
+	'both fields are registered in the Crawlers & SEO section, after Indexable Filter Pages',
+	(bool) preg_match( "/'seo_index_max_terms'\s*=>[^\n]*\n\s*'canonical_single'\s*=>[^\n]*\n\s*'canonical_multi'\s*=>/", $admin_src )
+);
+foreach ( [ 'canonical_single' => [ 'archive', 'filter', 'off' ], 'canonical_multi' => [ 'home', 'filter', 'off' ] ] as $key => $values ) {
+	$ok = (bool) preg_match( '/function jpkcom_postfilter_field_' . $key . '\(\): void \{(.*?)\n\}/s', $admin_src, $m );
+	$body = $ok ? $m[1] : '';
+	preg_match_all( "/^\s*'([a-z]+)'\s*=>\s*__\(/m", $body, $opts );
+	chk( "{$key}: a select with exactly " . implode( '|', $values ), $ok && str_contains( $body, "jpkcom_postfilter_policy_select( '{$key}'" ) && $opts[1] === $values, json_encode( $opts[1] ?? [] ) );
+	chk( "{$key}: shows the lock note", str_contains( $body, "jpkcom_postfilter_policy_lock_note( '{$key}' )" ) );
+}
+chk(
+	'the Indexable Filter Pages text no longer promises "no canonical" for every combination',
+	! str_contains( $admin_src, 'Pages with more terms, unknown terms or no results are sent as noindex, nofollow and have no canonical.' )
+);
+
 exit( summary() );

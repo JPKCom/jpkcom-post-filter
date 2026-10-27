@@ -312,6 +312,13 @@ chk( 'post type without archive gives no base', $ok && count( $inputs['bases'] )
 chk( 'no skip positions, no filters', $ok && $inputs['skip_positions'] === [] && $inputs['verdict_filtered'] === false && $inputs['policy_filtered'] === [] );
 chk( 'hash is the rule hash of the inputs', $ok && $inputs['hash'] === call( 'jpkcom_postfilter_server_rule_hash', $inputs ) && preg_match( '/^[0-9a-f]{12}$/', $inputs['hash'] ) === 1 );
 
+// 1.7.0: the canonical targets change no URL the plugin answers, so they are
+// no rule input - neither hash, union nor the loosening notice may move.
+set_general( [ 'enabled_post_types' => [ 'post', 'news', 'bloeg', 'noarch' ], 'canonical_single' => 'off', 'canonical_multi' => 'filter' ] );
+$canonical_inputs = call( 'jpkcom_postfilter_server_rule_inputs' );
+chk( 'the canonical settings are no rule inputs (1.7.0)', $ok && $canonical_inputs === $inputs, show( $canonical_inputs, 'hash' ) );
+set_general( [ 'enabled_post_types' => [ 'post', 'news', 'bloeg', 'noarch' ] ] );
+
 chk(
 	'base path: home without slash, subdirectory, malformed URL dropped',
 	call( 'jpkcom_postfilter_server_rule_base_path', 'https://example.test' ) === '/'

@@ -237,6 +237,8 @@ add_action( 'admin_init', static function (): void {
     $crawl_fields = [
         'filter_link_mode'     => __( 'Filter Links for Crawlers', 'jpkcom-post-filter' ),
         'seo_index_max_terms'  => __( 'Indexable Filter Pages', 'jpkcom-post-filter' ),
+        'canonical_single'     => __( 'Canonical: Single Term', 'jpkcom-post-filter' ),
+        'canonical_multi'      => __( 'Canonical: Multiple Terms', 'jpkcom-post-filter' ),
         'max_terms_total'      => __( 'Max. Terms in Total', 'jpkcom-post-filter' ),
         'strict_urls'          => __( 'Strict Filter URLs', 'jpkcom-post-filter' ),
         'reject_status'        => __( 'Invalid Combinations', 'jpkcom-post-filter' ),
@@ -656,9 +658,43 @@ function jpkcom_postfilter_field_seo_index_max_terms(): void {
         class="small-text"
         <?php disabled( $state['locked'] ); ?>
     >
-    <p class="description"><?php esc_html_e( 'Filter pages with up to this many selected terms may be indexed (index, follow). Pages with more terms, unknown terms or no results are sent as noindex, nofollow and have no canonical. 0 = no filter page is indexed. Default: 1.', 'jpkcom-post-filter' ); ?></p>
+    <p class="description"><?php esc_html_e( 'Filter pages with up to this many selected terms may be indexed (index, follow). Pages with more terms are sent as noindex, nofollow - unless their canonical points to another page (see the canonical settings below), which replaces the noindex. Pages with unknown terms or no results are always noindex, nofollow without a canonical. 0 = no filter page is indexed. Default: 1.', 'jpkcom-post-filter' ); ?></p>
     <?php
     jpkcom_postfilter_policy_lock_note( 'seo_index_max_terms' );
+}
+
+/**
+ * Render: Canonical of a single-term filter page
+ *
+ * @since 1.7.0
+ */
+function jpkcom_postfilter_field_canonical_single(): void {
+    jpkcom_postfilter_policy_select( 'canonical_single', [
+        'archive' => __( 'Term archive (recommended)', 'jpkcom-post-filter' ),
+        'filter'  => __( 'Filter URL', 'jpkcom-post-filter' ),
+        'off'     => __( 'Off', 'jpkcom-post-filter' ),
+    ] );
+    ?>
+    <p class="description"><?php esc_html_e( 'Where the canonical of a filter page with exactly one term points. "Term archive": the category, tag or custom taxonomy archive of that term, which shows the same posts - as long as that archive is public, lists this post type and is not set to noindex in Rank Math or Yoast; otherwise the filter URL. "Filter URL": the filter page itself. "Off": no canonical at all, also none from Rank Math or Yoast. Paginated pages always point to page 1.', 'jpkcom-post-filter' ); ?></p>
+    <?php
+    jpkcom_postfilter_policy_lock_note( 'canonical_single' );
+}
+
+/**
+ * Render: Canonical of a filter page with several terms
+ *
+ * @since 1.7.0
+ */
+function jpkcom_postfilter_field_canonical_multi(): void {
+    jpkcom_postfilter_policy_select( 'canonical_multi', [
+        'home'   => __( 'Archive base (recommended)', 'jpkcom-post-filter' ),
+        'filter' => __( 'Filter URL', 'jpkcom-post-filter' ),
+        'off'    => __( 'Off', 'jpkcom-post-filter' ),
+    ] );
+    ?>
+    <p class="description"><?php esc_html_e( 'Where the canonical of a filter page with two or more terms points. "Archive base": the unfiltered blog page or post type archive, as long as it is not set to noindex in Rank Math or Yoast; this replaces the noindex of these pages (they stay nofollow). Otherwise, and with "Filter URL", the page follows "Indexable Filter Pages" as before. "Off": no canonical at all, also none from Rank Math or Yoast. With the default robots.txt rules, combinations within one group stay blocked, so crawlers never see their canonical.', 'jpkcom-post-filter' ); ?></p>
+    <?php
+    jpkcom_postfilter_policy_lock_note( 'canonical_multi' );
 }
 
 /**
