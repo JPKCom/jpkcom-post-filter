@@ -836,7 +836,9 @@ function fuzz_layout( array $layout, array $regexes, int $cases, int $seed, ?cal
 	return $out;
 }
 
-$per_layout = max( 3, (int) ( getenv( 'JPKPF_FUZZ' ) ?: 9000 ) );
+// Unset, empty or 0: the default. The ternary stays out of the max() call.
+$fuzz_env   = (int) ( getenv( 'JPKPF_FUZZ' ) ?: 9000 );
+$per_layout = max( 3, $fuzz_env );
 $t0         = microtime( true );
 $total      = [ 'cases' => 0, 'per_group' => 0, 'segments' => 0, 'hits' => 0, 'violations' => 0 ];
 $vacuous    = [];
