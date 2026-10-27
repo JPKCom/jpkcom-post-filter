@@ -965,18 +965,62 @@ section( 'timing' );
 // =====================================================================================
 
 /**
- * Slowest pattern/URI pair over adversarial 2000-character URIs (up to 30
- * groups, with and without positions without taxonomy), best of 3
- * per pair so a scheduler hiccup does not count, with the JIT on and off
- * (nginx needs `pcre_jit on`, Apache does not JIT).
+ * Best time in ms of one pattern on one subject over $runs runs.
  */
-function worst_case_ms( bool $jit ): float {
+function best_ms( string $rx, string $subject, int $runs ): float {
+	$best = INF;
+	for ( $r = 0; $r < $runs; $r++ ) {
+		$t = hrtime( true );
+		preg_match( $rx, $subject );
+		$best = min( $best, ( hrtime( true ) - $t ) / 1e6 );
+	}
+	return $best;
+}
+
+/**
+ * Slowest pair of a list, robust against a loaded machine without weakening
+ * the bound (T3-a: one flake at 209/1 under load, reruns green).
+ *
+ * Every pair: best of 5. Only the pairs whose best reached the bound are
+ * measured once more, best of 5 again, after a 250 ms pause, and keep the
+ * better of the two. A pattern that is really slow is slow both times and
+ * still fails; a scheduler hiccup in one run of five, twice, does not. The
+ * bound itself is not touched.
+ *
+ * @param array<int, array{0: string, 1: string}> $pairs [regex with delimiters, subject].
+ * @return array{max: float, first: float, remeasured: int}
+ */
+function slowest_ms( array $pairs, float $bound ): array {
+	$best = [];
+	foreach ( $pairs as $i => [ $rx, $subject ] ) {
+		$best[ $i ] = best_ms( $rx, $subject, 5 );
+	}
+	$first = $best === [] ? 0.0 : max( $best );
+	$slow  = array_keys( array_filter( $best, static fn( float $ms ): bool => $ms >= $bound ) );
+	if ( $slow !== [] ) {
+		usleep( 250000 );
+		foreach ( $slow as $i ) {
+			$best[ $i ] = min( $best[ $i ], best_ms( $pairs[ $i ][0], $pairs[ $i ][1], 5 ) );
+		}
+	}
+	return [ 'max' => $best === [] ? 0.0 : max( $best ), 'first' => $first, 'remeasured' => count( $slow ) ];
+}
+
+/**
+ * Slowest pattern/URI pair over adversarial 2000-character URIs (up to 30
+ * groups, with and without positions without taxonomy), measured by
+ * slowest_ms(), with the JIT on and off (nginx needs `pcre_jit on`, Apache
+ * does not JIT).
+ *
+ * @return array{max: float, first: float, remeasured: int}
+ */
+function worst_case_ms( bool $jit, float $bound ): array {
 	$jit_ini = $jit ? '1' : '0';
 	ini_set( 'pcre.jit', $jit_ini );
 	// PHP caches compiled patterns by their source; a delimiter of its own
 	// per mode makes the no-JIT run compile without JIT instead of reusing.
 	$d      = $jit ? '~' : '`';
-	$max    = 0.0;
+	$pairs  = [];
 	$bodies = [ 'a/', 'a+', '+', '/', 'a', 'ab+a/', 'a+/', '+/', 'a++', 'a/+', '_/', 'page/', 'a+b/', 'a+b+c/x/', 'a+b+c+d+e/', '+a+b+c+d+e+/', 'a+b+c+d+e+f/', 'a//', 'ab' ];
 	// The last four: many groups with positions without taxonomy (attack A5:
 	// every position used to scan the tail on its own, O(G x length)).
@@ -992,38 +1036,40 @@ function worst_case_ms( bool $jit ): float {
 			foreach ( [ '%', '?', '', '%/', '/%' ] as $end ) {
 				$lead = $bases[0] . 'filter/';
 				$uri  = $lead . substr( str_repeat( $body, 2000 ), 0, 2000 - strlen( $lead ) - strlen( $end ) ) . $end;
-				$runs = [];
 				foreach ( $pp as $re ) {
-					$runs[] = [ $re, $uri ];
+					if ( is_string( $re ) ) {
+						$pairs[] = [ $d . $re . $d, $uri ];
+					}
 				}
 				foreach ( $pl as $re ) {
-					$runs[] = [ $re, 'GET ' . $uri . ' HTTP/1.1' ];
-				}
-				foreach ( $runs as [ $re, $subject ] ) {
-					if ( ! is_string( $re ) ) {
-						continue;
+					if ( is_string( $re ) ) {
+						$pairs[] = [ $d . $re . $d, 'GET ' . $uri . ' HTTP/1.1' ];
 					}
-					$rx   = $d . $re . $d;
-					$best = INF;
-					for ( $r = 0; $r < 3; $r++ ) {
-						$t = hrtime( true );
-						preg_match( $rx, $subject );
-						$best = min( $best, ( hrtime( true ) - $t ) / 1e6 );
-					}
-					$max = max( $max, $best );
 				}
 			}
 		}
 	}
+	$out = slowest_ms( $pairs, $bound );
 	ini_set( 'pcre.jit', '1' );
-	return $max;
+	return $out;
 }
 
-$max_ms     = $have ? worst_case_ms( true ) : INF;
-$max_ms_int = $have ? worst_case_ms( false ) : INF;
-printf( "        worst case 2000 chars: %.4f ms with JIT, %.4f ms without\n", $max_ms, $max_ms_int );
-chk( 'timing: 2000-char worst case < 1 ms', $max_ms < 1.0, sprintf( '%.3f ms', $max_ms ) );
-chk( 'timing: 2000-char worst case < 1 ms without JIT', $max_ms_int < 1.0, sprintf( '%.3f ms', $max_ms_int ) );
+$timing_detail = static fn( array $m ): string => sprintf( '%.3f ms (first pass %.3f ms, %d pair(s) re-measured)', $m['max'], $m['first'], $m['remeasured'] );
+$no_time       = [ 'max' => INF, 'first' => INF, 'remeasured' => 0 ];
+$max_ms        = $have ? worst_case_ms( true, 1.0 ) : $no_time;
+$max_ms_int    = $have ? worst_case_ms( false, 1.0 ) : $no_time;
+printf( "        worst case 2000 chars: %s with JIT, %s without\n", $timing_detail( $max_ms ), $timing_detail( $max_ms_int ) );
+chk( 'timing: 2000-char worst case < 1 ms', $max_ms['max'] < 1.0, $timing_detail( $max_ms ) );
+chk( 'timing: 2000-char worst case < 1 ms without JIT', $max_ms_int['max'] < 1.0, $timing_detail( $max_ms_int ) );
+
+// The re-measure must not hide a pattern that is really slow: exponential
+// backtracking (about 40 ms to the backtrack limit without JIT) is over the
+// bound on both passes, next to a fast pair that stays below it.
+ini_set( 'pcre.jit', '0' );
+$slow_probe = slowest_ms( [ [ '`^(?:a|a)*$`', str_repeat( 'a', 24 ) . 'b' ], [ '`x`', str_repeat( 'ab', 1000 ) ] ], 1.0 );
+ini_set( 'pcre.jit', '1' );
+chk( 'timing harness: a really slow pattern still fails after its re-measure, only it is re-measured',
+	$slow_probe['max'] >= 1.0 && $slow_probe['remeasured'] === 1, $timing_detail( $slow_probe ) );
 
 // =====================================================================================
 section( 'JIT stack: bounded segment repetition (attack A4, nginx pcre_jit on)' );
