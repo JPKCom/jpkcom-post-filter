@@ -191,10 +191,16 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_renderer_version' ) 
      * compare hashes).
      *
      * **The next renderer change must set this** (the first one to '2', then
-     * '3', ...). Empty means "the renderers of 1.6.0 to 1.7.1", whose output
-     * for a layout with nothing dropped never changed, so the hashes of those
-     * rules stay as they were. Setting it marks every deployed hand-pasted
-     * rule "stale" - which is the point when the rule did change.
+     * '3', ...). Empty means "the renderers of 1.6.0 to 1.7.1", whose reject
+     * rules and managed block for a layout with nothing dropped never
+     * changed, so the hashes of those rules stay as they were. Setting it
+     * marks every deployed hand-pasted rule "stale" - which is the point when
+     * the rule did change.
+     *
+     * Rate-limit parts are outside the hash, like their limits: the status
+     * check never probes them, and a change there would mark every deployed
+     * reject "stale" for nothing. 1.7.1's `ctl:auditEngine=Off` on the
+     * ModSecurity 429 (T6-a) therefore left this empty.
      *
      * @since 1.7.1
      *

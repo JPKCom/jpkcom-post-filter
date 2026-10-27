@@ -895,6 +895,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
      * less visitor or search engine), so a counter another rule set keeps
      * cannot trigger it.
      *
+     * A 429 writes no audit-log entry (1.7.1, T6-a): `ctl:auditEngine=Off` on
+     * the chained threshold rule, which runs only when the chain matches, so a
+     * request under the limit keeps its audit entry. Measured on Debian 13
+     * (ModSecurity 2.9.11, 1000 cookie-less requests from one IP): with
+     * modsecurity.conf-recommended (`SecAuditEngine RelevantOnly`, relevant
+     * status `^(?:5|4(?!04))`) every 429 wrote a ~1.7 KB audit entry, 15 times
+     * its access-log line. `log` stays: the ~390-byte error-log line names
+     * the limit that answered, the only place that says which one did.
+     *
      * The counters live in RESOURCE (key `jpkpf_ip_<addr>`) and USER (key
      * `jpkpf_site_<server name>`, via setuid), not in IP and GLOBAL: OWASP CRS
      * 3.3 opens `ip` as `<addr>_<UA hash>` and `global` as `global` in phase 1,
@@ -961,6 +970,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
             $bots   = 10 * $limits['bot_rate'];
             $anon   = 'SecRule TX:JPKPF_ANON "@eq 1" "id:';
             $bot    = 'SecRule TX:JPKPF_BOT "@eq 1" "id:';
+            // T6-a: on the chained threshold rule, so only a request over a
+            // limit loses its audit entry (see the docblock).
+            $no_audit = 'ctl:auditEngine=Off';
 
             $modsec = [
                 '<IfModule security2_module>',
@@ -981,17 +993,18 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
                 '    ' . $anon . '4710006,phase:2,pass,nolog,chain"',
                 '        SecRule &USER:JPKPF_HITS "@eq 0" "setvar:user.jpkpf_hits=0,expirevar:user.jpkpf_hits=10"',
                 '    ' . $anon . '4710007,phase:2,pass,nolog,setvar:resource.jpkpf_hits=+1,setvar:user.jpkpf_hits=+1"',
+                '    # Over a limit: 429 with an error-log line, no audit-log entry.',
                 '    ' . $anon . "4710008,phase:2,deny,status:429,log,msg:'jpkpf: per-IP filter limit',chain\"",
-                '        SecRule RESOURCE:JPKPF_HITS "@gt ' . $limits['ip_burst'] . '"',
+                '        SecRule RESOURCE:JPKPF_HITS "@gt ' . $limits['ip_burst'] . '" "' . $no_audit . '"',
                 '    ' . $anon . "4710009,phase:2,deny,status:429,log,msg:'jpkpf: site-wide filter limit',chain\"",
-                '        SecRule USER:JPKPF_HITS "@gt ' . $site . '"',
+                '        SecRule USER:JPKPF_HITS "@gt ' . $site . '" "' . $no_audit . '"',
                 '    # Search engines: their own site-wide counter.',
                 '    ' . $bot . '4710010,phase:2,pass,nolog,setuid:jpkpf_site_%{SERVER_NAME}"',
                 '    ' . $bot . '4710011,phase:2,pass,nolog,chain"',
                 '        SecRule &USER:JPKPF_BOT_HITS "@eq 0" "setvar:user.jpkpf_bot_hits=0,expirevar:user.jpkpf_bot_hits=10"',
                 '    ' . $bot . '4710012,phase:2,pass,nolog,setvar:user.jpkpf_bot_hits=+1"',
                 '    ' . $bot . "4710013,phase:2,deny,status:429,log,msg:'jpkpf: search engine filter limit',chain\"",
-                '        SecRule USER:JPKPF_BOT_HITS "@gt ' . $bots . '"',
+                '        SecRule USER:JPKPF_BOT_HITS "@gt ' . $bots . '" "' . $no_audit . '"',
                 '</LocationMatch>',
                 '</IfModule>',
                 '<IfModule mod_headers.c>',

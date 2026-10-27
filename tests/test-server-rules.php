@@ -1531,6 +1531,26 @@ chk( 'apache: ModSecurity per IP (10 / 20 s), site-wide (30 / 10 s), search engi
 chk( 'apache: ModSecurity counters in collections OWASP CRS does not open (RESOURCE per IP, USER per site)',
 	str_contains( $modsec, 'initcol:resource=jpkpf_ip_%{REMOTE_ADDR}' ) && substr_count( $modsec, 'setuid:jpkpf_site_%{SERVER_NAME}' ) === 2
 	&& ! preg_match( '/initcol:(?:ip|global)\b|\b(?:ip|global)\.jpkpf|\b(?:IP|GLOBAL):JPKPF/i', $modsec ), $modsec );
+// T6-a (lab, Debian 13, ModSecurity 2.9.11, 1000 cookie-less requests from one IP):
+// with modsecurity.conf-recommended (SecAuditEngine RelevantOnly, relevant status
+// "^(?:5|4(?!04))") every 429 wrote a ~1.7 KB audit entry - 1.7 MB per 1000, 15 times
+// the access log; the error-log line is ~390 bytes. ctl:auditEngine=Off sits on the
+// chained threshold rule, so only a request over a limit loses its audit entry (an
+// action on the chain starter would run for every cookie-less filter request), and
+// `log` stays: one error-log line per 429 names the limit that answered.
+chk( 'apache: ModSecurity 429 writes no audit entry (ctl:auditEngine=Off on each threshold rule only), keeps its error-log line',
+	str_contains( $modsec, 'SecRule RESOURCE:JPKPF_HITS "@gt 10" "ctl:auditEngine=Off"' )
+	&& str_contains( $modsec, 'SecRule USER:JPKPF_HITS "@gt 30" "ctl:auditEngine=Off"' )
+	&& str_contains( $modsec, 'SecRule USER:JPKPF_BOT_HITS "@gt 20" "ctl:auditEngine=Off"' )
+	&& substr_count( $modsec, 'ctl:auditEngine=Off' ) === 3 && substr_count( $modsec, 'ctl:' ) === 3
+	&& substr_count( $modsec, 'deny,status:429,log,msg:' ) === 3 && ! str_contains( $modsec, 'noauditlog' ), $modsec );
+// Never stricter: the edit adds an action, nothing else - without it the text is the 1.7.0 rule set.
+// sha1 of the 1.7.0 apache-modsec text for these inputs (version string 1.6.0-test).
+define( 'MODSEC_170_SHA1', '53401cb59c580cdc5252fa0fe577a785aa232e29' );
+$modsec_wo_ctl = str_replace( [ ' "ctl:auditEngine=Off"', "    # Over a limit: 429 with an error-log line, no audit-log entry.\n" ], '', $modsec );
+chk( 'apache: ModSecurity without the ctl action and its comment is the unchanged rule set (limits, conditions, order)',
+	$modsec_wo_ctl !== $modsec && ! str_contains( $modsec_wo_ctl, 'ctl:' )
+	&& sha1( $modsec_wo_ctl ) === MODSEC_170_SHA1, sha1( $modsec_wo_ctl ) );
 chk( 'apache: Retry-After on every 429, inside <IfModule mod_headers.c>, context names mod_headers',
 	str_contains( $modsec, "<IfModule mod_headers.c>\n    Header always set Retry-After \"10\" \"expr=%{REQUEST_STATUS} == 429\"\n</IfModule>" )
 	&& str_contains( $qos, "<IfModule mod_headers.c>\n    Header always set Retry-After \"10\" \"expr=%{REQUEST_STATUS} == 429\"\n</IfModule>" )
