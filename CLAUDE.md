@@ -138,7 +138,7 @@ jpkcom-post-filter/
 
 ### How it works
 1. **Read priority:** File cache → wp_options (DB)
-2. **On admin save:** wp_options + file cache updated simultaneously
+2. **On admin save:** wp_options + file cache updated simultaneously; **on `delete_option()`** the group's cache file is deleted (1.7.1, T2-b - otherwise it kept answering for the deleted row)
 3. **Cache location:** `.ht.jpkcom-post-filter-settings/{group}.php`
 4. **Format:** PHP array via `return [...];` – loaded with `include` (no JSON parsing)
 

@@ -1191,7 +1191,16 @@ foreach ( [ 'general', 'layout', 'cache', 'filter_groups' ] as $jpkpf_group ) {
         2
     );
     add_action( "add_option_jpkcom_postfilter_{$jpkpf_group}", 'jpkcom_postfilter_settings_memo_reset', 10, 0 );
-    add_action( "delete_option_jpkcom_postfilter_{$jpkpf_group}", 'jpkcom_postfilter_settings_memo_reset', 10, 0 );
+    // The row is gone: its cache file must go too (T2-b), or it keeps
+    // answering for the deleted value - the file is read before the database.
+    add_action(
+        "delete_option_jpkcom_postfilter_{$jpkpf_group}",
+        static function () use ( $jpkpf_group ): void {
+            jpkcom_postfilter_settings_delete_cache( $jpkpf_group );
+        },
+        10,
+        0
+    );
 }
 
 // Multisite: every site has its own options. Without this, a request that

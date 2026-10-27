@@ -274,6 +274,53 @@ foreach ( [ 'add' => null, 'update' => [ 'auto_inject' => [ 'post' ] ] ] as $cas
 	}
 }
 
+// ---------------------------------------------------------------------------
+section( 'Option deleted: its settings cache file goes with it (T2-b)' );
+
+/**
+ * delete_option() as core 7.1 runs it: the row is gone, then
+ * delete_option_{$option} and deleted_option fire with the option name -
+ * here the callbacks settings.php registered (bootstrap.php collects them).
+ */
+function delete_option( $k ) {
+	if ( ! array_key_exists( $k, $GLOBALS['__options'] ) ) {
+		return false;
+	}
+	unset( $GLOBALS['__options'][ $k ] );
+	foreach ( [ 'delete_option_' . $k, 'deleted_option' ] as $tag ) {
+		foreach ( $GLOBALS['__actions'][ $tag ] ?? [] as $cb ) {
+			$cb( $k );
+		}
+	}
+	return true;
+}
+
+foreach ( [ 'general', 'filter_groups', 'layout' ] as $group ) {
+	fresh_site();
+	$GLOBALS['__options']['jpkcom_postfilter_cache'] = [ 'settings_cache_enabled' => true ];
+	$stored = $group === 'general' ? [ 'max_filters_per_group' => 4 ] : [ 'jpkpf_marker' => 'stored' ];
+	$GLOBALS['__options'][ 'jpkcom_postfilter_' . $group ] = $stored;
+	jpkcom_postfilter_settings_write_file( $group, $stored );
+	jpkcom_postfilter_settings_memo_reset();
+	$before = jpkcom_postfilter_settings_get_group( $group );
+	delete_option( 'jpkcom_postfilter_' . $group );
+	$path = jpkcom_postfilter_settings_cache_path( $group );
+	clearstatcache();
+	chk( "{$group}: the cache file was there and is gone after delete_option()", ( $before['jpkpf_marker'] ?? $before['max_filters_per_group'] ?? null ) !== null && is_string( $path ) && ! is_file( $path ), (string) $path );
+	chk( "{$group}: the stored value is no longer read", ! array_key_exists( 'jpkpf_marker', jpkcom_postfilter_settings_get_group( $group ) ) );
+	if ( $group === 'general' ) {
+		chk( 'general: the effective cap is the default 2 again, not the deleted 4', (int) jpkcom_postfilter_policy( 'max_filters_per_group' ) === 2, (string) jpkcom_postfilter_policy( 'max_filters_per_group' ) );
+	}
+}
+fresh_site();
+$GLOBALS['__options']['jpkcom_postfilter_cache']   = [ 'settings_cache_enabled' => true ];
+$GLOBALS['__options']['jpkcom_postfilter_general'] = [ 'max_filters_per_group' => 4 ];
+jpkcom_postfilter_settings_write_file( 'general', [ 'max_filters_per_group' => 4 ] );
+$GLOBALS['__options']['jpkcom_postfilter_unrelated'] = 'x';
+delete_option( 'jpkcom_postfilter_unrelated' );
+clearstatcache();
+chk( 'another option deleted: the general cache file stays', is_file( (string) jpkcom_postfilter_settings_cache_path( 'general' ) ) );
+
 // Clean up the cache files the sanitizer wrote.
 jpkpf_test_rm_tree( WP_CONTENT_DIR );
 chk( 'temp directory removed', ! is_dir( WP_CONTENT_DIR ) );
