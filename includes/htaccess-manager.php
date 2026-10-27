@@ -373,6 +373,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_put' ) ) {
      * lines to the current size in one write (jpkcom_postfilter_htaccess_padded()),
      * so no reader ever sees a remnant of the old content before the cut.
      *
+     * Write, flush and cut are silenced: on a full disk fwrite() raises an
+     * E_NOTICE, and with display_errors on that would be output before the
+     * redirect of the Set up / Remove action ("headers already sent"). The
+     * failure is reported through the return value (T8-b).
+     *
      * @since 1.6.0
      *
      * @param resource $fh      Handle opened with 'r+' and locked.
@@ -389,14 +394,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_put' ) ) {
         $total   = strlen( $data );
         $written = 0;
         while ( $written < $total ) {
-            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
-            $n = fwrite( $fh, substr( $data, $written ) );
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPress.PHP.NoSilencedErrors.Discouraged
+            $n = @fwrite( $fh, substr( $data, $written ) );
             if ( $n === false || $n === 0 ) {
                 return false;
             }
             $written += $n;
         }
-        return fflush( $fh ) && ftruncate( $fh, strlen( $content ) );
+        // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+        return @fflush( $fh ) && @ftruncate( $fh, strlen( $content ) );
     }
 }
 

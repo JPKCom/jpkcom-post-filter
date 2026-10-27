@@ -432,6 +432,8 @@ final class Jpkpf_Recording_Stream {
 	 * nothing. Once the list is used up, every write succeeds in full.
 	 */
 	public static array $plan = [];
+	/** stream_truncate() raises an E_USER_NOTICE and fails. */
+	public static bool $truncate_fails = false;
 	public $context;
 	private string $path = '';
 	private int $pos = 0;
@@ -471,6 +473,10 @@ final class Jpkpf_Recording_Stream {
 		return strlen( $data );
 	}
 	public function stream_truncate( int $size ): bool {
+		if ( self::$truncate_fails ) {
+			trigger_error( 'ftruncate(): Truncate failed', E_USER_NOTICE );
+			return false;
+		}
 		self::$files[ $this->path ] = substr( self::$files[ $this->path ], 0, $size );
 		self::$snaps[]             = self::$files[ $this->path ];
 		return true;
@@ -537,6 +543,38 @@ chk( 'failed write half way: modify() false, the file is byte-identical to the o
 	$ok === false && ( Jpkpf_Recording_Stream::$files['jpkpfmem://roll'] ?? '' ) === $roll_old && Jpkpf_Recording_Stream::$plan === [],
 	json_encode( [ $ok, substr( Jpkpf_Recording_Stream::$files['jpkpfmem://roll'] ?? '', -60 ) ] ) );
 Jpkpf_Recording_Stream::$plan = [];
+
+// T8-b: on a plain file a failed fwrite() raises E_NOTICE ("Write of N bytes
+// failed with errno=28 No space left on device"). With display_errors on that
+// notice is output before the redirect of the Set up / Remove action, which
+// then fails with "headers already sent". The failure must still come back as
+// false - only the output goes.
+/** Run modify() with display_errors on; returns [ result, output ]. */
+function modify_quietly( string $file, string $new ): array {
+	$display = ini_set( 'display_errors', '1' );
+	$level   = error_reporting( E_ALL );
+	ob_start();
+	try {
+		$ok = call( 'jpkcom_postfilter_htaccess_modify', $file, static fn( string $c ): string => $new );
+	} finally {
+		$out = (string) ob_get_clean();
+		error_reporting( $level );
+		ini_set( 'display_errors', (string) $display );
+	}
+	return [ $ok, $out ];
+}
+Jpkpf_Recording_Stream::$files = [ 'jpkpfmem://full' => $roll_old ];
+Jpkpf_Recording_Stream::$plan  = [ 'notice', 'notice', 'notice', 'notice' ];
+[ $ok, $out ] = modify_quietly( 'jpkpfmem://full', $roll_new );
+chk( 'fwrite() fails with a notice: modify() false, nothing printed before the redirect headers, file unchanged',
+	$ok === false && $out === '' && ( Jpkpf_Recording_Stream::$files['jpkpfmem://full'] ?? '' ) === $roll_old, json_encode( [ $ok, $out ] ) );
+Jpkpf_Recording_Stream::$plan = [];
+
+Jpkpf_Recording_Stream::$files          = [ 'jpkpfmem://full' => $roll_old ];
+Jpkpf_Recording_Stream::$truncate_fails = true;
+[ $ok, $out ] = modify_quietly( 'jpkpfmem://full', $head . $wp_block );
+Jpkpf_Recording_Stream::$truncate_fails = false;
+chk( 'ftruncate() fails with a notice: modify() false, nothing printed', $ok === false && $out === '', json_encode( [ $ok, $out ] ) );
 
 Jpkpf_Recording_Stream::$files = [];
 Jpkpf_Recording_Stream::$modes = [];
