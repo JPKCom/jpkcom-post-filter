@@ -234,6 +234,59 @@ function jpkcom_postfilter_archive_base_urls_all_languages( string $post_type ):
 	return $base === null ? [] : [ 'https://example.test/' . $base . '/' ];
 }
 
+// --- the save lock (T9-d) ---------------------------------------------------------------
+
+/**
+ * $wpdb for the save lock: the four statements it sends, run against the same
+ * option rows get_option() reads. prepare() hands the query and its arguments
+ * on as JSON, so nothing is parsed out of SQL text.
+ */
+final class Jpkpf_Wpdb {
+	public string $options = 'wp_options';
+	public array $log      = [];
+
+	public function prepare( string $query, ...$args ): string {
+		return (string) json_encode( [ $query, $args ] );
+	}
+	public function query( string $prepared ) {
+		[ $q, $a ]   = json_decode( $prepared, true );
+		$this->log[] = $q;
+		$rows        = &$GLOBALS['__options'];
+		if ( str_starts_with( $q, 'INSERT IGNORE' ) ) {         // name, value
+			if ( array_key_exists( $a[0], $rows ) ) {
+				return 0;
+			}
+			$rows[ $a[0] ] = $a[1];
+			return 1;
+		}
+		if ( str_starts_with( $q, 'UPDATE' ) ) {                 // new value, name, old value
+			if ( ( $rows[ $a[1] ] ?? null ) !== $a[2] ) {
+				return 0;
+			}
+			$rows[ $a[1] ] = $a[0];
+			return 1;
+		}
+		if ( str_starts_with( $q, 'DELETE' ) ) {                 // name, value
+			if ( ( $rows[ $a[0] ] ?? null ) !== $a[1] ) {
+				return 0;
+			}
+			unset( $rows[ $a[0] ] );
+			return 1;
+		}
+		return false;
+	}
+	public function get_var( string $prepared ) {
+		[ $q, $a ]   = json_decode( $prepared, true );
+		$this->log[] = $q;
+		$v           = $GLOBALS['__options'][ $a[0] ] ?? null;
+		return $v === null ? null : (string) $v;
+	}
+}
+$GLOBALS['wpdb'] = new Jpkpf_Wpdb();
+
+// Which request is running: one process plays two admins saving at once.
+function jpkcom_postfilter_htaccess_request_id(): string { return $GLOBALS['__request_id'] ?? 'A'; }
+
 // --- the plugin -------------------------------------------------------------------------
 
 foreach ( [ 'helpers.php', 'settings.php', 'taxonomies.php', 'url-policy.php', 'server-rules.php', 'server-rules-render.php', 'htaccess-manager.php', 'htaccess-sync.php' ] as $file ) {
@@ -543,6 +596,27 @@ foreach ( [ 'update', 'add' ] as $kind ) {
 			$GLOBALS['__fired'][] = $kind . ':' . $o;
 		}, 99, 0 );
 	}
+}
+
+// One-shot callbacks run inside a save: between the loosen (sanitize_option_*
+// priority 5) and the commit, and between the commit and the tighten
+// (update_option_* priority 20).
+foreach ( [ 'jpkcom_postfilter_general', 'jpkcom_postfilter_filter_groups' ] as $o ) {
+	add_filter( "sanitize_option_{$o}", static function ( $value ) {
+		$fn = $GLOBALS['__after_loosen'] ?? null;
+		unset( $GLOBALS['__after_loosen'] );
+		if ( is_callable( $fn ) ) {
+			$fn();
+		}
+		return $value;
+	}, 7, 1 );
+	add_action( "update_option_{$o}", static function () {
+		$fn = $GLOBALS['__after_commit'] ?? null;
+		unset( $GLOBALS['__after_commit'] );
+		if ( is_callable( $fn ) ) {
+			$fn();
+		}
+	}, 10, 0 );
 }
 
 $have = function_exists( 'jpkcom_postfilter_htaccess_block' ) && function_exists( 'jpkcom_postfilter_server_rule_inputs' );
@@ -1300,6 +1374,145 @@ if ( $have ) {
 	site( general(), null, false, false );
 	call( 'jpkcom_postfilter_htaccess_lifecycle' );
 	chk( 'activation does not set anything up', bytes( htaccess() ) === $GLOBALS['__wp_block'] && ! isset( $GLOBALS['__options']['jpkcom_postfilter_htaccess_managed'] ) );
+}
+
+// =====================================================================================
+section( 'Save lock: two saves at once (T9-d)' );
+// =====================================================================================
+
+const LOCK = 'jpkcom_postfilter_htaccess_save_lock';
+
+/**
+ * Run a save as request B (another admin) while request A is inside its own
+ * save, and record what B got and whether B changed anything.
+ */
+function as_b( callable $save, string $option ): array {
+	$errors = count( $GLOBALS['__errors'] );
+	$file   = bytes( htaccess() );
+	$stored = $GLOBALS['__options'][ $option ] ?? null;
+	$cache  = cache_array( substr( $option, strlen( 'jpkcom_postfilter_' ) ) );
+	$GLOBALS['__request_id'] = 'B';
+	try {
+		$ok = $save();
+	} finally {
+		$GLOBALS['__request_id'] = 'A';
+	}
+	return [
+		'ok'        => $ok,
+		'msg'       => (string) ( $GLOBALS['__errors'][ $errors ]['message'] ?? '' ),
+		'unchanged' => bytes( htaccess() ) === $file && ( $GLOBALS['__options'][ $option ] ?? null ) === $stored
+			&& cache_array( substr( $option, strlen( 'jpkcom_postfilter_' ) ) ) === $cache,
+	];
+}
+
+$three_groups = [ 'groups' => [ group( 'category', 0 ), group( 'post_tag', 1 ), group( 'color', 2 ) ] ];
+
+if ( $have ) {
+	// B saves Filter Groups after A has loosened for N 2->5 and before A commits.
+	// Without a lock B loosens from what A has not committed yet - union(N2 G2,
+	// N2 G3) - over A's union, and A then commits N5 against a block with N2:
+	// stricter than the plugin until A tightens.
+	site( general() );
+	$b = null;
+	$GLOBALS['__after_loosen'] = static function () use ( &$b, $three_groups ) {
+		$b = as_b( static fn() => update_option( 'jpkcom_postfilter_filter_groups', $three_groups ), 'jpkcom_postfilter_filter_groups' );
+	};
+	$ok       = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '5' ] ) );
+	$a_commit = '';
+	foreach ( $GLOBALS['__commits'] as $c ) {
+		if ( $c['option'] === 'jpkcom_postfilter_general' ) {
+			$a_commit = $c['htaccess'];
+		}
+	}
+	chk( 'B (Filter Groups) between A\'s loosen and A\'s commit: refused with the "another save" text, B changed nothing',
+		is_array( $b ) && $b['ok'] === false && $b['unchanged'] && str_contains( $b['msg'], 'another save' ), json_encode( $b ) );
+	chk( 'A goes on: at A\'s commit the block is A\'s (N5) - never stricter than what A commits', $ok === true && n_of( $a_commit ) === 'N5', n_of( $a_commit ) );
+	chk( 'A done: block N5, lock released', n_of( bytes( htaccess() ) ) === 'N5' && ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+	$GLOBALS['__request_id'] = 'B';
+	$ok = update_option( 'jpkcom_postfilter_filter_groups', $three_groups );
+	$GLOBALS['__request_id'] = 'A';
+	chk( 'B again after A is done: saved, the block follows both (N5, 3 groups), lock released',
+		$ok === true && rule_hash( bytes( htaccess() ) ) === jpkcom_postfilter_server_rule_inputs()['hash']
+		&& jpkcom_postfilter_server_rule_inputs()['max_per_group'] === 5 && jpkcom_postfilter_server_rule_inputs()['groups'] === 3
+		&& ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+
+	// B saves General after A has committed and before A tightens.
+	site( general( [ 'max_filters_per_group' => 3 ] ) );
+	$b = null;
+	$GLOBALS['__after_commit'] = static function () use ( &$b ) {
+		$b = as_b( static fn() => update_option( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '4' ] ) ), 'jpkcom_postfilter_general' );
+	};
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '2' ] ) );
+	chk( 'B (General) between A\'s commit and A\'s tighten: refused, B changed nothing',
+		is_array( $b ) && $b['ok'] === false && $b['unchanged'] && str_contains( $b['msg'], 'another save' ), json_encode( $b ) );
+	chk( 'A tightens after all: block N2, lock released', $ok === true && n_of( bytes( htaccess() ) ) === 'N2' && ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+
+	// B imports (settings_save writes the cache file itself) while A is between loosen and commit.
+	site( general() );
+	$b = null;
+	$GLOBALS['__after_loosen'] = static function () use ( &$b, $three_groups ) {
+		$b = as_b( static function () use ( $three_groups ) {
+			jpkcom_postfilter_settings_save( 'filter_groups', $three_groups );
+			return jpkcom_postfilter_htaccess_refused( 'jpkcom_postfilter_filter_groups' ) ? false : true;
+		}, 'jpkcom_postfilter_filter_groups' );
+	};
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '5' ] ) );
+	chk( 'B (import) while A saves: refused, option, cache file and .htaccess unchanged',
+		is_array( $b ) && $b['ok'] === false && $b['unchanged'], json_encode( $b ) );
+	chk( 'A after the refused import: saved, lock released', $ok === true && ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+
+	// A lock another request holds right now.
+	site( general() );
+	$GLOBALS['__options'][ LOCK ] = time() . '|X';
+	$file_was   = bytes( htaccess() );
+	$old_stored = $GLOBALS['__options']['jpkcom_postfilter_general'];
+	$cache_was  = cache_array( 'general' );
+	$ok         = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	chk( 'lock held by another request: refused, option, cache file and .htaccess unchanged, their lock untouched',
+		$ok === false && str_contains( (string) ( $GLOBALS['__errors'][0]['message'] ?? '' ), 'another save' )
+		&& $GLOBALS['__options']['jpkcom_postfilter_general'] === $old_stored && cache_array( 'general' ) === $cache_was
+		&& bytes( htaccess() ) === $file_was && ( $GLOBALS['__options'][ LOCK ] ?? '' ) === explode( '|', (string) ( $GLOBALS['__options'][ LOCK ] ?? '' ) )[0] . '|X',
+		json_encode( [ $ok, $GLOBALS['__errors'] ] ) );
+
+	// admin_init must not write between another request's loosen and tighten either.
+	$cap = static fn( $v ) => 4;
+	add_filter( 'jpkcom_postfilter_max_filters_per_group', $cap );
+	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
+	chk( 'admin_init while another request holds the lock: no write', bytes( htaccess() ) === $file_was );
+	unset( $GLOBALS['__options'][ LOCK ] );
+	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
+	chk( 'admin_init once the lock is gone: synced (N4)', n_of( bytes( htaccess() ) ) === 'N4' );
+	remove_filter( 'jpkcom_postfilter_max_filters_per_group', $cap );
+
+	// A stale lock - its request died without running its shutdown functions.
+	site( general() );
+	$GLOBALS['__options'][ LOCK ] = ( time() - 61 ) . '|X';
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	chk( 'stale lock (older than a minute): taken over, saved, released', $ok === true && n_of( bytes( htaccess() ) ) === 'N3' && ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+
+	// Released on the other paths, too.
+	site( general() );
+	read_only();
+	save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	chk( 'refused save (read-only file): lock released', ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+
+	site( general() );
+	save( 'jpkcom_postfilter_general', general() );   // stores the sanitized form
+	save( 'jpkcom_postfilter_general', general() );   // nothing changes: update_option() returns without a hook
+	$held = (string) ( $GLOBALS['__options'][ LOCK ] ?? '' );
+	call( 'jpkcom_postfilter_htaccess_save_unlock' );   // what the shutdown function runs
+	chk( 'unchanged save: lock held by this request until shutdown, then released',
+		str_ends_with( $held, '|A' ) && ! array_key_exists( LOCK, $GLOBALS['__options'] ), $held );
+
+	site( general() );
+	jpkcom_postfilter_settings_save( 'general', general() );
+	jpkcom_postfilter_settings_save( 'general', general() );
+	chk( 'unchanged import: released once the import is done', ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+
+	site( general(), null, false, false );
+	$GLOBALS['wpdb']->log = [];
+	save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	chk( 'not managed: no lock, not a single query', $GLOBALS['wpdb']->log === [] && ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
 }
 
 // =====================================================================================

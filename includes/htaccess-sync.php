@@ -15,6 +15,11 @@
  *   .htaccess management no longer available) the save is refused: an error
  *   for the admin, and option, settings cache file and .htaccess all stay as
  *   they were.
+ * - One save at a time (1.7.1, T9-d): a lock is held from the loosen step to
+ *   the tighten step. A second save of General, Filter Groups or an import
+ *   that starts meanwhile is refused - loosening from values the first save
+ *   has not committed yet could leave the block stricter than what that save
+ *   commits.
  * - Options outside the plugin that move the archive bases (page_for_posts,
  *   permalink_structure) sync after the commit; constants and filters change
  *   the effective values without any option event, so admin_init compares
@@ -584,10 +589,14 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_refusal_message' )
      * markers are fixed by hand, a manual block next to the managed one is
      * deleted, a read-only file is made writable, an unreadable one readable.
      *
-     * @param string $reason `write-unrestored`, `damaged`, `not-readable`, `manual-block`, `not-writable`, `write-failed`, or a reason from jpkcom_postfilter_htaccess_available().
+     * @param string $reason `busy`, `write-unrestored`, `damaged`, `not-readable`, `manual-block`, `not-writable`, `write-failed`, or a reason from jpkcom_postfilter_htaccess_available().
      * @return string
      */
     function jpkcom_postfilter_htaccess_refusal_message( string $reason ): string {
+        if ( $reason === 'busy' ) {
+            return __( 'Settings not saved: another save of the JPKCom Post Filter settings is updating the .htaccess rules at this moment, and two saves at once could leave the rules stricter than the plugin. Wait a few seconds, then save again.', 'jpkcom-post-filter' );
+        }
+
         $reasons = [
             'write-unrestored'     => __( 'writing the file failed, and its previous content could not be put back', 'jpkcom-post-filter' ),
             'not-writable'         => __( 'the file is not writable', 'jpkcom-post-filter' ),
@@ -623,6 +632,213 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_refusal_message' )
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_request_id' ) ) {
+    /**
+     * A token for this request, to tell its save lock from another request's
+     *
+     * @since 1.7.1
+     *
+     * @return string 16 hex characters, the same for the whole request.
+     */
+    function jpkcom_postfilter_htaccess_request_id(): string {
+        static $id = '';
+
+        if ( $id === '' ) {
+            $id = bin2hex( random_bytes( 8 ) );
+        }
+
+        return $id;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_lock_row' ) ) {
+    /**
+     * The save lock as it is in the database: [ row value, since, owner ]
+     *
+     * Read past the options cache - another request writes the row, and a
+     * cached "no such option" from earlier in this request would hide it.
+     *
+     * @since 1.7.1
+     *
+     * @return array{0: string, 1: int, 2: string}|null Null when nobody holds it (or there is no database).
+     */
+    function jpkcom_postfilter_htaccess_save_lock_row(): ?array {
+        global $wpdb;
+
+        if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+            return null;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the table name only
+        $value = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM `{$wpdb->options}` WHERE option_name = %s LIMIT 1", 'jpkcom_postfilter_htaccess_save_lock' ) );
+        if ( ! is_string( $value ) ) {
+            return null;
+        }
+
+        $parts = explode( '|', $value, 2 );
+
+        return [ $value, (int) $parts[0], $parts[1] ?? '' ];
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_lock_taken' ) ) {
+    /**
+     * Has this request taken the save lock (and not released it yet)?
+     *
+     * Keeps jpkcom_postfilter_htaccess_save_unlock() from sending a query on
+     * every option event of a request that never took it.
+     *
+     * @since 1.7.1
+     *
+     * @param bool|null $set New state, or null to read.
+     * @return bool
+     */
+    function jpkcom_postfilter_htaccess_save_lock_taken( ?bool $set = null ): bool {
+        static $taken = false;
+
+        if ( $set !== null ) {
+            $taken = $set;
+        }
+
+        return $taken;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_lock' ) ) {
+    /**
+     * Take the save lock, held from the loosen step to the tighten step (T9-d)
+     *
+     * Two saves at once break "never stricter": B loosens from the values A
+     * has not committed yet and can write a block stricter than what A then
+     * commits. So one save at a time - for a managed block only; a site
+     * without one sends no query.
+     *
+     * The option `jpkcom_postfilter_htaccess_save_lock` holds
+     * "<time>|<request id>", inserted with INSERT IGNORE like core's
+     * WP_Upgrader::create_lock(): the row either goes in or it is there
+     * already, nothing in between. The request holding it may take it again
+     * (add_option() sanitizes a second time, an import saves two options).
+     * Released after the tighten (jpkcom_postfilter_htaccess_after_save()),
+     * on a refusal, after an import, and at the latest by a shutdown function
+     * - which PHP runs after a fatal error, too. A lock older than a minute
+     * belongs to a request that died without even that (killed); it is
+     * taken over, atomically, so two takers cannot both win.
+     *
+     * Without $wpdb (never the case in WordPress) there is nothing to lock
+     * with, and the save goes on.
+     *
+     * @since 1.7.1
+     *
+     * @return bool False when another request holds it.
+     */
+    function jpkcom_postfilter_htaccess_save_lock(): bool {
+        global $wpdb;
+        static $shutdown = false;
+
+        if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+            return true;
+        }
+
+        $name  = 'jpkcom_postfilter_htaccess_save_lock';
+        $mine  = jpkcom_postfilter_htaccess_request_id();
+        $now   = time();
+        $value = $now . '|' . $mine;
+        $taken = false;
+
+        // Twice: the holder may release it between the INSERT and the SELECT.
+        for ( $try = 0; $try < 2 && ! $taken; $try++ ) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the table name only
+            if ( (int) $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO `{$wpdb->options}` ( `option_name`, `option_value`, `autoload` ) VALUES ( %s, %s, 'off' )", $name, $value ) ) === 1 ) {
+                $taken = true;
+                break;
+            }
+
+            $row = jpkcom_postfilter_htaccess_save_lock_row();
+            if ( $row === null ) {
+                continue;
+            }
+            [ $held, $since, $owner ] = $row;
+
+            if ( $owner === $mine ) {
+                jpkcom_postfilter_htaccess_save_lock_taken( set: true );
+                return true;
+            }
+            if ( $since > $now - 60 ) {
+                return false;
+            }
+
+            // Stale: replace exactly that value, so of two takers only one wins.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the table name only
+            $taken = (int) $wpdb->query( $wpdb->prepare( "UPDATE `{$wpdb->options}` SET `option_value` = %s WHERE `option_name` = %s AND `option_value` = %s", $value, $name, $held ) ) === 1;
+            break;
+        }
+
+        if ( $taken ) {
+            jpkcom_postfilter_htaccess_save_lock_taken( set: true );
+            if ( ! $shutdown ) {
+                $shutdown = true;
+                register_shutdown_function( 'jpkcom_postfilter_htaccess_save_unlock' );
+            }
+        }
+
+        return $taken;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_unlock' ) ) {
+    /**
+     * Release the save lock, if this request holds it
+     *
+     * Deletes exactly the value this request wrote: a lock another request
+     * has taken over meanwhile stays.
+     *
+     * @since 1.7.1
+     *
+     * @return void
+     */
+    function jpkcom_postfilter_htaccess_save_unlock(): void {
+        global $wpdb;
+
+        if ( ! jpkcom_postfilter_htaccess_save_lock_taken() ) {
+            return;
+        }
+
+        $row = jpkcom_postfilter_htaccess_save_lock_row();
+        if ( $row === null ) {
+            jpkcom_postfilter_htaccess_save_lock_taken( set: false );
+            return;
+        }
+        if ( $row[2] !== jpkcom_postfilter_htaccess_request_id() ) {
+            return;
+        }
+        jpkcom_postfilter_htaccess_save_lock_taken( set: false );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the table name only
+        $wpdb->query( $wpdb->prepare( "DELETE FROM `{$wpdb->options}` WHERE `option_name` = %s AND `option_value` = %s", 'jpkcom_postfilter_htaccess_save_lock', $row[0] ) );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_locked_elsewhere' ) ) {
+    /**
+     * Is another request between its loosen and its tighten right now?
+     *
+     * @since 1.7.1
+     *
+     * @return bool
+     */
+    function jpkcom_postfilter_htaccess_save_locked_elsewhere(): bool {
+        $row = jpkcom_postfilter_htaccess_save_lock_row();
+
+        return $row !== null && $row[2] !== jpkcom_postfilter_htaccess_request_id() && $row[1] > time() - 60;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_prepare_save' ) ) {
     /**
      * Loosen the block for a submitted option value, before it is committed
@@ -633,6 +849,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_prepare_save' ) ) 
      * messages of the option's admin page), a warning under WP-CLI - or,
      * otherwise outside wp-admin, a debug log line - and returns false: the caller must then not save. Inside
      * jpkcom_postfilter_htaccess_without_refusal() it never returns false.
+     *
+     * First it takes the save lock (jpkcom_postfilter_htaccess_save_lock());
+     * while another request holds it, the save is refused with reason `busy`
+     * and nothing is written (T9-d).
      *
      * @since 1.6.0
      *
@@ -656,21 +876,25 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_prepare_save' ) ) 
             }
         }
 
-        // "Current" three times over: what the plugin runs with (the settings
-        // cache file first) and what is stored. They differ during a save - the
-        // sanitizer has already rewritten the cache file when add_option()
-        // sanitizes a second time (first save, or a stored value equal to the
-        // registered default) - and the block must stay loose for both.
-        jpkcom_postfilter_settings_memo_reset();
-        $current = jpkcom_postfilter_server_rule_union(
-            old: jpkcom_postfilter_server_rule_inputs(),
-            new: jpkcom_postfilter_server_inputs_from_raw( option: $option, raw: get_option( $option ), sanitized: false )
-        );
-        $union   = jpkcom_postfilter_server_rule_union(
-            old: $current,
-            new: jpkcom_postfilter_server_inputs_from_raw( option: $option, raw: $raw )
-        );
-        $result  = jpkcom_postfilter_htaccess_loosen( inputs: $union, orphan: ! $managed, current: $current );
+        if ( ! jpkcom_postfilter_htaccess_save_lock() && ! jpkcom_postfilter_htaccess_without_refusal() ) {
+            $result = [ 'ok' => false, 'reason' => 'busy' ];
+        } else {
+            // "Current" three times over: what the plugin runs with (the settings
+            // cache file first) and what is stored. They differ during a save - the
+            // sanitizer has already rewritten the cache file when add_option()
+            // sanitizes a second time (first save, or a stored value equal to the
+            // registered default) - and the block must stay loose for both.
+            jpkcom_postfilter_settings_memo_reset();
+            $current = jpkcom_postfilter_server_rule_union(
+                old: jpkcom_postfilter_server_rule_inputs(),
+                new: jpkcom_postfilter_server_inputs_from_raw( option: $option, raw: get_option( $option ), sanitized: false )
+            );
+            $union   = jpkcom_postfilter_server_rule_union(
+                old: $current,
+                new: jpkcom_postfilter_server_inputs_from_raw( option: $option, raw: $raw )
+            );
+            $result  = jpkcom_postfilter_htaccess_loosen( inputs: $union, orphan: ! $managed, current: $current );
+        }
 
         if ( $result['ok'] || jpkcom_postfilter_htaccess_without_refusal() ) {
             return true;
@@ -755,8 +979,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_settle_refusal' ) 
      *
      * Returns exactly what update_option() compares with (get_option() without
      * a default, i.e. the registered default for an option not stored yet), so
-     * nothing is written and no update_option_* / add_option_* fires, and puts
-     * the settings cache file back on the stored value.
+     * nothing is written and no update_option_* / add_option_* fires, puts
+     * the settings cache file back on the stored value, and releases the save
+     * lock (only if this request holds it - a `busy` refusal never took it).
      *
      * @since 1.6.0
      *
@@ -770,6 +995,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_settle_refusal' ) 
         }
 
         jpkcom_postfilter_htaccess_restore_cache( option: $option );
+        jpkcom_postfilter_htaccess_save_unlock();
 
         return get_option( $option );
     }
@@ -782,7 +1008,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_after_settings_sav
      *
      * jpkcom_postfilter_settings_save() (the import) writes the cache file
      * itself after update_option(); after a refused save that file would hold
-     * the values that were just refused.
+     * the values that were just refused. The import of this option is done
+     * then, so the save lock goes, too - also when nothing changed and no
+     * update_option_* hook released it.
      *
      * @since 1.6.0
      *
@@ -795,6 +1023,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_after_settings_sav
         if ( jpkcom_postfilter_htaccess_refused( $option ) ) {
             jpkcom_postfilter_htaccess_restore_cache( option: $option );
         }
+
+        jpkcom_postfilter_htaccess_save_unlock();
     }
 }
 
@@ -804,7 +1034,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_after_save' ) ) {
      * After an option commit: bring the block to the new state
      *
      * Tightens where the save tightened; for the plugin's own options the
-     * block is already loose enough. Hooked with 0 arguments.
+     * block is already loose enough. Then the save lock goes (if this request
+     * holds it). Hooked with 0 arguments.
      *
      * @since 1.6.0
      *
@@ -813,6 +1044,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_after_save' ) ) {
     function jpkcom_postfilter_htaccess_after_save(): void {
         jpkcom_postfilter_settings_memo_reset();
         jpkcom_postfilter_htaccess_sync();
+        jpkcom_postfilter_htaccess_save_unlock();
     }
 }
 
@@ -826,7 +1058,10 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_maybe_resync' ) ) 
      * admin page loads - not on admin-ajax (heartbeat), REST or cron requests
      * (ruling R18), and only for a user who can manage_options (not for an
      * anonymous request to admin-post.php). Known limit: a constant that loosens between two requests
-     * leaves the block stricter until the next admin page load.
+     * leaves the block stricter until the next admin page load. No write while
+     * another request is between its loosen and its tighten (T9-d): this
+     * request may still read the values before that save, and the save's
+     * own tighten writes the current state anyway.
      *
      * @since 1.6.0
      *
@@ -859,7 +1094,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_maybe_resync' ) ) 
             ? $state['managed']
             : ( $state['hash'] !== $inputs['hash'] || $state['misplaced'] );
 
-        if ( $stale ) {
+        if ( $stale && ! jpkcom_postfilter_htaccess_save_locked_elsewhere() ) {
             jpkcom_postfilter_htaccess_sync( inputs: $inputs );
         }
     }
