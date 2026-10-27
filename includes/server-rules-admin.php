@@ -462,8 +462,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rules_htaccess_actio
      *
      * install: only when jpkcom_postfilter_htaccess_available() allows it;
      * writes the block for the current inputs, then stores the file's path
-     * in the option `jpkcom_postfilter_htaccess_managed` (not autoloaded). With no reject
-     * part the option is set anyway and the block follows once there is one.
+     * in the option `jpkcom_postfilter_htaccess_managed` (not autoloaded).
+     * With no reject part the option is set anyway and the block follows
+     * once there is one.
      *
      * remove: whenever the file can be written, whatever available() says -
      * removing only loosens, and after a server move it is the only way to
