@@ -1497,9 +1497,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
      * `unknown_terms_action = reject` even a within-cap probe, so the status
      * alone says nothing. OpenLiteSpeed sends no header with its reject; there
      * a reject status WITHOUT the header is the server's. Ferron 2.8 gets no
-     * reject rule at all (jpkcom_postfilter_server_snippets_ferron2()), so it
-     * gets no reject probes either. Not translated: the comments belong to
-     * the code block.
+     * reject rule at all (jpkcom_postfilter_server_snippets_ferron2(), ruling
+     * R14), so it gets no reject probes, no header preamble (there is no
+     * server-... value to read) and no never-stricter loop (a server that
+     * rejects nothing cannot be stricter) - only robots.txt and the rate
+     * limit. Not translated: the comments belong to the code block.
      *
      * @since 1.6.0
      *
@@ -1517,6 +1519,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
         $status   = jpkcom_postfilter_server_reject_status( inputs: $inputs );
         $hash     = jpkcom_postfilter_server_hash_of( inputs: $inputs );
         $headers  = $server !== 'ols';
+        // Ferron 2 rejects nothing: no header to read, nothing that could be stricter.
+        $rejects  = $server !== 'ferron2';
         $rate     = in_array( $server, [ 'nginx', 'apache', 'caddy', 'ferron3', 'ferron2' ], true ) && jpkcom_postfilter_server_scope_regex( inputs: $inputs ) !== null;
 
         $origin = jpkcom_postfilter_server_probe_origin() ?? 'https://example.com';
@@ -1525,11 +1529,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
 
         $out   = [];
         $out[] = '# jpkcom-post-filter rule ' . $hash . ': checks for ' . $server;
-        if ( $headers ) {
+        if ( $rejects && $headers ) {
             $out[] = '# Read the VALUE of X-Jpkpf-Reject: "server-..." = the web server answered,';
             $out[] = '# a value without "server-" (per-group, segments, unknown) = PHP answered.';
             $out[] = '# PHP may answer ' . $status . ' as well, so the status alone says nothing.';
-        } else {
+        } elseif ( $rejects ) {
             $out[] = '# OpenLiteSpeed sends no header with its reject: a ' . $status . ' WITHOUT an';
             $out[] = '# X-Jpkpf-Reject line is the server; PHP\'s own reject always carries one.';
         }
@@ -1554,7 +1558,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
         }
         if ( $n === 0 ) {
             $out[] = '';
-            if ( $server === 'ferron2' ) {
+            if ( ! $rejects ) {
                 $out[] = '# Ferron 2.8 gets no reject rule in this version: nothing to probe.';
             } else {
                 $out[] = '# No reject rule is generated for these settings: nothing to probe.';
@@ -1562,11 +1566,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_check_commands' ) ) 
         }
 
         $within = implode( ' ', array_map( $url, $probes['within'] ) );
-        $out[]  = '';
-        if ( $headers ) {
+        if ( $rejects && $headers ) {
+            $out[] = '';
             $out[] = '# ' . ( ++$n ) . ') Never stricter than the plugin: every line must end in 0';
             $out[] = '( for u in ' . $within . '; do printf \'%s \' "$u"; curl -s -o /dev/null -D - "$u" | grep -ciE \'^x-jpkpf-reject: *server-\'; done )';
-        } else {
+        } elseif ( $rejects ) {
+            $out[] = '';
             $out[] = '# ' . ( ++$n ) . ') Never stricter than the plugin: no line may show ' . $status . ' without X-Jpkpf-Reject';
             $out[] = '( for u in ' . $within . '; do printf \'%s \' "$u"; curl -s -o /dev/null -D - "$u" | grep -iE \'^(HTTP|x-jpkpf-reject)\' | tr -d \'\\r\' | tr \'\\n\' \' \'; echo; done )';
         }

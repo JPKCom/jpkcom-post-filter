@@ -1800,10 +1800,22 @@ foreach ( [ 'caddy', 'ferron3', 'ferron2' ] as $server ) {
 }
 $cc_ok = true;
 foreach ( [ 'caddy', 'ferron3', 'ferron2' ] as $server ) {
-	$cc_ok = $cc_ok && str_contains( $cc[ $server ], "'https://example.test/blog/filter/jpkpf-probe-1+jpkpf-probe-2/'" )
+	$cc_ok = $cc_ok && ( $server === 'ferron2' || str_contains( $cc[ $server ], "'https://example.test/blog/filter/jpkpf-probe-1+jpkpf-probe-2/'" ) )
 		&& str_contains( $cc[ $server ], "'https://example.test/robots.txt'" ) && str_contains( $cc[ $server ], 'Cookie:' ) && str_contains( $cc[ $server ], 'for i in $(seq 1 25)' );
 }
-chk( 'check commands caddy/ferron: within probes, robots.txt, rate limit with cookie exemption', $cc_ok );
+chk( 'check commands caddy/ferron: within probes (not Ferron 2), robots.txt, rate limit with cookie exemption', $cc_ok );
+// T5-a: Ferron 2 gets no reject rule (ruling R14), so there is no
+// X-Jpkpf-Reject to read and nothing that could be stricter than the plugin:
+// neither the header preamble nor the never-stricter loop belongs there. The
+// rate-limit part stays - Ferron 2 has a rate limit.
+chk( 'check commands ferron2: no header preamble, no never-stricter loop, no within probe (T5-a)',
+	! str_contains( $cc['ferron2'], 'Read the VALUE' ) && ! str_contains( $cc['ferron2'], 'X-Jpkpf-Reject' ) && stripos( $cc['ferron2'], 'Never stricter' ) === false
+	&& ! str_contains( $cc['ferron2'], 'for u in' ) && ! str_contains( $cc['ferron2'], "'https://example.test/blog/filter/jpkpf-probe-1+jpkpf-probe-2/'" ), $cc['ferron2'] );
+chk( 'check commands ferron2: still the "nothing to probe" line, robots.txt and the rate-limit loop with its first 429',
+	str_contains( $cc['ferron2'], '# Ferron 2.8 gets no reject rule in this version: nothing to probe.' ) && str_contains( $cc['ferron2'], 'robots.txt reaches WordPress' )
+	&& str_contains( $cc['ferron2'], 'first 429: ' ) && str_contains( $cc['ferron2'], 'Rate limit.' ), $cc['ferron2'] );
+chk( 'check commands caddy/ferron3: preamble and never-stricter loop stay',
+	str_contains( $cc['caddy'], 'Read the VALUE' ) && str_contains( $cc['caddy'], 'Never stricter' ) && str_contains( $cc['ferron3'], 'Read the VALUE' ) && str_contains( $cc['ferron3'], 'Never stricter' ) );
 chk( 'check commands caddy/ferron3: reject probes by header value and hash',
 	str_contains( $cc['caddy'], 'X-Jpkpf-Reject: server-per-group' ) && str_contains( $cc['caddy'], 'X-Jpkpf-Rule: ' . $hash )
 	&& str_contains( $cc['ferron3'], 'X-Jpkpf-Reject: server-segments' ) && str_contains( $cc['ferron3'], "'https://example.test/blog/filter/jpkpf-probe-1+jpkpf-probe-2+jpkpf-probe-3/'" ) );
