@@ -472,40 +472,54 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_write' ) ) {
 
         return jpkcom_postfilter_htaccess_modify(
             file: $file,
-            change: static function ( string $content ) use ( $block_lines ): ?string {
-                $p = jpkcom_postfilter_htaccess_parse( content: $content );
-                if ( $p['manual'] || $p['damaged'] ) {
-                    return null;
-                }
-
-                $text  = implode( $p['eol'], $block_lines );
-                $lines = $p['lines'];
-
-                if ( $p['misplaced'] ) {
-                    // The first block is below WordPress's line, so all of them are:
-                    // removing them leaves that line's index as it is.
-                    foreach ( array_reverse( $p['blocks'] ) as [ $start, $end ] ) {
-                        array_splice( $lines, $start, $end - $start + 1 );
-                    }
-                    array_splice( $lines, (int) $p['wp'], 0, [ $text . $p['eol'] ] );
-                } elseif ( $p['blocks'] !== [] ) {
-                    // Last first, so earlier indexes stay valid. The first block keeps
-                    // its place and its END line's own terminator (none at EOF).
-                    foreach ( array_reverse( $p['blocks'] ) as $n => [ $start, $end ] ) {
-                        $is_first = $n === count( $p['blocks'] ) - 1;
-                        $after    = substr( $lines[ $end ], strlen( rtrim( $lines[ $end ], "\r\n" ) ) );
-                        $with     = $is_first ? [ $text . $after ] : [];
-                        array_splice( $lines, $start, $end - $start + 1, $with );
-                    }
-                } elseif ( $p['wp'] !== null ) {
-                    array_splice( $lines, $p['wp'], 0, [ $text . $p['eol'] ] );
-                } else {
-                    array_unshift( $lines, $text . $p['eol'] );
-                }
-
-                return $p['bom'] . implode( '', $lines );
-            }
+            change: static fn( string $content ): ?string => jpkcom_postfilter_htaccess_with_block( content: $content, block_lines: $block_lines )
         );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_with_block' ) ) {
+    /**
+     * File content with the managed block put in, as write() places it
+     *
+     * @since 1.7.1 (the body of jpkcom_postfilter_htaccess_write() before)
+     *
+     * @param string   $content     File content.
+     * @param string[] $block_lines As returned by jpkcom_postfilter_htaccess_block_lines().
+     * @return string|null Null when the content holds a manual block or damaged markers.
+     */
+    function jpkcom_postfilter_htaccess_with_block( string $content, array $block_lines ): ?string {
+        $p = jpkcom_postfilter_htaccess_parse( content: $content );
+        if ( $p['manual'] || $p['damaged'] ) {
+            return null;
+        }
+
+        $text  = implode( $p['eol'], $block_lines );
+        $lines = $p['lines'];
+
+        if ( $p['misplaced'] ) {
+            // The first block is below WordPress's line, so all of them are:
+            // removing them leaves that line's index as it is.
+            foreach ( array_reverse( $p['blocks'] ) as [ $start, $end ] ) {
+                array_splice( $lines, $start, $end - $start + 1 );
+            }
+            array_splice( $lines, (int) $p['wp'], 0, [ $text . $p['eol'] ] );
+        } elseif ( $p['blocks'] !== [] ) {
+            // Last first, so earlier indexes stay valid. The first block keeps
+            // its place and its END line's own terminator (none at EOF).
+            foreach ( array_reverse( $p['blocks'] ) as $n => [ $start, $end ] ) {
+                $is_first = $n === count( $p['blocks'] ) - 1;
+                $after    = substr( $lines[ $end ], strlen( rtrim( $lines[ $end ], "\r\n" ) ) );
+                $with     = $is_first ? [ $text . $after ] : [];
+                array_splice( $lines, $start, $end - $start + 1, $with );
+            }
+        } elseif ( $p['wp'] !== null ) {
+            array_splice( $lines, $p['wp'], 0, [ $text . $p['eol'] ] );
+        } else {
+            array_unshift( $lines, $text . $p['eol'] );
+        }
+
+        return $p['bom'] . implode( '', $lines );
     }
 }
 
@@ -526,21 +540,200 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_remove' ) ) {
     function jpkcom_postfilter_htaccess_remove( string $file ): bool {
         return jpkcom_postfilter_htaccess_modify(
             file: $file,
-            change: static function ( string $content ): ?string {
-                $p = jpkcom_postfilter_htaccess_parse( content: $content );
-                if ( $p['damaged'] ) {
+            change: static fn( string $content ): ?string => jpkcom_postfilter_htaccess_without_block( content: $content )
+        );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_without_block' ) ) {
+    /**
+     * File content without any managed block, as remove() leaves it
+     *
+     * @since 1.7.1 (the body of jpkcom_postfilter_htaccess_remove() before)
+     *
+     * @param string $content File content.
+     * @return string|null Null when the managed markers do not pair up.
+     */
+    function jpkcom_postfilter_htaccess_without_block( string $content ): ?string {
+        $p = jpkcom_postfilter_htaccess_parse( content: $content );
+        if ( $p['damaged'] ) {
+            return null;
+        }
+        if ( $p['blocks'] === [] ) {
+            return $content;
+        }
+
+        $lines = $p['lines'];
+        foreach ( array_reverse( $p['blocks'] ) as [ $start, $end ] ) {
+            array_splice( $lines, $start, $end - $start + 1 );
+        }
+
+        return $p['bom'] . implode( '', $lines );
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_rule_units' ) ) {
+    /**
+     * The lines of a managed block as comparable units
+     *
+     * A reject rule - the three lines `RewriteCond %{ENV:REDIRECT_STATUS} ^$`,
+     * `RewriteCond %{THE_REQUEST} "…"`, `RewriteRule … [E=JPKPF_REJECT:server-…`
+     * that jpkcom_postfilter_server_apache_rules() writes per reason - is one
+     * unit; every other line is a unit of its own. The rule hash is taken out:
+     * the `# rule <hash>` line is dropped and the hash of an `X-Jpkpf-Rule`
+     * header line blanked. It names the rule set; what is rejected does not
+     * depend on it.
+     *
+     * @since 1.7.1
+     *
+     * @param string[] $lines Lines between the markers, without line endings.
+     * @return array<int, array{reject: bool, text: string}>
+     */
+    function jpkcom_postfilter_htaccess_rule_units( array $lines ): array {
+        $lines = array_values( $lines );
+        $count = count( $lines );
+        $units = [];
+
+        for ( $i = 0; $i < $count; $i++ ) {
+            $line = $lines[ $i ];
+            if ( preg_match( '/^# rule [0-9a-f]{12}$/D', $line ) === 1 ) {
+                continue;
+            }
+
+            $is_rule = $line === 'RewriteCond %{ENV:REDIRECT_STATUS} ^$'
+                && $i + 2 < $count
+                && str_starts_with( $lines[ $i + 1 ], 'RewriteCond %{THE_REQUEST} ' )
+                && str_starts_with( $lines[ $i + 2 ], 'RewriteRule ' )
+                && str_contains( $lines[ $i + 2 ], '[E=JPKPF_REJECT:server-' );
+
+            if ( $is_rule ) {
+                $units[] = [ 'reject' => true, 'text' => $line . "\n" . $lines[ $i + 1 ] . "\n" . $lines[ $i + 2 ] ];
+                $i      += 2;
+                continue;
+            }
+
+            $units[] = [ 'reject' => false, 'text' => (string) preg_replace( '/^(Header always set X-Jpkpf-Rule ")[0-9a-f]{12}(")/', '$1$2', $line ) ];
+        }
+
+        return $units;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_provably_looser' ) ) {
+    /**
+     * Is a new managed block provably no stricter than the one in the file?
+     *
+     * "Provably looser" (R161-3) is decided on the text alone - no pattern is
+     * evaluated, so nothing depends on how a server reads a regular
+     * expression. True only when:
+     *
+     * - the content parses without damaged markers and holds a managed block;
+     * - `$block` is '' (no reject part any more): removing a block only ever
+     *   loosens; or else
+     * - there is no manual block (write() refuses next to one), the managed
+     *   block does not sit below WordPress's (it never took effect there,
+     *   and writing would move it up into effect), and
+     * - the units of the new block (jpkcom_postfilter_htaccess_rule_units(),
+     *   rule hash taken out) are exactly the units of the file's first
+     *   managed block with zero or more whole reject rules deleted: same
+     *   order, every other unit byte for byte the same - the patterns of the
+     *   rules that stay, the reject status, the header lines, the
+     *   ErrorDocument text, `RewriteEngine` and `<IfModule>` lines.
+     *
+     * So the new block rejects a subset of what the old one rejects. Anything
+     * else - a rule added, a pattern changed (even to a looser one), another
+     * status, another ErrorDocument text (a translation), a line edited by
+     * hand - is not provable, and the answer is false. Further managed blocks
+     * in the file are dropped by write(), which only loosens.
+     *
+     * The reject rules of one block carry different reasons, so matching the
+     * units in order, earliest first, finds the deletion when there is one.
+     *
+     * @since 1.7.1
+     *
+     * @param string $content File content.
+     * @param string $block   New managed block (jpkcom_postfilter_htaccess_block()), '' for none.
+     * @return bool
+     */
+    function jpkcom_postfilter_htaccess_provably_looser( string $content, string $block ): bool {
+        $p = jpkcom_postfilter_htaccess_parse( content: $content );
+        if ( $p['damaged'] || $p['blocks'] === [] ) {
+            return false;
+        }
+        if ( $block === '' ) {
+            return true;
+        }
+        if ( $p['manual'] || $p['misplaced'] ) {
+            return false;
+        }
+
+        $new_lines = jpkcom_postfilter_htaccess_block_lines( block: $block );
+        if ( $new_lines === null ) {
+            return false;
+        }
+
+        [ $start, $end ] = $p['blocks'][0];
+        $old_lines       = array_map(
+            static fn( string $line ): string => rtrim( $line, "\r\n" ),
+            array_slice( $p['lines'], $start + 1, $end - $start - 1 )
+        );
+
+        $old = jpkcom_postfilter_htaccess_rule_units( lines: $old_lines );
+        $new = jpkcom_postfilter_htaccess_rule_units( lines: array_slice( $new_lines, 1, -1 ) );
+
+        $next  = 0;
+        $total = count( $new );
+        foreach ( $old as $unit ) {
+            if ( $next < $total && $new[ $next ]['text'] === $unit['text'] ) {
+                $next++;
+            } elseif ( ! $unit['reject'] ) {
+                return false;
+            }
+        }
+
+        return $next === $total;
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_loosen_to' ) ) {
+    /**
+     * Write a new managed block only if it is provably looser (R161-3)
+     *
+     * The comparison (jpkcom_postfilter_htaccess_provably_looser()) runs on
+     * the content read under the lock, so what is compared is what is
+     * replaced. '' removes the block. False, with nothing written, when the
+     * new block is not provably looser or the write fails.
+     *
+     * @since 1.7.1
+     *
+     * @param string $file  Path of the .htaccess.
+     * @param string $block New managed block, '' for none.
+     * @return bool True when the file holds the new block (or none) afterwards.
+     */
+    function jpkcom_postfilter_htaccess_loosen_to( string $file, string $block ): bool {
+        $block_lines = [];
+        if ( $block !== '' ) {
+            $block_lines = jpkcom_postfilter_htaccess_block_lines( block: $block );
+            if ( $block_lines === null ) {
+                return false;
+            }
+        }
+
+        return jpkcom_postfilter_htaccess_modify(
+            file: $file,
+            change: static function ( string $content ) use ( $block, $block_lines ): ?string {
+                if ( ! jpkcom_postfilter_htaccess_provably_looser( content: $content, block: $block ) ) {
                     return null;
                 }
-                if ( $p['blocks'] === [] ) {
-                    return $content;
+                if ( $block === '' ) {
+                    return jpkcom_postfilter_htaccess_without_block( content: $content );
                 }
 
-                $lines = $p['lines'];
-                foreach ( array_reverse( $p['blocks'] ) as [ $start, $end ] ) {
-                    array_splice( $lines, $start, $end - $start + 1 );
-                }
-
-                return $p['bom'] . implode( '', $lines );
+                return jpkcom_postfilter_htaccess_with_block( content: $content, block_lines: $block_lines );
             }
         );
     }

@@ -596,6 +596,80 @@ Jpkpf_Recording_Stream::$modes = [];
 chk( 'missing file: nothing created', call( 'jpkcom_postfilter_htaccess_modify', 'jpkpfmem://none', static fn( string $c ): string => 'x' ) === false && Jpkpf_Recording_Stream::$files === [] );
 
 // =====================================================================================
+section( 'provably looser (R161-3)' );
+// =====================================================================================
+
+/** The reject-rule unit (three lines) for a reason and pattern, as server_apache_rules() writes it. */
+function reject_unit( string $reason, string $pattern, int $status = 410 ): string {
+	return "RewriteCond %{ENV:REDIRECT_STATUS} ^\$\nRewriteCond %{THE_REQUEST} \"{$pattern}\"\nRewriteRule ^ - [E=JPKPF_REJECT:server-{$reason},R={$status},L]";
+}
+
+/** $block with $unit inserted after the line that starts with $after. */
+function with_unit( string $block, string $unit, string $after ): string {
+	$lines = explode( "\n", $block );
+	foreach ( $lines as $i => $line ) {
+		if ( str_starts_with( $line, $after ) ) {
+			array_splice( $lines, $i + 1, 0, [ $unit ] );
+			return implode( "\n", $lines );
+		}
+	}
+	return '__no_anchor__';
+}
+
+/** $block with every 12-hex rule hash replaced. */
+function rehashed( string $block, string $hash ): string {
+	return (string) preg_replace( '/(# rule |X-Jpkpf-Rule ")[0-9a-f]{12}/', '${1}' . $hash, $block );
+}
+
+$looser = static fn( string $content, string $new ): mixed => call( 'jpkcom_postfilter_htaccess_provably_looser', $content, $new );
+$file_with = static fn( string $b ): string => $head . $b . "\n" . $wp_block . $tail;
+
+// The case R161-3 is about: a 1.6.0 block whose per-group rule the size guard
+// now drops (N 20, 71 groups: PCRE cannot compile it - the file answers 500).
+$big     = inputs( 20, [ 'groups' => 71 ] );
+$dropped = (array) call( 'jpkcom_postfilter_server_patterns_dropped', $big );
+$new_big = (string) call( 'jpkcom_postfilter_htaccess_block', $big );
+$old_big = with_unit( $new_big, reject_unit( 'per-group', (string) ( call( 'jpkcom_postfilter_server_reject_patterns_unchecked', call( 'jpkcom_postfilter_server_render_inputs', $big ), 'request_line' )['per_group'] ?? 'x' ) ), 'RewriteRule ^ - [E=JPKPF_REJECT:server-segments' );
+chk( 'fixture: N20 G71 drops per_group only, the new block keeps the segments rule',
+	isset( $dropped['per_group'] ) && ! isset( $dropped['segments'] ) && str_contains( $new_big, 'server-segments' ) && ! str_contains( $new_big, 'server-per-group' ) && str_contains( $old_big, 'server-per-group' ),
+	json_encode( $dropped ) );
+chk( '1.6.0 block with the rule the guard now drops -> the new block is provably looser', $looser( $file_with( $old_big ), $new_big ) === true );
+chk( 'same, and the rule hash changed (R161-4 folds dropped rules into it) -> still provably looser',
+	$looser( $file_with( rehashed( $old_big, 'abcdefabcdef' ) ), $new_big ) === true );
+chk( 'identical block -> not stricter', $looser( $file_with( $block ), $block ) === true );
+chk( 'no reject part any more (block removed) -> looser', $looser( $file_with( $block ), '' ) === true );
+
+$extra = reject_unit( 'legacy', '^GET /blog/filter/legacy' );
+chk( 'the new block adds a rule -> not provable', $looser( $file_with( $block ), with_unit( $block, $extra, 'RewriteEngine On' ) ) === false );
+chk( 'another N (2 -> 3): patterns differ -> not provable, even though N 3 is looser',
+	$looser( $file_with( (string) call( 'jpkcom_postfilter_htaccess_block', inputs( 2 ) ) ), (string) call( 'jpkcom_postfilter_htaccess_block', inputs( 3 ) ) ) === false );
+chk( 'another reject status (410 -> 404) next to a dropped rule -> not provable',
+	$looser( $file_with( with_unit( $block, $extra, 'RewriteEngine On' ) ), (string) call( 'jpkcom_postfilter_htaccess_block', inputs( 3, [ 'reject_status' => 404 ] ) ) ) === false );
+chk( 'another ErrorDocument text -> not provable',
+	$looser( $file_with( (string) preg_replace( '/^ErrorDocument .*$/m', 'ErrorDocument 410 "gone"', with_unit( $block, $extra, 'RewriteEngine On' ) ) ), $block ) === false );
+chk( 'a line edited by hand inside the block -> not provable',
+	$looser( $file_with( str_replace( 'RewriteEngine On', 'RewriteEngine on', with_unit( $block, $extra, 'RewriteEngine On' ) ) ), $block ) === false );
+chk( 'block below WordPress\'s (never took effect): moving it up would make it count -> not provable',
+	$looser( $head . $wp_block . with_unit( $block, $extra, 'RewriteEngine On' ) . "\n" . $tail, $block ) === false );
+chk( 'block below WordPress\'s, no reject part any more: removing it is looser', $looser( $head . $wp_block . $block . "\n" . $tail, '' ) === true );
+chk( 'manual block next to it -> not provable (write() refuses anyway)',
+	$looser( $head . $manual_block . "\n" . with_unit( $block, $extra, 'RewriteEngine On' ) . "\n" . $wp_block, $block ) === false );
+chk( 'damaged markers -> not provable, not even a removal', $looser( $damaged, $block ) === false && $looser( $damaged, '' ) === false );
+chk( 'no managed block -> nothing to loosen', $looser( $original, $block ) === false );
+chk( 'CRLF file -> compared without line endings', $looser( str_replace( "\n", "\r\n", $file_with( with_unit( $block, $extra, 'RewriteEngine On' ) ) ), $block ) === true );
+
+// loosen_to(): writes under the lock only what is provably looser.
+$f = fixture( 'loosen-to', $file_with( $old_big ) );
+chk( 'loosen_to(): provably looser -> written, exactly as write() would',
+	call( 'jpkcom_postfilter_htaccess_loosen_to', $f, $new_big ) === true && bytes( $f ) === $file_with( $new_big ) );
+$stricter = $file_with( (string) call( 'jpkcom_postfilter_htaccess_block', inputs( 3 ) ) );
+$f        = fixture( 'loosen-to-2', $stricter );
+chk( 'loosen_to(): not provable -> false, file byte-identical',
+	call( 'jpkcom_postfilter_htaccess_loosen_to', $f, (string) call( 'jpkcom_postfilter_htaccess_block', inputs( 2 ) ) ) === false && bytes( $f ) === $stricter );
+$f = fixture( 'loosen-to-3', $file_with( $block ) );
+chk( 'loosen_to(): no reject part -> block removed', call( 'jpkcom_postfilter_htaccess_loosen_to', $f, '' ) === true && bytes( $f ) === $head . $wp_block . $tail );
+
+// =====================================================================================
 section( 'available(): gates' );
 // =====================================================================================
 

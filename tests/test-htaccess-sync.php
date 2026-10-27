@@ -1266,6 +1266,55 @@ if ( $have ) {
 	}, true );
 	chk( 'CLI deactivate with the stored path: the real block is removed',
 		bytes( htaccess() ) === $GLOBALS['__wp_block'] && ! array_key_exists( 'jpkcom_postfilter_htaccess_managed', $GLOBALS['__options'] ) );
+
+	// R161-3: a version change where SERVER_SOFTWARE is empty (WP-CLI - the only
+	// PHP that still runs once a 1.6.0 block answers 500) or unknown rewrites a
+	// managed block only when the new one is provably looser: it drops whole
+	// reject rules and adds none. Fixture: the current block plus one reject
+	// rule the new version no longer writes.
+	$legacy = static function (): string {
+		$unit = "RewriteCond %{ENV:REDIRECT_STATUS} ^$\nRewriteCond %{THE_REQUEST} \"^GET\\ /blog/filter/legacy/\"\nRewriteRule ^ - [E=JPKPF_REJECT:server-per-group,R=410,L]";
+		$file = bytes( htaccess() );
+		$at   = strpos( $file, "RewriteEngine On\n" );   // the managed block comes first; WordPress's has the line too
+		file_put_contents( htaccess(), substr_replace( $file, "RewriteEngine On\n" . $unit . "\n", (int) $at, strlen( "RewriteEngine On\n" ) ) );
+		return $file;
+	};
+	foreach ( [ 'CLI (no SERVER_SOFTWARE)' => null, 'unknown server (IIS)' => 'Microsoft-IIS/10.0' ] as $label => $software ) {
+		site( general() );
+		$expected = $legacy();
+		if ( $software === null ) {
+			as_cli( static fn() => call( 'jpkcom_postfilter_htaccess_lifecycle' ) );
+		} else {
+			$_SERVER['SERVER_SOFTWARE'] = $software;
+			call( 'jpkcom_postfilter_htaccess_lifecycle' );
+			$_SERVER['SERVER_SOFTWARE'] = 'Apache/2.4.66 (Debian)';
+		}
+		chk( "R161-3 {$label}: version change, block with a rule the new version drops -> rewritten without it",
+			bytes( htaccess() ) === $expected && ! str_contains( bytes( htaccess() ), 'legacy' ), n_of( bytes( htaccess() ) ) );
+	}
+
+	site( general() );
+	$expected = $legacy();
+	$was      = bytes( htaccess() );
+	$_SERVER['SERVER_SOFTWARE'] = 'nginx/1.26.3';
+	call( 'jpkcom_postfilter_htaccess_lifecycle' );
+	$_SERVER['SERVER_SOFTWARE'] = 'Apache/2.4.66 (Debian)';
+	chk( 'R161-3 nginx (does not read .htaccess): untouched, as before', bytes( htaccess() ) === $was );
+
+	site( general( [ 'strict_urls' => false ] ), null, true, false );
+	jpkcom_postfilter_htaccess_write( htaccess(), jpkcom_postfilter_htaccess_block( with( [ 'strict' => true ] ) ) );
+	as_cli( static fn() => call( 'jpkcom_postfilter_htaccess_lifecycle' ) );
+	chk( 'R161-3 CLI: no reject part any more -> block removed', bytes( htaccess() ) === $GLOBALS['__wp_block'] );
+
+	// Anything else stays as it was - also a block that is in fact stricter
+	// (N 1 against the settings' N 2): another pattern is not provable on the text.
+	foreach ( [ 'stricter block (N1, settings N2)' => 1, 'looser block (N3, settings N2): never tightened here' => 3 ] as $label => $n ) {
+		site( general() );
+		jpkcom_postfilter_htaccess_write( htaccess(), jpkcom_postfilter_htaccess_block( with( [ 'max_per_group' => $n ] ) ) );
+		$was = bytes( htaccess() );
+		as_cli( static fn() => call( 'jpkcom_postfilter_htaccess_lifecycle' ) );
+		chk( "R161-3 CLI, {$label}: untouched", bytes( htaccess() ) === $was && n_of( $was ) === 'N' . $n );
+	}
 }
 
 // =====================================================================================

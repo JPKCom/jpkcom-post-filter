@@ -1112,13 +1112,32 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_lifecycle' ) ) {
      * so it does not wait for jpkcom_postfilter_htaccess_available(); a manual
      * block is never touched. Nothing is set up.
      *
+     * Managed, but SERVER_SOFTWARE is empty (WP-CLI, a system cron) or names
+     * an unknown server that may read .htaccess (R161-3): the block is
+     * rewritten only when the new one is provably looser
+     * (jpkcom_postfilter_htaccess_provably_looser(): it drops whole reject
+     * rules and adds none). A 1.6.0 block with a rule the size guard now
+     * drops makes Apache answer 500 for the whole site, so PHP only ever runs
+     * under WP-CLI there - and on a server the plugin cannot see, it never
+     * tightens. Everything else stays as it was until the next admin page
+     * load on Apache. Other reasons of jpkcom_postfilter_htaccess_available()
+     * (multisite, DISALLOW_FILE_MODS, LiteSpeed, a manual block) keep their
+     * behaviour, and so does a server that positively ignores .htaccess.
+     *
      * @since 1.6.0
      *
      * @return void
      */
     function jpkcom_postfilter_htaccess_lifecycle(): void {
         if ( jpkcom_postfilter_htaccess_is_managed() ) {
-            jpkcom_postfilter_htaccess_sync();
+            $available = jpkcom_postfilter_htaccess_available();
+            if ( $available['ok'] ) {
+                jpkcom_postfilter_htaccess_sync();
+            } elseif ( $available['reason'] === 'not-apache' && jpkcom_postfilter_htaccess_server_reads() ) {
+                jpkcom_postfilter_settings_memo_reset();
+                $block = jpkcom_postfilter_htaccess_block( inputs: jpkcom_postfilter_server_rule_inputs() );
+                jpkcom_postfilter_htaccess_loosen_to( file: jpkcom_postfilter_htaccess_file(), block: $block );
+            }
             return;
         }
 
