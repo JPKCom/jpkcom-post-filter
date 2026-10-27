@@ -565,6 +565,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_default_settings' ) ) {
                 'unknown_terms_action'    => 'redirect',
                 'robots_txt_mode'         => 'deep',
                 'strip_query'             => false,
+                // Canonical targets (1.7.0), see includes/canonical-target.php
+                'canonical_single'        => 'archive',
+                'canonical_multi'         => 'home',
             ],
             'filter_groups' => [
                 'groups' => [],
@@ -809,7 +812,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_sanitize_general_settings' 
         $stored = get_option( 'jpkcom_postfilter_general', [] );
         $stored = is_array( $stored ) ? $stored : [];
 
-        foreach ( [ 'max_terms_total', 'filter_link_mode', 'seo_index_max_terms', 'strict_urls', 'reject_status', 'unknown_terms_action', 'robots_txt_mode', 'strip_query' ] as $policy_key ) {
+        foreach ( [ 'max_terms_total', 'filter_link_mode', 'seo_index_max_terms', 'strict_urls', 'reject_status', 'unknown_terms_action', 'robots_txt_mode', 'strip_query', 'canonical_single', 'canonical_multi' ] as $policy_key ) {
             if ( jpkcom_postfilter_policy_locked( $policy_key ) ) {
                 $output[ $policy_key ] = $stored[ $policy_key ] ?? $defaults[ $policy_key ];
                 continue;

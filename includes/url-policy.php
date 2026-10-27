@@ -65,6 +65,8 @@ if ( ! function_exists( function: 'jpkcom_postfilter_policy_definitions' ) ) {
             'unknown_terms_action'  => [ 'constant' => 'JPKCOM_POSTFILTER_UNKNOWN_TERMS_ACTION', 'default' => 'redirect' ],
             'robots_txt_mode'       => [ 'constant' => 'JPKCOM_POSTFILTER_ROBOTS_TXT', 'default' => 'deep' ],
             'strip_query'           => [ 'constant' => 'JPKCOM_POSTFILTER_STRIP_QUERY', 'default' => false ],
+            'canonical_single'      => [ 'constant' => 'JPKCOM_POSTFILTER_CANONICAL_SINGLE', 'default' => 'archive' ],
+            'canonical_multi'       => [ 'constant' => 'JPKCOM_POSTFILTER_CANONICAL_MULTI', 'default' => 'home' ],
         ];
     }
 }
@@ -118,6 +120,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_policy_sanitize' ) ) {
 
             case 'robots_txt_mode':
                 return in_array( $value, [ 'deep', 'all', 'off' ], true ) ? $value : $default;
+
+            case 'canonical_single':
+                return in_array( $value, [ 'archive', 'filter', 'off' ], true ) ? $value : $default;
+
+            case 'canonical_multi':
+                return in_array( $value, [ 'home', 'filter', 'off' ], true ) ? $value : $default;
 
             case 'strict_urls':
             case 'strip_query':
