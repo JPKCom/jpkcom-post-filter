@@ -1104,15 +1104,15 @@ if ( $have ) {
 		$many[] = group( 'tax' . $i, $i );
 	}
 	$inputs = site( general( [ 'max_filters_per_group' => 20 ] ), $many );
-	$legacy = jpkcom_postfilter_server_rule_hash( $inputs, [] );
+	$hash_160 = jpkcom_postfilter_server_rule_hash( $inputs, [] );
 	chk( 'M-4 fixture: N20 G71 drops a pattern, so its 1.6.0 hash differs',
-		jpkcom_postfilter_server_patterns_dropped( $inputs ) !== [] && $legacy !== $inputs['hash'] && rule_hash( bytes( htaccess() ) ) === $inputs['hash'] );
-	file_put_contents( htaccess(), str_replace( $inputs['hash'], $legacy, bytes( htaccess() ) ) );
+		jpkcom_postfilter_server_patterns_dropped( $inputs ) !== [] && $hash_160 !== $inputs['hash'] && rule_hash( bytes( htaccess() ) ) === $inputs['hash'] );
+	file_put_contents( htaccess(), str_replace( $inputs['hash'], $hash_160, bytes( htaccess() ) ) );
 	read_only();
 	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '20', 'seo_index_max_terms' => 2 ] ) );
 	chk( 'M-4 1.6.0 hash (no `dropped`) on a read-only file, a save that loosens nothing: saved, no error',
 		$ok === true && $GLOBALS['__errors'] === [], json_encode( $GLOBALS['__errors'] ) );
-	chk( 'M-4 hash_rejects_as(): the 1.6.0 hash of the same inputs rejects as they do', jpkcom_postfilter_htaccess_hash_rejects_as( $legacy, $inputs ) === true );
+	chk( 'M-4 hash_rejects_as(): the 1.6.0 hash of the same inputs rejects as they do', jpkcom_postfilter_htaccess_hash_rejects_as( $hash_160, $inputs ) === true );
 	chk( 'M-4 hash_rejects_as(): a 1.6.0 hash of other inputs (N19) does not',
 		jpkcom_postfilter_htaccess_hash_rejects_as( jpkcom_postfilter_server_rule_hash( array_merge( $inputs, [ 'max_per_group' => 19 ] ), [] ), $inputs ) === false );
 }
@@ -1389,7 +1389,7 @@ if ( $have ) {
 	// managed block only when the new one is provably looser: it drops whole
 	// reject rules and adds none. Fixture: the current block plus one reject
 	// rule the new version no longer writes.
-	$legacy = static function (): string {
+	$add_legacy_rule = static function (): string {
 		$unit = "RewriteCond %{ENV:REDIRECT_STATUS} ^$\nRewriteCond %{THE_REQUEST} \"^GET\\ /blog/filter/legacy/\"\nRewriteRule ^ - [E=JPKPF_REJECT:server-per-group,R=410,L]";
 		$file = bytes( htaccess() );
 		$at   = strpos( $file, "RewriteEngine On\n" );   // the managed block comes first; WordPress's has the line too
@@ -1398,7 +1398,7 @@ if ( $have ) {
 	};
 	foreach ( [ 'CLI (no SERVER_SOFTWARE)' => null, 'unknown server (IIS)' => 'Microsoft-IIS/10.0' ] as $label => $software ) {
 		site( general() );
-		$expected = $legacy();
+		$expected = $add_legacy_rule();
 		if ( $software === null ) {
 			as_cli( static fn() => call( 'jpkcom_postfilter_htaccess_lifecycle' ) );
 		} else {
@@ -1411,7 +1411,7 @@ if ( $have ) {
 	}
 
 	site( general() );
-	$expected = $legacy();
+	$expected = $add_legacy_rule();
 	$was      = bytes( htaccess() );
 	$_SERVER['SERVER_SOFTWARE'] = 'nginx/1.26.3';
 	call( 'jpkcom_postfilter_htaccess_lifecycle' );
@@ -1422,6 +1422,23 @@ if ( $have ) {
 	jpkcom_postfilter_htaccess_write( htaccess(), jpkcom_postfilter_htaccess_block( with( [ 'strict' => true ] ) ) );
 	as_cli( static fn() => call( 'jpkcom_postfilter_htaccess_lifecycle' ) );
 	chk( 'R161-3 CLI: no reject part any more -> block removed', bytes( htaccess() ) === $GLOBALS['__wp_block'] );
+
+	// M-2: under WP-CLI available() stops at `not-apache` before it looks at a
+	// manual block, so the repair runs next to one too - and with no reject
+	// part any more it removes the managed block (looser), the manual one stays.
+	$manual = "# BEGIN JPKCom Post Filter (manual)\nRewriteEngine On\n# END JPKCom Post Filter (manual)\n";
+	site( general( [ 'strict_urls' => false ] ), null, true, false );
+	jpkcom_postfilter_htaccess_write( htaccess(), jpkcom_postfilter_htaccess_block( with( [ 'strict' => true ] ) ) );
+	file_put_contents( htaccess(), $manual . bytes( htaccess() ) );
+	as_cli( static fn() => call( 'jpkcom_postfilter_htaccess_lifecycle' ) );
+	chk( 'M-2 R161-3 CLI next to a manual block, no reject part any more: managed block removed, manual block kept',
+		bytes( htaccess() ) === $manual . $GLOBALS['__wp_block'] );
+	site( general(), null, true, true );
+	$add_legacy_rule();
+	$was = $manual . bytes( htaccess() );
+	file_put_contents( htaccess(), $was );
+	as_cli( static fn() => call( 'jpkcom_postfilter_htaccess_lifecycle' ) );
+	chk( 'M-2 R161-3 CLI next to a manual block, a rule dropped: untouched (not provable next to a manual block)', bytes( htaccess() ) === $was );
 
 	// Anything else stays as it was - also a block that is in fact stricter
 	// (N 1 against the settings' N 2): another pattern is not provable on the text.
@@ -1967,6 +1984,45 @@ if ( $have ) {
 	chk( 'I-2 wp option delete, block not writable: WP_CLI::warning() says the cache file was kept, and why',
 		cache_array( 'filter_groups' ) === $cache_was && str_contains( $warning, 'jpkcom_postfilter_filter_groups' ) && str_contains( $warning, 'cache file' ) && str_contains( $warning, 'not-writable' ),
 		$warning );
+
+	// M-2 / M-9: DISALLOW_FILE_MODS (last: it cannot be undefined either).
+	define( 'DISALLOW_FILE_MODS', true );
+
+	// M-9: admin_init on such a site sends no query for the managed flag.
+	site( general() );
+	$GLOBALS['__option_reads'] = [];
+	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
+	chk( 'M-9 admin_init with DISALLOW_FILE_MODS: no read of the managed flag', ( $GLOBALS['__option_reads']['jpkcom_postfilter_htaccess_managed'] ?? 0 ) === 0,
+		json_encode( $GLOBALS['__option_reads'] ) );
+
+	// M-2: under WP-CLI available() reports `not-apache` before it looks at
+	// DISALLOW_FILE_MODS, so the version-change repair runs there - loosen-only,
+	// like a loosening save under the constant (F-4).
+	site( general() );
+	$expected = $add_legacy_rule();
+	as_cli( static fn() => call( 'jpkcom_postfilter_htaccess_lifecycle' ) );
+	chk( 'M-2 R161-3 CLI with DISALLOW_FILE_MODS: the dropped rule is removed all the same (loosen-only)',
+		bytes( htaccess() ) === $expected && ! str_contains( bytes( htaccess() ), 'legacy' ) );
+	site( general() );
+	$add_legacy_rule();
+	$was = bytes( htaccess() );
+	call( 'jpkcom_postfilter_htaccess_lifecycle' );
+	chk( 'M-2 version change on Apache with DISALLOW_FILE_MODS: untouched (no sync, no repair)', bytes( htaccess() ) === $was );
+
+	// The texts that describe this: the lifecycle docblock, CLAUDE.md, README.
+	$sync_src = (string) file_get_contents( __DIR__ . '/../includes/htaccess-sync.php' );
+	$doc      = preg_match( '/Activation and version change.*?\*\//s', $sync_src, $m ) === 1 ? $m[0] : '';
+	chk( 'M-2 lifecycle docblock: no claim that multisite, DISALLOW_FILE_MODS, LiteSpeed or a manual block keep their behaviour under WP-CLI',
+		$doc !== '' && ! str_contains( $doc, 'keep their' ) && str_contains( $doc, 'DISALLOW_FILE_MODS' ) && str_contains( $doc, 'manual block' ), $doc );
+	$claude = is_file( __DIR__ . '/../CLAUDE.md' ) ? (string) file_get_contents( __DIR__ . '/../CLAUDE.md' ) : '';
+	$readme = (string) file_get_contents( __DIR__ . '/../README.md' );
+	chk( 'M-2 CLAUDE.md: the R161-3 paragraph no longer says the other available() reasons keep their behaviour',
+		$claude !== '' && ! str_contains( $claude, 'Every other `available()` reason (multisite, `DISALLOW_FILE_MODS`, LiteSpeed, a manual block) and a server that ignores `.htaccess` keep their behaviour' ) );
+	chk( 'M-2 README: four cases under DISALLOW_FILE_MODS, the version-change repair under WP-CLI among them',
+		str_contains( $readme, 'keeps writing it in four cases' ) && ! str_contains( $readme, 'keeps writing it in three cases' ) && str_contains( $readme, 'version change under WP-CLI' ) );
+	chk( 'M-9 README and CLAUDE.md: DISALLOW_FILE_MODS sites skip the managed-flag query too',
+		(bool) preg_match( '/\*\*Faster wp-admin:\*\*[^\n]*DISALLOW_FILE_MODS/', $readme )
+		&& (bool) preg_match( '/so nginx, Caddy, Ferron, LiteSpeed[^\n]*DISALLOW_FILE_MODS[^\n]*send none/', $claude ) );
 }
 
 exit( summary() );

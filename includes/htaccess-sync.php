@@ -1464,9 +1464,17 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_lifecycle' ) ) {
      * drops makes Apache answer 500 for the whole site, so PHP only ever runs
      * under WP-CLI there - and on a server the plugin cannot see, it never
      * tightens. Everything else stays as it was until the next admin page
-     * load on Apache. Other reasons of jpkcom_postfilter_htaccess_available()
-     * (multisite, DISALLOW_FILE_MODS, LiteSpeed, a manual block) keep their
-     * behaviour, and so does a server that positively ignores .htaccess.
+     * load on Apache.
+     *
+     * Under WP-CLI SERVER_SOFTWARE is empty, so available() answers
+     * `not-apache` before it looks at multisite, DISALLOW_FILE_MODS,
+     * LiteSpeed or a manual block: the repair runs on such a site as well
+     * (M-2). It is loosen-only, like a loosening save under
+     * DISALLOW_FILE_MODS (F-4). Next to a manual block it can only remove the
+     * managed block (the new one is '', no reject part any more); deleting a
+     * rule there is not provable. On a web request those reasons stop the
+     * version change here - no sync, no repair - and so does a server that
+     * positively ignores .htaccess.
      *
      * @since 1.6.0
      *
