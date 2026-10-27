@@ -1065,7 +1065,18 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_maybe_resync' ) ) 
      * request may still read the values before that save, and the save's
      * own tighten writes the current state anyway.
      *
+     * Cheapest first, since this runs on every admin page (1.7.1): the site
+     * checks before the managed flag (not autoloaded, so a query - T9-b),
+     * the file read once, and on an equal hash nothing is rendered (T9-a).
+     * The hash still runs the size guard once
+     * (jpkcom_postfilter_server_patterns_dropped(), R161-4); rendering the
+     * block would run it twice more. Returning on an equal hash is safe
+     * because a `# rule` line is only written with a non-empty block, and
+     * the same hash means the same rule - as long as a renderer change bumps
+     * jpkcom_postfilter_server_renderer_version().
+     *
      * @since 1.6.0
+     * @since 1.7.1 Site checks before the option read; returns on an equal hash before rendering.
      *
      * @return void
      */
@@ -1085,16 +1096,23 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_maybe_resync' ) ) 
             return;
         }
 
-        if ( ! jpkcom_postfilter_htaccess_is_managed() || ! jpkcom_postfilter_htaccess_available()['ok'] ) {
+        if ( jpkcom_postfilter_htaccess_site_reason() !== '' || ! jpkcom_postfilter_htaccess_is_managed() ) {
+            return;
+        }
+
+        $state = jpkcom_postfilter_htaccess_state( file: jpkcom_postfilter_htaccess_file() );
+        if ( jpkcom_postfilter_htaccess_file_reason( state: $state ) !== '' ) {
             return;
         }
 
         $inputs = jpkcom_postfilter_server_rule_inputs();
-        $state  = jpkcom_postfilter_htaccess_state( file: jpkcom_postfilter_htaccess_file() );
+        if ( $state['managed'] && ! $state['misplaced'] && $state['hash'] === $inputs['hash'] ) {
+            return;
+        }
 
-        $stale = jpkcom_postfilter_htaccess_block( inputs: $inputs ) === ''
-            ? $state['managed']
-            : ( $state['hash'] !== $inputs['hash'] || $state['misplaced'] );
+        // Not equal: stale whenever there is a block to write, and when
+        // there is none, only if a managed block is still in the file.
+        $stale = jpkcom_postfilter_htaccess_block( inputs: $inputs ) === '' ? $state['managed'] : true;
 
         if ( $stale && ! jpkcom_postfilter_htaccess_save_locked_elsewhere() ) {
             jpkcom_postfilter_htaccess_sync( inputs: $inputs );

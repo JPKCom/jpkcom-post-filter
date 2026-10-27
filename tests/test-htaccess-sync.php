@@ -106,6 +106,8 @@ $GLOBALS['__commits']    = [];   // one row per row written to the "database"
 $GLOBALS['__errors']     = [];
 
 function get_option( $k, $d = false ) {
+	// Every read is counted: an option that is not autoloaded is a query (T9-b).
+	$GLOBALS['__option_reads'][ $k ] = ( $GLOBALS['__option_reads'][ $k ] ?? 0 ) + 1;
 	if ( array_key_exists( $k, $GLOBALS['__options'] ) ) {
 		return $GLOBALS['__options'][ $k ];
 	}
@@ -173,7 +175,13 @@ function add_settings_error( $setting, $code, $message, $type = 'error' ) {
 // --- other WordPress stand-ins ---------------------------------------------------------
 
 function __( $s, $d = '' ) { return $s; }
-function get_bloginfo( $show = '' ) { return $show === 'language' ? 'en-US' : ''; }
+function get_bloginfo( $show = '' ) {
+	// The reject body asks for the language: one call per rendered block (T9-a).
+	if ( $show === 'language' ) {
+		$GLOBALS['__renders'] = ( $GLOBALS['__renders'] ?? 0 ) + 1;
+	}
+	return $show === 'language' ? 'en-US' : '';
+}
 function sanitize_key( $k ) { return strtolower( preg_replace( '/[^a-zA-Z0-9_\-]/', '', (string) $k ) ); }
 function sanitize_title( $t ) { return strtolower( preg_replace( '/[^a-zA-Z0-9_\-%]/', '', (string) $t ) ); }
 function sanitize_text_field( $s ) { return is_string( $s ) ? trim( strip_tags( $s ) ) : ''; }
@@ -1094,6 +1102,52 @@ if ( $have ) {
 	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
 	clearstatcache();
 	chk( 'admin_init: same hash -> no write', filemtime( htaccess() ) === $mtime && function_exists( 'jpkcom_postfilter_htaccess_maybe_resync' ) );
+
+	// T9-a: on an equal hash nothing is rendered - since 1.6.1 rendering the
+	// block also runs the size guard over both pattern forms twice, on every
+	// managed admin page load.
+	$GLOBALS['__renders'] = 0;
+	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
+	chk( 'admin_init: same hash -> no block rendered (T9-a)', $GLOBALS['__renders'] === 0 && function_exists( 'jpkcom_postfilter_htaccess_maybe_resync' ), $GLOBALS['__renders'] . ' renders' );
+	$cap = static fn( $v ) => 4;
+	add_filter( 'jpkcom_postfilter_max_filters_per_group', $cap );
+	$GLOBALS['__renders'] = 0;
+	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
+	chk( 'admin_init: stale hash -> rendered and synced (the probe sees a render)', $GLOBALS['__renders'] > 0 && n_of( bytes( htaccess() ) ) === 'N4', $GLOBALS['__renders'] . ' renders' );
+	remove_filter( 'jpkcom_postfilter_max_filters_per_group', $cap );
+
+	// T9-a: a block below WordPress's with the current hash still moves.
+	site( general() );
+	$block = substr( bytes( htaccess() ), 0, strpos( bytes( htaccess() ), '# BEGIN WordPress' ) );
+	file_put_contents( htaccess(), $GLOBALS['__wp_block'] . $block );
+	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
+	$moved = bytes( htaccess() );
+	chk( 'admin_init: same hash but below WordPress\'s block -> moved before it', strpos( $moved, '# BEGIN JPKCom Post Filter' ) !== false && strpos( $moved, '# BEGIN JPKCom Post Filter' ) < strpos( $moved, '# BEGIN WordPress' ) );
+
+	// No reject part any more (a verdict filter): the block goes.
+	site( general() );
+	$verdict = static fn( $v ) => $v;
+	add_filter( 'jpkcom_postfilter_request_verdict', $verdict );
+	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
+	chk( 'admin_init: no reject part any more -> managed block removed', ! str_contains( bytes( htaccess() ), '# BEGIN JPKCom Post Filter' ) && str_contains( bytes( htaccess() ), '# BEGIN WordPress' ) );
+	remove_filter( 'jpkcom_postfilter_request_verdict', $verdict );
+
+	// T9-b: where the server positively does not read .htaccess (or is not
+	// Apache), admin_init reads no option at all - the managed flag is not
+	// autoloaded, so every read is a query on every admin page load.
+	site( general() );
+	$reads = [];
+	foreach ( [ 'nginx/1.26.3', 'Caddy', 'FrankenPHP', 'ferron', 'LiteSpeed', '' ] as $software ) {
+		$_SERVER['SERVER_SOFTWARE'] = $software;
+		$GLOBALS['__option_reads']  = [];
+		call( 'jpkcom_postfilter_htaccess_maybe_resync' );
+		$reads[ $software === '' ? '(empty)' : $software ] = array_sum( $GLOBALS['__option_reads'] );
+	}
+	$_SERVER['SERVER_SOFTWARE'] = 'Apache/2.4.66 (Debian)';
+	chk( 'admin_init on nginx, Caddy, FrankenPHP, Ferron, LiteSpeed, no SERVER_SOFTWARE: no option read (T9-b)', array_sum( $reads ) === 0 && function_exists( 'jpkcom_postfilter_htaccess_maybe_resync' ), (string) json_encode( $reads ) );
+	$GLOBALS['__option_reads'] = [];
+	call( 'jpkcom_postfilter_htaccess_maybe_resync' );
+	chk( 'admin_init on Apache: the managed flag is read (the probe sees a read)', ( $GLOBALS['__option_reads']['jpkcom_postfilter_htaccess_managed'] ?? 0 ) > 0 );
 
 	site( general() );
 	$_SERVER['SERVER_SOFTWARE'] = 'nginx/1.26.3';

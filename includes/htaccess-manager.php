@@ -834,6 +834,71 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_file' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_site_reason' ) ) {
+    /**
+     * Why the plugin may not manage .htaccess here, from the site alone
+     *
+     * The part of jpkcom_postfilter_htaccess_available() that reads neither
+     * the file nor an option - SERVER_SOFTWARE, multisite,
+     * DISALLOW_FILE_MODS - so a caller on every admin page can stop before
+     * the query for the managed flag, which is not autoloaded (T9-b).
+     *
+     * @since 1.7.1
+     *
+     * @return string `litespeed`, `not-apache`, `multisite`, `file-mods-disallowed`, or '' when none applies.
+     */
+    function jpkcom_postfilter_htaccess_site_reason(): string {
+        $software = isset( $_SERVER['SERVER_SOFTWARE'] ) && is_string( $_SERVER['SERVER_SOFTWARE'] ) ? $_SERVER['SERVER_SOFTWARE'] : '';
+
+        if ( stripos( $software, 'litespeed' ) !== false ) {
+            return 'litespeed';
+        }
+        if ( stripos( $software, 'apache' ) === false ) {
+            return 'not-apache';
+        }
+        if ( function_exists( function: 'is_multisite' ) && is_multisite() ) {
+            return 'multisite';
+        }
+        if ( defined( constant_name: 'DISALLOW_FILE_MODS' ) && DISALLOW_FILE_MODS ) {
+            return 'file-mods-disallowed';
+        }
+
+        return '';
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_file_reason' ) ) {
+    /**
+     * Why the plugin may not manage this .htaccess, from what it contains
+     *
+     * The file part of jpkcom_postfilter_htaccess_available(), on a state
+     * the caller has already read (T9-a: one read per admin page).
+     *
+     * @since 1.7.1
+     *
+     * @param array<string, mixed> $state As returned by jpkcom_postfilter_htaccess_state().
+     * @return string `no-file`, `not-writable`, `not-readable`, `manual-block`, or '' when none applies.
+     */
+    function jpkcom_postfilter_htaccess_file_reason( array $state ): string {
+        if ( empty( $state['exists'] ) ) {
+            return 'no-file';
+        }
+        if ( empty( $state['writable'] ) ) {
+            return 'not-writable';
+        }
+        if ( empty( $state['readable'] ) ) {
+            return 'not-readable';
+        }
+        if ( ! empty( $state['manual'] ) ) {
+            return 'manual-block';
+        }
+
+        return '';
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_available' ) ) {
     /**
      * May the plugin manage the .htaccess on this site?
@@ -850,35 +915,18 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_available' ) ) {
      * - `manual-block`: a pasted block with the manual markers is present;
      *   a second, managed one would apply the same rules twice.
      *
-     * The capability and nonce checks belong to the admin action.
+     * The first four come from jpkcom_postfilter_htaccess_site_reason(), the
+     * rest from jpkcom_postfilter_htaccess_file_reason(). The capability and
+     * nonce checks belong to the admin action.
      *
      * @since 1.6.0
      *
      * @return array{ok: bool, reason: string}
      */
     function jpkcom_postfilter_htaccess_available(): array {
-        $software = isset( $_SERVER['SERVER_SOFTWARE'] ) && is_string( $_SERVER['SERVER_SOFTWARE'] ) ? $_SERVER['SERVER_SOFTWARE'] : '';
-
-        $reason = '';
-        if ( stripos( $software, 'litespeed' ) !== false ) {
-            $reason = 'litespeed';
-        } elseif ( stripos( $software, 'apache' ) === false ) {
-            $reason = 'not-apache';
-        } elseif ( function_exists( function: 'is_multisite' ) && is_multisite() ) {
-            $reason = 'multisite';
-        } elseif ( defined( constant_name: 'DISALLOW_FILE_MODS' ) && DISALLOW_FILE_MODS ) {
-            $reason = 'file-mods-disallowed';
-        } else {
-            $state = jpkcom_postfilter_htaccess_state( file: jpkcom_postfilter_htaccess_file() );
-            if ( ! $state['exists'] ) {
-                $reason = 'no-file';
-            } elseif ( ! $state['writable'] ) {
-                $reason = 'not-writable';
-            } elseif ( ! $state['readable'] ) {
-                $reason = 'not-readable';
-            } elseif ( $state['manual'] ) {
-                $reason = 'manual-block';
-            }
+        $reason = jpkcom_postfilter_htaccess_site_reason();
+        if ( $reason === '' ) {
+            $reason = jpkcom_postfilter_htaccess_file_reason( state: jpkcom_postfilter_htaccess_state( file: jpkcom_postfilter_htaccess_file() ) );
         }
 
         return [ 'ok' => $reason === '', 'reason' => $reason ];
