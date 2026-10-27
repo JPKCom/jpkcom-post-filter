@@ -1093,6 +1093,28 @@ if ( $have ) {
 	chk( 'refused through settings_save() (import): cache file back on the stored value',
 		$GLOBALS['__options']['jpkcom_postfilter_general'] === $old_stored && cache_array( 'general' ) === $old_stored
 		&& jpkcom_postfilter_policy( 'max_filters_per_group' ) === 2 );
+
+	// M-4: a block written by 1.6.0 for a layout over the size guard's limits
+	// carries a hash without `dropped` (R161-4 added it in 1.7.1) - and one
+	// rule more than the plugin would write now, a rule that rejects only what
+	// the plugin rejects too. On a read-only file every save was refused as
+	// "not writable", even one that loosens nothing.
+	$many = [];
+	for ( $i = 0; $i < 71; $i++ ) {
+		$many[] = group( 'tax' . $i, $i );
+	}
+	$inputs = site( general( [ 'max_filters_per_group' => 20 ] ), $many );
+	$legacy = jpkcom_postfilter_server_rule_hash( $inputs, [] );
+	chk( 'M-4 fixture: N20 G71 drops a pattern, so its 1.6.0 hash differs',
+		jpkcom_postfilter_server_patterns_dropped( $inputs ) !== [] && $legacy !== $inputs['hash'] && rule_hash( bytes( htaccess() ) ) === $inputs['hash'] );
+	file_put_contents( htaccess(), str_replace( $inputs['hash'], $legacy, bytes( htaccess() ) ) );
+	read_only();
+	$ok = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '20', 'seo_index_max_terms' => 2 ] ) );
+	chk( 'M-4 1.6.0 hash (no `dropped`) on a read-only file, a save that loosens nothing: saved, no error',
+		$ok === true && $GLOBALS['__errors'] === [], json_encode( $GLOBALS['__errors'] ) );
+	chk( 'M-4 hash_rejects_as(): the 1.6.0 hash of the same inputs rejects as they do', jpkcom_postfilter_htaccess_hash_rejects_as( $legacy, $inputs ) === true );
+	chk( 'M-4 hash_rejects_as(): a 1.6.0 hash of other inputs (N19) does not',
+		jpkcom_postfilter_htaccess_hash_rejects_as( jpkcom_postfilter_server_rule_hash( array_merge( $inputs, [ 'max_per_group' => 19 ] ), [] ), $inputs ) === false );
 }
 
 // =====================================================================================

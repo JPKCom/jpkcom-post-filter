@@ -512,6 +512,15 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_hash_rejects_as' )
      * The hash of the inputs, with the reject status left out of the
      * comparison (ruling R20): 404 and 410 reject the same URLs.
      *
+     * The hash these inputs had before R161-4 counts too - without the
+     * `dropped` part (M-4). A 1.6.0 block for a layout over the size guard's
+     * limits carries it, and its rules are the current ones plus the rule the
+     * guard now leaves out, which rejects only what the plugin rejects as
+     * well: never stricter. Without this, every save on a read-only .htaccess
+     * with such a block was refused as `not-writable`, even one that loosens
+     * nothing. For every other layout nothing is dropped and the two hashes
+     * are the same.
+     *
      * @since 1.7.1
      *
      * @param string               $hash   A rule hash (12 hex characters).
@@ -525,6 +534,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_hash_rejects_as' )
         foreach ( $statuses as $status ) {
             $inputs['reject_status'] = $status;
             if ( jpkcom_postfilter_server_rule_hash( inputs: $inputs, dropped: $dropped ) === $hash ) {
+                return true;
+            }
+            if ( $dropped !== [] && jpkcom_postfilter_server_rule_hash( inputs: $inputs, dropped: [] ) === $hash ) {
                 return true;
             }
         }
