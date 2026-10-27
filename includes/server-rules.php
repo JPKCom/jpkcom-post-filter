@@ -200,7 +200,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_renderer_version' ) 
      * Rate-limit parts are outside the hash, like their limits: the status
      * check never probes them, and a change there would mark every deployed
      * reject "stale" for nothing. 1.7.1's `ctl:auditEngine=Off` on the
-     * ModSecurity 429 (T6-a) therefore left this empty.
+     * ModSecurity 429 and its rule 4710014 that keeps server rejects out of
+     * the audit log (T6-a, both in the ModSecurity snippet; the reject
+     * parts are byte-identical) therefore left this empty.
      *
      * @since 1.7.1
      *

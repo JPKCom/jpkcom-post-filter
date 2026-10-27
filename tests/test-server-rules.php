@@ -1503,18 +1503,25 @@ chk( 'apache: mod_qos has no User-Agent exemption, context says search engines s
 	$qos !== '' && stripos( $qos, 'User-Agent' ) === false && stripos( $qos, 'bot' ) === false
 	&& str_contains( context_of( $all['apache'], 'apache-qos' ), 'Search engines share this cap' ) );
 $modsec = code_of( $all['apache'], 'apache-modsec' );
+// The one rule outside the LocationMatch (1.7.1, T6-a follow-up, tested below): a
+// server reject ends the request before Apache applies the LocationMatch. Every
+// check of the LocationMatch part runs on the text without it.
+$rej_audit = "# Server rejects write no audit-log entry. Phase 5 and outside the LocationMatch:\n"
+	. "# a reject ends the request before Apache applies the LocationMatch.\n"
+	. "SecRule ENV:JPKPF_REJECT|ENV:REDIRECT_JPKPF_REJECT \"@beginsWith server-\" \"id:4710014,phase:5,pass,nolog,ctl:auditEngine=Off\"\n";
+$modsec_lm = str_replace( $rej_audit, '', $modsec );
 preg_match_all( '/\bid:(\d+)/', $modsec, $m );
 chk( 'apache: ModSecurity ids 4710001+ and unique', $m[1] !== [] && $m[1][0] === '4710001' && count( array_unique( $m[1] ) ) === count( $m[1] ) && min( $m[1] ) === '4710001' );
 // R9: SecRuleEngine On only inside the LocationMatch over the filter
 // prefixes - a vhost-wide one would make OWASP CRS block wp-admin too.
-$lm_open  = strpos( $modsec, '<LocationMatch "^/+(?:blog/|news/)filter/">' );
-$lm_close = strpos( $modsec, '</LocationMatch>' );
+$lm_open  = strpos( $modsec_lm, '<LocationMatch "^/+(?:blog/|news/)filter/">' );
+$lm_close = strpos( $modsec_lm, '</LocationMatch>' );
 $scoped   = $lm_open !== false && $lm_close !== false && substr_count( $modsec, 'SecRuleEngine' ) === 1 && substr_count( $modsec, '<LocationMatch' ) === 1;
 foreach ( [ 'SecRuleEngine', 'SecRule ', 'SecAction' ] as $needle ) {
-	$scoped = $scoped && strpos( $modsec, $needle ) > $lm_open && strrpos( $modsec, $needle ) < $lm_close;
+	$scoped = $scoped && strpos( $modsec_lm, $needle ) > $lm_open && strrpos( $modsec_lm, $needle ) < $lm_close;
 }
-chk( 'apache: ModSecurity engine and every rule inside <LocationMatch> over the filter bases, nothing vhost-wide', $scoped, $modsec );
-chk( 'apache: ModSecurity rules run in phase 2 (Location is mapped after phase 1)', substr_count( $modsec, 'phase:2' ) === 13 && ! str_contains( $modsec, 'phase:1' ) );
+chk( 'apache: ModSecurity engine and every rule inside <LocationMatch> over the filter bases, nothing vhost-wide but the reject-audit rule', $scoped, $modsec );
+chk( 'apache: ModSecurity rules run in phase 2 (Location is mapped after phase 1)', substr_count( $modsec_lm, 'phase:2' ) === 13 && ! str_contains( $modsec, 'phase:1' ) );
 chk( 'apache: ModSecurity per IP (10 / 20 s), site-wide (30 / 10 s), search engines own counter (20 / 10 s)',
 	str_contains( $modsec, '&REQUEST_HEADERS:Cookie "@gt 0"' )
 	&& str_contains( $modsec, 'expirevar:resource.jpkpf_hits=20' ) && str_contains( $modsec, 'SecRule RESOURCE:JPKPF_HITS "@gt 10"' )
@@ -1542,15 +1549,62 @@ chk( 'apache: ModSecurity 429 writes no audit entry (ctl:auditEngine=Off on each
 	str_contains( $modsec, 'SecRule RESOURCE:JPKPF_HITS "@gt 10" "ctl:auditEngine=Off"' )
 	&& str_contains( $modsec, 'SecRule USER:JPKPF_HITS "@gt 30" "ctl:auditEngine=Off"' )
 	&& str_contains( $modsec, 'SecRule USER:JPKPF_BOT_HITS "@gt 20" "ctl:auditEngine=Off"' )
-	&& substr_count( $modsec, 'ctl:auditEngine=Off' ) === 3 && substr_count( $modsec, 'ctl:' ) === 3
+	&& substr_count( $modsec_lm, 'ctl:auditEngine=Off' ) === 3 && substr_count( $modsec_lm, 'ctl:' ) === 3
 	&& substr_count( $modsec, 'deny,status:429,log,msg:' ) === 3 && ! str_contains( $modsec, 'noauditlog' ), $modsec );
 // Never stricter: the edit adds an action, nothing else - without it the text is the 1.7.0 rule set.
 // sha1 of the 1.7.0 apache-modsec text for these inputs (version string 1.6.0-test).
 define( 'MODSEC_170_SHA1', '53401cb59c580cdc5252fa0fe577a785aa232e29' );
-$modsec_wo_ctl = str_replace( [ ' "ctl:auditEngine=Off"', "    # Over a limit: 429 with an error-log line, no audit-log entry.\n" ], '', $modsec );
+$modsec_wo_ctl = str_replace( [ ' "ctl:auditEngine=Off"', "    # Over a limit: 429 with an error-log line, no audit-log entry.\n" ], '', $modsec_lm );
 chk( 'apache: ModSecurity without the ctl action and its comment is the unchanged rule set (limits, conditions, order)',
 	$modsec_wo_ctl !== $modsec && ! str_contains( $modsec_wo_ctl, 'ctl:' )
 	&& sha1( $modsec_wo_ctl ) === MODSEC_170_SHA1, sha1( $modsec_wo_ctl ) );
+// T6-a follow-up (lab, Debian 13, ModSecurity 2.9.11, modsecurity.conf-recommended):
+// every server reject (mod_rewrite R=410) wrote a ~1 KB audit entry, because the
+// relevant-status pattern "^(?:5|4(?!04))" matches 410 - ~1 MB per 1000 rejects. A
+// reject ends the request in translate_name, before the fixups hook where ModSecurity
+// applies the LocationMatch: rules inside it (phase 2 or phase 5) never ran for a
+// reject (measured: audit unchanged). A phase-5 rule at VirtualHost level does run.
+// Keyed on the variable the RewriteRule sets, so it matches exactly the requests the
+// reject answered; REDIRECT_ for an ErrorDocument that redirects internally (measured:
+// with JPKPF_REJECT alone such rejects kept their audit entry).
+chk( 'apache: a server reject writes no audit entry: one phase-5 rule after the LocationMatch, keyed on the reject\'s variable',
+	str_contains( $modsec, "</LocationMatch>\n" . $rej_audit . "</IfModule>\n" )
+	&& substr_count( $modsec, 'id:4710014' ) === 1 && substr_count( $modsec, 'phase:5' ) === 1 && substr_count( $modsec, 'ENV:' ) === 2
+	&& substr_count( $apache_rj, 'RewriteRule ^/ - [E=JPKPF_REJECT:server-' ) === 2 && substr_count( $apache_rj, 'E=' ) === 2
+	&& str_contains( $apache_rj, 'env=REDIRECT_JPKPF_REJECT' ), $modsec );
+// The rule may only switch the audit log off: no disruptive action, no status, no
+// variable, no log line - and no SecRuleEngine of its own (R9: it runs under the
+// admin's engine; with the engine Off there is no audit log to switch off).
+$rej_line = '';
+foreach ( explode( "\n", $modsec ) as $l ) {
+	if ( str_contains( $l, 'id:4710014' ) ) {
+		$rej_line = $l;
+	}
+}
+$rej_actions = preg_match( '/^SecRule (\S+) "([^"]*)" "([^"]*)"$/D', $rej_line, $rm ) === 1 ? explode( ',', $rm[3] ) : [];
+chk( 'apache: the reject-audit rule is pass,nolog,ctl:auditEngine=Off only - never deny, never a status, never a variable',
+	( $rm[1] ?? '' ) === 'ENV:JPKPF_REJECT|ENV:REDIRECT_JPKPF_REJECT' && ( $rm[2] ?? '' ) === '@beginsWith server-'
+	&& $rej_actions === [ 'id:4710014', 'phase:5', 'pass', 'nolog', 'ctl:auditEngine=Off' ]
+	&& ! preg_match( '/deny|drop|block|status|redirect|allow|proxy|setvar|setenv|skip|exec|chain|\blog\b|auditlog|SecRuleEngine/i', str_replace( [ 'nolog', 'auditEngine' ], '', ( $rm[3] ?? 'deny' ) ) ), $rej_line );
+// Reject parts byte for byte as before the change (sha1 of 57689e2's texts for these
+// inputs, version string 1.6.0-test); the ModSecurity text without the new rule is
+// 57689e2's text; the rule hash is unchanged (snippets are no hash input).
+chk( 'apache: reject parts unchanged byte for byte (VirtualHost, .htaccess, status 404)',
+	sha1( $apache_rj ) === '15d9b66ba3d78ae686543ccb48b1a7e3d9b5fb83'
+	&& sha1( code_of( $all['htaccess'], 'htaccess-reject' ) ) === '1fa5ddd412ec5d98cde4fc75c7160317a962a050'
+	&& sha1( code_of( snips( 'apache', layout_inputs( 2, 2, [], [ '/blog/', '/news/' ], [ 'reject_status' => 404 ] ) ), 'apache-reject' ) ) === '02128859e5cb830d3d463a0cadb24125619c22f7'
+	&& ! str_contains( code_of( $all['htaccess'] ), 'SecRule' ), sha1( $apache_rj ) );
+chk( 'apache: ModSecurity text without the reject-audit rule is the 57689e2 text; rule hash unchanged',
+	$modsec_lm !== $modsec && sha1( $modsec_lm ) === '4a506ac7c32280bc904936e15925df2fbee4bdbe'
+	&& $hash === '72ff20d0ae4c' && str_contains( $apache_rj, 'X-Jpkpf-Rule "72ff20d0ae4c"' ), sha1( $modsec_lm ) );
+// No reject part (strict URLs off): nothing sets the variable, so no rule - the
+// ModSecurity text stays as it was. With reject_status 404 the rule stays (an admin's
+// own relevant-status pattern may include 404; the default one does not).
+$modsec_off = code_of( snips( 'apache', layout_inputs( 2, 2, [], [ '/blog/', '/news/' ], [ 'strict' => false ] ) ), 'apache-modsec' );
+$modsec_404 = code_of( snips( 'apache', layout_inputs( 2, 2, [], [ '/blog/', '/news/' ], [ 'reject_status' => 404 ] ) ), 'apache-modsec' );
+chk( 'apache: no reject part, no reject-audit rule (ModSecurity text unchanged); reject_status 404 keeps it',
+	$modsec_off !== '' && ! str_contains( $modsec_off, '4710014' ) && sha1( $modsec_off ) === '4e387764ad9a801ff64a30da9583d6c51039363d'
+	&& str_contains( $modsec_404, "</LocationMatch>\n" . $rej_audit ), sha1( $modsec_off ) );
 chk( 'apache: Retry-After on every 429, inside <IfModule mod_headers.c>, context names mod_headers',
 	str_contains( $modsec, "<IfModule mod_headers.c>\n    Header always set Retry-After \"10\" \"expr=%{REQUEST_STATUS} == 429\"\n</IfModule>" )
 	&& str_contains( $qos, "<IfModule mod_headers.c>\n    Header always set Retry-After \"10\" \"expr=%{REQUEST_STATUS} == 429\"\n</IfModule>" )

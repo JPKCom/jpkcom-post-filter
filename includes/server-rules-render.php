@@ -904,6 +904,19 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
      * its access-log line. `log` stays: the ~390-byte error-log line names
      * the limit that answered, the only place that says which one did.
      *
+     * A server reject writes no audit-log entry either (1.7.1, T6-a follow-up):
+     * with that config every mod_rewrite 410 wrote ~1 KB (`4(?!04)` matches
+     * 410). Rule 4710014 is the one rule outside the LocationMatch: a reject
+     * ends the request in translate_name, before the fixups hook in which
+     * ModSecurity applies the LocationMatch, so no rule inside it - phase 2
+     * or 5 - ever runs for a reject (measured). At VirtualHost level phase 5
+     * does run. It is keyed on `JPKPF_REJECT` / `REDIRECT_JPKPF_REJECT`,
+     * which only the reject's RewriteRule sets (the REDIRECT_ form after an
+     * ErrorDocument that redirects internally, measured), and it is
+     * `pass,nolog` with `ctl:auditEngine=Off` only: no status, no deny, no
+     * SecRuleEngine - it runs under the admin's engine setting. Only present
+     * when there is a reject part.
+     *
      * The counters live in RESOURCE (key `jpkpf_ip_<addr>`) and USER (key
      * `jpkpf_site_<server name>`, via setuid), not in IP and GLOBAL: OWASP CRS
      * 3.3 opens `ip` as `<addr>_<UA hash>` and `global` as `global` in phase 1,
@@ -1006,6 +1019,18 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_snippets_apache' ) )
                 '    ' . $bot . "4710013,phase:2,deny,status:429,log,msg:'jpkpf: search engine filter limit',chain\"",
                 '        SecRule USER:JPKPF_BOT_HITS "@gt ' . $bots . '" "' . $no_audit . '"',
                 '</LocationMatch>',
+            ];
+
+            // T6-a: a server reject writes no audit-log entry. Only with a
+            // reject part - nothing else sets the variable.
+            if ( $rules !== '' ) {
+                $modsec[] = '# Server rejects write no audit-log entry. Phase 5 and outside the LocationMatch:';
+                $modsec[] = '# a reject ends the request before Apache applies the LocationMatch.';
+                $modsec[] = 'SecRule ENV:JPKPF_REJECT|ENV:REDIRECT_JPKPF_REJECT "@beginsWith server-" "id:4710014,phase:5,pass,nolog,' . $no_audit . '"';
+            }
+
+            $modsec = [
+                ...$modsec,
                 '</IfModule>',
                 '<IfModule mod_headers.c>',
                 '    ' . $retry_after,
