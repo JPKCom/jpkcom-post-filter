@@ -466,6 +466,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_settings_save_refused' ) ) 
     /**
      * Has the .htaccess sync refused the current save of a settings group?
      *
+     * Also true after a delete_option() whose block could not be loosened
+     * first (I-2): the cache file is kept then.
+     *
      * A refused save hands this request's copy of the stored value through
      * the sanitizer. That copy is what this request loaded - possibly before
      * another request committed - so it must not be written to the settings
@@ -1224,9 +1227,16 @@ foreach ( [ 'general', 'layout', 'cache', 'filter_groups' ] as $jpkpf_group ) {
     add_action( "add_option_jpkcom_postfilter_{$jpkpf_group}", 'jpkcom_postfilter_settings_memo_reset', 10, 0 );
     // The row is gone: its cache file must go too (T2-b), or it keeps
     // answering for the deleted value - the file is read before the database.
+    // Kept only when the .htaccess sync could not loosen the managed block
+    // for the defaults first (I-2): the plugin must not become looser than
+    // the block.
     add_action(
         "delete_option_jpkcom_postfilter_{$jpkpf_group}",
         static function () use ( $jpkpf_group ): void {
+            if ( jpkcom_postfilter_settings_save_refused( $jpkpf_group ) ) {
+                jpkcom_postfilter_settings_memo_reset();
+                return;
+            }
             jpkcom_postfilter_settings_delete_cache( $jpkpf_group );
         },
         10,

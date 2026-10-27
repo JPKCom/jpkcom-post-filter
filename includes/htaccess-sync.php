@@ -1263,6 +1263,105 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_after_save' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_before_delete' ) ) {
+    /**
+     * delete_option (core, before the row goes): loosen for the defaults (I-2)
+     *
+     * Deleting `jpkcom_postfilter_general` or `jpkcom_postfilter_filter_groups`
+     * deletes the group's settings cache file too (T2-b), and from then on the
+     * plugin runs with what it falls back to - the defaults, or no groups at
+     * all. That can be looser than the block (stored N1, default N2), so the
+     * block is first brought to union( current, state after the delete ),
+     * under the save lock, like a save.
+     *
+     * A delete cannot be refused. When the block cannot be loosened (or
+     * another request holds the save lock, or the lock statement fails), the
+     * cache file is kept instead: the plugin goes on with the deleted values
+     * - the block's - until the rules can be updated, and is never looser
+     * than the block. A WP_CLI::warning() says so under WP-CLI, a debug log
+     * line otherwise.
+     *
+     * @since 1.7.1
+     *
+     * @param string $option Option name.
+     * @return void
+     */
+    function jpkcom_postfilter_htaccess_before_delete( string $option ): void {
+        if ( ! in_array( $option, [ 'jpkcom_postfilter_general', 'jpkcom_postfilter_filter_groups' ], true ) ) {
+            return;
+        }
+        jpkcom_postfilter_htaccess_refused( $option, false );
+
+        $guarded = jpkcom_postfilter_htaccess_guarded();
+        if ( ! $guarded['guarded'] ) {
+            return;
+        }
+
+        $lock = jpkcom_postfilter_htaccess_save_lock();
+        if ( $lock !== '' ) {
+            $result = [ 'ok' => false, 'reason' => $lock ];
+        } else {
+            jpkcom_postfilter_settings_memo_reset();
+            $current = jpkcom_postfilter_server_rule_union(
+                old: jpkcom_postfilter_server_rule_inputs(),
+                new: jpkcom_postfilter_server_inputs_from_raw( option: $option, raw: get_option( $option ), sanitized: false )
+            );
+            // Without the row the getters read nothing stored: the same as a
+            // stored empty array.
+            $union  = jpkcom_postfilter_server_rule_union(
+                old: $current,
+                new: jpkcom_postfilter_server_inputs_from_raw( option: $option, raw: [], sanitized: false )
+            );
+            $result = jpkcom_postfilter_htaccess_loosen( inputs: $union, orphan: ! $guarded['managed'], current: $current );
+        }
+
+        if ( $result['ok'] ) {
+            return;
+        }
+
+        // Keeps the cache file (settings.php, delete_option_{$option}).
+        jpkcom_postfilter_htaccess_refused( $option, true );
+
+        $message = sprintf(
+            /* translators: 1: option name, e.g. jpkcom_postfilter_general; 2: reason code, e.g. not-writable */
+            __( 'The option %1$s was deleted, but the JPKCom Post Filter rules in .htaccess could not be loosened to the values the plugin falls back to (reason: %2$s). So that the server never rejects a filter page the plugin serves, the plugin keeps its settings cache file and goes on with the deleted values until the rules can be updated. Fix the cause, then save the settings page once.', 'jpkcom-post-filter' ),
+            $option,
+            $result['reason']
+        );
+        if ( defined( constant_name: 'WP_CLI' ) && WP_CLI && class_exists( class: 'WP_CLI' ) ) {
+            WP_CLI::warning( $message );
+        } elseif ( function_exists( function: 'jpkcom_postfilter_debug_log' ) ) {
+            jpkcom_postfilter_debug_log( $message, [ 'option' => $option, 'reason' => $result['reason'] ] );
+        }
+    }
+}
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_after_delete' ) ) {
+    /**
+     * delete_option_{option}, priority 20: tighten to the state after the delete
+     *
+     * After settings.php has deleted the cache file (priority 10), the block
+     * is brought to what the plugin now runs with - unless the delete could
+     * not loosen it (jpkcom_postfilter_htaccess_before_delete()): then the
+     * cache file was kept and nothing changes. The save lock goes either way.
+     *
+     * @since 1.7.1
+     *
+     * @param string $option Option name.
+     * @return void
+     */
+    function jpkcom_postfilter_htaccess_after_delete( string $option ): void {
+        if ( jpkcom_postfilter_htaccess_refused( $option ) ) {
+            jpkcom_postfilter_htaccess_save_unlock();
+            return;
+        }
+
+        jpkcom_postfilter_htaccess_after_save();
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_maybe_resync' ) ) {
     /**
      * admin_init: sync when the file's hash is not the current one
@@ -1422,10 +1521,14 @@ foreach ( [ 'jpkcom_postfilter_general', 'jpkcom_postfilter_filter_groups' ] as 
     add_filter( "sanitize_option_{$jpkpf_option}", 'jpkcom_postfilter_htaccess_settle_refusal', PHP_INT_MAX, 2 );
     add_action( "update_option_{$jpkpf_option}", 'jpkcom_postfilter_htaccess_after_save', 20, 0 );
     add_action( "add_option_{$jpkpf_option}", 'jpkcom_postfilter_htaccess_after_save', 20, 0 );
+    add_action( "delete_option_{$jpkpf_option}", 'jpkcom_postfilter_htaccess_after_delete', 20, 1 );
 }
 unset( $jpkpf_option );
 
 add_action( 'jpkcom_postfilter_settings_saved', 'jpkcom_postfilter_htaccess_after_settings_saved', 10, 1 );
+
+// Core fires 'delete_option' before the row goes (I-2).
+add_action( 'delete_option', 'jpkcom_postfilter_htaccess_before_delete', 10, 1 );
 
 // Archive bases follow the posts page and the permalink structure.
 // permalink_structure_changed fires after WP_Rewrite::init() - update_option_*

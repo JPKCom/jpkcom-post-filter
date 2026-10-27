@@ -173,8 +173,12 @@ function delete_option( $option ) {
 	if ( ! array_key_exists( $option, $GLOBALS['__options'] ) ) {
 		return false;
 	}
+	// Core: 'delete_option' before the row goes, delete_option_{$option} and
+	// 'deleted_option' after.
+	do_action( 'delete_option', $option );
 	unset( $GLOBALS['__options'][ $option ] );
 	do_action( "delete_option_{$option}", $option );
+	do_action( 'deleted_option', $option );
 	return true;
 }
 function register_setting( $option_group, $option_name, $args = [] ) {
@@ -326,6 +330,8 @@ final class Jpkpf_Wpdb {
 	}
 }
 $GLOBALS['wpdb'] = new Jpkpf_Wpdb();
+
+const LOCK = 'jpkcom_postfilter_htaccess_save_lock';
 
 // Which request is running: one process plays two admins saving at once.
 function jpkcom_postfilter_htaccess_request_id(): string { return $GLOBALS['__request_id'] ?? 'A'; }
@@ -1407,6 +1413,62 @@ if ( $have ) {
 }
 
 // =====================================================================================
+section( 'delete_option() of a settings option (I-2)' );
+// =====================================================================================
+
+if ( $have ) {
+	// The cache file goes with the row (T2-b), and from then on the plugin runs
+	// with what it falls back to - the defaults. The block has to be at least
+	// that loose BEFORE the file goes: a delete cannot be refused.
+	$at_cache_delete = null;
+	foreach ( [ 'jpkcom_postfilter_general', 'jpkcom_postfilter_filter_groups' ] as $o ) {
+		add_action( "delete_option_{$o}", static function () {
+			$GLOBALS['__at_cache_delete'] = bytes( htaccess() );   // just before settings.php deletes the cache file (priority 10)
+		}, 9, 0 );
+	}
+
+	foreach ( [ 1 => 'loosens', 3 => 'tightens' ] as $n => $label ) {
+		site( general( [ 'max_filters_per_group' => $n ] ) );
+		$GLOBALS['__at_cache_delete'] = null;
+		$ok = delete_option( 'jpkcom_postfilter_general' );
+		jpkcom_postfilter_settings_memo_reset();
+		$now = jpkcom_postfilter_server_rule_inputs();
+		chk( "I-2 delete General (stored N{$n}, defaults N2 = {$label}): block loosened to at least N2 before the cache file goes",
+			$ok === true && in_array( n_of( (string) $GLOBALS['__at_cache_delete'] ), [ 'N' . max( 2, $n ), 'N0' ], true ),
+			n_of( (string) $GLOBALS['__at_cache_delete'] ) );
+		chk( "I-2 delete General (N{$n}): afterwards cache file gone, plugin on the defaults (N2), block == its rules",
+			cache_array( 'general' ) === null && $now['max_per_group'] === 2 && rule_hash( bytes( htaccess() ) ) === $now['hash'] && ! array_key_exists( LOCK, $GLOBALS['__options'] ),
+			n_of( bytes( htaccess() ) ) . ' / plugin N' . $now['max_per_group'] );
+	}
+
+	// Filter Groups: without the row there are no groups, so no reject part.
+	site( general() );
+	$GLOBALS['__at_cache_delete'] = null;
+	delete_option( 'jpkcom_postfilter_filter_groups' );
+	chk( 'I-2 delete Filter Groups: the block (no groups -> no reject part) is gone before the cache file goes, and stays gone',
+		! str_contains( (string) $GLOBALS['__at_cache_delete'], 'R=410' ) && ! str_contains( bytes( htaccess() ), 'R=410' ) && cache_array( 'filter_groups' ) === null,
+		(string) $GLOBALS['__at_cache_delete'] );
+
+	// The block cannot be loosened: the plugin must not become looser than it,
+	// so the cache file stays and the plugin goes on with the deleted values.
+	site( general( [ 'max_filters_per_group' => 1 ] ) );
+	$cache_was = cache_array( 'general' );
+	$file_was  = bytes( htaccess() );
+	read_only();
+	delete_option( 'jpkcom_postfilter_general' );
+	jpkcom_postfilter_settings_memo_reset();
+	chk( 'I-2 delete General, block not writable: cache file kept (plugin stays on N1 = the block), block unchanged',
+		cache_array( 'general' ) === $cache_was && bytes( htaccess() ) === $file_was && jpkcom_postfilter_server_rule_inputs()['max_per_group'] === 1
+		&& ! array_key_exists( 'jpkcom_postfilter_general', $GLOBALS['__options'] ) && ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+
+	// Not managed: nothing to loosen, the cache file goes as before (T2-b).
+	site( general( [ 'max_filters_per_group' => 1 ] ), null, false, false );
+	$GLOBALS['wpdb']->log = [];
+	delete_option( 'jpkcom_postfilter_general' );
+	chk( 'I-2 delete General without a managed block: cache file gone, no lock query', cache_array( 'general' ) === null && $GLOBALS['wpdb']->log === [] );
+}
+
+// =====================================================================================
 section( 'Migration (Task 2) during a managed .htaccess' );
 // =====================================================================================
 
@@ -1517,8 +1579,6 @@ if ( $have ) {
 // =====================================================================================
 section( 'Save lock: two saves at once (T9-d)' );
 // =====================================================================================
-
-const LOCK = 'jpkcom_postfilter_htaccess_save_lock';
 
 /**
  * Run a save as request B (another admin) while request A is inside its own
@@ -1871,6 +1931,20 @@ if ( $have ) {
 	// N is locked by the constant above: add a group instead.
 	$ok = as_cli( static fn() => save( 'jpkcom_postfilter_filter_groups', [ 'groups' => [ group( 'category', 0 ), group( 'post_tag', 1 ), group( 'color', 2 ) ] ] ) );
 	chk( 'WP-CLI refusal: WP_CLI::warning() carries the reason', $ok === false && str_contains( $GLOBALS['__cli_warnings'][0] ?? '', 'not writable' ), json_encode( [ $ok, $GLOBALS['__cli_warnings'], $GLOBALS['__errors'] ] ) );
+
+	// I-2 under WP-CLI (`wp option delete`): a delete cannot be refused, so the
+	// warning says the cache file was kept and why. (N is locked by the
+	// constant above: delete the filter groups - without them there is no
+	// reject part, and the block would have to go.)
+	site( general() );
+	$cache_was = cache_array( 'filter_groups' );
+	read_only();
+	$GLOBALS['__cli_warnings'] = [];
+	as_cli( static fn() => delete_option( 'jpkcom_postfilter_filter_groups' ) );
+	$warning = $GLOBALS['__cli_warnings'][0] ?? '';
+	chk( 'I-2 wp option delete, block not writable: WP_CLI::warning() says the cache file was kept, and why',
+		cache_array( 'filter_groups' ) === $cache_was && str_contains( $warning, 'jpkcom_postfilter_filter_groups' ) && str_contains( $warning, 'cache file' ) && str_contains( $warning, 'not-writable' ),
+		$warning );
 }
 
 exit( summary() );
