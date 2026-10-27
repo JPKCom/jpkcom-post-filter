@@ -178,6 +178,34 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rule_inputs' ) ) {
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_server_renderer_version' ) ) {
+    /**
+     * Version of the code that turns rule inputs into server rules
+     *
+     * Folded into the rule hash when it is not empty. The hash otherwise
+     * covers the inputs only, so a release that changes what a renderer
+     * writes for the same inputs - a snippet, the managed .htaccess block,
+     * a pattern - without bumping this would leave every deployed rule
+     * reading as current: the status check says "active", and the managed
+     * block is never resynced (admin_init and the version-change sync both
+     * compare hashes).
+     *
+     * **The next renderer change must set this** (the first one to '2', then
+     * '3', ...). Empty means "the renderers of 1.6.0 to 1.7.1", whose output
+     * for a layout with nothing dropped never changed, so the hashes of those
+     * rules stay as they were. Setting it marks every deployed hand-pasted
+     * rule "stale" - which is the point when the rule did change.
+     *
+     * @since 1.7.1
+     *
+     * @return string '' until a renderer changes.
+     */
+    function jpkcom_postfilter_server_renderer_version(): string {
+        return '';
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_server_rule_hash' ) ) {
     /**
      * Short hash over every input that shapes the rule
@@ -188,12 +216,25 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rule_hash' ) ) {
      * and `bases` matters (both are sets); `policy_filtered` and `hash` do not
      * shape the rule and are left out.
      *
-     * @since 1.6.0
+     * Two values are appended only when they are not empty, so the hash of
+     * every other rule stays byte-identical to 1.6.0:
      *
-     * @param array<string, mixed> $inputs As returned by jpkcom_postfilter_server_rule_inputs().
+     * - `dropped` (R161-4): the patterns the size and compile guard leaves
+     *   out (jpkcom_postfilter_server_patterns_dropped(), key => reason).
+     *   1.6.0 had no guard and wrote those patterns, so the same inputs
+     *   stood for another rule; without this a deployed 1.6.0 rule read as
+     *   "active" and a managed 1.6.0 block was never rewritten.
+     * - `renderer` (T9-c): jpkcom_postfilter_server_renderer_version().
+     *
+     * @since 1.6.0
+     * @since 1.7.1 Folds in the dropped patterns and the renderer version, each only when not empty.
+     *
+     * @param array<string, mixed>       $inputs   As returned by jpkcom_postfilter_server_rule_inputs().
+     * @param array<string, string>|null $dropped  Dropped patterns; null to decide them from `$inputs`.
+     * @param string|null                $renderer Renderer version; null for the current one.
      * @return string First 12 hex characters of sha256( json_encode ).
      */
-    function jpkcom_postfilter_server_rule_hash( array $inputs ): string {
+    function jpkcom_postfilter_server_rule_hash( array $inputs, ?array $dropped = null, ?string $renderer = null ): string {
         $skip = array_values( array_unique( array_map( 'intval', (array) ( $inputs['skip_positions'] ?? [] ) ) ) );
         sort( $skip );
 
@@ -211,6 +252,18 @@ if ( ! function_exists( function: 'jpkcom_postfilter_server_rule_hash' ) ) {
             'bases'            => $bases,
             'verdict_filtered' => (bool) ( $inputs['verdict_filtered'] ?? false ),
         ];
+
+        $dropped ??= jpkcom_postfilter_server_patterns_dropped( inputs: $inputs );
+        if ( $dropped !== [] ) {
+            $dropped = array_map( 'strval', $dropped );
+            ksort( $dropped, SORT_STRING );
+            $data['dropped'] = $dropped;
+        }
+
+        $renderer ??= jpkcom_postfilter_server_renderer_version();
+        if ( $renderer !== '' ) {
+            $data['renderer'] = $renderer;
+        }
 
         return substr( hash( algo: 'sha256', data: (string) json_encode( $data, JSON_INVALID_UTF8_SUBSTITUTE ) ), 0, 12 );
     }

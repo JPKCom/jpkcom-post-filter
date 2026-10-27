@@ -470,9 +470,11 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_hash_rejects_as' )
      */
     function jpkcom_postfilter_htaccess_hash_rejects_as( string $hash, array $inputs ): bool {
         $statuses = array_unique( [ (int) ( $inputs['reject_status'] ?? 0 ), 404, 410 ] );
+        // The status shapes no pattern: decide the dropped ones once.
+        $dropped = jpkcom_postfilter_server_patterns_dropped( inputs: $inputs );
         foreach ( $statuses as $status ) {
             $inputs['reject_status'] = $status;
-            if ( jpkcom_postfilter_server_rule_hash( inputs: $inputs ) === $hash ) {
+            if ( jpkcom_postfilter_server_rule_hash( inputs: $inputs, dropped: $dropped ) === $hash ) {
                 return true;
             }
         }

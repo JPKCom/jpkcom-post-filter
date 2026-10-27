@@ -411,6 +411,44 @@ $expect = substr( hash( 'sha256', (string) json_encode( [
 ] ) ), 0, 12 );
 chk( 'hash = first 12 hex of sha256(json_encode) in fixed key order', $h2 === $expect, "$h2 vs $expect" );
 
+/**
+ * The rule hash with named overrides (`dropped`, `renderer`), or a marker when
+ * the hash function does not take them yet - so the check fails instead of the
+ * run ending on an unknown named parameter.
+ */
+function hash_with( array $inputs, array $named ): string {
+	if ( ! function_exists( 'jpkcom_postfilter_server_rule_hash' ) ) {
+		return '__missing__';
+	}
+	$params = array_map( static fn( ReflectionParameter $p ): string => $p->getName(), ( new ReflectionFunction( 'jpkcom_postfilter_server_rule_hash' ) )->getParameters() );
+	foreach ( array_keys( $named ) as $name ) {
+		if ( ! in_array( $name, $params, true ) ) {
+			return '__no_parameter__ ' . $name;
+		}
+	}
+	return (string) jpkcom_postfilter_server_rule_hash( $inputs, ...$named );
+}
+
+// T9-c: a renderer version folded into the hash, empty until a renderer
+// changes - so no deployed hash moves with this release.
+chk( 'renderer version is empty today (T9-c)', call( 'jpkcom_postfilter_server_renderer_version' ) === '', show( call( 'jpkcom_postfilter_server_renderer_version' ) ) );
+chk( 'an empty renderer version leaves the hash as it is (T9-c)', hash_with( $base, [ 'renderer' => '' ] ) === $h2, hash_with( $base, [ 'renderer' => '' ] ) );
+$h2_r2 = hash_with( $base, [ 'renderer' => '2' ] );
+chk( 'a set renderer version changes the hash, and only through the fixed formula (T9-c)',
+	preg_match( '/^[0-9a-f]{12}$/', $h2_r2 ) === 1 && $h2_r2 !== $h2
+	&& $h2_r2 === substr( hash( 'sha256', (string) json_encode( [
+		'strict'           => true,
+		'max_per_group'    => 2,
+		'groups'           => 2,
+		'skip_positions'   => [],
+		'reject_status'    => 410,
+		'endpoint'         => 'filter',
+		'fragment'         => 'jpkpf-fragment',
+		'bases'            => [ '/blog/' ],
+		'verdict_filtered' => false,
+		'renderer'         => '2',
+	] ) ), 0, 12 ), $h2_r2 );
+
 // =====================================================================================
 section( 'reject patterns' );
 // =====================================================================================
@@ -2075,6 +2113,60 @@ foreach ( guard_layouts() as [ $n, $g, $skip, $bases ] ) {
 chk( 'normal layouts (N 1-5, G 1-8, 580 layouts): nothing dropped, guarded === unchecked', $normal_ok );
 // sha256 of the same list built by the v1.6.0 code (be1cf39).
 chk( 'normal layouts: both pattern forms byte-identical to v1.6.0', hash( 'sha256', (string) json_encode( $normal ) ) === 'c7ccec8ee9dece6dade60e0800a1853b8354f5047391f78308c104739933b4e4' && count( $normal ) === 580 );
+
+// --- R161-4 / T9-c: the rule hash of every layout with nothing dropped stays as it was ---
+// The 580 normal layouts plus N = 0, strict off, a filtered verdict and 404
+// at G 1, 3, 8. The digest is of the hashes computed by the formula before
+// R161-4 and T9-c (554eef4): a deployed rule of a normal site must not turn
+// "stale" with this release.
+$normal_hashes = [];
+foreach ( guard_layouts() as [ $n, $g, $skip, $bases ] ) {
+	$normal_hashes[] = layout_inputs( $n, $g, $skip, $bases )['hash'];
+}
+foreach ( [ [ 'max_per_group' => 0 ], [ 'strict' => false ], [ 'verdict_filtered' => true ], [ 'reject_status' => 404 ] ] as $over ) {
+	foreach ( [ 1, 3, 8 ] as $g ) {
+		$normal_hashes[] = layout_inputs( 2, $g, [], [ '/blog/' ], $over )['hash'];
+	}
+}
+chk( 'normal layouts: rule hash byte-identical to before R161-4 and T9-c (592 hashes)',
+	count( $normal_hashes ) === 592 && hash( 'sha256', (string) json_encode( $normal_hashes ) ) === 'b5e4432e4da3627d100620e6c0bcb796c08d82d1fd8bb5e7b28d5180da5e5432',
+	show( array_slice( $normal_hashes, 0, 3 ) ) . ' want ["41f49577698e","73f9fc161e25","5ddc0d52fa3f",...]' );
+
+// R161-4: where the guard drops a pattern, the rule differs from the one 1.6.0
+// built for the same inputs, so the hash must differ too - otherwise a
+// deployed 1.6.0 rule reads as "active" and a managed block is never resynced.
+$c71_plain = substr( hash( 'sha256', (string) json_encode( [
+	'strict'           => true,
+	'max_per_group'    => 20,
+	'groups'           => 71,
+	'skip_positions'   => [],
+	'reject_status'    => 410,
+	'endpoint'         => 'filter',
+	'fragment'         => 'jpkpf-fragment',
+	'bases'            => [ '/blog/', '/news/' ],
+	'verdict_filtered' => false,
+] ) ), 0, 12 );
+$c71_folded = substr( hash( 'sha256', (string) json_encode( [
+	'strict'           => true,
+	'max_per_group'    => 20,
+	'groups'           => 71,
+	'skip_positions'   => [],
+	'reject_status'    => 410,
+	'endpoint'         => 'filter',
+	'fragment'         => 'jpkpf-fragment',
+	'bases'            => [ '/blog/', '/news/' ],
+	'verdict_filtered' => false,
+	'dropped'          => [ 'per_group' => 'pcre' ],
+] ) ), 0, 12 );
+chk( 'N20 G71 (per_group dropped): the hash is not the one of the same inputs without the guard (R161-4)', $c71['in']['hash'] !== $c71_plain, $c71['in']['hash'] );
+chk( 'N20 G71: the hash folds in the dropped map (key and reason) after the inputs', $c71['in']['hash'] === $c71_folded, $c71['in']['hash'] . ' vs ' . $c71_folded );
+chk( 'N20 G71: with the dropped map forced empty the hash is the plain one', hash_with( $c71['in'], [ 'dropped' => [] ] ) === $c71_plain, hash_with( $c71['in'], [ 'dropped' => [] ] ) );
+chk( 'dropped map: another reason gives another hash, key order does not matter',
+	preg_match( '/^[0-9a-f]{12}$/', hash_with( $c71['in'], [ 'dropped' => [ 'per_group' => 'length' ] ] ) ) === 1
+	&& hash_with( $c71['in'], [ 'dropped' => [ 'per_group' => 'length' ] ] ) !== $c71['in']['hash']
+	&& hash_with( $c71['in'], [ 'dropped' => [ 'segments' => 'pcre', 'per_group' => 'with-segments' ] ] ) === hash_with( $c71['in'], [ 'dropped' => [ 'per_group' => 'with-segments', 'segments' => 'pcre' ] ] ) );
+$c1000_in = $c1000['in'];
+chk( 'N2 G1000 (both dropped): hash differs from the plain one', $c1000_in['hash'] !== hash_with( $c1000_in, [ 'dropped' => [] ] ) && $c1000_in['hash'] === hash_with( $c1000_in, [ 'dropped' => $c1000['dropped'] ] ) );
 
 // --- the shape check, calibrated against the engines ---
 $shape = static fn( string $re ): array => (array) call( 'jpkcom_postfilter_server_regex_shape', $re );
