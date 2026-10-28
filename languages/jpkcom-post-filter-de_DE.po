@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: JPKCom Post Filter 1.7.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/jpkcom-post-"
 "filter\n"
-"POT-Creation-Date: 2026-10-27T21:20:37+01:00\n"
+"POT-Creation-Date: 2026-10-28T11:15:59+01:00\n"
 "PO-Revision-Date: 2026-10-27 21:22+0100\n"
 "Last-Translator: jpk@jpkc.com\n"
 "Language-Team: Deutsch\n"
@@ -275,7 +275,7 @@ msgid "General"
 msgstr "Allgemein"
 
 #: includes/admin-pages.php:59 includes/admin-pages.php:60
-#: includes/admin-pages.php:2374 includes/elementor/class-widget-filter.php:77
+#: includes/admin-pages.php:2382 includes/elementor/class-widget-filter.php:77
 #: blocks/post-filter/edit.js:42
 msgid "Filter Groups"
 msgstr "Filtergruppen"
@@ -309,8 +309,8 @@ msgstr "Import / Export"
 msgid "Sorry, you are not allowed to do this."
 msgstr "Du bist leider nicht berechtigt, diese Aktion durchzuführen."
 
-#: includes/admin-pages.php:155 includes/admin-pages.php:1885
-#: includes/admin-pages.php:2087
+#: includes/admin-pages.php:155 includes/admin-pages.php:1893
+#: includes/admin-pages.php:2095
 msgid "Post Types"
 msgstr "Beitragstypen"
 
@@ -326,7 +326,7 @@ msgstr "Aktivierte Beitragstypen"
 msgid "Auto-Inject Filter"
 msgstr "Filter automatisch einbinden"
 
-#: includes/admin-pages.php:180 includes/admin-pages.php:2217
+#: includes/admin-pages.php:180 includes/admin-pages.php:2225
 msgid "Advanced"
 msgstr "Erweitert"
 
@@ -509,11 +509,11 @@ msgstr ""
 "Legt fest, was passiert, wenn der Filter-Endpunkt ohne Filterpfad aufgerufen "
 "wird (z. B. %s)."
 
-#: includes/admin-pages.php:517
+#: includes/admin-pages.php:519
 msgid "Enable debug logging (independent of WP_DEBUG)"
 msgstr "Debug-Logging aktivieren (unabhängig von WP_DEBUG)"
 
-#: includes/admin-pages.php:519
+#: includes/admin-pages.php:521
 msgid ""
 "When enabled, detailed logs are written to the PHP error log and debug-"
 "templates/ are used instead of templates/."
@@ -522,24 +522,24 @@ msgstr ""
 "und debug-templates/ statt templates/ verwendet."
 
 #. translators: %s: PHP constant name
-#: includes/admin-pages.php:564
+#: includes/admin-pages.php:566
 #, php-format
 msgid "Set by %s in wp-config.php."
 msgstr "Durch %s in der wp-config.php festgelegt."
 
-#: includes/admin-pages.php:633
+#: includes/admin-pages.php:635
 msgid "Single terms only (recommended)"
 msgstr "Nur Einzelbegriffe (empfohlen)"
 
-#: includes/admin-pages.php:634
+#: includes/admin-pages.php:636
 msgid "Combinations within the limits"
 msgstr "Kombinationen innerhalb der Grenzen"
 
-#: includes/admin-pages.php:635
+#: includes/admin-pages.php:637
 msgid "No links"
 msgstr "Keine Links"
 
-#: includes/admin-pages.php:638
+#: includes/admin-pages.php:640
 msgid ""
 "Which address a filter button links to. Visitors with JavaScript are not "
 "affected: the script handles every click itself and can always combine "
@@ -554,7 +554,7 @@ msgstr ""
 "eigene Seite, sodass Crawler eine Seite pro Begriff finden statt jeder "
 "Kombination."
 
-#: includes/admin-pages.php:661
+#: includes/admin-pages.php:663
 msgid ""
 "Filter pages with up to this many selected terms may be indexed (index, "
 "follow). Pages with more terms are sent as noindex, nofollow - unless their "
@@ -570,19 +570,19 @@ msgstr ""
 "unbekannten Begriffen oder ohne Treffer sind immer noindex, nofollow ohne "
 "Canonical. 0 = keine Filterseite wird indexiert. Standard: 1."
 
-#: includes/admin-pages.php:673
+#: includes/admin-pages.php:675
 msgid "Term archive (recommended)"
 msgstr "Begriffsarchiv (empfohlen)"
 
-#: includes/admin-pages.php:674 includes/admin-pages.php:691
+#: includes/admin-pages.php:676 includes/admin-pages.php:693
 msgid "Filter URL"
 msgstr "Filter-URL"
 
-#: includes/admin-pages.php:675 includes/admin-pages.php:692
+#: includes/admin-pages.php:677 includes/admin-pages.php:694
 msgid "Off"
 msgstr "Aus"
 
-#: includes/admin-pages.php:678
+#: includes/admin-pages.php:680
 msgid ""
 "Where the canonical of a filter page with exactly one term points. \"Term "
 "archive\": the category, tag or custom taxonomy archive of that term, which "
@@ -603,11 +603,11 @@ msgstr ""
 "einem Begriff indexiert werden dürfen („Indexierbare Filterseiten“ "
 "mindestens 1); bei „Aus“ gibt es keinen."
 
-#: includes/admin-pages.php:690
+#: includes/admin-pages.php:692
 msgid "Archive base (recommended)"
 msgstr "Archiv-Startseite (empfohlen)"
 
-#: includes/admin-pages.php:695
+#: includes/admin-pages.php:697
 msgid ""
 "Where the canonical of a filter page with two or more terms points. "
 "\"Archive base\": the unfiltered blog page or post type archive, as long as "
@@ -627,7 +627,7 @@ msgstr ""
 "robots.txt-Regeln bleiben Kombinationen innerhalb einer Gruppe gesperrt, "
 "Crawler sehen ihren Canonical also nie."
 
-#: includes/admin-pages.php:718
+#: includes/admin-pages.php:720
 msgid ""
 "Maximum number of selected terms across all filter groups together. The "
 "filter bar disables further terms once it is reached, and the server rejects "
@@ -637,11 +637,11 @@ msgstr ""
 "sie erreicht, deaktiviert die Filterleiste weitere Begriffe, und der Server "
 "weist längere Kombinationen ab. 0 = keine Begrenzung."
 
-#: includes/admin-pages.php:729
+#: includes/admin-pages.php:731
 msgid "Redirect and reject filter URLs before the database is queried"
 msgstr "Filter-URLs umleiten bzw. abweisen, bevor die Datenbank abgefragt wird"
 
-#: includes/admin-pages.php:731
+#: includes/admin-pages.php:733
 msgid ""
 "Every other spelling of a selection (term order, duplicates, upper case, /"
 "page/1/) is redirected (301) to its one canonical address. Combinations "
@@ -654,15 +654,15 @@ msgstr ""
 "Segmente werden mit einer kurzen Fehlerseite abgewiesen. Ohne diese Option "
 "wird jede Variante als vollständige Seite gerendert."
 
-#: includes/admin-pages.php:743
+#: includes/admin-pages.php:745
 msgid "410 Gone (recommended)"
 msgstr "410 Gone (empfohlen)"
 
-#: includes/admin-pages.php:744
+#: includes/admin-pages.php:746
 msgid "404 Not Found"
 msgstr "404 Not Found"
 
-#: includes/admin-pages.php:747
+#: includes/admin-pages.php:749
 msgid ""
 "HTTP status for combinations that can never be valid on this site. 410 tells "
 "crawlers not to come back."
@@ -670,19 +670,19 @@ msgstr ""
 "HTTP-Status für Kombinationen, die auf dieser Website nie gültig sein "
 "können. 410 teilt Crawlern mit, nicht wiederzukommen."
 
-#: includes/admin-pages.php:759
+#: includes/admin-pages.php:761
 msgid "Redirect to the selection without them (recommended)"
 msgstr "Auf die Auswahl ohne sie umleiten (empfohlen)"
 
-#: includes/admin-pages.php:760
+#: includes/admin-pages.php:762
 msgid "Show the page, but noindex"
 msgstr "Seite anzeigen, aber mit noindex"
 
-#: includes/admin-pages.php:761
+#: includes/admin-pages.php:763
 msgid "Reject like an invalid combination"
 msgstr "Wie eine ungültige Kombination abweisen"
 
-#: includes/admin-pages.php:764
+#: includes/admin-pages.php:766
 msgid ""
 "What to do with a term in the URL that does not exist (anymore). Redirecting "
 "keeps old links to renamed terms working."
@@ -690,11 +690,11 @@ msgstr ""
 "Was mit einem Begriff in der URL geschieht, den es (nicht mehr) gibt. Die "
 "Umleitung hält alte Links auf umbenannte Begriffe funktionsfähig."
 
-#: includes/admin-pages.php:775
+#: includes/admin-pages.php:777
 msgid "Redirect filter URLs with a query string to the address without it"
 msgstr "Filter-URLs mit Query-String auf die Adresse ohne ihn umleiten"
 
-#: includes/admin-pages.php:777
+#: includes/admin-pages.php:779
 msgid ""
 "Each ?parameter is a new address for the same page, which page caches "
 "usually do not store. Parameters you need (for example utm_*) can be kept "
@@ -704,19 +704,19 @@ msgstr ""
 "meist nicht speichern. Benötigte Parameter (zum Beispiel utm_*) lassen sich "
 "mit dem Filter jpkcom_postfilter_strip_query_allowlist erhalten."
 
-#: includes/admin-pages.php:789
+#: includes/admin-pages.php:791
 msgid "Disallow combinations (recommended)"
 msgstr "Kombinationen sperren (empfohlen)"
 
-#: includes/admin-pages.php:790
+#: includes/admin-pages.php:792
 msgid "Disallow all filter pages"
 msgstr "Alle Filterseiten sperren"
 
-#: includes/admin-pages.php:791
+#: includes/admin-pages.php:793
 msgid "No rules"
 msgstr "Keine Regeln"
 
-#: includes/admin-pages.php:797
+#: includes/admin-pages.php:799
 msgid ""
 "Added to the robots.txt WordPress generates. The rules apply to every "
 "crawler alike; content and single-term pages stay allowed. A physical robots."
@@ -728,11 +728,11 @@ msgstr ""
 "Eine echte robots.txt-Datei im Webroot ersetzt die erzeugte – kopiere diese "
 "Zeilen dort hinein:"
 
-#: includes/admin-pages.php:837
+#: includes/admin-pages.php:839
 msgid "Reset to default"
 msgstr "Auf Standard zurücksetzen"
 
-#: includes/admin-pages.php:918
+#: includes/admin-pages.php:920
 msgid ""
 "Reset all CSS variable overrides in this tab to their defaults? This cannot "
 "be undone until you first save the current values."
@@ -741,280 +741,280 @@ msgstr ""
 "zurücksetzen? Dies kann nicht rückgängig gemacht werden, sofern die "
 "aktuellen Werte nicht zuerst gespeichert wurden."
 
-#: includes/admin-pages.php:919
+#: includes/admin-pages.php:921
 msgid "Reset Tab to Defaults"
 msgstr "Tab auf Standardwerte zurücksetzen"
 
-#: includes/admin-pages.php:920
+#: includes/admin-pages.php:922
 msgid "Clears all overrides in this tab. Click \"Save Settings\" to apply."
 msgstr ""
 "Löscht alle Überschreibungen in diesem Tab. Auf \"Einstellungen speichern\" "
 "klicken, um die Änderungen zu übernehmen."
 
-#: includes/admin-pages.php:952
+#: includes/admin-pages.php:954
 msgid "Primary Colors"
 msgstr "Primärfarben"
 
-#: includes/admin-pages.php:956
+#: includes/admin-pages.php:958
 msgid "Primary Color"
 msgstr "Primärfarbe"
 
-#: includes/admin-pages.php:960
+#: includes/admin-pages.php:962
 msgid "Primary Hover"
 msgstr "Primär-Hover"
 
-#: includes/admin-pages.php:964
+#: includes/admin-pages.php:966
 msgid "Typography"
 msgstr "Typografie"
 
-#: includes/admin-pages.php:968
+#: includes/admin-pages.php:970
 msgid "Base Font Size"
 msgstr "Basis-Schriftgröße"
 
-#: includes/admin-pages.php:972
+#: includes/admin-pages.php:974
 msgid "Small Font Size"
 msgstr "Kleine Schriftgröße"
 
-#: includes/admin-pages.php:976 includes/admin-pages.php:1020
+#: includes/admin-pages.php:978 includes/admin-pages.php:1022
 msgid "Inherit"
 msgstr "Vererbt"
 
-#: includes/admin-pages.php:982
+#: includes/admin-pages.php:984
 msgid "Medium Font Weight"
 msgstr "Mittlere Schriftstärke"
 
-#: includes/admin-pages.php:986
+#: includes/admin-pages.php:988
 msgid "Spacing & Animation"
 msgstr "Abstände & Animation"
 
-#: includes/admin-pages.php:990
+#: includes/admin-pages.php:992
 msgid "Gap (small)"
 msgstr "Abstand (klein)"
 
-#: includes/admin-pages.php:994
+#: includes/admin-pages.php:996
 msgid "Gap (large)"
 msgstr "Abstand (groß)"
 
-#: includes/admin-pages.php:998
+#: includes/admin-pages.php:1000
 msgid "Section Gap"
 msgstr "Abschnittsabstand"
 
-#: includes/admin-pages.php:1002
+#: includes/admin-pages.php:1004
 msgid "Transition"
 msgstr "Übergang"
 
-#: includes/admin-pages.php:1027
+#: includes/admin-pages.php:1029
 msgid "Filter Buttons"
 msgstr "Filter-Schaltflächen"
 
-#: includes/admin-pages.php:1031 includes/admin-pages.php:1091
-#: includes/admin-pages.php:1135 includes/admin-pages.php:1260
+#: includes/admin-pages.php:1033 includes/admin-pages.php:1093
+#: includes/admin-pages.php:1137 includes/admin-pages.php:1262
 msgid "Background"
 msgstr "Hintergrund"
 
-#: includes/admin-pages.php:1035 includes/admin-pages.php:1095
-#: includes/admin-pages.php:1264
+#: includes/admin-pages.php:1037 includes/admin-pages.php:1097
+#: includes/admin-pages.php:1266
 msgid "Text Color"
 msgstr "Textfarbe"
 
-#: includes/admin-pages.php:1039 includes/admin-pages.php:1107
-#: includes/admin-pages.php:1268
+#: includes/admin-pages.php:1041 includes/admin-pages.php:1109
+#: includes/admin-pages.php:1270
 msgid "Hover Background"
 msgstr "Hover-Hintergrund"
 
-#: includes/admin-pages.php:1043 includes/admin-pages.php:1111
-#: includes/admin-pages.php:1272
+#: includes/admin-pages.php:1045 includes/admin-pages.php:1113
+#: includes/admin-pages.php:1274
 msgid "Hover Text Color"
 msgstr "Hover-Textfarbe"
 
-#: includes/admin-pages.php:1047 includes/admin-pages.php:1276
+#: includes/admin-pages.php:1049 includes/admin-pages.php:1278
 msgid "Active Background"
 msgstr "Aktiver Hintergrund"
 
-#: includes/admin-pages.php:1051 includes/admin-pages.php:1280
+#: includes/admin-pages.php:1053 includes/admin-pages.php:1282
 msgid "Active Text Color"
 msgstr "Aktive Textfarbe"
 
-#: includes/admin-pages.php:1055 includes/admin-pages.php:1103
-#: includes/admin-pages.php:1147 includes/admin-pages.php:1284
+#: includes/admin-pages.php:1057 includes/admin-pages.php:1105
+#: includes/admin-pages.php:1149 includes/admin-pages.php:1286
 msgid "Border Radius"
 msgstr "Eckenradius"
 
-#: includes/admin-pages.php:1059
+#: includes/admin-pages.php:1061
 msgid "Padding"
 msgstr "Innenabstand"
 
-#: includes/admin-pages.php:1063
+#: includes/admin-pages.php:1065
 msgid "Button Font Size"
 msgstr "Schaltflächen-Schriftgröße"
 
-#: includes/admin-pages.php:1067
+#: includes/admin-pages.php:1069
 msgid "Button Font Weight"
 msgstr "Schaltflächen-Schriftstärke"
 
-#: includes/admin-pages.php:1071
+#: includes/admin-pages.php:1073
 msgid "Filter Group Labels"
 msgstr "Filtergruppen-Beschriftungen"
 
-#: includes/admin-pages.php:1075
+#: includes/admin-pages.php:1077
 msgid "Label Color"
 msgstr "Beschriftungsfarbe"
 
-#: includes/admin-pages.php:1079
+#: includes/admin-pages.php:1081
 msgid "Label Font Weight"
 msgstr "Beschriftungs-Schriftstärke"
 
-#: includes/admin-pages.php:1083
+#: includes/admin-pages.php:1085
 msgid "Label Font Size"
 msgstr "Beschriftungs-Schriftgröße"
 
-#: includes/admin-pages.php:1087 includes/admin-pages.php:1439
+#: includes/admin-pages.php:1089 includes/admin-pages.php:1441
 #: includes/elementor/class-widget-filter.php:86
 #: includes/oxygen/class-element-filter.php:86
 msgid "Reset Button"
 msgstr "Zurücksetzen-Schaltfläche"
 
-#: includes/admin-pages.php:1099 includes/admin-pages.php:1139
+#: includes/admin-pages.php:1101 includes/admin-pages.php:1141
 msgid "Border Color"
 msgstr "Rahmenfarbe"
 
-#: includes/admin-pages.php:1115
+#: includes/admin-pages.php:1117
 msgid "Plus/Minus Icon"
 msgstr "Plus/Minus-Symbol"
 
-#: includes/admin-pages.php:1119
+#: includes/admin-pages.php:1121
 msgid "Color"
 msgstr "Farbe"
 
-#: includes/admin-pages.php:1123 includes/admin-pages.php:1288
+#: includes/admin-pages.php:1125 includes/admin-pages.php:1290
 msgid "Font Size"
 msgstr "Schriftgröße"
 
-#: includes/admin-pages.php:1127
+#: includes/admin-pages.php:1129
 msgid "Font Weight"
 msgstr "Schriftstärke"
 
-#: includes/admin-pages.php:1131
+#: includes/admin-pages.php:1133
 msgid "Dropdown Panel"
 msgstr "Dropdown-Bereich"
 
-#: includes/admin-pages.php:1143
+#: includes/admin-pages.php:1145
 msgid "Box Shadow"
 msgstr "Box-Schatten"
 
-#: includes/admin-pages.php:1164
+#: includes/admin-pages.php:1166
 msgid "Card Layout"
 msgstr "Karten-Layout"
 
-#: includes/admin-pages.php:1168
+#: includes/admin-pages.php:1170
 msgid "Card Background"
 msgstr "Karten-Hintergrund"
 
-#: includes/admin-pages.php:1172
+#: includes/admin-pages.php:1174
 msgid "Card Border"
 msgstr "Karten-Rahmen"
 
-#: includes/admin-pages.php:1176
+#: includes/admin-pages.php:1178
 msgid "Card Shadow"
 msgstr "Karten-Schatten"
 
-#: includes/admin-pages.php:1180
+#: includes/admin-pages.php:1182
 msgid "Card Hover Shadow"
 msgstr "Karten-Hover-Schatten"
 
-#: includes/admin-pages.php:1184
+#: includes/admin-pages.php:1186
 msgid "Card Radius"
 msgstr "Karten-Eckenradius"
 
-#: includes/admin-pages.php:1188
+#: includes/admin-pages.php:1190
 msgid "Card Padding"
 msgstr "Karten-Innenabstand"
 
-#: includes/admin-pages.php:1195
+#: includes/admin-pages.php:1197
 msgid "Grid Columns (desktop)"
 msgstr "Rasterspalten (Desktop)"
 
-#: includes/admin-pages.php:1202
+#: includes/admin-pages.php:1204
 msgid "Grid Columns (tablet)"
 msgstr "Rasterspalten (Tablet)"
 
-#: includes/admin-pages.php:1203
+#: includes/admin-pages.php:1205
 msgid "Applies below 900px."
 msgstr "Gilt unterhalb von 900 px."
 
-#: includes/admin-pages.php:1210
+#: includes/admin-pages.php:1212
 msgid "Grid Columns (mobile)"
 msgstr "Rasterspalten (Mobil)"
 
-#: includes/admin-pages.php:1211
+#: includes/admin-pages.php:1213
 msgid "Applies below 600px."
 msgstr "Gilt unterhalb von 600 px."
 
-#: includes/admin-pages.php:1215
+#: includes/admin-pages.php:1217
 msgid "Typography & Links"
 msgstr "Typografie & Links"
 
-#: includes/admin-pages.php:1219
+#: includes/admin-pages.php:1221
 msgid "Primary Text"
 msgstr "Primärer Text"
 
-#: includes/admin-pages.php:1223
+#: includes/admin-pages.php:1225
 msgid "Secondary Text"
 msgstr "Sekundärer Text"
 
-#: includes/admin-pages.php:1227
+#: includes/admin-pages.php:1229
 msgid "Link Color"
 msgstr "Linkfarbe"
 
-#: includes/admin-pages.php:1231
+#: includes/admin-pages.php:1233
 msgid "Link Hover"
 msgstr "Link-Hover"
 
-#: includes/admin-pages.php:1235
+#: includes/admin-pages.php:1237
 msgid "No Results Text"
 msgstr "Text bei keinen Ergebnissen"
 
-#: includes/admin-pages.php:1252
+#: includes/admin-pages.php:1254
 msgid "Pagination Buttons"
 msgstr "Seitennavigation-Schaltflächen"
 
-#: includes/admin-pages.php:1255
+#: includes/admin-pages.php:1257
 msgid "Leave empty to inherit from Filter Button colors."
 msgstr "Leer lassen, um die Farben der Filter-Schaltflächen zu übernehmen."
 
-#: includes/admin-pages.php:1307
+#: includes/admin-pages.php:1309
 msgid "Default"
 msgstr "Standard"
 
-#: includes/admin-pages.php:1308
+#: includes/admin-pages.php:1310
 msgid "WordPress blue accent, light backgrounds."
 msgstr "WordPress-Blau als Akzent, helle Hintergründe."
 
-#: includes/admin-pages.php:1312
+#: includes/admin-pages.php:1314
 msgid "Dark"
 msgstr "Dunkel"
 
-#: includes/admin-pages.php:1313
+#: includes/admin-pages.php:1315
 msgid "Dark backgrounds, light texts, blue accent."
 msgstr "Dunkle Hintergründe, helle Texte, blauer Akzent."
 
-#: includes/admin-pages.php:1317
+#: includes/admin-pages.php:1319
 msgid "Contrast"
 msgstr "Kontrast"
 
-#: includes/admin-pages.php:1318
+#: includes/admin-pages.php:1320
 msgid "Red reset button for stronger visual differentiation."
 msgstr "Rote Zurücksetzen-Schaltfläche für stärkere visuelle Differenzierung."
 
-#: includes/admin-pages.php:1322
+#: includes/admin-pages.php:1324
 msgid "Monochrome"
 msgstr "Monochrom"
 
-#: includes/admin-pages.php:1323
+#: includes/admin-pages.php:1325
 msgid "Black, white and grey only – no color accent."
 msgstr "Nur Schwarz, Weiß und Grau – kein Farbakzent."
 
-#: includes/admin-pages.php:1328
+#: includes/admin-pages.php:1330
 msgid ""
 "Choose a predefined color scheme. Your custom CSS variable overrides (other "
 "tabs) are applied on top of the selected scheme."
@@ -1022,19 +1022,19 @@ msgstr ""
 "Ein vordefiniertes Farbschema auswählen. Eigene CSS-Variablen-"
 "Überschreibungen (andere Tabs) werden zusätzlich angewendet."
 
-#: includes/admin-pages.php:1371
+#: includes/admin-pages.php:1373
 msgid "Full stylesheet"
 msgstr "Vollständiges Stylesheet"
 
-#: includes/admin-pages.php:1372
+#: includes/admin-pages.php:1374
 msgid "Loads the complete plugin CSS (layout + variables)."
 msgstr "Lädt das komplette Plugin-CSS (Layout + Variablen)."
 
-#: includes/admin-pages.php:1375
+#: includes/admin-pages.php:1377
 msgid "Variables only"
 msgstr "Nur Variablen"
 
-#: includes/admin-pages.php:1376
+#: includes/admin-pages.php:1378
 msgid ""
 "Outputs only the :root CSS variable block as inline style. Your theme "
 "handles all layout CSS."
@@ -1042,82 +1042,82 @@ msgstr ""
 "Gibt nur den :root-CSS-Variablenblock als Inline-Style aus. Das Theme "
 "übernimmt das gesamte Layout-CSS."
 
-#: includes/admin-pages.php:1379
+#: includes/admin-pages.php:1381
 msgid "Disabled"
 msgstr "Deaktiviert"
 
-#: includes/admin-pages.php:1380
+#: includes/admin-pages.php:1382
 msgid "No CSS is loaded at all. Fully self-managed styling."
 msgstr "Es wird kein CSS geladen. Vollständig selbstverwaltetes Styling."
 
-#: includes/admin-pages.php:1386
+#: includes/admin-pages.php:1388
 msgid "Always visible"
 msgstr "Immer sichtbar"
 
-#: includes/admin-pages.php:1387
+#: includes/admin-pages.php:1389
 msgid "The reset button is always shown, even when no filters are active."
 msgstr ""
 "Die Schaltfläche wird immer angezeigt, auch wenn keine Filter aktiv sind."
 
-#: includes/admin-pages.php:1390
+#: includes/admin-pages.php:1392
 msgid "On selection"
 msgstr "Bei Auswahl"
 
-#: includes/admin-pages.php:1391
+#: includes/admin-pages.php:1393
 msgid "The reset button appears only when at least one filter is active."
 msgstr "Die Schaltfläche erscheint nur, wenn mindestens ein Filter aktiv ist."
 
-#: includes/admin-pages.php:1394 includes/elementor/class-widget-filter.php:92
+#: includes/admin-pages.php:1396 includes/elementor/class-widget-filter.php:92
 #: includes/oxygen/class-element-filter.php:92
 msgid "Never"
 msgstr "Nie"
 
-#: includes/admin-pages.php:1395
+#: includes/admin-pages.php:1397
 msgid "The reset button is never shown."
 msgstr "Die Schaltfläche wird nie angezeigt."
 
-#: includes/admin-pages.php:1401
+#: includes/admin-pages.php:1403
 msgid "Below posts"
 msgstr "Unterhalb der Beiträge"
 
-#: includes/admin-pages.php:1402
+#: includes/admin-pages.php:1404
 msgid "Pagination appears after the post list (default)."
 msgstr "Die Seitennavigation erscheint nach der Beiragsliste (Standard)."
 
-#: includes/admin-pages.php:1405
+#: includes/admin-pages.php:1407
 msgid "Above posts"
 msgstr "Oberhalb der Beiträge"
 
-#: includes/admin-pages.php:1406
+#: includes/admin-pages.php:1408
 msgid "Pagination appears before the post list."
 msgstr "Die Seitennavigation erscheint vor der Beitragsliste."
 
-#: includes/admin-pages.php:1409
+#: includes/admin-pages.php:1411
 msgid "Above and below posts"
 msgstr "Ober- und unterhalb der Beiträge"
 
-#: includes/admin-pages.php:1410
+#: includes/admin-pages.php:1412
 msgid "Pagination appears both before and after the post list."
 msgstr ""
 "Die Seitennavigation erscheint sowohl vor als auch nach der Beitragsliste."
 
-#: includes/admin-pages.php:1416 includes/admin-pages.php:1418
+#: includes/admin-pages.php:1418 includes/admin-pages.php:1420
 msgid "Stylesheet Mode"
 msgstr "Stylesheet-Modus"
 
-#: includes/admin-pages.php:1435
+#: includes/admin-pages.php:1437
 msgid "Filter Interaction"
 msgstr "Filterinteraktion"
 
-#: includes/admin-pages.php:1437
+#: includes/admin-pages.php:1439
 msgid "Reset Button Visibility"
 msgstr "Sichtbarkeit der Zurücksetzen-Schaltfläche"
 
-#: includes/admin-pages.php:1463
+#: includes/admin-pages.php:1465
 msgid "Plus/Minus Mode"
 msgstr "Plus/Minus-Modus"
 
-#: includes/admin-pages.php:1466
+#: includes/admin-pages.php:1468
 msgid ""
 "Adds a +/– icon to each filter button. Clicking the label selects a filter "
 "exclusively; clicking + adds it to the selection."
@@ -1125,11 +1125,11 @@ msgstr ""
 "Fügt jedem Filter-Button ein +/–-Symbol hinzu. Klick auf die Beschriftung "
 "wählt den Filter exklusiv; Klick auf + fügt ihn zur aktuellen Auswahl hinzu."
 
-#: includes/admin-pages.php:1476
+#: includes/admin-pages.php:1478
 msgid "Force no underline"
 msgstr "Unterstreichung erzwungen entfernen"
 
-#: includes/admin-pages.php:1479
+#: includes/admin-pages.php:1481
 msgid ""
 "Adds text-decoration: none !important to all filter buttons and icons. Use "
 "this when your theme forces underlines on links."
@@ -1137,38 +1137,38 @@ msgstr ""
 "Fügt text-decoration: none !important zu allen Filter-Buttons und Symbolen "
 "hinzu. Verwende dies, wenn dein Theme Unterstreichungen bei Links erzwingt."
 
-#: includes/admin-pages.php:1489
+#: includes/admin-pages.php:1491
 msgid "Show More Button (…)"
 msgstr "Mehr-anzeigen-Schaltfläche (…)"
 
-#: includes/admin-pages.php:1492
+#: includes/admin-pages.php:1494
 msgid "Show button when group has more than"
 msgstr "Schaltfläche anzeigen, wenn die Gruppe mehr als"
 
-#: includes/admin-pages.php:1501
+#: includes/admin-pages.php:1503
 msgid "filters"
 msgstr "Filter enthält"
 
-#: includes/admin-pages.php:1504
+#: includes/admin-pages.php:1506
 msgid "Not available in Dropdown layout."
 msgstr "Im Dropdown-Layout nicht verfügbar."
 
-#: includes/admin-pages.php:1509 includes/admin-pages.php:1511
+#: includes/admin-pages.php:1511 includes/admin-pages.php:1513
 msgid "Pagination Position"
 msgstr "Seitennavigation Position"
 
-#: includes/admin-pages.php:1525
+#: includes/admin-pages.php:1527
 msgid ""
 "Applies to auto-injection only. Shortcode pagination is placed manually."
 msgstr ""
 "Gilt nur für die automatische Einbindung. Shortcode-Paginierung wird manuell "
 "platziert."
 
-#: includes/admin-pages.php:1529
+#: includes/admin-pages.php:1531
 msgid "Custom CSS"
 msgstr "Eigenes CSS"
 
-#: includes/admin-pages.php:1537
+#: includes/admin-pages.php:1539
 msgid ""
 "Additional CSS rules appended after the plugin's stylesheet. Avoid using !"
 "important."
@@ -1176,55 +1176,55 @@ msgstr ""
 "Zusätzliche CSS-Regeln, die nach dem Plugin-Stylesheet angehängt werden. !"
 "important vermeiden."
 
-#: includes/admin-pages.php:1564
+#: includes/admin-pages.php:1568
 msgid "Enable WordPress Object Cache for query results"
 msgstr "WordPress-Objekt-Cache für Abfrageergebnisse aktivieren"
 
-#: includes/admin-pages.php:1585
+#: includes/admin-pages.php:1591
 msgid "Enable transient caching for taxonomy term lists"
 msgstr "Transient-Caching für Taxonomie-Termlisten aktivieren"
 
-#: includes/admin-pages.php:1606
+#: includes/admin-pages.php:1614
 msgid "Enable PHP file cache for settings (fastest option)"
 msgstr "PHP-Datei-Cache für Einstellungen aktivieren (schnellste Option)"
 
 #. translators: %s: settings cache directory path
-#: includes/admin-pages.php:1612
+#: includes/admin-pages.php:1620
 #, php-format
 msgid "Cache files are stored in: %s"
 msgstr "Cache-Dateien werden gespeichert in: %s"
 
 #. translators: 1: seconds value, 2: human readable
-#: includes/admin-pages.php:1642
+#: includes/admin-pages.php:1650
 #, php-format
 msgid "Transient cache TTL in seconds. Current: %1$d seconds (%2$s)"
 msgstr "Transient-Cache-Lebensdauer in Sekunden. Aktuell: %1$d Sekunden (%2$s)"
 
-#: includes/admin-pages.php:1692 includes/admin-pages.php:2528
+#: includes/admin-pages.php:1700 includes/admin-pages.php:2536
 msgid "Rewrite rules flushed."
 msgstr "Rewrite-Regeln geleert."
 
-#: includes/admin-pages.php:1697
+#: includes/admin-pages.php:1705
 msgid "Settings saved."
 msgstr "Einstellungen gespeichert."
 
-#: includes/admin-pages.php:1714 includes/admin-pages.php:2608
+#: includes/admin-pages.php:1722 includes/admin-pages.php:2616
 msgid "Rewrite Rules"
 msgstr "Rewrite-Regeln"
 
-#: includes/admin-pages.php:1715
+#: includes/admin-pages.php:1723
 msgid "After changing the URL endpoint, flush the rewrite rules."
 msgstr "Nach dem Ändern des URL-Endpunkts die Rewrite-Regeln leeren."
 
-#: includes/admin-pages.php:1719 includes/admin-pages.php:2612
+#: includes/admin-pages.php:1727 includes/admin-pages.php:2620
 msgid "Flush Rewrite Rules"
 msgstr "Rewrite-Regeln leeren"
 
-#: includes/admin-pages.php:1736
+#: includes/admin-pages.php:1744
 msgid "Filter groups saved."
 msgstr "Filtergruppen gespeichert."
 
-#: includes/admin-pages.php:1749
+#: includes/admin-pages.php:1757
 msgid ""
 "Configure which taxonomies are used as filter groups. The order here "
 "determines the URL segment order."
@@ -1232,34 +1232,34 @@ msgstr ""
 "Lege fest, welche Taxonomien als Filtergruppen verwendet werden. Die "
 "Reihenfolge hier bestimmt die URL-Segment-Reihenfolge."
 
-#: includes/admin-pages.php:1757
+#: includes/admin-pages.php:1765
 msgid "No filter groups configured yet. Click \"Add Filter Group\" below."
 msgstr ""
 "Noch keine Filtergruppen konfiguriert. Unten auf \"+ Filtergruppe "
 "hinzufügen\" klicken."
 
-#: includes/admin-pages.php:1767 includes/admin-pages.php:1979
+#: includes/admin-pages.php:1775 includes/admin-pages.php:1987
 msgid "Custom Taxonomy"
 msgstr "Eigene Taxonomie"
 
-#: includes/admin-pages.php:1778 includes/admin-pages.php:1989
+#: includes/admin-pages.php:1786 includes/admin-pages.php:1997
 msgid "Register as new WordPress taxonomy"
 msgstr "Als neue WordPress-Taxonomie registrieren"
 
-#: includes/admin-pages.php:1780 includes/admin-pages.php:1991
+#: includes/admin-pages.php:1788 includes/admin-pages.php:1999
 msgid "Enable only if this taxonomy does not yet exist in WordPress."
 msgstr ""
 "Nur aktivieren, wenn diese Taxonomie noch nicht in WordPress existiert."
 
-#: includes/admin-pages.php:1784 includes/admin-pages.php:1995
+#: includes/admin-pages.php:1792 includes/admin-pages.php:2003
 msgid "Taxonomy Slug"
 msgstr "Taxonomie-Slug"
 
-#: includes/admin-pages.php:1784 includes/admin-pages.php:1995
+#: includes/admin-pages.php:1792 includes/admin-pages.php:2003
 msgid "Required"
 msgstr "Pflichtfeld"
 
-#: includes/admin-pages.php:1792 includes/admin-pages.php:2000
+#: includes/admin-pages.php:1800 includes/admin-pages.php:2008
 msgid ""
 "Required. Unique slug for the new taxonomy, lowercase letters and hyphens "
 "only (e.g. \"meine-themen\")."
@@ -1267,19 +1267,19 @@ msgstr ""
 "Pflichtfeld. Eindeutiger Slug für die neue Taxonomie, nur Kleinbuchstaben "
 "und Bindestriche (z. B. \"meine-themen\")."
 
-#: includes/admin-pages.php:1796 includes/admin-pages.php:2004
+#: includes/admin-pages.php:1804 includes/admin-pages.php:2012
 msgid "Taxonomy"
 msgstr "Taxonomie"
 
-#: includes/admin-pages.php:1807 includes/admin-pages.php:2014
+#: includes/admin-pages.php:1815 includes/admin-pages.php:2022
 msgid "Select the existing WordPress taxonomy to use as filter."
 msgstr "Wähle die bestehende WordPress-Taxonomie für diesen Filter aus."
 
-#: includes/admin-pages.php:1811 includes/admin-pages.php:2018
+#: includes/admin-pages.php:1819 includes/admin-pages.php:2026
 msgid "Rewrite Slug"
 msgstr "Rewrite-Slug"
 
-#: includes/admin-pages.php:1817 includes/admin-pages.php:2023
+#: includes/admin-pages.php:1825 includes/admin-pages.php:2031
 msgid ""
 "URL rewrite slug for this custom taxonomy (e.g. \"my-topics\"). Defaults to "
 "the taxonomy name if left empty."
@@ -1287,30 +1287,30 @@ msgstr ""
 "URL-Rewrite-Slug für diese Taxonomie (z. B. \"meine-themen\"). Standard: der "
 "Taxonomie-Name, wenn leer gelassen."
 
-#: includes/admin-pages.php:1821 includes/admin-pages.php:2027
+#: includes/admin-pages.php:1829 includes/admin-pages.php:2035
 msgid "Type"
 msgstr "Typ"
 
-#: includes/admin-pages.php:1831 includes/admin-pages.php:2036
+#: includes/admin-pages.php:1839 includes/admin-pages.php:2044
 msgid "Hierarchical (like categories, with parent/child terms)"
 msgstr ""
 "Hierarchisch (wie Kategorien, mit übergeordneten und untergeordneten "
 "Einträgen)"
 
-#: includes/admin-pages.php:1833 includes/admin-pages.php:2038
+#: includes/admin-pages.php:1841 includes/admin-pages.php:2046
 msgid "Uncheck for tag-like behaviour (flat list, no parent/child)."
 msgstr ""
 "Deaktivieren für tag-ähnliches Verhalten (flache Liste, keine Hierarchie)."
 
-#: includes/admin-pages.php:1837 includes/admin-pages.php:2042
+#: includes/admin-pages.php:1845 includes/admin-pages.php:2050
 msgid "Public"
 msgstr "Öffentlich"
 
-#: includes/admin-pages.php:1847 includes/admin-pages.php:2051
+#: includes/admin-pages.php:1855 includes/admin-pages.php:2059
 msgid "Enable term archive pages (public = true)"
 msgstr "Term-Archivseiten aktivieren (public = true)"
 
-#: includes/admin-pages.php:1849 includes/admin-pages.php:2053
+#: includes/admin-pages.php:1857 includes/admin-pages.php:2061
 msgid ""
 "Enables frontend URLs for individual terms (e.g. /my-taxonomy/my-term/). "
 "Note: WordPress does not create a taxonomy index page — only per-term "
@@ -1320,15 +1320,15 @@ msgstr ""
 "term/). Hinweis: WordPress erstellt keine Taxonomie-Indexseite – es werden "
 "nur Term-Archive generiert. Für rein interne Taxonomien deaktivieren."
 
-#: includes/admin-pages.php:1853 includes/admin-pages.php:2057
+#: includes/admin-pages.php:1861 includes/admin-pages.php:2065
 msgid "Admin Column"
 msgstr "Admin-Spalte"
 
-#: includes/admin-pages.php:1863 includes/admin-pages.php:2066
+#: includes/admin-pages.php:1871 includes/admin-pages.php:2074
 msgid "Show as column in post list (show_admin_column = true)"
 msgstr "Als Spalte in der Beitragsliste anzeigen (show_admin_column = true)"
 
-#: includes/admin-pages.php:1865 includes/admin-pages.php:2068
+#: includes/admin-pages.php:1873 includes/admin-pages.php:2076
 msgid ""
 "Adds a column for this taxonomy to the post list table in the WordPress "
 "admin."
@@ -1336,15 +1336,15 @@ msgstr ""
 "Fügt der Beitragslisten-Tabelle im WordPress-Admin eine Spalte für diese "
 "Taxonomie hinzu."
 
-#: includes/admin-pages.php:1869 includes/admin-pages.php:2072
+#: includes/admin-pages.php:1877 includes/admin-pages.php:2080
 msgid "REST API"
 msgstr "REST-API"
 
-#: includes/admin-pages.php:1879 includes/admin-pages.php:2081
+#: includes/admin-pages.php:1887 includes/admin-pages.php:2089
 msgid "Expose in REST API (show_in_rest = true)"
 msgstr "In der REST-API verfügbar machen (show_in_rest = true)"
 
-#: includes/admin-pages.php:1881 includes/admin-pages.php:2083
+#: includes/admin-pages.php:1889 includes/admin-pages.php:2091
 msgid ""
 "Required for the Block Editor (Gutenberg). Disable only for purely server-"
 "side workflows."
@@ -1352,7 +1352,7 @@ msgstr ""
 "Erforderlich für den Block-Editor (Gutenberg). Nur für rein serverseitige "
 "Workflows deaktivieren."
 
-#: includes/admin-pages.php:1902 includes/admin-pages.php:2098
+#: includes/admin-pages.php:1910 includes/admin-pages.php:2106
 msgid ""
 "On which archive pages should this filter group appear? Leave empty = all "
 "enabled post types. For new (custom) taxonomies this also determines for "
@@ -1363,32 +1363,32 @@ msgstr ""
 "außerdem, für welche Beitragstypen die Taxonomie in WordPress registriert "
 "wird."
 
-#: includes/admin-pages.php:1906 includes/admin-pages.php:2102
+#: includes/admin-pages.php:1914 includes/admin-pages.php:2110
 msgid "Label"
 msgstr "Bezeichnung"
 
-#: includes/admin-pages.php:1912 includes/admin-pages.php:2107
+#: includes/admin-pages.php:1920 includes/admin-pages.php:2115
 msgid ""
 "Shown in the filter bar and (for custom taxonomies) in the WordPress backend."
 msgstr ""
 "Wird in der Filterleiste und (bei eigenen Taxonomien) im WordPress-Backend "
 "angezeigt."
 
-#: includes/admin-pages.php:1916 includes/admin-pages.php:2111
+#: includes/admin-pages.php:1924 includes/admin-pages.php:2119
 #: includes/elementor/class-widget-list.php:102
 #: includes/oxygen/class-element-list.php:100 blocks/post-list/edit.js:60
 msgid "Order"
 msgstr "Reihenfolge"
 
-#: includes/admin-pages.php:1925 includes/admin-pages.php:2119
+#: includes/admin-pages.php:1933 includes/admin-pages.php:2127
 msgid "Enabled"
 msgstr "Aktiviert"
 
-#: includes/admin-pages.php:1945 includes/admin-pages.php:2139
+#: includes/admin-pages.php:1953 includes/admin-pages.php:2147
 msgid "Remove Group"
 msgstr "Gruppe entfernen"
 
-#: includes/admin-pages.php:1948 includes/admin-pages.php:2142
+#: includes/admin-pages.php:1956 includes/admin-pages.php:2150
 msgid ""
 "Warning: Removing this group will unregister the custom taxonomy — all term "
 "assignments on posts will be permanently lost and cannot be recovered."
@@ -1397,23 +1397,23 @@ msgstr ""
 "Taxonomie auf – alle Term-Zuweisungen an Beiträgen gehen dauerhaft verloren "
 "und können nicht wiederhergestellt werden."
 
-#: includes/admin-pages.php:1958
+#: includes/admin-pages.php:1966
 msgid "+ Add Filter Group"
 msgstr "+ Filtergruppe hinzufügen"
 
-#: includes/admin-pages.php:1962
+#: includes/admin-pages.php:1970
 msgid "Save Filter Groups"
 msgstr "Filtergruppen speichern"
 
-#: includes/admin-pages.php:2150
+#: includes/admin-pages.php:2158
 msgid "URL-Filter-Segment"
 msgstr "URL-Filter-Segment"
 
-#: includes/admin-pages.php:2151
+#: includes/admin-pages.php:2159
 msgid "Are you sure you want to remove this filter group?"
 msgstr "Bist du sicher, dass du diese Filtergruppe entfernen möchtest?"
 
-#: includes/admin-pages.php:2157
+#: includes/admin-pages.php:2165
 msgid ""
 "Warning: This group uses a Custom Taxonomy registered by this plugin.\n"
 "\n"
@@ -1431,82 +1431,82 @@ msgstr ""
 "\n"
 "Möchtest du diese Gruppe wirklich entfernen?"
 
-#: includes/admin-pages.php:2199
+#: includes/admin-pages.php:2207
 msgid "Layout settings saved."
 msgstr "Layout-Einstellungen gespeichert."
 
-#: includes/admin-pages.php:2212
+#: includes/admin-pages.php:2220
 msgid "Global"
 msgstr "Global"
 
-#: includes/admin-pages.php:2213
+#: includes/admin-pages.php:2221
 msgid "Filter"
 msgstr "Filter"
 
-#: includes/admin-pages.php:2214
+#: includes/admin-pages.php:2222
 msgid "Posts"
 msgstr "Beiträge"
 
-#: includes/admin-pages.php:2215 includes/blocks.php:315
+#: includes/admin-pages.php:2223 includes/blocks.php:315
 msgid "Pagination"
 msgstr "Seitennavigation"
 
-#: includes/admin-pages.php:2216
+#: includes/admin-pages.php:2224
 msgid "Color Schemes"
 msgstr "Farbschemata"
 
-#: includes/admin-pages.php:2256
+#: includes/admin-pages.php:2264
 msgid "Default Layouts"
 msgstr "Standard-Layouts"
 
-#: includes/admin-pages.php:2258 includes/admin-pages.php:2363
+#: includes/admin-pages.php:2266 includes/admin-pages.php:2371
 msgid "Filter Layout"
 msgstr "Filter-Layout"
 
-#: includes/admin-pages.php:2261 includes/admin-pages.php:2366
+#: includes/admin-pages.php:2269 includes/admin-pages.php:2374
 msgid "Horizontal Bar"
 msgstr "Horizontale Leiste"
 
-#: includes/admin-pages.php:2262 includes/admin-pages.php:2367
+#: includes/admin-pages.php:2270 includes/admin-pages.php:2375
 #: includes/elementor/class-widget-filter.php:69
 #: includes/oxygen/class-element-filter.php:70 blocks/post-filter/edit.js:35
 msgid "Sidebar"
 msgstr "Seitenleiste"
 
-#: includes/admin-pages.php:2263 includes/admin-pages.php:2368
+#: includes/admin-pages.php:2271 includes/admin-pages.php:2376
 #: includes/elementor/class-widget-filter.php:70
 #: includes/oxygen/class-element-filter.php:71 blocks/post-filter/edit.js:36
 msgid "Dropdown"
 msgstr "Dropdown"
 
-#: includes/admin-pages.php:2264 includes/admin-pages.php:2369
+#: includes/admin-pages.php:2272 includes/admin-pages.php:2377
 msgid "Column View"
 msgstr "Spaltenansicht"
 
-#: includes/admin-pages.php:2270
+#: includes/admin-pages.php:2278
 msgid "Post List Layout"
 msgstr "Beitragslisten-Layout"
 
-#: includes/admin-pages.php:2273 blocks/post-list/edit.js:34
+#: includes/admin-pages.php:2281 blocks/post-list/edit.js:34
 msgid "Cards (grid)"
 msgstr "Karten (Raster)"
 
-#: includes/admin-pages.php:2274 blocks/post-list/edit.js:35
+#: includes/admin-pages.php:2282 blocks/post-list/edit.js:35
 msgid "Rows (list)"
 msgstr "Zeilen (Liste)"
 
-#: includes/admin-pages.php:2275 includes/admin-pages.php:2396
+#: includes/admin-pages.php:2283 includes/admin-pages.php:2404
 #: includes/elementor/class-widget-list.php:70
 #: includes/oxygen/class-element-list.php:71 blocks/post-list/edit.js:36
 msgid "Minimal"
 msgstr "Minimal"
 
-#: includes/admin-pages.php:2276 includes/admin-pages.php:2397
+#: includes/admin-pages.php:2284 includes/admin-pages.php:2405
 #: blocks/post-list/edit.js:37
 msgid "Theme Default"
 msgstr "Theme-Standard"
 
-#: includes/admin-pages.php:2281
+#: includes/admin-pages.php:2289
 msgid ""
 "Applies only to [jpkcom_postfilter_list] shortcode. \"Theme Default\" uses "
 "your theme's native content templates. Auto-injection always uses the "
@@ -1516,11 +1516,11 @@ msgstr ""
 "verwendet die nativen Inhalts-Templates deines Themes. Die automatische "
 "Einbindung nutzt immer den nativen Loop des Themes."
 
-#: includes/admin-pages.php:2308
+#: includes/admin-pages.php:2316
 msgid "How shortcodes work — and where they work"
 msgstr "Wie Shortcodes funktionieren – und wo sie funktionieren"
 
-#: includes/admin-pages.php:2310
+#: includes/admin-pages.php:2318
 msgid ""
 "The three shortcodes always connect to the WordPress archive of the "
 "configured post type. The filter bar generates URLs like"
@@ -1528,7 +1528,7 @@ msgstr ""
 "Die drei Shortcodes sind immer mit dem WordPress-Archiv des konfigurierten "
 "Beitragstyps verknüpft. Die Filterleiste generiert URLs wie"
 
-#: includes/admin-pages.php:2312
+#: includes/admin-pages.php:2320
 msgid ""
 "and after a filter click the browser navigates to that archive URL — "
 "regardless of which page the shortcode is placed on."
@@ -1536,11 +1536,11 @@ msgstr ""
 "und nach einem Filterklick navigiert der Browser zu dieser Archiv-URL – "
 "unabhängig davon, auf welcher Seite der Shortcode platziert wurde."
 
-#: includes/admin-pages.php:2314
+#: includes/admin-pages.php:2322
 msgid "Supported use cases:"
 msgstr "Unterstützte Anwendungsfälle:"
 
-#: includes/admin-pages.php:2316
+#: includes/admin-pages.php:2324
 msgid ""
 "Embed shortcodes inside an archive template via a page builder or the "
 "Gutenberg Full Site Editor (FSE). The page IS the archive, so archive URL = "
@@ -1551,7 +1551,7 @@ msgstr ""
 "URL."
 
 #. translators: 1: Settings → Reading, 2: example URL
-#: includes/admin-pages.php:2321
+#: includes/admin-pages.php:2329
 #, php-format
 msgid ""
 "For the built-in \"post\" post type: assign a WordPress page as the \"Posts "
@@ -1563,11 +1563,11 @@ msgstr ""
 "behandelt diese Seite als Blog-Archiv, sodass %2$s und die Shortcode-Seite "
 "dieselbe URL haben."
 
-#: includes/admin-pages.php:2322
+#: includes/admin-pages.php:2330
 msgid "Settings → Reading"
 msgstr "Einstellungen → Lesen"
 
-#: includes/admin-pages.php:2327
+#: includes/admin-pages.php:2335
 msgid ""
 "Use the Auto-Inject feature (General → Auto-Inject Filter) instead of "
 "shortcodes. The plugin then adds the filter UI to archive pages "
@@ -1577,12 +1577,12 @@ msgstr ""
 "einblenden) verwenden. Das Plugin fügt die Filter-Oberfläche dann "
 "automatisch in Archivseiten ein – kein Shortcode nötig."
 
-#: includes/admin-pages.php:2329
+#: includes/admin-pages.php:2337
 msgid "What does NOT work:"
 msgstr "Was NICHT funktioniert:"
 
 #. translators: example URL
-#: includes/admin-pages.php:2335
+#: includes/admin-pages.php:2343
 #, php-format
 msgid ""
 "Placing the shortcodes on an arbitrary custom page (e.g. %s) whose URL has "
@@ -1595,7 +1595,7 @@ msgstr ""
 "Besucher auf einen Filter klickt, ändert sich die URL zur Archiv-URL und die "
 "benutzerdefinierte Seite wird verlassen."
 
-#: includes/admin-pages.php:2340
+#: includes/admin-pages.php:2348
 msgid ""
 "AJAX results and pagination also point to the archive URL, not to the custom "
 "page."
@@ -1603,7 +1603,7 @@ msgstr ""
 "AJAX-Ergebnisse und die Paginierung verweisen ebenfalls auf die Archiv-URL, "
 "nicht auf die benutzerdefinierte Seite."
 
-#: includes/admin-pages.php:2343
+#: includes/admin-pages.php:2351
 msgid ""
 "This is an architectural limitation, not a bug. The plugin's SEO-friendly "
 "URL system is tied to WordPress archive URLs and rewrite rules, which "
@@ -1613,16 +1613,16 @@ msgstr ""
 "freundliche URL-System des Plugins ist an WordPress-Archiv-URLs und Rewrite-"
 "Regeln gebunden, die eine feste Basis-URL pro Beitragstyp erfordern."
 
-#: includes/admin-pages.php:2348
+#: includes/admin-pages.php:2356
 msgid "Shortcode Builder"
 msgstr "Shortcode-Builder"
 
-#: includes/admin-pages.php:2349
+#: includes/admin-pages.php:2357
 msgid "Configure options below. The preview updates automatically."
 msgstr ""
 "Konfiguriere die Optionen unten. Die Vorschau aktualisiert sich automatisch."
 
-#: includes/admin-pages.php:2353 includes/elementor/class-widget-filter.php:55
+#: includes/admin-pages.php:2361 includes/elementor/class-widget-filter.php:55
 #: includes/elementor/class-widget-list.php:55
 #: includes/elementor/class-widget-pagination.php:55
 #: includes/oxygen/class-element-filter.php:56
@@ -1633,216 +1633,216 @@ msgstr ""
 msgid "Post Type"
 msgstr "Beitragstyp"
 
-#: includes/admin-pages.php:2377
+#: includes/admin-pages.php:2385
 msgid "group-slug-1, group-slug-2"
 msgstr "gruppen-slug-1, gruppen-slug-2"
 
-#: includes/admin-pages.php:2378
+#: includes/admin-pages.php:2386
 msgid "Comma-separated group slugs to display. Leave empty to show all."
 msgstr "Kommagetrennte Gruppen-Slugs. Leer lassen, um alle anzuzeigen."
 
-#: includes/admin-pages.php:2382 blocks/post-filter/edit.js:48
+#: includes/admin-pages.php:2390 blocks/post-filter/edit.js:48
 msgid "Show Reset Button"
 msgstr "Zurücksetzen-Schaltfläche anzeigen"
 
-#: includes/admin-pages.php:2386
+#: includes/admin-pages.php:2394
 msgid "Display a \"Reset filters\" link"
 msgstr "Einen \"Filter zurücksetzen\"-Link anzeigen"
 
-#: includes/admin-pages.php:2391
+#: includes/admin-pages.php:2399
 msgid "List Layout"
 msgstr "Listenlayout"
 
-#: includes/admin-pages.php:2394 includes/elementor/class-widget-list.php:68
+#: includes/admin-pages.php:2402 includes/elementor/class-widget-list.php:68
 #: includes/oxygen/class-element-list.php:69
 msgid "Cards"
 msgstr "Karten"
 
-#: includes/admin-pages.php:2395 includes/elementor/class-widget-list.php:69
+#: includes/admin-pages.php:2403 includes/elementor/class-widget-list.php:69
 #: includes/oxygen/class-element-list.php:70
 msgid "Rows"
 msgstr "Zeilen"
 
-#: includes/admin-pages.php:2402 includes/elementor/class-widget-list.php:77
+#: includes/admin-pages.php:2410 includes/elementor/class-widget-list.php:77
 #: blocks/post-list/edit.js:42
 msgid "Posts per Page"
 msgstr "Beiträge pro Seite"
 
-#: includes/admin-pages.php:2405
+#: includes/admin-pages.php:2413
 msgid "-1 = all posts"
 msgstr "-1 = alle Beiträge"
 
-#: includes/admin-pages.php:2409 includes/elementor/class-widget-list.php:88
+#: includes/admin-pages.php:2417 includes/elementor/class-widget-list.php:88
 #: includes/oxygen/class-element-list.php:86 blocks/post-list/edit.js:50
 msgid "Order By"
 msgstr "Sortieren nach"
 
-#: includes/admin-pages.php:2412 includes/elementor/class-widget-list.php:92
+#: includes/admin-pages.php:2420 includes/elementor/class-widget-list.php:92
 #: includes/oxygen/class-element-list.php:90 blocks/post-list/edit.js:53
 msgid "Date"
 msgstr "Datum"
 
-#: includes/admin-pages.php:2413 includes/elementor/class-widget-list.php:93
+#: includes/admin-pages.php:2421 includes/elementor/class-widget-list.php:93
 #: includes/oxygen/class-element-list.php:91 blocks/post-list/edit.js:54
 msgid "Title"
 msgstr "Titel"
 
-#: includes/admin-pages.php:2414 includes/elementor/class-widget-list.php:94
+#: includes/admin-pages.php:2422 includes/elementor/class-widget-list.php:94
 #: includes/oxygen/class-element-list.php:92 blocks/post-list/edit.js:55
 msgid "Menu Order"
 msgstr "Menü-Reihenfolge"
 
-#: includes/admin-pages.php:2417 includes/elementor/class-widget-list.php:106
+#: includes/admin-pages.php:2425 includes/elementor/class-widget-list.php:106
 #: includes/oxygen/class-element-list.php:104 blocks/post-list/edit.js:63
 msgid "Descending"
 msgstr "Absteigend"
 
-#: includes/admin-pages.php:2418 includes/elementor/class-widget-list.php:107
+#: includes/admin-pages.php:2426 includes/elementor/class-widget-list.php:107
 #: includes/oxygen/class-element-list.php:105 blocks/post-list/edit.js:64
 msgid "Ascending"
 msgstr "Aufsteigend"
 
-#: includes/admin-pages.php:2426
+#: includes/admin-pages.php:2434
 msgid "Generate Shortcodes"
 msgstr "Shortcodes generieren"
 
-#: includes/admin-pages.php:2431
+#: includes/admin-pages.php:2439
 msgid "Generated Shortcodes"
 msgstr "Generierte Shortcodes"
 
-#: includes/admin-pages.php:2436
+#: includes/admin-pages.php:2444
 msgid "Copy to Clipboard"
 msgstr "In Zwischenablage kopieren"
 
-#: includes/admin-pages.php:2439
+#: includes/admin-pages.php:2447
 msgid "Copied!"
 msgstr "Kopiert!"
 
-#: includes/admin-pages.php:2448
+#: includes/admin-pages.php:2456
 msgid "Available Shortcodes"
 msgstr "Verfügbare Shortcodes"
 
-#: includes/admin-pages.php:2451
+#: includes/admin-pages.php:2459
 msgid "Displays the filter/facets bar."
 msgstr "Zeigt die Filter-/Facettenleiste an."
 
-#: includes/admin-pages.php:2453
+#: includes/admin-pages.php:2461
 msgid "Target post type (default: post)"
 msgstr "Ziel-Beitragstyp (Standard: post)"
 
-#: includes/admin-pages.php:2455
+#: includes/admin-pages.php:2463
 msgid "CSV of group slugs (empty = all)"
 msgstr "Kommagetrennte Gruppen-Slugs (leer = alle)"
 
-#: includes/admin-pages.php:2457 includes/admin-pages.php:2468
+#: includes/admin-pages.php:2465 includes/admin-pages.php:2476
 msgid "Extra CSS classes"
 msgstr "Zusätzliche CSS-Klassen"
 
-#: includes/admin-pages.php:2461
+#: includes/admin-pages.php:2469
 msgid "Displays the post list."
 msgstr "Zeigt die Beitragsliste an."
 
-#: includes/admin-pages.php:2463
+#: includes/admin-pages.php:2471
 msgid "Post type (default: post)"
 msgstr "Beitragstyp (Standard: post)"
 
-#: includes/admin-pages.php:2465
+#: includes/admin-pages.php:2473
 msgid "Number of posts (-1 = all)"
 msgstr "Anzahl der Beiträge (-1 = alle)"
 
-#: includes/admin-pages.php:2472
+#: includes/admin-pages.php:2480
 msgid "Displays pagination for the filtered list."
 msgstr "Zeigt die Seitennummerierung für die gefilterte Liste an."
 
-#: includes/admin-pages.php:2474
+#: includes/admin-pages.php:2482
 msgid "Example combination:"
 msgstr "Beispielkombination:"
 
-#: includes/admin-pages.php:2506
+#: includes/admin-pages.php:2514
 msgid "All caches cleared."
 msgstr "Alle Caches geleert."
 
-#: includes/admin-pages.php:2511
+#: includes/admin-pages.php:2519
 msgid "Object cache cleared."
 msgstr "Objekt-Cache geleert."
 
-#: includes/admin-pages.php:2516
+#: includes/admin-pages.php:2524
 msgid "Settings file cache cleared."
 msgstr "Einstellungs-Datei-Cache geleert."
 
-#: includes/admin-pages.php:2523
+#: includes/admin-pages.php:2531
 msgid "Transient cache cleared."
 msgstr "Transient-Cache geleert."
 
-#: includes/admin-pages.php:2534
+#: includes/admin-pages.php:2542
 msgid "Cache settings saved."
 msgstr "Cache-Einstellungen gespeichert."
 
-#: includes/admin-pages.php:2553
+#: includes/admin-pages.php:2561
 msgid "Cache Statistics"
 msgstr "Cache-Statistiken"
 
-#: includes/admin-pages.php:2558
+#: includes/admin-pages.php:2566
 msgid "APCu Available"
 msgstr "APCu verfügbar"
 
-#: includes/admin-pages.php:2559
+#: includes/admin-pages.php:2567
 msgid "Yes"
 msgstr "Ja"
 
-#: includes/admin-pages.php:2559
+#: includes/admin-pages.php:2567
 msgid "No"
 msgstr "Nein"
 
-#: includes/admin-pages.php:2562
+#: includes/admin-pages.php:2570
 msgid "External Object Cache"
 msgstr "Externer Objekt-Cache"
 
-#: includes/admin-pages.php:2563
+#: includes/admin-pages.php:2571
 msgid "Yes (Redis/Memcached/other)"
 msgstr "Ja (Redis/Memcached/other)"
 
-#: includes/admin-pages.php:2563
+#: includes/admin-pages.php:2571
 msgid "No (WordPress default)"
 msgstr "Nein (WordPress-Standard)"
 
-#: includes/admin-pages.php:2567
+#: includes/admin-pages.php:2575
 msgid "APCu Memory Used"
 msgstr "APCu-Speichernutzung"
 
-#: includes/admin-pages.php:2572
+#: includes/admin-pages.php:2580
 msgid "Settings Cache Dir"
 msgstr "Einstellungs-Cache-Verzeichnis"
 
-#: includes/admin-pages.php:2576
+#: includes/admin-pages.php:2584
 msgid "Exists"
 msgstr "Vorhanden"
 
-#: includes/admin-pages.php:2578
+#: includes/admin-pages.php:2586
 msgid "(not created yet)"
 msgstr "(noch nicht erstellt)"
 
-#: includes/admin-pages.php:2586
+#: includes/admin-pages.php:2594
 msgid "Clear Caches"
 msgstr "Caches leeren"
 
-#: includes/admin-pages.php:2592
+#: includes/admin-pages.php:2600
 msgid "Clear All Caches"
 msgstr "Alle Caches leeren"
 
-#: includes/admin-pages.php:2596
+#: includes/admin-pages.php:2604
 msgid "Clear Object Cache"
 msgstr "Objekt-Cache leeren"
 
-#: includes/admin-pages.php:2600
+#: includes/admin-pages.php:2608
 msgid "Clear Settings File Cache"
 msgstr "Einstellungs-Datei-Cache leeren"
 
-#: includes/admin-pages.php:2604
+#: includes/admin-pages.php:2612
 msgid "Clear Transient Cache"
 msgstr "Transient-Cache leeren"
 
-#: includes/admin-pages.php:2609
+#: includes/admin-pages.php:2617
 msgid ""
 "After changing the URL endpoint or filter group configuration, flush the "
 "rewrite rules."
@@ -1851,36 +1851,36 @@ msgstr ""
 "Rewrite-Regeln leeren."
 
 #. translators: %d: number of imported settings groups
-#: includes/admin-pages.php:2692
+#: includes/admin-pages.php:2700
 #, php-format
 msgid "Successfully imported %d settings groups."
 msgstr "%d Einstellungsgruppen erfolgreich importiert."
 
-#: includes/admin-pages.php:2698
+#: includes/admin-pages.php:2706
 msgid "Invalid JSON file. Import aborted."
 msgstr "Ungültige JSON-Datei. Import abgebrochen."
 
-#: includes/admin-pages.php:2701
+#: includes/admin-pages.php:2709
 msgid "File upload failed."
 msgstr "Dateiupload fehlgeschlagen."
 
-#: includes/admin-pages.php:2718
+#: includes/admin-pages.php:2726
 msgid "Export Settings"
 msgstr "Einstellungen exportieren"
 
-#: includes/admin-pages.php:2719
+#: includes/admin-pages.php:2727
 msgid "Download all plugin settings as a JSON file."
 msgstr "Alle Plugin-Einstellungen als JSON-Datei herunterladen."
 
-#: includes/admin-pages.php:2724
+#: includes/admin-pages.php:2732
 msgid "Export Settings as JSON"
 msgstr "Einstellungen als JSON exportieren"
 
-#: includes/admin-pages.php:2728 includes/admin-pages.php:2749
+#: includes/admin-pages.php:2736 includes/admin-pages.php:2757
 msgid "Import Settings"
 msgstr "Einstellungen importieren"
 
-#: includes/admin-pages.php:2729
+#: includes/admin-pages.php:2737
 msgid ""
 "Import settings from a previously exported JSON file. Existing settings will "
 "be overwritten."
@@ -1888,11 +1888,11 @@ msgstr ""
 "Einstellungen aus einer zuvor exportierten JSON-Datei importieren. "
 "Vorhandene Einstellungen werden überschrieben."
 
-#: includes/admin-pages.php:2736
+#: includes/admin-pages.php:2744
 msgid "JSON File"
 msgstr "JSON-Datei"
 
-#: includes/admin-pages.php:2745
+#: includes/admin-pages.php:2753
 msgid "Select a .json file exported from this plugin."
 msgstr "Eine aus diesem Plugin exportierte .json-Datei auswählen."
 
@@ -2221,22 +2221,19 @@ msgstr ""
 "ausliefert."
 
 #. translators: 1: option name, e.g. jpkcom_postfilter_general; 2: reason code, e.g. not-writable
-#: includes/htaccess-sync.php:1339
+#: includes/htaccess-sync.php:1394
 #, php-format
 msgid ""
-"The option %1$s was deleted, but the JPKCom Post Filter rules in .htaccess "
-"could not be loosened to the values the plugin falls back to (reason: %2$s). "
-"So that the server never rejects a filter page the plugin serves, the plugin "
-"keeps its settings cache file and goes on with the deleted values until the "
-"rules can be updated. Fix the cause, then save the settings page once."
+"The option %1$s was not deleted: the JPKCom Post Filter rules in .htaccess "
+"could not first be loosened to the values the plugin would fall back to "
+"(reason: %2$s). Without that, the server would reject filter pages the "
+"plugin serves. Fix the cause, then delete the option again."
 msgstr ""
-"Die Option %1$s wurde gelöscht, aber die JPKCom-Post-Filter-Regeln in der ."
-"htaccess konnten nicht auf die Werte gelockert werden, auf die das Plugin "
-"nun zurückfällt (Grund: %2$s). Damit der Server nie eine Filterseite "
-"abweist, die das Plugin ausliefert, behält das Plugin seine Einstellungs-"
-"Cache-Datei und arbeitet mit den gelöschten Werten weiter, bis die Regeln "
-"aktualisiert werden können. Behebe die Ursache und speichere dann die "
-"Einstellungsseite einmal."
+"Die Option %1$s wurde nicht gelöscht: Die JPKCom-Post-Filter-Regeln in der "
+".htaccess konnten nicht zuerst auf die Werte gelockert werden, auf die das "
+"Plugin zurückfallen würde (Grund: %2$s). Sonst würde der Server "
+"Filterseiten abweisen, die das Plugin ausliefert. Behebe die Ursache und "
+"lösche die Option dann erneut."
 
 #: includes/oxygen/class-element-filter.php:78
 msgid "Filter Groups (comma-separated slugs)"
@@ -4254,6 +4251,23 @@ msgstr "Seitennummerierung"
 msgctxt "block keyword"
 msgid "paging"
 msgstr "Blättern"
+
+#, php-format
+#~ msgid ""
+#~ "The option %1$s was deleted, but the JPKCom Post Filter rules in ."
+#~ "htaccess could not be loosened to the values the plugin falls back to "
+#~ "(reason: %2$s). So that the server never rejects a filter page the plugin "
+#~ "serves, the plugin keeps its settings cache file and goes on with the "
+#~ "deleted values until the rules can be updated. Fix the cause, then save "
+#~ "the settings page once."
+#~ msgstr ""
+#~ "Die Option %1$s wurde gelöscht, aber die JPKCom-Post-Filter-Regeln in "
+#~ "der .htaccess konnten nicht auf die Werte gelockert werden, auf die das "
+#~ "Plugin nun zurückfällt (Grund: %2$s). Damit der Server nie eine "
+#~ "Filterseite abweist, die das Plugin ausliefert, behält das Plugin seine "
+#~ "Einstellungs-Cache-Datei und arbeitet mit den gelöschten Werten weiter, "
+#~ "bis die Regeln aktualisiert werden können. Behebe die Ursache und "
+#~ "speichere dann die Einstellungsseite einmal."
 
 #~ msgid ""
 #~ "Where the canonical of a filter page with exactly one term points. \"Term "
