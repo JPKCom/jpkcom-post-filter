@@ -223,7 +223,7 @@
     <span>
                                 &nbsp;: void    </span>
 </dt>
-<dd>Render: Debug Mode checkbox</dd>
+<dd>Render: Debug Mode (read-only)</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_policy_field_state">jpkcom_postfilter_policy_field_state()</a>
@@ -751,18 +751,25 @@
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">505</span>
+    <span class="phpdocumentor-element-found-in__line">513</span>
 
     </aside>
 
-        <p class="phpdocumentor-summary">Render: Debug Mode checkbox</p>
+        <p class="phpdocumentor-summary">Render: Debug Mode (read-only)</p>
 
     
     <code class="phpdocumentor-code phpdocumentor-signature ">
     <span class="phpdocumentor-signature__visibility"></span>
                     <span class="phpdocumentor-signature__name">jpkcom_postfilter_field_debug_mode</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
 
-    
+        <section class="phpdocumentor-description"><p>Shows JPKCOM_POSTFILTER_DEBUG. The stored <code class="prettyprint">debug_mode</code> setting this box
+used to save was never read: logging (jpkcom_postfilter_debug_log()), the
+debug templates and the script's debug flag follow the constant alone,
+which is decided when the plugin loads (default: WP_DEBUG). So the box
+claimed a switch that did nothing - unchecking it changed nothing on the
+front end (1.7.1 review). Disabled, it sends nothing.</p>
+</section>
+
     
     
     <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_field_debug_mode_tags">
@@ -778,6 +785,12 @@
                                             <span class="phpdocumentor-tag-link">1.0.0</span>
                                                                                                         
                                     </dd>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                            <section class="phpdocumentor-description"><p>Read-only, shows the constant.</p>
+</section>
+
+                                    </dd>
                         </dl>
 
     
@@ -791,7 +804,7 @@
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">539</span>
+    <span class="phpdocumentor-element-found-in__line">554</span>
 
     </aside>
 
@@ -850,7 +863,7 @@ and disabled, so the form never pretends a change would take effect.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">556</span>
+    <span class="phpdocumentor-element-found-in__line">571</span>
 
     </aside>
 
@@ -902,7 +915,7 @@ and disabled, so the form never pretends a change would take effect.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">579</span>
+    <span class="phpdocumentor-element-found-in__line">594</span>
 
     </aside>
 
@@ -963,7 +976,7 @@ and disabled, so the form never pretends a change would take effect.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">608</span>
+    <span class="phpdocumentor-element-found-in__line">623</span>
 
     </aside>
 
@@ -1027,7 +1040,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">631</span>
+    <span class="phpdocumentor-element-found-in__line">646</span>
 
     </aside>
 
@@ -1067,7 +1080,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">648</span>
+    <span class="phpdocumentor-element-found-in__line">663</span>
 
     </aside>
 
@@ -1107,7 +1120,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">671</span>
+    <span class="phpdocumentor-element-found-in__line">686</span>
 
     </aside>
 
@@ -1147,7 +1160,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">688</span>
+    <span class="phpdocumentor-element-found-in__line">703</span>
 
     </aside>
 
@@ -1187,7 +1200,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">705</span>
+    <span class="phpdocumentor-element-found-in__line">720</span>
 
     </aside>
 
@@ -1227,7 +1240,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">728</span>
+    <span class="phpdocumentor-element-found-in__line">743</span>
 
     </aside>
 
@@ -1267,7 +1280,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">741</span>
+    <span class="phpdocumentor-element-found-in__line">756</span>
 
     </aside>
 
@@ -1307,7 +1320,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">757</span>
+    <span class="phpdocumentor-element-found-in__line">772</span>
 
     </aside>
 
@@ -1347,7 +1360,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">774</span>
+    <span class="phpdocumentor-element-found-in__line">789</span>
 
     </aside>
 
@@ -1387,7 +1400,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">787</span>
+    <span class="phpdocumentor-element-found-in__line">802</span>
 
     </aside>
 
@@ -1427,7 +1440,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">818</span>
+    <span class="phpdocumentor-element-found-in__line">833</span>
 
     </aside>
 
@@ -1497,7 +1510,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">851</span>
+    <span class="phpdocumentor-element-found-in__line">866</span>
 
     </aside>
 
@@ -1567,7 +1580,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">872</span>
+    <span class="phpdocumentor-element-found-in__line">887</span>
 
     </aside>
 
@@ -1644,7 +1657,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">891</span>
+    <span class="phpdocumentor-element-found-in__line">906</span>
 
     </aside>
 
@@ -1696,7 +1709,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">900</span>
+    <span class="phpdocumentor-element-found-in__line">915</span>
 
     </aside>
 
@@ -1736,7 +1749,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">911</span>
+    <span class="phpdocumentor-element-found-in__line">926</span>
 
     </aside>
 
@@ -1788,7 +1801,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">934</span>
+    <span class="phpdocumentor-element-found-in__line">949</span>
 
     </aside>
 
@@ -1858,7 +1871,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">951</span>
+    <span class="phpdocumentor-element-found-in__line">966</span>
 
     </aside>
 
@@ -1928,7 +1941,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1018</span>
+    <span class="phpdocumentor-element-found-in__line">1033</span>
 
     </aside>
 
@@ -1998,7 +2011,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1163</span>
+    <span class="phpdocumentor-element-found-in__line">1178</span>
 
     </aside>
 
@@ -2068,7 +2081,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1251</span>
+    <span class="phpdocumentor-element-found-in__line">1266</span>
 
     </aside>
 
@@ -2138,7 +2151,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1302</span>
+    <span class="phpdocumentor-element-found-in__line">1317</span>
 
     </aside>
 
@@ -2190,7 +2203,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1359</span>
+    <span class="phpdocumentor-element-found-in__line">1374</span>
 
     </aside>
 
@@ -2242,7 +2255,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1553</span>
+    <span class="phpdocumentor-element-found-in__line">1568</span>
 
     </aside>
 
@@ -2282,7 +2295,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1574</span>
+    <span class="phpdocumentor-element-found-in__line">1591</span>
 
     </aside>
 
@@ -2322,7 +2335,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1595</span>
+    <span class="phpdocumentor-element-found-in__line">1614</span>
 
     </aside>
 
@@ -2362,7 +2375,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1625</span>
+    <span class="phpdocumentor-element-found-in__line">1646</span>
 
     </aside>
 
@@ -2402,7 +2415,7 @@ unchecked box, and the sanitizer would otherwise fall back to the default.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1668</span>
+    <span class="phpdocumentor-element-found-in__line">1689</span>
 
     </aside>
 
@@ -2461,7 +2474,7 @@ the global list, so settings_errors() still prints them afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1683</span>
+    <span class="phpdocumentor-element-found-in__line">1704</span>
 
     </aside>
 
@@ -2501,7 +2514,7 @@ the global list, so settings_errors() still prints them afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1730</span>
+    <span class="phpdocumentor-element-found-in__line">1751</span>
 
     </aside>
 
@@ -2541,7 +2554,7 @@ the global list, so settings_errors() still prints them afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">2193</span>
+    <span class="phpdocumentor-element-found-in__line">2214</span>
 
     </aside>
 
@@ -2581,7 +2594,7 @@ the global list, so settings_errors() still prints them afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">2299</span>
+    <span class="phpdocumentor-element-found-in__line">2320</span>
 
     </aside>
 
@@ -2621,7 +2634,7 @@ the global list, so settings_errors() still prints them afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">2487</span>
+    <span class="phpdocumentor-element-found-in__line">2508</span>
 
     </aside>
 
@@ -2661,7 +2674,7 @@ the global list, so settings_errors() still prints them afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/admin-pages.php"><a href="files/includes-admin-pages.html"><abbr title="includes/admin-pages.php">admin-pages.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">2625</span>
+    <span class="phpdocumentor-element-found-in__line">2646</span>
 
     </aside>
 

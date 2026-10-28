@@ -585,9 +585,13 @@
 				// zone says so: the theme's own loop (auto-inject) renders
 				// articles without data-jpkpf-post, and until 1.5.0 every
 				// successful click there was announced as "No posts found".
+				// A block theme's post template renders li.wp-block-post
+				// without any article (Twenty Twenty-Five, 1.7.1); a query
+				// block inside a post adds its own, which are not results.
 				if ( liveRegion ) {
 					const empty = !! resultZone.querySelector( '.jpkpf-no-results' );
 					const count = resultZone.querySelectorAll( '[data-jpkpf-post]' ).length
+						|| resultZone.querySelectorAll( '.wp-block-post:not(.wp-block-post .wp-block-post)' ).length
 						|| resultZone.querySelectorAll( 'article' ).length;
 					liveRegion.textContent = empty
 						? ( cfg.i18n.noResults || 'No posts found.' )

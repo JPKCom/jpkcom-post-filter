@@ -210,6 +210,13 @@ backreferences - one grammar, one fuzz test for every server.</p>
 <dd>The effective values a server rule is generated from</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_renderer_version">jpkcom_postfilter_server_renderer_version()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Version of the code that turns rule inputs into server rules</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_server_rule_hash">jpkcom_postfilter_server_rule_hash()</a>
     <span>
                                 &nbsp;: string    </span>
@@ -462,6 +469,74 @@ would reject it. A callback must return only bases the plugin routes.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_renderer_version">
+        jpkcom_postfilter_server_renderer_version()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_renderer_version" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">211</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Version of the code that turns rule inputs into server rules</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_renderer_version</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>Folded into the rule hash when it is not empty. The hash otherwise
+covers the inputs only, so a release that changes what a renderer
+writes for the same inputs - a snippet, the managed .htaccess block,
+a pattern - without bumping this would leave every deployed rule
+reading as current: the status check says &quot;active&quot;, and the managed
+block is never resynced (admin_init and the version-change sync both
+compare hashes).</p>
+<p><strong>The next renderer change must set this</strong> (the first one to '2', then
+'3', ...). Empty means &quot;the renderers of 1.6.0 to 1.7.1&quot;, whose reject
+rules and managed block for a layout with nothing dropped never
+changed, so the hashes of those rules stay as they were. Setting it
+marks every deployed hand-pasted rule &quot;stale&quot; - which is the point when
+the rule did change.</p>
+<p>Rate-limit parts are outside the hash, like their limits: the status
+check never probes them, and a change there would mark every deployed
+reject &quot;stale&quot; for nothing. 1.7.1's <code class="prettyprint">ctl:auditEngine=Off</code> on the
+ModSecurity 429 and its rule 4710014 that keeps server rejects out of
+the audit log (T6-a, both in the ModSecurity snippet; the reject
+parts are byte-identical) therefore left this empty.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_server_renderer_version_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_server_renderer_version_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>'' until a renderer changes.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_server_rule_hash">
         jpkcom_postfilter_server_rule_hash()
         <a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_hash" class="headerlink"><i class="fas fa-link"></i></a>
@@ -470,7 +545,7 @@ would reject it. A callback must return only bases the plugin routes.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">196</span>
+    <span class="phpdocumentor-element-found-in__line">245</span>
 
     </aside>
 
@@ -479,13 +554,23 @@ would reject it. A callback must return only bases the plugin routes.</p>
     
     <code class="phpdocumentor-code phpdocumentor-signature ">
     <span class="phpdocumentor-signature__visibility"></span>
-                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_rule_hash</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$inputs</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_server_rule_hash</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$inputs</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;string, string&gt;|null&nbsp;</span><span class="phpdocumentor-signature__argument__name">$dropped</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">null</span><span> ]</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">string|null&nbsp;</span><span class="phpdocumentor-signature__argument__name">$renderer</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">null</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
 
         <section class="phpdocumentor-description"><p>Sent as <code class="prettyprint">X-Jpkpf-Rule</code> by the server and compared by the status check,
 so a deployed rule built from other settings is recognised as stale.
 Neither the key order of the argument nor the order of <code class="prettyprint">skip_positions</code>
 and <code class="prettyprint">bases</code> matters (both are sets); <code class="prettyprint">policy_filtered</code> and <code class="prettyprint">hash</code> do not
 shape the rule and are left out.</p>
+<p>Two values are appended only when they are not empty, so the hash of
+every other rule stays byte-identical to 1.6.0:</p>
+<ul>
+<li><code class="prettyprint">dropped</code> (R161-4): the patterns the size and compile guard leaves
+out (jpkcom_postfilter_server_patterns_dropped(), key =&gt; reason).
+1.6.0 had no guard and wrote those patterns, so the same inputs
+stood for another rule; without this a deployed 1.6.0 rule read as
+&quot;active&quot; and a managed 1.6.0 block was never rewritten.</li>
+<li><code class="prettyprint">renderer</code> (T9-c): jpkcom_postfilter_server_renderer_version().</li>
+</ul>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -496,6 +581,24 @@ shape the rule and are left out.</p>
                             </dt>
             <dd class="phpdocumentor-argument-list__definition">
                     <section class="phpdocumentor-description"><p>As returned by jpkcom_postfilter_server_rule_inputs().</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$dropped</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, string&gt;|null</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">null</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Dropped patterns; null to decide them from <code class="prettyprint">$inputs</code>.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$renderer</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string|null</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">null</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Renderer version; null for the current one.</p>
 </section>
 
             </dd>
@@ -514,6 +617,12 @@ shape the rule and are left out.</p>
                             <dd class="phpdocumentor-tag-list__definition">
                                             <span class="phpdocumentor-tag-link">1.6.0</span>
                                                                                                         
+                                    </dd>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                            <section class="phpdocumentor-description"><p>Folds in the dropped patterns and the renderer version, each only when not empty.</p>
+</section>
+
                                     </dd>
                         </dl>
 
@@ -536,7 +645,7 @@ shape the rule and are left out.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">237</span>
+    <span class="phpdocumentor-element-found-in__line">298</span>
 
     </aside>
 
@@ -596,7 +705,7 @@ error or mean something else in RE2 or Rust's <code class="prettyprint">regex</c
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">303</span>
+    <span class="phpdocumentor-element-found-in__line">364</span>
 
     </aside>
 
@@ -710,7 +819,7 @@ This form is PCRE-only (<code class="prettyprint">\s</code>, <code class="pretty
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">453</span>
+    <span class="phpdocumentor-element-found-in__line">514</span>
 
     </aside>
 
@@ -778,7 +887,7 @@ by one; Go's own nesting limit (1000) is further away.</li>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">480</span>
+    <span class="phpdocumentor-element-found-in__line">541</span>
 
     </aside>
 
@@ -847,7 +956,7 @@ count above 1000, and along every path the counted repetitions
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">608</span>
+    <span class="phpdocumentor-element-found-in__line">669</span>
 
     </aside>
 
@@ -922,7 +1031,7 @@ Rust's engines get, against jpkcom_postfilter_server_pattern_limits()).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">654</span>
+    <span class="phpdocumentor-element-found-in__line">718</span>
 
     </aside>
 
@@ -938,7 +1047,8 @@ commands, the status check and the managed .htaccess block agree on
 which rule exists. A pattern that is dropped is looser, never
 stricter: the plugin still rejects those URLs in PHP. per_group is
 also dropped when segments is, so a URL over both caps never gets
-another reason from the server than from PHP.</p>
+another reason from the server than from PHP. Its reason is then its
+own problem, or <code class="prettyprint">with-segments</code> when its own pattern would load.</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -968,6 +1078,12 @@ another reason from the server than from PHP.</p>
                                             <span class="phpdocumentor-tag-link">1.6.1</span>
                                                                                                         
                                     </dd>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                            <section class="phpdocumentor-description"><p>Reason <code class="prettyprint">with-segments</code>.</p>
+</section>
+
+                                    </dd>
                         </dl>
 
             <section>
@@ -975,7 +1091,8 @@ another reason from the server than from PHP.</p>
         <span class="phpdocumentor-signature__response_type">array&lt;string, string&gt;</span>
                     &mdash;
                 <section class="phpdocumentor-description"><p>Pattern key (<code class="prettyprint">per_group</code>, <code class="prettyprint">segments</code>) =&gt; reason
-(see jpkcom_postfilter_server_pattern_problem()); empty when nothing is dropped.</p>
+(see jpkcom_postfilter_server_pattern_problem(), plus
+<code class="prettyprint">with-segments</code>); empty when nothing is dropped.</p>
 </section>
 
             </section>
@@ -990,7 +1107,7 @@ another reason from the server than from PHP.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules.php"><a href="files/includes-server-rules.html"><abbr title="includes/server-rules.php">server-rules.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">696</span>
+    <span class="phpdocumentor-element-found-in__line">763</span>
 
     </aside>
 
@@ -1089,6 +1206,7 @@ none. Every snippet, curl command, status check and the managed
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_regex_shape">jpkcom_postfilter_server_regex_shape()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns">jpkcom_postfilter_server_reject_patterns()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_reject_patterns_unchecked">jpkcom_postfilter_server_reject_patterns_unchecked()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_renderer_version">jpkcom_postfilter_server_renderer_version()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_base_path">jpkcom_postfilter_server_rule_base_path()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_bases">jpkcom_postfilter_server_rule_bases()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_rule_hash">jpkcom_postfilter_server_rule_hash()</a></li>

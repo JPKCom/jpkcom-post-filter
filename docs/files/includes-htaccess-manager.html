@@ -223,7 +223,7 @@ managed block stays as it was.</li>
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_state">jpkcom_postfilter_htaccess_state()</a>
     <span>
-                                &nbsp;: array{exists: bool, writable: bool, managed: bool, manual: bool, hash: ?string, wp_block: bool, damaged: bool, misplaced: bool}    </span>
+                                &nbsp;: array{exists: bool, writable: bool, readable: bool, managed: bool, manual: bool, hash: ?string, wp_block: bool, damaged: bool, misplaced: bool}    </span>
 </dt>
 <dd>What the .htaccess contains</dd>
 
@@ -233,6 +233,13 @@ managed block stays as it was.</li>
                                 &nbsp;: array&lt;string|int, string&gt;|null    </span>
 </dt>
 <dd>The lines of a managed block, or null when it is not one</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_last_error">jpkcom_postfilter_htaccess_last_error()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>How the last jpkcom_postfilter_htaccess_modify() call in this request failed</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_modify">jpkcom_postfilter_htaccess_modify()</a>
@@ -263,11 +270,46 @@ managed block stays as it was.</li>
 <dd>Put the managed block into the .htaccess</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_with_block">jpkcom_postfilter_htaccess_with_block()</a>
+    <span>
+                                &nbsp;: string|null    </span>
+</dt>
+<dd>File content with the managed block put in, as write() places it</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_remove">jpkcom_postfilter_htaccess_remove()</a>
     <span>
                                 &nbsp;: bool    </span>
 </dt>
 <dd>Remove the managed block, markers included, and nothing else</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_without_block">jpkcom_postfilter_htaccess_without_block()</a>
+    <span>
+                                &nbsp;: string|null    </span>
+</dt>
+<dd>File content without any managed block, as remove() leaves it</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_rule_units">jpkcom_postfilter_htaccess_rule_units()</a>
+    <span>
+                                &nbsp;: array&lt;int, array{reject: bool, text: string}&gt;    </span>
+</dt>
+<dd>The lines of a managed block as comparable units</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_provably_looser">jpkcom_postfilter_htaccess_provably_looser()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Is a new managed block provably no stricter than the one in the file?</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_loosen_to">jpkcom_postfilter_htaccess_loosen_to()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Write a new managed block only if it is provably looser (R161-3)</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_home_file">jpkcom_postfilter_htaccess_home_file()</a>
@@ -282,6 +324,20 @@ managed block stays as it was.</li>
                                 &nbsp;: string    </span>
 </dt>
 <dd>Path of the site&#039;s .htaccess</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_site_reason">jpkcom_postfilter_htaccess_site_reason()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Why the plugin may not manage .htaccess here, from the site alone</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_file_reason">jpkcom_postfilter_htaccess_file_reason()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Why the plugin may not manage this .htaccess, from what it contains</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_available">jpkcom_postfilter_htaccess_available()</a>
@@ -486,7 +542,7 @@ where it never takes effect.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">195</span>
+    <span class="phpdocumentor-element-found-in__line">200</span>
 
     </aside>
 
@@ -495,7 +551,7 @@ where it never takes effect.</p>
     
     <code class="phpdocumentor-code phpdocumentor-signature ">
     <span class="phpdocumentor-signature__visibility"></span>
-                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_state</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$file</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{exists: bool, writable: bool, managed: bool, manual: bool, hash: ?string, wp_block: bool, damaged: bool, misplaced: bool}</span></code>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_state</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$file</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{exists: bool, writable: bool, readable: bool, managed: bool, manual: bool, hash: ?string, wp_block: bool, damaged: bool, misplaced: bool}</span></code>
 
         <section class="phpdocumentor-description"><p><code class="prettyprint">hash</code> comes from the <code class="prettyprint"># rule &lt;hash&gt;</code> line of the managed block, so a
 caller can compare it with the current rule hash. Beyond the interface
@@ -503,6 +559,10 @@ of the plan: <code class="prettyprint">damaged</code> (managed markers that do n
 remove refuse, and the admin page can say why) and <code class="prettyprint">misplaced</code> (the
 managed block sits below WordPress's and never takes effect; the next
 write moves it, ruling R15).</p>
+<p><code class="prettyprint">readable</code> (1.7.1, T9-e): the content could be read. An existing file
+that cannot be read reports <code class="prettyprint">managed</code> false - not because there is no
+block, but because nothing about it is known; callers that guard the
+block must treat <code class="prettyprint">exists &amp;&amp; ! readable</code> as &quot;a block may be there&quot;.</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -536,7 +596,7 @@ write moves it, ruling R15).</p>
 
             <section>
         <h5 class="phpdocumentor-return-value__heading">Return values</h5>
-        <span class="phpdocumentor-signature__response_type">array{exists: bool, writable: bool, managed: bool, manual: bool, hash: ?string, wp_block: bool, damaged: bool, misplaced: bool}</span>
+        <span class="phpdocumentor-signature__response_type">array{exists: bool, writable: bool, readable: bool, managed: bool, manual: bool, hash: ?string, wp_block: bool, damaged: bool, misplaced: bool}</span>
             </section>
 
 </article>
@@ -549,7 +609,7 @@ write moves it, ruling R15).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">255</span>
+    <span class="phpdocumentor-element-found-in__line">262</span>
 
     </aside>
 
@@ -601,6 +661,72 @@ leave the file with markers that no longer pair up.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_last_error">
+        jpkcom_postfilter_htaccess_last_error()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_last_error" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">300</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">How the last jpkcom_postfilter_htaccess_modify() call in this request failed</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_last_error</span><span>(</span><span class="phpdocumentor-signature__argument"><span>[</span><span class="phpdocumentor-signature__argument__type">string|null&nbsp;</span><span class="phpdocumentor-signature__argument__name">$set</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">null</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><ul>
+<li><code class="prettyprint">''</code>: nothing failed while writing (the write succeeded, nothing had to
+be written, or nothing was attempted - missing file, lock, refusal).</li>
+<li><code class="prettyprint">write-failed</code>: the write failed and the old content is back.</li>
+<li><code class="prettyprint">rollback-failed</code>: the write failed and putting the old content back
+failed too. The file may now hold part of the new content over the
+old one - possibly half a directive, for which Apache answers 500 -
+so the caller has to tell the admin to check it (T8-a).</li>
+</ul>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$set</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string|null</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">null</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>New value, or null to read.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_last_error_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_last_error_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_modify">
         jpkcom_postfilter_htaccess_modify()
         <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_modify" class="headerlink"><i class="fas fa-link"></i></a>
@@ -609,7 +735,7 @@ leave the file with markers that no longer pair up.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">292</span>
+    <span class="phpdocumentor-element-found-in__line">329</span>
 
     </aside>
 
@@ -624,7 +750,8 @@ leave the file with markers that no longer pair up.</p>
 to refuse (nothing is written, the result is false). Identical content
 is not written at all, so the mtime stays. No rename: owner, group and
 mode survive. Should the write fail half way, the old content is put
-back.</p>
+back; jpkcom_postfilter_htaccess_last_error() says afterwards whether
+that worked.</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -680,7 +807,7 @@ back.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">350</span>
+    <span class="phpdocumentor-element-found-in__line">389</span>
 
     </aside>
 
@@ -757,7 +884,7 @@ with a newline gets one first, so the padding starts on its own line.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">382</span>
+    <span class="phpdocumentor-element-found-in__line">426</span>
 
     </aside>
 
@@ -772,6 +899,10 @@ with a newline gets one first, so the padding starts on its own line.</p>
 never empty in between. A shorter content goes out padded with comment
 lines to the current size in one write (jpkcom_postfilter_htaccess_padded()),
 so no reader ever sees a remnant of the old content before the cut.</p>
+<p>Write, flush and cut are silenced: on a full disk fwrite() raises an
+E_NOTICE, and with display_errors on that would be output before the
+redirect of the Set up / Remove action (&quot;headers already sent&quot;). The
+failure is reported through the return value (T8-b).</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -827,7 +958,7 @@ so no reader ever sees a remnant of the old content before the cut.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">422</span>
+    <span class="phpdocumentor-element-found-in__line">468</span>
 
     </aside>
 
@@ -842,9 +973,10 @@ so no reader ever sees a remnant of the old content before the cut.</p>
 further copy of it) - unless it sits below <code class="prettyprint"># BEGIN WordPress</code>, where it
 never takes effect: then it is removed there and the block goes directly
 before WordPress's (ruling R15). Without a managed block it is inserted
-directly before <code class="prettyprint"># BEGIN WordPress</code>, or at the top when there is none. Refuses (false,
-nothing written) when the file is missing, holds a manual block, holds
-managed markers that do not pair up, or <code class="prettyprint">$block</code> is not a managed block.</p>
+directly before <code class="prettyprint"># BEGIN WordPress</code>, or at the top when there is none.
+Refuses (false, nothing written) when the file is missing, holds a
+manual block, holds managed markers that do not pair up, or <code class="prettyprint">$block</code> is
+not a managed block.</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -896,6 +1028,77 @@ managed markers that do not pair up, or <code class="prettyprint">$block</code> 
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_with_block">
+        jpkcom_postfilter_htaccess_with_block()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_with_block" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">492</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">File content with the managed block put in, as write() places it</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_with_block</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$content</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;string|int, string&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$block_lines</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string|null</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$content</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>File content.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$block_lines</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string|int, string&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>As returned by jpkcom_postfilter_htaccess_block_lines().</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_with_block_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_with_block_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                            <section class="phpdocumentor-description"><p>(the body of jpkcom_postfilter_htaccess_write() before)</p>
+</section>
+
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string|null</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Null when the content holds a manual block or damaged markers.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_remove">
         jpkcom_postfilter_htaccess_remove()
         <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_remove" class="headerlink"><i class="fas fa-link"></i></a>
@@ -904,7 +1107,7 @@ managed markers that do not pair up, or <code class="prettyprint">$block</code> 
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">481</span>
+    <span class="phpdocumentor-element-found-in__line">541</span>
 
     </aside>
 
@@ -956,6 +1159,303 @@ do not pair up.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_without_block">
+        jpkcom_postfilter_htaccess_without_block()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_without_block" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">559</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">File content without any managed block, as remove() leaves it</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_without_block</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$content</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string|null</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$content</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>File content.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_without_block_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_without_block_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                            <section class="phpdocumentor-description"><p>(the body of jpkcom_postfilter_htaccess_remove() before)</p>
+</section>
+
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string|null</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Null when the managed markers do not pair up.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_rule_units">
+        jpkcom_postfilter_htaccess_rule_units()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_rule_units" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">601</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">The lines of a managed block as comparable units</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_rule_units</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string|int, string&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$lines</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;int, array{reject: bool, text: string}&gt;</span></code>
+
+        <section class="phpdocumentor-description"><p>A reject rule - the three lines <code class="prettyprint">RewriteCond %{ENV:REDIRECT_STATUS} ^$</code>,
+<code class="prettyprint">RewriteCond %{THE_REQUEST} &quot;&lt;pattern&gt;&quot;</code>,
+<code class="prettyprint">RewriteRule ^ - [E=JPKPF_REJECT:server-&lt;reason&gt;,R=&lt;status&gt;,L]</code> (or
+<code class="prettyprint">^/</code>) that jpkcom_postfilter_server_apache_rules() writes per reason,
+in exactly that shape (1.7.1, M-3) - is one unit; every other line is a
+unit of its own. The rule hash is taken out:
+the <code class="prettyprint"># rule &lt;hash&gt;</code> line is dropped and the hash of an <code class="prettyprint">X-Jpkpf-Rule</code>
+header line blanked. It names the rule set; what is rejected does not
+depend on it. So is the text of a string <code class="prettyprint">ErrorDocument &lt;status&gt; &quot;…&quot;</code>
+line (a complete quoted string, escapes allowed): it is the page's body
+in the locale of whoever wrote the block, and a body cannot reject
+anything. Directive and status stay; an ErrorDocument that is not one
+complete quoted string (a URL, an open quote) is compared as it is.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$lines</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string|int, string&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Lines between the markers, without line endings.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_rule_units_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_rule_units_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array&lt;int, array{reject: bool, text: string}&gt;</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_provably_looser">
+        jpkcom_postfilter_htaccess_provably_looser()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_provably_looser" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">678</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Is a new managed block provably no stricter than the one in the file?</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_provably_looser</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$content</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$block</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>&quot;Provably looser&quot; (R161-3) is decided on the text alone - no pattern is
+evaluated, so nothing depends on how a server reads a regular
+expression. True only when:</p>
+<ul>
+<li>the content parses without damaged markers and holds a managed block;</li>
+<li><code class="prettyprint">$block</code> is '' (no reject part any more): removing a block only ever
+loosens; or else</li>
+<li>there is no manual block (write() refuses next to one), the managed
+block does not sit below WordPress's (it never took effect there,
+and writing would move it up into effect), and</li>
+<li>the units of the new block (jpkcom_postfilter_htaccess_rule_units(),
+rule hash taken out) are exactly the units of the file's first
+managed block with zero or more whole reject rules deleted: same
+order, every other unit byte for byte the same - the patterns of the
+rules that stay, the reject status, the header lines, the
+ErrorDocument directive and status (its quoted text may differ: a
+translation), <code class="prettyprint">RewriteEngine</code> and <code class="prettyprint">&lt;IfModule&gt;</code> lines.</li>
+</ul>
+<p>So the new block rejects a subset of what the old one rejects. Anything
+else - a rule added, a pattern changed (even to a looser one), another
+status, an ErrorDocument that is no longer a quoted text, a line edited
+by hand - is not provable, and the answer is false. Further managed blocks
+in the file are dropped by write(), which only loosens.</p>
+<p>The reject rules of one block carry different reasons, so matching the
+units in order, earliest first, finds the deletion when there is one.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$content</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>File content.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$block</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>New managed block (jpkcom_postfilter_htaccess_block()), '' for none.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_provably_looser_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_provably_looser_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_loosen_to">
+        jpkcom_postfilter_htaccess_loosen_to()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_loosen_to" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">734</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Write a new managed block only if it is provably looser (R161-3)</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_loosen_to</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$file</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$block</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>The comparison (jpkcom_postfilter_htaccess_provably_looser()) runs on
+the content read under the lock, so what is compared is what is
+replaced. '' removes the block. False, with nothing written, when the
+new block is not provably looser or the write fails.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$file</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Path of the .htaccess.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$block</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>New managed block, '' for none.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_loosen_to_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_loosen_to_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True when the file holds the new block (or none) afterwards.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_home_file">
         jpkcom_postfilter_htaccess_home_file()
         <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_home_file" class="headerlink"><i class="fas fa-link"></i></a>
@@ -964,7 +1464,7 @@ do not pair up.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">523</span>
+    <span class="phpdocumentor-element-found-in__line">778</span>
 
     </aside>
 
@@ -1018,7 +1518,7 @@ WordPress directory is taken - never the file system root.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">573</span>
+    <span class="phpdocumentor-element-found-in__line">828</span>
 
     </aside>
 
@@ -1066,6 +1566,122 @@ wp-content/uploads is never the right file either.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_site_reason">
+        jpkcom_postfilter_htaccess_site_reason()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_site_reason" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">867</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Why the plugin may not manage .htaccess here, from the site alone</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_site_reason</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>The part of jpkcom_postfilter_htaccess_available() that reads neither
+the file nor an option - SERVER_SOFTWARE, multisite,
+DISALLOW_FILE_MODS - so a caller on every admin page can stop before
+the query for the managed flag, which is not autoloaded (T9-b).</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_site_reason_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_site_reason_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p><code class="prettyprint">litespeed</code>, <code class="prettyprint">not-apache</code>, <code class="prettyprint">multisite</code>, <code class="prettyprint">file-mods-disallowed</code>, or '' when none applies.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_file_reason">
+        jpkcom_postfilter_htaccess_file_reason()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_file_reason" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">900</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Why the plugin may not manage this .htaccess, from what it contains</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_file_reason</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$state</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>The file part of jpkcom_postfilter_htaccess_available(), on a state
+the caller has already read (T9-a: one read per admin page).</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$state</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, mixed&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>As returned by jpkcom_postfilter_htaccess_state().</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_file_reason_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_file_reason_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p><code class="prettyprint">no-file</code>, <code class="prettyprint">not-writable</code>, <code class="prettyprint">not-readable</code>, <code class="prettyprint">manual-block</code>, or '' when none applies.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_available">
         jpkcom_postfilter_htaccess_available()
         <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_available" class="headerlink"><i class="fas fa-link"></i></a>
@@ -1074,7 +1690,7 @@ wp-content/uploads is never the right file either.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-manager.php"><a href="files/includes-htaccess-manager.html"><abbr title="includes/htaccess-manager.php">htaccess-manager.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">621</span>
+    <span class="phpdocumentor-element-found-in__line">943</span>
 
     </aside>
 
@@ -1094,11 +1710,13 @@ read .htaccess changes, so the plugin does not manage it there.</li>
 FrankenPHP, Ferron, IIS, none).</li>
 <li><code class="prettyprint">multisite</code>: one .htaccess serves the whole network.</li>
 <li><code class="prettyprint">file-mods-disallowed</code>: DISALLOW_FILE_MODS is set.</li>
-<li><code class="prettyprint">no-file</code>, <code class="prettyprint">not-writable</code>: jpkcom_postfilter_htaccess_file().</li>
+<li><code class="prettyprint">no-file</code>, <code class="prettyprint">not-writable</code>, <code class="prettyprint">not-readable</code>: jpkcom_postfilter_htaccess_file().</li>
 <li><code class="prettyprint">manual-block</code>: a pasted block with the manual markers is present;
 a second, managed one would apply the same rules twice.</li>
 </ul>
-<p>The capability and nonce checks belong to the admin action.</p>
+<p>The first four come from jpkcom_postfilter_htaccess_site_reason(), the
+rest from jpkcom_postfilter_htaccess_file_reason(). The capability and
+nonce checks belong to the admin action.</p>
 </section>
 
     
@@ -1150,14 +1768,22 @@ a second, managed one would apply the same rules twice.</li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_block">jpkcom_postfilter_htaccess_block()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_block_lines">jpkcom_postfilter_htaccess_block_lines()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_file">jpkcom_postfilter_htaccess_file()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_file_reason">jpkcom_postfilter_htaccess_file_reason()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_home_file">jpkcom_postfilter_htaccess_home_file()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_last_error">jpkcom_postfilter_htaccess_last_error()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_loosen_to">jpkcom_postfilter_htaccess_loosen_to()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_markers">jpkcom_postfilter_htaccess_markers()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_modify">jpkcom_postfilter_htaccess_modify()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_padded">jpkcom_postfilter_htaccess_padded()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_parse">jpkcom_postfilter_htaccess_parse()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_provably_looser">jpkcom_postfilter_htaccess_provably_looser()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_put">jpkcom_postfilter_htaccess_put()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_remove">jpkcom_postfilter_htaccess_remove()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_rule_units">jpkcom_postfilter_htaccess_rule_units()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_site_reason">jpkcom_postfilter_htaccess_site_reason()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_state">jpkcom_postfilter_htaccess_state()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_with_block">jpkcom_postfilter_htaccess_with_block()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_without_block">jpkcom_postfilter_htaccess_without_block()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_write">jpkcom_postfilter_htaccess_write()</a></li>
                                             </ul>
                 </li>

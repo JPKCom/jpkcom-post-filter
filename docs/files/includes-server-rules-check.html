@@ -453,7 +453,7 @@ value. Anything malformed becomes &quot;no answer&quot;.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-check.php"><a href="files/includes-server-rules-check.html"><abbr title="includes/server-rules-check.php">server-rules-check.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">161</span>
+    <span class="phpdocumentor-element-found-in__line">163</span>
 
     </aside>
 
@@ -468,9 +468,11 @@ value. Anything malformed becomes &quot;no answer&quot;.</p>
 authentication, a firewall, a rate limit, maintenance mode or another
 server error, and - unless <code class="prettyprint">$redirect_ok</code> - a redirect (<code class="prettyprint">redirection</code>
 is 0, so a redirect to https or another host is not followed). For the
-at-cap probe a redirect is the plugin's normal answer (unknown probe
-slugs, 301 to the archive). Plain text, untrusted parts (error message,
-Location) included - the page escapes it.</p>
+at-cap probe the plugin's own redirect is its normal answer (unknown
+probe slugs, 301 to the archive); the caller passes <code class="prettyprint">$redirect_ok</code> only
+for a 3xx that carries the plugin's <code class="prettyprint">X-Redirect-By</code>. Plain text,
+untrusted parts (error message, Location) included - the page escapes
+it.</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -526,7 +528,7 @@ Location) included - the page escapes it.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-check.php"><a href="files/includes-server-rules-check.html"><abbr title="includes/server-rules-check.php">server-rules-check.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">248</span>
+    <span class="phpdocumentor-element-found-in__line">255</span>
 
     </aside>
 
@@ -556,8 +558,13 @@ rejects without one, but so does WordPress for a base it does not
 route), a hedged warning, never the alarm (ruling R19).
 stricter_checked: false when the at-cap probe did not get through
 (timeout, 401, 429 - the loopback sends no cookies, so a rate limit
-catches it -, 5xx, ...) or there was nothing to check; the detail then
-says why.</p>
+catches it -, 5xx, ...), when it was answered with a 3xx that does not
+carry <code class="prettyprint">X-Redirect-By: jpkcom-post-filter</code> (the crawl guard's redirect
+sends it through wp_safe_redirect(); any other redirect - to https, to
+another host name, from a proxy - may have been sent before the server
+rules apply, so it proves nothing about them; a site that filters
+<code class="prettyprint">x_redirect_by</code> away only loses the check, it never gets a false
+alarm), or there was nothing to check; the detail then says why.</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -633,7 +640,7 @@ or null when not requested.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-check.php"><a href="files/includes-server-rules-check.html"><abbr title="includes/server-rules-check.php">server-rules-check.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">395</span>
+    <span class="phpdocumentor-element-found-in__line">410</span>
 
     </aside>
 
@@ -707,7 +714,7 @@ which URLs are rejected.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-check.php"><a href="files/includes-server-rules-check.html"><abbr title="includes/server-rules-check.php">server-rules-check.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">440</span>
+    <span class="phpdocumentor-element-found-in__line">455</span>
 
     </aside>
 
@@ -755,7 +762,7 @@ which URLs are rejected.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-check.php"><a href="files/includes-server-rules-check.html"><abbr title="includes/server-rules-check.php">server-rules-check.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">472</span>
+    <span class="phpdocumentor-element-found-in__line">487</span>
 
     </aside>
 
@@ -808,7 +815,7 @@ not trust, and the probe carries no secrets. The result goes to the option
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-check.php"><a href="files/includes-server-rules-check.html"><abbr title="includes/server-rules-check.php">server-rules-check.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">553</span>
+    <span class="phpdocumentor-element-found-in__line">568</span>
 
     </aside>
 
@@ -882,7 +889,7 @@ not trust, and the probe carries no secrets. The result goes to the option
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-check.php"><a href="files/includes-server-rules-check.html"><abbr title="includes/server-rules-check.php">server-rules-check.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">586</span>
+    <span class="phpdocumentor-element-found-in__line">601</span>
 
     </aside>
 
@@ -948,7 +955,7 @@ is running.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-check.php"><a href="files/includes-server-rules-check.html"><abbr title="includes/server-rules-check.php">server-rules-check.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">622</span>
+    <span class="phpdocumentor-element-found-in__line">637</span>
 
     </aside>
 
@@ -1017,7 +1024,7 @@ sanitizer itself before jpkcom_postfilter_settings_save().</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-check.php"><a href="files/includes-server-rules-check.html"><abbr title="includes/server-rules-check.php">server-rules-check.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">649</span>
+    <span class="phpdocumentor-element-found-in__line">664</span>
 
     </aside>
 
@@ -1065,7 +1072,7 @@ server that ignores .htaccess keeps nothing in step.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-check.php"><a href="files/includes-server-rules-check.html"><abbr title="includes/server-rules-check.php">server-rules-check.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">670</span>
+    <span class="phpdocumentor-element-found-in__line">685</span>
 
     </aside>
 
@@ -1121,7 +1128,7 @@ for 60 seconds - long enough for the redirect after options.php.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-check.php"><a href="files/includes-server-rules-check.html"><abbr title="includes/server-rules-check.php">server-rules-check.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">707</span>
+    <span class="phpdocumentor-element-found-in__line">722</span>
 
     </aside>
 
@@ -1191,7 +1198,7 @@ for 60 seconds - long enough for the redirect after options.php.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-check.php"><a href="files/includes-server-rules-check.html"><abbr title="includes/server-rules-check.php">server-rules-check.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">722</span>
+    <span class="phpdocumentor-element-found-in__line">737</span>
 
     </aside>
 
@@ -1243,7 +1250,7 @@ for 60 seconds - long enough for the redirect after options.php.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-check.php"><a href="files/includes-server-rules-check.html"><abbr title="includes/server-rules-check.php">server-rules-check.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">740</span>
+    <span class="phpdocumentor-element-found-in__line">755</span>
 
     </aside>
 

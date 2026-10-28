@@ -736,7 +736,7 @@ jpkcom_postfilter_filter_taxonomies() returns them.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">387</span>
+    <span class="phpdocumentor-element-found-in__line">413</span>
 
     </aside>
 
@@ -796,7 +796,7 @@ jpkcom_postfilter_filter_taxonomies() returns them.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">416</span>
+    <span class="phpdocumentor-element-found-in__line">444</span>
 
     </aside>
 
@@ -852,7 +852,7 @@ jpkcom_postfilter_filter_taxonomies() returns them.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">454</span>
+    <span class="phpdocumentor-element-found-in__line">494</span>
 
     </aside>
 
@@ -865,13 +865,22 @@ jpkcom_postfilter_filter_taxonomies() returns them.</p>
 
         <section class="phpdocumentor-description"><p>install: only when jpkcom_postfilter_htaccess_available() allows it;
 writes the block for the current inputs, then stores the file's path
-in the option <code class="prettyprint">jpkcom_postfilter_htaccess_managed</code> (not autoloaded). With no reject
-part the option is set anyway and the block follows once there is one.</p>
+in the option <code class="prettyprint">jpkcom_postfilter_htaccess_managed</code> (not autoloaded).
+With no reject part the option is set anyway and the block follows
+once there is one.</p>
 <p>remove: whenever the file can be written, whatever available() says -
 removing only loosens, and after a server move it is the only way to
 get rid of a leftover block. The option goes only when no managed block
-(and no damaged marker) remains, so a block that could not be removed
-stays guarded.</p>
+(and no damaged marker) remains and the file could be read, so a block
+that could not be removed - or not even seen - stays guarded.</p>
+<p>Either way, a write that failed half way and could not be undone
+(jpkcom_postfilter_htaccess_last_error() <code class="prettyprint">rollback-failed</code>) gives
+<code class="prettyprint">htaccess-unrestored</code>: the file may be incomplete and has to be checked
+(T8-a).</p>
+<p>install while another request holds the save lock gives
+<code class="prettyprint">htaccess-busy</code> and writes nothing (M-1): that save is between its
+loosen and its tighten, and the values this request reads may predate
+it. Remove only loosens and is never held up.</p>
 <p>The caller checks capability and nonce.</p>
 </section>
 
@@ -932,7 +941,7 @@ stays guarded.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">512</span>
+    <span class="phpdocumentor-element-found-in__line">560</span>
 
     </aside>
 
@@ -993,7 +1002,7 @@ through, null when there is no rule.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">572</span>
+    <span class="phpdocumentor-element-found-in__line">620</span>
 
     </aside>
 
@@ -1057,7 +1066,7 @@ copies the element's textContent, which is the unescaped text again.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">598</span>
+    <span class="phpdocumentor-element-found-in__line">646</span>
 
     </aside>
 
@@ -1127,7 +1136,7 @@ copies the element's textContent, which is the unescaped text again.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">623</span>
+    <span class="phpdocumentor-element-found-in__line">671</span>
 
     </aside>
 
@@ -1172,7 +1181,7 @@ rule is the admin's job.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">644</span>
+    <span class="phpdocumentor-element-found-in__line">692</span>
 
     </aside>
 
@@ -1251,7 +1260,7 @@ rule is the admin's job.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">848</span>
+    <span class="phpdocumentor-element-found-in__line">896</span>
 
     </aside>
 
@@ -1303,7 +1312,7 @@ rule is the admin's job.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">921</span>
+    <span class="phpdocumentor-element-found-in__line">969</span>
 
     </aside>
 
@@ -1382,7 +1391,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">954</span>
+    <span class="phpdocumentor-element-found-in__line">1002</span>
 
     </aside>
 
@@ -1434,7 +1443,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1086</span>
+    <span class="phpdocumentor-element-found-in__line">1136</span>
 
     </aside>
 
@@ -1513,7 +1522,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1163</span>
+    <span class="phpdocumentor-element-found-in__line">1213</span>
 
     </aside>
 
@@ -1553,7 +1562,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1238</span>
+    <span class="phpdocumentor-element-found-in__line">1288</span>
 
     </aside>
 
@@ -1618,7 +1627,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1262</span>
+    <span class="phpdocumentor-element-found-in__line">1312</span>
 
     </aside>
 
@@ -1658,7 +1667,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1283</span>
+    <span class="phpdocumentor-element-found-in__line">1333</span>
 
     </aside>
 
@@ -1698,7 +1707,7 @@ plugin may manage the file and only this write failed.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1308</span>
+    <span class="phpdocumentor-element-found-in__line">1358</span>
 
     </aside>
 
@@ -1757,7 +1766,7 @@ notice does not come back on a reload or with the next form's referer.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-admin.php"><a href="files/includes-server-rules-admin.html"><abbr title="includes/server-rules-admin.php">server-rules-admin.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1328</span>
+    <span class="phpdocumentor-element-found-in__line">1378</span>
 
     </aside>
 

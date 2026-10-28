@@ -1296,7 +1296,7 @@ nothing. nginx uses prefix locations and never reads this.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">399</span>
+    <span class="phpdocumentor-element-found-in__line">427</span>
 
     </aside>
 
@@ -1315,14 +1315,39 @@ the rest stay free for the site
 rate          = max(1, round(0.4 conn/t)) requests/s site-wide: keeps those
 workers 40 % busy on average
 burst         = 2 rate
-ip_per_minute = 30, ip_burst = 10       a visitor without cookie gets 11
-quick clicks, then one every 2 s
+ip_per_minute = 30, ip_burst = 10       a visitor without cookie gets 10
+or 11 quick clicks (see below),
+then one every 2 s
 bot_rate      = max(1, round(2 rate/3)), bot_burst = 20
 search engines' own bucket
 retry_after   = 10 s</p>
 <p>Anchor (spec 6, research report 3 §3, production: 8 workers, 0.4 s):
 conn 3, 3 r/s burst 6, 30 r/min burst 10 per IP, search engines 2 r/s
 burst 20.</p>
+<p>ip_burst is one number, and every renderer emits it unchanged as that
+server's own burst parameter. How many back-to-back requests that lets
+through is the server's semantics, not the plugin's (T5-b, lab 1.6.0):</p>
+<p>nginx <code class="prettyprint">limit_req burst=ip_burst nodelay</code>  ip_burst + 1  burst counts the
+&quot;excessive&quot; requests (nginx docs); the first one in an empty
+bucket is within the rate, so it is not part of the burst
+Ferron 3 <code class="prettyprint">rate_limit rate 1 burst ip_burst</code>  ip_burst + 1  token
+bucket of capacity burst + 1, as nginx (measured: 11×200 at
+burst 10)
+Caddy <code class="prettyprint">events ip_burst</code> / <code class="prettyprint">window W</code>      ip_burst  sliding window: at
+most <code class="prettyprint">events</code> in the last W seconds (caddy-ratelimit README)
+ModSecurity <code class="prettyprint">@gt ip_burst</code> per window W   ip_burst  fixed-window
+counter (measured: 10×200 at 10)
+Ferron 2 <code class="prettyprint">limit rate=1 burst=ip_burst</code>    ip_burst  bucket of
+capacity burst (measured: 10×200 at 10)</p>
+<p>with W = ceil(ip_burst * 60 / ip_per_minute), so the window-based
+servers keep exactly ip_per_minute in the long run. The difference of
+one request is deliberately not evened out: nginx/Ferron 3 at
+ip_burst - 1 would tighten rules already deployed on re-paste, and
+Caddy/ModSecurity/Ferron 2 at ip_burst + 1 would also raise their
+long-run rate (11 per 20 s = 33 per minute) unless W grew with it.
+Both sides are well inside what the formula is for - a quick series of
+clicks passes, a flood does not - and none of this touches a reject
+rule or the rule hash (the limits are not hash inputs).</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -1378,7 +1403,7 @@ burst 20.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">434</span>
+    <span class="phpdocumentor-element-found-in__line">462</span>
 
     </aside>
 
@@ -1439,7 +1464,7 @@ pasted into every server's config syntax as it is.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">469</span>
+    <span class="phpdocumentor-element-found-in__line">497</span>
 
     </aside>
 
@@ -1505,7 +1530,7 @@ and PHP apart.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">531</span>
+    <span class="phpdocumentor-element-found-in__line">559</span>
 
     </aside>
 
@@ -1557,7 +1582,7 @@ check (includes/server-rules-check.php), so both probe the same URLs.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">578</span>
+    <span class="phpdocumentor-element-found-in__line">606</span>
 
     </aside>
 
@@ -1645,7 +1670,7 @@ template's own <code class="prettyprint">location = /robots.txt</code> is extend
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">757</span>
+    <span class="phpdocumentor-element-found-in__line">785</span>
 
     </aside>
 
@@ -1726,7 +1751,7 @@ stripped) and <code class="prettyprint">&lt;IfModule&gt;</code>.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">809</span>
+    <span class="phpdocumentor-element-found-in__line">837</span>
 
     </aside>
 
@@ -1790,7 +1815,7 @@ carry the same rules.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">829</span>
+    <span class="phpdocumentor-element-found-in__line">857</span>
 
     </aside>
 
@@ -1863,7 +1888,7 @@ line is what jpkcom_postfilter_htaccess_state() reads back.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">885</span>
+    <span class="phpdocumentor-element-found-in__line">940</span>
 
     </aside>
 
@@ -1884,13 +1909,33 @@ so they share it (spec 6).</p>
 <p>ModSecurity (§3b): everything inside a <code class="prettyprint">&lt;LocationMatch&gt;</code> over the filter
 prefixes (decoded path - fine for a rate limit), including <code class="prettyprint">SecRuleEngine On</code>, so OWASP CRS is not switched to blocking for the rest of the site.
 Phase 2, because Apache maps a request to its Location only after phase 1
-rules ran (post_read_request). Fixed-window counters. The window starts with the
-first request (<code class="prettyprint">expirevar</code> only when the counter is created); research
-set expirevar on every hit, which re-arms it - steady traffic then never
-resets a site-wide counter, and a visitor clicking every few seconds is
-blocked for good. Every deny rule is chained to its own class (cookie-
-less visitor or search engine), so a counter another rule set keeps
-cannot trigger it.</p>
+rules ran (post_read_request). Fixed-window counters. The window starts
+with the first request (<code class="prettyprint">expirevar</code> only when the counter is created);
+research set expirevar on every hit, which re-arms it - steady traffic
+then never resets a site-wide counter, and a visitor clicking every few
+seconds is blocked for good. Every deny rule is chained to its own class
+(cookie-less visitor or search engine), so a counter another rule set
+keeps cannot trigger it.</p>
+<p>A 429 writes no audit-log entry (1.7.1, T6-a): <code class="prettyprint">ctl:auditEngine=Off</code> on
+the chained threshold rule, which runs only when the chain matches, so a
+request under the limit keeps its audit entry. Measured on Debian 13
+(ModSecurity 2.9.11, 1000 cookie-less requests from one IP): with
+modsecurity.conf-recommended (<code class="prettyprint">SecAuditEngine RelevantOnly</code>, relevant
+status <code class="prettyprint">^(?:5|4(?!04))</code>) every 429 wrote a ~1.7 KB audit entry, 15 times
+its access-log line. <code class="prettyprint">log</code> stays: the ~390-byte error-log line names
+the limit that answered, the only place that says which one did.</p>
+<p>A server reject writes no audit-log entry either (1.7.1, T6-a follow-up):
+with that config every mod_rewrite 410 wrote ~1 KB (<code class="prettyprint">4(?!04)</code> matches
+410). Rule 4710014 is the one rule outside the LocationMatch: a reject
+ends the request in translate_name, before the fixups hook in which
+ModSecurity applies the LocationMatch, so no rule inside it - phase 2
+or 5 - ever runs for a reject (measured). At VirtualHost level phase 5
+does run. It is keyed on <code class="prettyprint">JPKPF_REJECT</code> / <code class="prettyprint">REDIRECT_JPKPF_REJECT</code>,
+which only the reject's RewriteRule sets (the REDIRECT_ form after an
+ErrorDocument that redirects internally, measured), and it is
+<code class="prettyprint">pass,nolog</code> with <code class="prettyprint">ctl:auditEngine=Off</code> only: no status, no deny, no
+SecRuleEngine - it runs under the admin's engine setting. Only present
+when there is a reject part.</p>
 <p>The counters live in RESOURCE (key <code class="prettyprint">jpkpf_ip_&lt;addr&gt;</code>) and USER (key
 <code class="prettyprint">jpkpf_site_&lt;server name&gt;</code>, via setuid), not in IP and GLOBAL: OWASP CRS
 3.3 opens <code class="prettyprint">ip</code> as <code class="prettyprint">&lt;addr&gt;_&lt;UA hash&gt;</code> and <code class="prettyprint">global</code> as <code class="prettyprint">global</code> in phase 1,
@@ -1898,7 +1943,12 @@ and ModSecurity 2 ignores a later initcol of an open collection. Measured
 on Debian 13 (CRS 3.3.7, modsecurity.conf active): a new User-Agent per
 request walked past the per-IP limit, and one VirtualHost's site-wide
 counter answered 429 on another. Custom collection names are not
-addressable in ModSecurity 2 (&quot;Unknown variable&quot;).</p>
+addressable in ModSecurity 2 (&quot;Unknown variable&quot;), so RESOURCE and USER
+are the last two left (T6-b): a rule set of the site's own that opens
+either of them earlier in the request, under another key, would take
+these counters along in the same way, and nothing in this snippet can
+prevent that. CRS 3.3.7 opens neither (measured: every limit held with
+it loaded).</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -1954,7 +2004,7 @@ addressable in ModSecurity 2 (&quot;Unknown variable&quot;).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1013</span>
+    <span class="phpdocumentor-element-found-in__line">1084</span>
 
     </aside>
 
@@ -2013,7 +2063,7 @@ only ever edits its managed block and never a pasted one (spec 7).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1062</span>
+    <span class="phpdocumentor-element-found-in__line">1133</span>
 
     </aside>
 
@@ -2074,7 +2124,7 @@ put noindex on every page. So the reject carries no header at all.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1142</span>
+    <span class="phpdocumentor-element-found-in__line">1213</span>
 
     </aside>
 
@@ -2164,7 +2214,7 @@ answer for a valid URL must not tell search engines to drop it.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1272</span>
+    <span class="phpdocumentor-element-found-in__line">1343</span>
 
     </aside>
 
@@ -2249,7 +2299,7 @@ spelling of the same path (<code class="prettyprint">/./</code>) is the separate
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1385</span>
+    <span class="phpdocumentor-element-found-in__line">1456</span>
 
     </aside>
 
@@ -2323,7 +2373,7 @@ scope regex is doubled, and comments are <code class="prettyprint">//</code>.</p
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1458</span>
+    <span class="phpdocumentor-element-found-in__line">1529</span>
 
     </aside>
 
@@ -2414,7 +2464,7 @@ a config syntax are left out (jpkcom_postfilter_server_safe_bases()).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1484</span>
+    <span class="phpdocumentor-element-found-in__line">1555</span>
 
     </aside>
 
@@ -2470,7 +2520,7 @@ a config syntax are left out (jpkcom_postfilter_server_safe_bases()).</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/server-rules-render.php"><a href="files/includes-server-rules-render.html"><abbr title="includes/server-rules-render.php">server-rules-render.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1510</span>
+    <span class="phpdocumentor-element-found-in__line">1583</span>
 
     </aside>
 
@@ -2487,9 +2537,11 @@ URL with its own 410 (<code class="prettyprint">per-group</code>, <code class="p
 <code class="prettyprint">unknown_terms_action = reject</code> even a within-cap probe, so the status
 alone says nothing. OpenLiteSpeed sends no header with its reject; there
 a reject status WITHOUT the header is the server's. Ferron 2.8 gets no
-reject rule at all (jpkcom_postfilter_server_snippets_ferron2()), so it
-gets no reject probes either. Not translated: the comments belong to
-the code block.</p>
+reject rule at all (jpkcom_postfilter_server_snippets_ferron2(), ruling
+R14), so it gets no reject probes, no header preamble (there is no
+server-... value to read) and no never-stricter loop (a server that
+rejects nothing cannot be stricter) - only robots.txt and the rate
+limit. Not translated: the comments belong to the code block.</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>

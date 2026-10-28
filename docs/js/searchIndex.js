@@ -183,7 +183,7 @@ Search.appendIndex(
         },                {
             "fqsen": "\\jpkcom_postfilter_field_debug_mode\u0028\u0029",
             "name": "jpkcom_postfilter_field_debug_mode",
-            "summary": "Render\u003A\u0020Debug\u0020Mode\u0020checkbox",
+            "summary": "Render\u003A\u0020Debug\u0020Mode\u0020\u0028read\u002Donly\u0029",
             "url": "namespaces/default.html#function_jpkcom_postfilter_field_debug_mode"
         },                {
             "fqsen": "\\jpkcom_postfilter_policy_field_state\u0028\u0029",
@@ -536,6 +536,11 @@ Search.appendIndex(
             "summary": "The\u0020archive\u0020base\u0020a\u0020filter\u0020combination\u0020may\u0020point\u0020at",
             "url": "namespaces/default.html#function_jpkcom_postfilter_base_canonical_url"
         },                {
+            "fqsen": "\\jpkcom_postfilter_seo_paged_noindex\u0028\u0029",
+            "name": "jpkcom_postfilter_seo_paged_noindex",
+            "summary": "Whether\u0020Rank\u0020Math\u0020sends\u0020page\u00202\u002B\u0020of\u0020this\u0020filter\u0020page\u0020as\u0020noindex",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_seo_paged_noindex"
+        },                {
             "fqsen": "\\JPKComPostFilterGitUpdate\\JPKComGitPluginUpdater",
             "name": "JPKComGitPluginUpdater",
             "summary": "Class\u0020JPKComGitPluginUpdater",
@@ -831,6 +836,11 @@ Search.appendIndex(
             "summary": "Whether\u0020the\u0020current\u0020filter\u0020page\u0020is\u0020one\u0020only\u0020bots\u0020make",
             "url": "namespaces/default.html#function_jpkcom_postfilter_is_bot_filter_page"
         },                {
+            "fqsen": "\\jpkcom_postfilter_canonical_filtered\u0028\u0029",
+            "name": "jpkcom_postfilter_canonical_filtered",
+            "summary": "Pass\u0020a\u0020canonical\u0020target\u0020through\u0020\u0060jpkcom_postfilter_canonical\u0060",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_canonical_filtered"
+        },                {
             "fqsen": "\\jpkcom_postfilter_canonical_decision\u0028\u0029",
             "name": "jpkcom_postfilter_canonical_decision",
             "summary": "Where\u0020the\u0020canonical\u0020of\u0020the\u0020current\u0020filter\u0020page\u0020points",
@@ -1026,10 +1036,35 @@ Search.appendIndex(
             "summary": "Resolve\u0020the\u0020post\u0020type\u0020for\u0020an\u0020auto\u002Dinjection\u0020context",
             "url": "namespaces/default.html#function_jpkcom_postfilter_get_injected_post_type"
         },                {
+            "fqsen": "\\jpkcom_postfilter_inject_via_blocks\u0028\u0029",
+            "name": "jpkcom_postfilter_inject_via_blocks",
+            "summary": "Whether\u0020auto\u002Dinjection\u0020goes\u0020around\u0020the\u0020query\u0020block\u0020instead\u0020of\u0020the\u0020loop\u0020hooks",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_inject_via_blocks"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_auto_inject_open_html\u0028\u0029",
+            "name": "jpkcom_postfilter_auto_inject_open_html",
+            "summary": "Opening\u0020markup\u0020of\u0020auto\u002Dinjection\u003A\u0020wrapper,\u0020filter\u0020bar,\u0020results\u0020zone",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_auto_inject_open_html"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_auto_inject_close_html\u0028\u0029",
+            "name": "jpkcom_postfilter_auto_inject_close_html",
+            "summary": "Closing\u0020markup\u0020of\u0020auto\u002Dinjection\u003A\u0020pagination,\u0020end\u0020of\u0020zone\u0020and\u0020wrapper",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_auto_inject_close_html"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_block_inherits_query\u0028\u0029",
+            "name": "jpkcom_postfilter_block_inherits_query",
+            "summary": "Whether\u0020a\u0020rendered\u0020block\u0020belongs\u0020to\u0020a\u0020query\u0020block\u0020that\u0020inherits\u0020the\u0020main\u0020query",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_block_inherits_query"
+        },                {
             "fqsen": "\\jpkcom_postfilter_render_zero_results_fallback\u0028\u0029",
             "name": "jpkcom_postfilter_render_zero_results_fallback",
             "summary": "When\u0020auto\u002Dinjection\u0020should\u0020happen\u0020but\u0020the\u0020main\u0020loop\u0020never\u0020started\u0020\u00280\u0020posts\u0029,\noutput\u0020an\u0020empty\u0020\u005Bdata\u002Djpkpf\u002Dresults\u005D\u0020container\u0020so\u0020the\u0020AJAX\u0020response\u0020always\ncontains\u0020a\u0020swappable\u0020results\u0020zone\u0020\u2014\u0020and\u0020also\u0020render\u0020the\u0020filter\u0020bar\u0020so\u0020the\nuser\u0020can\u0020change\u0020their\u0020selection\u0020on\u0020a\u0020zero\u002Dresults\u0020page\u0020reload.",
             "url": "namespaces/default.html#function_jpkcom_postfilter_render_zero_results_fallback"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_zero_results_html\u0028\u0029",
+            "name": "jpkcom_postfilter_zero_results_html",
+            "summary": "The\u0020zero\u002Dresults\u0020markup,\u0020once\u0020per\u0020request",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_zero_results_html"
         },                {
             "fqsen": "\\JPKCOM_POSTFILTER_ZONE_START",
             "name": "JPKCOM_POSTFILTER_ZONE_START",
@@ -1186,6 +1221,11 @@ Search.appendIndex(
             "summary": "The\u0020lines\u0020of\u0020a\u0020managed\u0020block,\u0020or\u0020null\u0020when\u0020it\u0020is\u0020not\u0020one",
             "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_block_lines"
         },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_last_error\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_last_error",
+            "summary": "How\u0020the\u0020last\u0020jpkcom_postfilter_htaccess_modify\u0028\u0029\u0020call\u0020in\u0020this\u0020request\u0020failed",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_last_error"
+        },                {
             "fqsen": "\\jpkcom_postfilter_htaccess_modify\u0028\u0029",
             "name": "jpkcom_postfilter_htaccess_modify",
             "summary": "Read\u002Dmodify\u002Dwrite\u0020a\u0020file\u0020under\u0020an\u0020exclusive\u0020lock,\u0020in\u0020place",
@@ -1206,10 +1246,35 @@ Search.appendIndex(
             "summary": "Put\u0020the\u0020managed\u0020block\u0020into\u0020the\u0020.htaccess",
             "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_write"
         },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_with_block\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_with_block",
+            "summary": "File\u0020content\u0020with\u0020the\u0020managed\u0020block\u0020put\u0020in,\u0020as\u0020write\u0028\u0029\u0020places\u0020it",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_with_block"
+        },                {
             "fqsen": "\\jpkcom_postfilter_htaccess_remove\u0028\u0029",
             "name": "jpkcom_postfilter_htaccess_remove",
             "summary": "Remove\u0020the\u0020managed\u0020block,\u0020markers\u0020included,\u0020and\u0020nothing\u0020else",
             "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_remove"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_without_block\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_without_block",
+            "summary": "File\u0020content\u0020without\u0020any\u0020managed\u0020block,\u0020as\u0020remove\u0028\u0029\u0020leaves\u0020it",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_without_block"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_rule_units\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_rule_units",
+            "summary": "The\u0020lines\u0020of\u0020a\u0020managed\u0020block\u0020as\u0020comparable\u0020units",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_rule_units"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_provably_looser\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_provably_looser",
+            "summary": "Is\u0020a\u0020new\u0020managed\u0020block\u0020provably\u0020no\u0020stricter\u0020than\u0020the\u0020one\u0020in\u0020the\u0020file\u003F",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_provably_looser"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_loosen_to\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_loosen_to",
+            "summary": "Write\u0020a\u0020new\u0020managed\u0020block\u0020only\u0020if\u0020it\u0020is\u0020provably\u0020looser\u0020\u0028R161\u002D3\u0029",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_loosen_to"
         },                {
             "fqsen": "\\jpkcom_postfilter_htaccess_home_file\u0028\u0029",
             "name": "jpkcom_postfilter_htaccess_home_file",
@@ -1220,6 +1285,16 @@ Search.appendIndex(
             "name": "jpkcom_postfilter_htaccess_file",
             "summary": "Path\u0020of\u0020the\u0020site\u0027s\u0020.htaccess",
             "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_file"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_site_reason\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_site_reason",
+            "summary": "Why\u0020the\u0020plugin\u0020may\u0020not\u0020manage\u0020.htaccess\u0020here,\u0020from\u0020the\u0020site\u0020alone",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_site_reason"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_file_reason\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_file_reason",
+            "summary": "Why\u0020the\u0020plugin\u0020may\u0020not\u0020manage\u0020this\u0020.htaccess,\u0020from\u0020what\u0020it\u0020contains",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_file_reason"
         },                {
             "fqsen": "\\jpkcom_postfilter_htaccess_available\u0028\u0029",
             "name": "jpkcom_postfilter_htaccess_available",
@@ -1266,6 +1341,11 @@ Search.appendIndex(
             "summary": "Was\u0020the\u0020last\u0020save\u0020of\u0020an\u0020option\u0020refused\u0020in\u0020this\u0020request\u003F",
             "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_refused"
         },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_cache_pending\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_cache_pending",
+            "summary": "Has\u0020an\u0020accepted\u0020step\u0020of\u0020the\u0020current\u0020save\u0020let\u0020the\u0020sanitizer\u0020rewrite\u0020the\nsettings\u0020cache\u0020file,\u0020with\u0020the\u0020commit\u0020still\u0020to\u0020come\u003F",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_cache_pending"
+        },                {
             "fqsen": "\\jpkcom_postfilter_htaccess_server_reads\u0028\u0029",
             "name": "jpkcom_postfilter_htaccess_server_reads",
             "summary": "May\u0020the\u0020web\u0020server\u0020read\u0020.htaccess\u003F",
@@ -1276,6 +1356,11 @@ Search.appendIndex(
             "summary": "Is\u0020the\u0020block\u0020in\u0020the\u0020file\u0020exactly\u0020as\u0020strict\u0020as\u0020the\u0020given\u0020inputs\u003F",
             "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_as_strict_as"
         },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_hash_rejects_as\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_hash_rejects_as",
+            "summary": "Does\u0020a\u0020rule\u0020hash\u0020stand\u0020for\u0020the\u0020same\u0020rejects\u0020as\u0020the\u0020given\u0020inputs\u003F",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_hash_rejects_as"
+        },                {
             "fqsen": "\\jpkcom_postfilter_htaccess_loosen\u0028\u0029",
             "name": "jpkcom_postfilter_htaccess_loosen",
             "summary": "Make\u0020sure\u0020the\u0020.htaccess\u0020is\u0020no\u0020stricter\u0020than\u0020the\u0020given\u0020inputs",
@@ -1285,6 +1370,56 @@ Search.appendIndex(
             "name": "jpkcom_postfilter_htaccess_refusal_message",
             "summary": "The\u0020error\u0020shown\u0020when\u0020a\u0020save\u0020is\u0020refused",
             "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_refusal_message"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_request_id\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_request_id",
+            "summary": "A\u0020token\u0020for\u0020this\u0020request,\u0020to\u0020tell\u0020its\u0020save\u0020lock\u0020from\u0020another\u0020request\u0027s",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_request_id"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_save_lock_row\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_save_lock_row",
+            "summary": "The\u0020save\u0020lock\u0020as\u0020it\u0020is\u0020in\u0020the\u0020database\u003A\u0020\u005B\u0020row\u0020value,\u0020since,\u0020owner\u0020\u005D",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_row"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_save_lock_taken\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_save_lock_taken",
+            "summary": "Has\u0020this\u0020request\u0020taken\u0020the\u0020save\u0020lock\u0020\u0028and\u0020not\u0020released\u0020it\u0020yet\u0029\u003F",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_taken"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_save_lock\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_save_lock",
+            "summary": "Take\u0020the\u0020save\u0020lock,\u0020held\u0020from\u0020the\u0020loosen\u0020step\u0020to\u0020the\u0020tighten\u0020step\u0020\u0028T9\u002Dd\u0029",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_save_unlock\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_save_unlock",
+            "summary": "Release\u0020the\u0020save\u0020lock,\u0020if\u0020this\u0020request\u0020holds\u0020it",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_save_unlock"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_save_locked_elsewhere\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_save_locked_elsewhere",
+            "summary": "Is\u0020another\u0020request\u0020between\u0020its\u0020loosen\u0020and\u0020its\u0020tighten\u0020right\u0020now\u003F",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_save_locked_elsewhere"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_guarded\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_guarded",
+            "summary": "Is\u0020there\u0020a\u0020block\u0020a\u0020save\u0020has\u0020to\u0020keep\u0020in\u0020step\u0020\u002D\u0020and\u0020lock\u0020for\u003F",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_guarded"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_save_lock_held\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_save_lock_held",
+            "summary": "Is\u0020the\u0020save\u0020lock\u0020held\u0020for\u0020a\u0020whole\u0020import\u0020right\u0020now\u003F",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_held"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_import_begin\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_import_begin",
+            "summary": "Take\u0020the\u0020save\u0020lock\u0020for\u0020a\u0020whole\u0020import,\u0020before\u0020its\u0020first\u0020option\u0020\u0028M\u002D5\u0029",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_import_begin"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_import_end\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_import_end",
+            "summary": "Release\u0020the\u0020save\u0020lock\u0020an\u0020import\u0020held\u0020\u0028M\u002D5\u0029",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_import_end"
         },                {
             "fqsen": "\\jpkcom_postfilter_htaccess_prepare_save\u0028\u0029",
             "name": "jpkcom_postfilter_htaccess_prepare_save",
@@ -1306,15 +1441,30 @@ Search.appendIndex(
             "summary": "sanitize_option_\u007Boption\u007D,\u0020priority\u0020PHP_INT_MAX\u003A\u0020make\u0020a\u0020refusal\u0020a\u0020no\u002Dop",
             "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_settle_refusal"
         },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_unchanged_save\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_unchanged_save",
+            "summary": "pre_update_option_\u007Boption\u007D,\u0020priority\u0020PHP_INT_MAX\u003A\u0020an\u0020unchanged\u0020save\u0020lets\u0020go\u0020\u0028R5\u0029",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_unchanged_save"
+        },                {
             "fqsen": "\\jpkcom_postfilter_htaccess_after_settings_saved\u0028\u0029",
             "name": "jpkcom_postfilter_htaccess_after_settings_saved",
-            "summary": "jpkcom_postfilter_settings_saved\u003A\u0020undo\u0020settings_save\u0028\u0029\u0027s\u0020own\u0020cache\u0020write",
+            "summary": "jpkcom_postfilter_settings_saved\u003A\u0020settle\u0020the\u0020import\u0020of\u0020one\u0020option",
             "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_after_settings_saved"
         },                {
             "fqsen": "\\jpkcom_postfilter_htaccess_after_save\u0028\u0029",
             "name": "jpkcom_postfilter_htaccess_after_save",
             "summary": "After\u0020an\u0020option\u0020commit\u003A\u0020bring\u0020the\u0020block\u0020to\u0020the\u0020new\u0020state",
             "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_after_save"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_before_delete\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_before_delete",
+            "summary": "delete_option\u0020\u0028core,\u0020before\u0020the\u0020row\u0020goes\u0029\u003A\u0020loosen\u0020for\u0020the\u0020defaults\u0020\u0028I\u002D2\u0029",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_before_delete"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_htaccess_after_delete\u0028\u0029",
+            "name": "jpkcom_postfilter_htaccess_after_delete",
+            "summary": "delete_option_\u007Boption\u007D,\u0020priority\u002020\u003A\u0020tighten\u0020to\u0020the\u0020state\u0020after\u0020the\u0020delete",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_htaccess_after_delete"
         },                {
             "fqsen": "\\jpkcom_postfilter_htaccess_maybe_resync\u0028\u0029",
             "name": "jpkcom_postfilter_htaccess_maybe_resync",
@@ -1876,6 +2026,11 @@ Search.appendIndex(
             "summary": "The\u0020effective\u0020values\u0020a\u0020server\u0020rule\u0020is\u0020generated\u0020from",
             "url": "namespaces/default.html#function_jpkcom_postfilter_server_rule_inputs"
         },                {
+            "fqsen": "\\jpkcom_postfilter_server_renderer_version\u0028\u0029",
+            "name": "jpkcom_postfilter_server_renderer_version",
+            "summary": "Version\u0020of\u0020the\u0020code\u0020that\u0020turns\u0020rule\u0020inputs\u0020into\u0020server\u0020rules",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_server_renderer_version"
+        },                {
             "fqsen": "\\jpkcom_postfilter_server_rule_hash\u0028\u0029",
             "name": "jpkcom_postfilter_server_rule_hash",
             "summary": "Short\u0020hash\u0020over\u0020every\u0020input\u0020that\u0020shapes\u0020the\u0020rule",
@@ -1975,6 +2130,11 @@ Search.appendIndex(
             "name": "jpkcom_postfilter_settings_get_group",
             "summary": "Get\u0020all\u0020settings\u0020for\u0020a\u0020group\u0020\u0028file\u0020cache\u0020\u2192\u0020wp_options\u0020fallback\u0029",
             "url": "namespaces/default.html#function_jpkcom_postfilter_settings_get_group"
+        },                {
+            "fqsen": "\\jpkcom_postfilter_settings_save_refused\u0028\u0029",
+            "name": "jpkcom_postfilter_settings_save_refused",
+            "summary": "Has\u0020the\u0020.htaccess\u0020sync\u0020refused\u0020the\u0020current\u0020save\u0020of\u0020a\u0020settings\u0020group\u003F",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_settings_save_refused"
         },                {
             "fqsen": "\\jpkcom_postfilter_settings_save\u0028\u0029",
             "name": "jpkcom_postfilter_settings_save",

@@ -255,6 +255,13 @@ database and say nothing about the page any more.</p>
 </dt>
 <dd>The archive base a filter combination may point at</dd>
 
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_seo_paged_noindex">jpkcom_postfilter_seo_paged_noindex()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether Rank Math sends page 2+ of this filter page as noindex</dd>
+
     </dl>
 
 
@@ -509,7 +516,7 @@ The first non-empty list of the candidates decides; with none,
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">126</span>
+    <span class="phpdocumentor-element-found-in__line">133</span>
 
     </aside>
 
@@ -518,9 +525,14 @@ The first non-empty list of the candidates decides; with none,
     
     <code class="phpdocumentor-code phpdocumentor-signature ">
     <span class="phpdocumentor-signature__visibility"></span>
-                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_rank_math_titles_robots</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$prefix</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;int, string&gt;</span></code>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_rank_math_titles_robots</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$prefix</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">bool&nbsp;</span><span class="phpdocumentor-signature__argument__name">$empty_means_index</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">false</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;int, string&gt;</span></code>
 
-    
+        <section class="phpdocumentor-description"><p>Rank Math combines that list with index as the default in
+Paper\Taxonomy and Paper\Singular (<code class="prettyprint">robots_combine( …, true )</code>), but not in
+Paper\Archive and Paper\Blog: there an empty list falls through to the
+global robots.</p>
+</section>
+
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
     <dl class="phpdocumentor-argument-list">
                     <dt class="phpdocumentor-argument-list__entry">
@@ -529,6 +541,15 @@ The first non-empty list of the candidates decides; with none,
                             </dt>
             <dd class="phpdocumentor-argument-list__definition">
                     <section class="phpdocumentor-description"><p>e.g. <code class="prettyprint">tax_category</code>, <code class="prettyprint">pt_page</code>, <code class="prettyprint">homepage</code>.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$empty_means_index</span>
+                : <span class="phpdocumentor-argument-list__argument__type">bool</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">false</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>An empty list while custom robots are on means index.</p>
 </section>
 
             </dd>
@@ -547,6 +568,12 @@ The first non-empty list of the candidates decides; with none,
                             <dd class="phpdocumentor-tag-list__definition">
                                             <span class="phpdocumentor-tag-link">1.7.0</span>
                                                                                                         
+                                    </dd>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                            <section class="phpdocumentor-description"><p><code class="prettyprint">$empty_means_index</code>.</p>
+</section>
+
                                     </dd>
                         </dl>
 
@@ -569,7 +596,7 @@ The first non-empty list of the candidates decides; with none,
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">156</span>
+    <span class="phpdocumentor-element-found-in__line">165</span>
 
     </aside>
 
@@ -648,7 +675,7 @@ the target is then unusable and the filter page keeps its own canonical.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">203</span>
+    <span class="phpdocumentor-element-found-in__line">212</span>
 
     </aside>
 
@@ -721,7 +748,7 @@ A theme's pre_get_posts is invisible here; the filter
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">228</span>
+    <span class="phpdocumentor-element-found-in__line">237</span>
 
     </aside>
 
@@ -777,7 +804,7 @@ A theme's pre_get_posts is invisible here; the filter
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">280</span>
+    <span class="phpdocumentor-element-found-in__line">299</span>
 
     </aside>
 
@@ -855,7 +882,7 @@ A theme's pre_get_posts is invisible here; the filter
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">336</span>
+    <span class="phpdocumentor-element-found-in__line">355</span>
 
     </aside>
 
@@ -915,7 +942,7 @@ jpkcom_postfilter_get_archive_base_url() distinguishes.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">387</span>
+    <span class="phpdocumentor-element-found-in__line">406</span>
 
     </aside>
 
@@ -966,6 +993,78 @@ jpkcom_postfilter_get_archive_base_url() distinguishes.</p>
             </section>
 
 </article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_seo_paged_noindex">
+        jpkcom_postfilter_seo_paged_noindex()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_seo_paged_noindex" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/canonical-target.php"><a href="files/includes-canonical-target.html"><abbr title="includes/canonical-target.php">canonical-target.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">472</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether Rank Math sends page 2+ of this filter page as noindex</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_seo_paged_noindex</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$post_type</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">int&nbsp;</span><span class="phpdocumentor-signature__argument__name">$page</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>Rank Math treats a filter page like the page it routes to:
+<code class="prettyprint">noindex_archive_subpages</code> applies to every paginated page
+(Paper::respect_settings_for_robots()), <code class="prettyprint">noindex_paginated_pages</code> only
+in Paper\Singular (a static posts page) and Paper\Blog (the front page
+shows the posts), not in Paper\Archive (post type archives). Rank Math
+1.0.280. Yoast has no such setting.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$post_type</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Post type of the filter page.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$page</span>
+                : <span class="phpdocumentor-argument-list__argument__type">int</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Current page, 1-based.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_seo_paged_noindex_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_seo_paged_noindex_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
             </section>
 
         
@@ -995,6 +1094,7 @@ jpkcom_postfilter_get_archive_base_url() distinguishes.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_rank_math_titles_robots">jpkcom_postfilter_rank_math_titles_robots()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_seo_base_noindex">jpkcom_postfilter_seo_base_noindex()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_seo_canonical_moved">jpkcom_postfilter_seo_canonical_moved()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_seo_paged_noindex">jpkcom_postfilter_seo_paged_noindex()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_seo_switch_on">jpkcom_postfilter_seo_switch_on()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_seo_term_noindex">jpkcom_postfilter_seo_term_noindex()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_term_archive_lists_post_type">jpkcom_postfilter_term_archive_lists_post_type()</a></li>

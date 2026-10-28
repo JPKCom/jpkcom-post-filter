@@ -138,6 +138,11 @@ brought to the new state, which tightens it where the save tightened.</li>
 .htaccess management no longer available) the save is refused: an error
 for the admin, and option, settings cache file and .htaccess all stay as
 they were.</li>
+<li>One save at a time (1.7.1, T9-d): a lock is held from the loosen step to
+the tighten step. A second save of General, Filter Groups or an import
+that starts meanwhile is refused - loosening from values the first save
+has not committed yet could leave the block stricter than what that save
+commits.</li>
 <li>Options outside the plugin that move the archive bases (page_for_posts,
 permalink_structure) sync after the commit; constants and filters change
 the effective values without any option event, so admin_init compares
@@ -257,6 +262,14 @@ sanitizes a second time (:1113); a refused first save never gets there.</p>
 <dd>Was the last save of an option refused in this request?</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_cache_pending">jpkcom_postfilter_htaccess_cache_pending()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Has an accepted step of the current save let the sanitizer rewrite the
+settings cache file, with the commit still to come?</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_server_reads">jpkcom_postfilter_htaccess_server_reads()</a>
     <span>
                                 &nbsp;: bool    </span>
@@ -271,6 +284,13 @@ sanitizes a second time (:1113); a refused first save never gets there.</p>
 <dd>Is the block in the file exactly as strict as the given inputs?</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_hash_rejects_as">jpkcom_postfilter_htaccess_hash_rejects_as()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Does a rule hash stand for the same rejects as the given inputs?</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_loosen">jpkcom_postfilter_htaccess_loosen()</a>
     <span>
                                 &nbsp;: array{ok: bool, reason: string}    </span>
@@ -283,6 +303,76 @@ sanitizes a second time (:1113); a refused first save never gets there.</p>
                                 &nbsp;: string    </span>
 </dt>
 <dd>The error shown when a save is refused</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_request_id">jpkcom_postfilter_htaccess_request_id()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>A token for this request, to tell its save lock from another request&#039;s</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_row">jpkcom_postfilter_htaccess_save_lock_row()</a>
+    <span>
+                                &nbsp;: array{0: string, 1: int, 2: string}|null    </span>
+</dt>
+<dd>The save lock as it is in the database: [ row value, since, owner ]</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_taken">jpkcom_postfilter_htaccess_save_lock_taken()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Has this request taken the save lock (and not released it yet)?</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock">jpkcom_postfilter_htaccess_save_lock()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Take the save lock, held from the loosen step to the tighten step (T9-d)</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_unlock">jpkcom_postfilter_htaccess_save_unlock()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>Release the save lock, if this request holds it</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_locked_elsewhere">jpkcom_postfilter_htaccess_save_locked_elsewhere()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Is another request between its loosen and its tighten right now?</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_guarded">jpkcom_postfilter_htaccess_guarded()</a>
+    <span>
+                                &nbsp;: array{guarded: bool, managed: bool}    </span>
+</dt>
+<dd>Is there a block a save has to keep in step - and lock for?</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_held">jpkcom_postfilter_htaccess_save_lock_held()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Is the save lock held for a whole import right now?</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_import_begin">jpkcom_postfilter_htaccess_import_begin()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Take the save lock for a whole import, before its first option (M-5)</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_import_end">jpkcom_postfilter_htaccess_import_end()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>Release the save lock an import held (M-5)</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_prepare_save">jpkcom_postfilter_htaccess_prepare_save()</a>
@@ -313,11 +403,18 @@ sanitizes a second time (:1113); a refused first save never gets there.</p>
 <dd>sanitize_option_{option}, priority PHP_INT_MAX: make a refusal a no-op</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_unchanged_save">jpkcom_postfilter_htaccess_unchanged_save()</a>
+    <span>
+                                &nbsp;: mixed    </span>
+</dt>
+<dd>pre_update_option_{option}, priority PHP_INT_MAX: an unchanged save lets go (R5)</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_after_settings_saved">jpkcom_postfilter_htaccess_after_settings_saved()</a>
     <span>
                                 &nbsp;: void    </span>
 </dt>
-<dd>jpkcom_postfilter_settings_saved: undo settings_save()&#039;s own cache write</dd>
+<dd>jpkcom_postfilter_settings_saved: settle the import of one option</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_after_save">jpkcom_postfilter_htaccess_after_save()</a>
@@ -325,6 +422,20 @@ sanitizes a second time (:1113); a refused first save never gets there.</p>
                                 &nbsp;: void    </span>
 </dt>
 <dd>After an option commit: bring the block to the new state</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_before_delete">jpkcom_postfilter_htaccess_before_delete()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>delete_option (core, before the row goes): loosen for the defaults (I-2)</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_after_delete">jpkcom_postfilter_htaccess_after_delete()</a>
+    <span>
+                                &nbsp;: void    </span>
+</dt>
+<dd>delete_option_{option}, priority 20: tighten to the state after the delete</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_maybe_resync">jpkcom_postfilter_htaccess_maybe_resync()</a>
@@ -367,7 +478,7 @@ sanitizes a second time (:1113); a refused first save never gets there.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">65</span>
+    <span class="phpdocumentor-element-found-in__line">70</span>
 
     </aside>
 
@@ -416,7 +527,7 @@ Never autoloaded.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">90</span>
+    <span class="phpdocumentor-element-found-in__line">95</span>
 
     </aside>
 
@@ -492,7 +603,7 @@ paths of the other.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">158</span>
+    <span class="phpdocumentor-element-found-in__line">163</span>
 
     </aside>
 
@@ -562,7 +673,7 @@ default, and when unclear, the looser reading is the safe one.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">210</span>
+    <span class="phpdocumentor-element-found-in__line">215</span>
 
     </aside>
 
@@ -657,7 +768,7 @@ the option is turned into inputs, too.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">302</span>
+    <span class="phpdocumentor-element-found-in__line">307</span>
 
     </aside>
 
@@ -731,7 +842,7 @@ either way, so the block comes back when there is a reject part again.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">328</span>
+    <span class="phpdocumentor-element-found-in__line">341</span>
 
     </aside>
 
@@ -746,6 +857,12 @@ either way, so the block comes back when there is a reject part again.</p>
 .htaccess on this site. Reads the current inputs after
 jpkcom_postfilter_settings_memo_reset(), so a value saved earlier in the
 same request is seen.</p>
+<p>Nothing is written while another request holds the save lock (M-1):
+that request is between its loosen and its tighten, the block is its
+union, and this request may still read the values from before that
+save - writing them could leave the block stricter than what that save
+commits. Its own tighten writes the current state. The holder itself
+syncs as before (its tighten goes through here).</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -775,6 +892,12 @@ same request is seen.</p>
                                             <span class="phpdocumentor-tag-link">1.6.0</span>
                                                                                                         
                                     </dd>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                            <section class="phpdocumentor-description"><p>Returns false while another request holds the save lock.</p>
+</section>
+
+                                    </dd>
                         </dl>
 
             <section>
@@ -796,7 +919,7 @@ same request is seen.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">360</span>
+    <span class="phpdocumentor-element-found-in__line">376</span>
 
     </aside>
 
@@ -863,7 +986,7 @@ sync and the admin_init hash comparison try again afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">387</span>
+    <span class="phpdocumentor-element-found-in__line">403</span>
 
     </aside>
 
@@ -920,6 +1043,81 @@ sync and the admin_init hash comparison try again afterwards.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_cache_pending">
+        jpkcom_postfilter_htaccess_cache_pending()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_cache_pending" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">435</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Has an accepted step of the current save let the sanitizer rewrite the
+settings cache file, with the commit still to come?</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_cache_pending</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$option</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">bool|null&nbsp;</span><span class="phpdocumentor-signature__argument__name">$set</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">null</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>Only then does a refusal have a cache file to put back: a refused step
+writes nothing (the sanitizers and jpkcom_postfilter_settings_save()
+skip the file, I-1). It happens when add_option() sanitizes a second
+time and that step is refused, or when the import's own sanitizer call
+went through and its update_option() is refused. Set by
+jpkcom_postfilter_htaccess_prepare_save() when it lets a save of a
+guarded block go on; cleared after the commit and when a refusal has
+been settled.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$option</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Option name, '*' with <code class="prettyprint">$set</code> false to clear every option.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$set</span>
+                : <span class="phpdocumentor-argument-list__argument__type">bool|null</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">null</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>New state, or null to read.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_cache_pending_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_cache_pending_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_server_reads">
         jpkcom_postfilter_htaccess_server_reads()
         <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_server_reads" class="headerlink"><i class="fas fa-link"></i></a>
@@ -928,7 +1126,7 @@ sync and the admin_init hash comparison try again afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">414</span>
+    <span class="phpdocumentor-element-found-in__line">469</span>
 
     </aside>
 
@@ -979,7 +1177,7 @@ in doubt a block has to count as active.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">443</span>
+    <span class="phpdocumentor-element-found-in__line">498</span>
 
     </aside>
 
@@ -1041,6 +1239,82 @@ cannot be stricter. A block below WordPress's never counts.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_hash_rejects_as">
+        jpkcom_postfilter_htaccess_hash_rejects_as()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_hash_rejects_as" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">530</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Does a rule hash stand for the same rejects as the given inputs?</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_hash_rejects_as</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$hash</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$inputs</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>The hash of the inputs, with the reject status left out of the
+comparison (ruling R20): 404 and 410 reject the same URLs.</p>
+<p>The hash these inputs had before R161-4 counts too - without the
+<code class="prettyprint">dropped</code> part (M-4). A 1.6.0 block for a layout over the size guard's
+limits carries it, and its rules are the current ones plus the rule the
+guard now leaves out, which rejects only what the plugin rejects as
+well: never stricter. Without this, every save on a read-only .htaccess
+with such a block was refused as <code class="prettyprint">not-writable</code>, even one that loosens
+nothing. For every other layout nothing is dropped and the two hashes
+are the same.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$hash</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>A rule hash (12 hex characters).</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$inputs</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, mixed&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Rule inputs.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_hash_rejects_as_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_hash_rejects_as_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_loosen">
         jpkcom_postfilter_htaccess_loosen()
         <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_loosen" class="headerlink"><i class="fas fa-link"></i></a>
@@ -1049,7 +1323,7 @@ cannot be stricter. A block below WordPress's never counts.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">488</span>
+    <span class="phpdocumentor-element-found-in__line">588</span>
 
     </aside>
 
@@ -1058,7 +1332,7 @@ cannot be stricter. A block below WordPress's never counts.</p>
     
     <code class="phpdocumentor-code phpdocumentor-signature ">
     <span class="phpdocumentor-signature__visibility"></span>
-                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_loosen</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$inputs</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">bool&nbsp;</span><span class="phpdocumentor-signature__argument__name">$orphan</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">false</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{ok: bool, reason: string}</span></code>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_loosen</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$inputs</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">bool&nbsp;</span><span class="phpdocumentor-signature__argument__name">$orphan</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">false</span><span> ]</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;|null&nbsp;</span><span class="phpdocumentor-signature__argument__name">$current</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">null</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{ok: bool, reason: string}</span></code>
 
         <section class="phpdocumentor-description"><p>Writing a looser block, like removing one, is always safe, so it is
 attempted whenever the file holds a managed block and is writable -
@@ -1074,6 +1348,15 @@ stricter on a server that may read it (ruling R22).</p>
 <p>An orphaned block (managed markers in the file, option gone - e.g. a
 deactivation that could not remove it) is not brought to the inputs but
 removed: nothing would keep it in step afterwards.</p>
+<p>A write that failed half way and could not be undone
+(jpkcom_postfilter_htaccess_last_error() <code class="prettyprint">rollback-failed</code>) is reported
+as <code class="prettyprint">write-unrestored</code> ahead of every other reason: the file may be
+incomplete, and the admin has to check it, not just retry (T8-a).</p>
+<p>A file that exists but cannot be read (T9-e) holds a block nobody can
+see, possibly stricter than anything: <code class="prettyprint">not-readable</code>, like damaged
+markers - unless <code class="prettyprint">$current</code> is given and the inputs reject exactly what
+it rejects (the save loosens nothing, so whatever the block is, it is
+not made stricter than the plugin by this save).</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -1093,6 +1376,15 @@ removed: nothing would keep it in step afterwards.</p>
                  = <span class="phpdocumentor-argument-list__argument__default-value">false</span>            </dt>
             <dd class="phpdocumentor-argument-list__definition">
                     <section class="phpdocumentor-description"><p>The block is in the file without the managed option.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$current</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, mixed&gt;|null</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">null</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Inputs the plugin runs with before the save (1.7.1).</p>
 </section>
 
             </dd>
@@ -1118,7 +1410,7 @@ removed: nothing would keep it in step afterwards.</p>
         <h5 class="phpdocumentor-return-value__heading">Return values</h5>
         <span class="phpdocumentor-signature__response_type">array{ok: bool, reason: string}</span>
                     &mdash;
-                <section class="phpdocumentor-description"><p>Reason: <code class="prettyprint">damaged</code>, <code class="prettyprint">manual-block</code>, <code class="prettyprint">not-writable</code> or <code class="prettyprint">write-failed</code>.</p>
+                <section class="phpdocumentor-description"><p>Reason: <code class="prettyprint">write-unrestored</code>, <code class="prettyprint">damaged</code>, <code class="prettyprint">not-readable</code>, <code class="prettyprint">manual-block</code>, <code class="prettyprint">not-writable</code> or <code class="prettyprint">write-failed</code>.</p>
 </section>
 
             </section>
@@ -1133,7 +1425,7 @@ removed: nothing would keep it in step afterwards.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">547</span>
+    <span class="phpdocumentor-element-found-in__line">659</span>
 
     </aside>
 
@@ -1152,7 +1444,7 @@ removed: nothing would keep it in step afterwards.</p>
                 : <span class="phpdocumentor-argument-list__argument__type">string</span>
                             </dt>
             <dd class="phpdocumentor-argument-list__definition">
-                    <section class="phpdocumentor-description"><p><code class="prettyprint">damaged</code>, <code class="prettyprint">manual-block</code>, <code class="prettyprint">not-writable</code>, <code class="prettyprint">write-failed</code>, or a reason from jpkcom_postfilter_htaccess_available().</p>
+                    <section class="phpdocumentor-description"><p><code class="prettyprint">busy</code>, <code class="prettyprint">db-error</code>, <code class="prettyprint">write-unrestored</code>, <code class="prettyprint">damaged</code>, <code class="prettyprint">not-readable</code>, <code class="prettyprint">manual-block</code>, <code class="prettyprint">not-writable</code>, <code class="prettyprint">write-failed</code>, or a reason from jpkcom_postfilter_htaccess_available().</p>
 </section>
 
             </dd>
@@ -1172,7 +1464,7 @@ removed: nothing would keep it in step afterwards.</p>
                                             <span class="phpdocumentor-tag-link">1.6.0</span>
                                                                                                             <section class="phpdocumentor-description"><p>The sentence that says what to do depends on the reason: damaged
 markers are fixed by hand, a manual block next to the managed one is
-deleted, a read-only file is made writable.</p>
+deleted, a read-only file is made writable, an unreadable one readable.</p>
 </section>
 
                                     </dd>
@@ -1185,6 +1477,574 @@ deleted, a read-only file is made writable.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_request_id">
+        jpkcom_postfilter_htaccess_request_id()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_request_id" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">710</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">A token for this request, to tell its save lock from another request&#039;s</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_request_id</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+    
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_request_id_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_request_id_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>16 hex characters, the same for the whole request.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_save_lock_row">
+        jpkcom_postfilter_htaccess_save_lock_row()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_row" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">733</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">The save lock as it is in the database: [ row value, since, owner ]</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_save_lock_row</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{0: string, 1: int, 2: string}|null</span></code>
+
+        <section class="phpdocumentor-description"><p>Read past the options cache - another request writes the row, and a
+cached &quot;no such option&quot; from earlier in this request would hide it.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_save_lock_row_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_row_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array{0: string, 1: int, 2: string}|null</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Null when nobody holds it (or there is no database).</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_save_lock_taken">
+        jpkcom_postfilter_htaccess_save_lock_taken()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_taken" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">765</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Has this request taken the save lock (and not released it yet)?</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_save_lock_taken</span><span>(</span><span class="phpdocumentor-signature__argument"><span>[</span><span class="phpdocumentor-signature__argument__type">bool|null&nbsp;</span><span class="phpdocumentor-signature__argument__name">$set</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">null</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>Keeps jpkcom_postfilter_htaccess_save_unlock() from sending a query on
+every option event of a request that never took it.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$set</span>
+                : <span class="phpdocumentor-argument-list__argument__type">bool|null</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">null</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>New state, or null to read.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_save_lock_taken_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_taken_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_save_lock">
+        jpkcom_postfilter_htaccess_save_lock()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">814</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Take the save lock, held from the loosen step to the tighten step (T9-d)</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_save_lock</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>Two saves at once break &quot;never stricter&quot;: B loosens from the values A
+has not committed yet and can write a block stricter than what A then
+commits. So one save at a time - for a managed block only; a site
+without one sends no query.</p>
+<p>The option <code class="prettyprint">jpkcom_postfilter_htaccess_save_lock</code> holds
+&quot;<time>|<request id>&quot;, inserted with INSERT IGNORE like core's
+WP_Upgrader::create_lock(): the row either goes in or it is there
+already, nothing in between. The request holding it may take it again
+(add_option() sanitizes a second time, an import saves two options).
+Released after the tighten (jpkcom_postfilter_htaccess_after_save()),
+on a refusal, after an import, and at the latest by a shutdown function</p>
+<ul>
+<li>which PHP runs after a fatal error, too. A lock older than a minute
+belongs to a request that died without even that (killed); it is
+taken over, atomically, so two takers cannot both win.</li>
+</ul>
+<p>Without $wpdb (never the case in WordPress) there is nothing to lock
+with, and the save goes on.</p>
+<p>A statement that fails (<code class="prettyprint">$wpdb-&gt;last_error</code>, a false result) is not
+another request's lock: INSERT IGNORE turns a duplicate key into a
+warning, so an error means the options table could not be used. That
+is <code class="prettyprint">db-error</code> (M-6) - before, it ended as <code class="prettyprint">busy</code>, and the admin was told
+to wait for a save that did not exist.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_save_lock_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>'' when this request holds it now, <code class="prettyprint">busy</code> when another
+request holds it, <code class="prettyprint">db-error</code> when a statement failed.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_save_unlock">
+        jpkcom_postfilter_htaccess_save_unlock()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_unlock" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">895</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Release the save lock, if this request holds it</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_save_unlock</span><span>(</span><span class="phpdocumentor-signature__argument"><span>[</span><span class="phpdocumentor-signature__argument__type">bool&nbsp;</span><span class="phpdocumentor-signature__argument__name">$force</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">false</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+        <section class="phpdocumentor-description"><p>Deletes exactly the value this request wrote: a lock another request
+has taken over meanwhile stays. While an import holds it
+(jpkcom_postfilter_htaccess_save_lock_held()) only <code class="prettyprint">$force</code> - the
+shutdown function - releases it.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$force</span>
+                : <span class="phpdocumentor-argument-list__argument__type">bool</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">false</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Release a lock held for an import, too.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_save_unlock_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_unlock_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_save_locked_elsewhere">
+        jpkcom_postfilter_htaccess_save_locked_elsewhere()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_locked_elsewhere" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">942</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Is another request between its loosen and its tighten right now?</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_save_locked_elsewhere</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>A SELECT that fails counts as &quot;yes&quot; (d3): the callers - the syncs, Set
+up, the admin_init resync - then write nothing, which is never stricter.
+Read as &quot;no&quot;, they wrote the block from values a running save may be
+about to loosen.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_save_locked_elsewhere_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_locked_elsewhere_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_guarded">
+        jpkcom_postfilter_htaccess_guarded()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_guarded" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">967</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Is there a block a save has to keep in step - and lock for?</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_guarded</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{guarded: bool, managed: bool}</span></code>
+
+        <section class="phpdocumentor-description"><p>The option <code class="prettyprint">jpkcom_postfilter_htaccess_managed</code>, or managed markers in
+the file without it (a removal that failed must not leave a block
+nothing guards).</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_guarded_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_guarded_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array{guarded: bool, managed: bool}</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p><code class="prettyprint">managed</code>: the option says so.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_save_lock_held">
+        jpkcom_postfilter_htaccess_save_lock_held()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_held" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">991</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Is the save lock held for a whole import right now?</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_save_lock_held</span><span>(</span><span class="phpdocumentor-signature__argument"><span>[</span><span class="phpdocumentor-signature__argument__type">bool|null&nbsp;</span><span class="phpdocumentor-signature__argument__name">$set</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">null</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>While it is, the release points of a single save (after the tighten,
+after one option of the import) leave the lock alone;
+jpkcom_postfilter_htaccess_import_end() releases it.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$set</span>
+                : <span class="phpdocumentor-argument-list__argument__type">bool|null</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">null</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>New state, or null to read.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_save_lock_held_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_held_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_import_begin">
+        jpkcom_postfilter_htaccess_import_begin()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_import_begin" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">1026</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Take the save lock for a whole import, before its first option (M-5)</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_import_begin</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">array&lt;string, mixed&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$data</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$setting</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>An import saves General and Filter Groups one after the other. Taken
+and released per option, the lock was free in between: another save
+could take it, and the import was refused half way - General imported,
+Filter Groups not. Now it is taken once and held until
+jpkcom_postfilter_htaccess_import_end(); when another request holds it
+(or the lock statement fails), the whole import is refused: an error
+for <code class="prettyprint">$setting</code>, nothing imported.</p>
+<p>Nothing to lock - no General or Filter Groups in the data, or no block
+to guard - is true without a query.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$data</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, mixed&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>The decoded import, group =&gt; settings.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$setting</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Settings error slug.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_import_begin_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_import_begin_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>True when the import may run.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_import_end">
+        jpkcom_postfilter_htaccess_import_end()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_import_end" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">1056</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Release the save lock an import held (M-5)</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_import_end</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+    
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_import_end_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_import_end_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_prepare_save">
         jpkcom_postfilter_htaccess_prepare_save()
         <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_prepare_save" class="headerlink"><i class="fas fa-link"></i></a>
@@ -1193,7 +2053,7 @@ deleted, a read-only file is made writable.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">597</span>
+    <span class="phpdocumentor-element-found-in__line">1086</span>
 
     </aside>
 
@@ -1208,8 +2068,12 @@ deleted, a read-only file is made writable.</p>
 removes an orphaned managed block (markers in the file without the
 option). On failure adds a settings error for <code class="prettyprint">$setting</code> (default: the
 messages of the option's admin page), a warning under WP-CLI - or,
-otherwise outside wp-admin, a debug log line - and returns false: the caller must then not save. Inside
+otherwise outside wp-admin, a debug log line - and returns false: the
+caller must then not save. Inside
 jpkcom_postfilter_htaccess_without_refusal() it never returns false.</p>
+<p>First it takes the save lock (jpkcom_postfilter_htaccess_save_lock());
+while another request holds it, the save is refused with reason <code class="prettyprint">busy</code>
+and nothing is written (T9-d).</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -1278,7 +2142,7 @@ jpkcom_postfilter_htaccess_without_refusal() it never returns false.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">662</span>
+    <span class="phpdocumentor-element-found-in__line">1158</span>
 
     </aside>
 
@@ -1334,7 +2198,7 @@ is stored.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">691</span>
+    <span class="phpdocumentor-element-found-in__line">1187</span>
 
     </aside>
 
@@ -1399,7 +2263,7 @@ PHP_INT_MAX finishes the refusal.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">720</span>
+    <span class="phpdocumentor-element-found-in__line">1226</span>
 
     </aside>
 
@@ -1412,8 +2276,16 @@ PHP_INT_MAX finishes the refusal.</p>
 
         <section class="phpdocumentor-description"><p>Returns exactly what update_option() compares with (get_option() without
 a default, i.e. the registered default for an option not stored yet), so
-nothing is written and no update_option_* / add_option_* fires, and puts
-the settings cache file back on the stored value.</p>
+nothing is written and no update_option_* / add_option_* fires, and
+releases the save lock (only if this request holds it - a <code class="prettyprint">busy</code>
+refusal never took it).</p>
+<p>The settings cache file is put back on the stored value only when an
+accepted earlier step of this save rewrote it
+(jpkcom_postfilter_htaccess_cache_pending()); the refused step itself
+wrote nothing. Rewriting it regardless (up to 1.7.1-dev) wrote this
+request's copy of the option, which may predate another request's
+commit: a <code class="prettyprint">busy</code> save loaded before A committed N2 put N5 back into the
+file, and A's tighten then built an N5 block (I-1).</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -1452,9 +2324,103 @@ the settings cache file back on the stored value.</p>
                                             <span class="phpdocumentor-tag-link">1.6.0</span>
                                                                                                         
                                     </dd>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                            <section class="phpdocumentor-description"><p>Puts the cache file back only after an accepted step wrote it.</p>
+</section>
+
+                                    </dd>
                         </dl>
 
     
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_unchanged_save">
+        jpkcom_postfilter_htaccess_unchanged_save()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_unchanged_save" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">1263</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">pre_update_option_{option}, priority PHP_INT_MAX: an unchanged save lets go (R5)</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_unchanged_save</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">mixed&nbsp;</span><span class="phpdocumentor-signature__argument__name">$value</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">mixed&nbsp;</span><span class="phpdocumentor-signature__argument__name">$old_value</span></span><span class="phpdocumentor-signature__argument"><span>[</span><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$option</span><span> = </span><span class="phpdocumentor-signature__argument__default-value">''</span><span> ]</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">mixed</span></code>
+
+        <section class="phpdocumentor-description"><p>update_option() compares the value with the stored one right after this
+filter and returns without any update_option_* hook when they are
+equal - so after_save() never runs, and the save lock stayed until the
+request ended. In a long-running process (a WP-CLI script, a queue or
+cron runner) that is every save of the settings refused <code class="prettyprint">busy</code> for up
+to a minute. Same comparison as core; only update_option() runs this
+filter, so add_option() (which inserts whatever it is given) keeps its
+lock until its add_option_* hook. An import holds the lock until its
+end anyway (jpkcom_postfilter_htaccess_save_unlock() leaves it).</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$value</span>
+                : <span class="phpdocumentor-argument-list__argument__type">mixed</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Value about to be saved.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$old_value</span>
+                : <span class="phpdocumentor-argument-list__argument__type">mixed</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Stored value, as update_option() compares it.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$option</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                 = <span class="phpdocumentor-argument-list__argument__default-value">''</span>            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Option name.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_unchanged_save_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_unchanged_save_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">mixed</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>$value, unchanged.</p>
+</section>
+
+            </section>
+
 </article>
                     <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_after_settings_saved">
@@ -1465,20 +2431,23 @@ the settings cache file back on the stored value.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">745</span>
+    <span class="phpdocumentor-element-found-in__line">1291</span>
 
     </aside>
 
-        <p class="phpdocumentor-summary">jpkcom_postfilter_settings_saved: undo settings_save()&#039;s own cache write</p>
+        <p class="phpdocumentor-summary">jpkcom_postfilter_settings_saved: settle the import of one option</p>
 
     
     <code class="phpdocumentor-code phpdocumentor-signature ">
     <span class="phpdocumentor-signature__visibility"></span>
                     <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_after_settings_saved</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$group</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
 
-        <section class="phpdocumentor-description"><p>jpkcom_postfilter_settings_save() (the import) writes the cache file
-itself after update_option(); after a refused save that file would hold
-the values that were just refused.</p>
+        <section class="phpdocumentor-description"><p>jpkcom_postfilter_settings_save() (the import) skips its own cache
+write after a refused save (I-1). The import's direct sanitizer call
+may have rewritten the file before update_option() was refused; then
+it is put back on the stored value (jpkcom_postfilter_htaccess_cache_pending()).
+The import of this option is done then, so the save lock goes, too -
+also when nothing changed and no update_option_* hook released it.</p>
 </section>
 
         <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
@@ -1508,6 +2477,12 @@ the values that were just refused.</p>
                                             <span class="phpdocumentor-tag-link">1.6.0</span>
                                                                                                         
                                     </dd>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                            <section class="phpdocumentor-description"><p>Puts the cache file back only when this save rewrote it.</p>
+</section>
+
+                                    </dd>
                         </dl>
 
     
@@ -1521,7 +2496,7 @@ the values that were just refused.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">766</span>
+    <span class="phpdocumentor-element-found-in__line">1316</span>
 
     </aside>
 
@@ -1533,7 +2508,8 @@ the values that were just refused.</p>
                     <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_after_save</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
 
         <section class="phpdocumentor-description"><p>Tightens where the save tightened; for the plugin's own options the
-block is already loose enough. Hooked with 0 arguments.</p>
+block is already loose enough. Then the save lock goes (if this request
+holds it). Hooked with 0 arguments.</p>
 </section>
 
     
@@ -1556,6 +2532,134 @@ block is already loose enough. Hooked with 0 arguments.</p>
     
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_before_delete">
+        jpkcom_postfilter_htaccess_before_delete()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_before_delete" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">1356</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">delete_option (core, before the row goes): loosen for the defaults (I-2)</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_before_delete</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$option</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+        <section class="phpdocumentor-description"><p>Deleting <code class="prettyprint">jpkcom_postfilter_general</code> or <code class="prettyprint">jpkcom_postfilter_filter_groups</code>
+deletes the group's settings cache file too (T2-b), and from then on the
+plugin runs with what it falls back to - the defaults, or no groups at
+all. That can be looser than the block (stored N1, default N2), so the
+block is first brought to union( current, state after the delete ),
+under the save lock, like a save.</p>
+<p>When the block cannot be loosened (or another request holds the save
+lock, or the lock statement fails), the delete is refused before core
+deletes the row: the lock is released, then WP_CLI::error() ends
+<code class="prettyprint">wp option delete</code> with exit code 1, and anywhere else wp_die() answers
+409 with the reason. Option, cache file and .htaccess stay as they were,
+like a refused save (user decision, 1.7.1 re-review). Keeping the cache
+file instead (1.7.1-dev) left the stricter values in a store the plugin
+treats as disposable: with the settings file cache switched off it is
+never read, and &quot;Clear Settings File Cache&quot; deletes it - either way the
+plugin fell back to the defaults while the block stayed strict.</p>
+<p>core's delete_option() offers no filter to stop it; this action runs
+before its DELETE, so ending the request here is the only way.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$option</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Option name.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_before_delete_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_before_delete_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_after_delete">
+        jpkcom_postfilter_htaccess_after_delete()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_after_delete" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">1423</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">delete_option_{option}, priority 20: tighten to the state after the delete</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_htaccess_after_delete</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$option</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">void</span></code>
+
+        <section class="phpdocumentor-description"><p>After settings.php has deleted the cache file (priority 10), the block
+is brought to what the plugin now runs with, and the save lock goes. A
+delete that could not loosen the block never gets here
+(jpkcom_postfilter_htaccess_before_delete() refuses it).</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$option</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Option name.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_htaccess_after_delete_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_after_delete_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+    
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_htaccess_maybe_resync">
         jpkcom_postfilter_htaccess_maybe_resync()
         <a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_maybe_resync" class="headerlink"><i class="fas fa-link"></i></a>
@@ -1564,7 +2668,7 @@ block is already loose enough. Hooked with 0 arguments.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">788</span>
+    <span class="phpdocumentor-element-found-in__line">1458</span>
 
     </aside>
 
@@ -1579,8 +2683,20 @@ block is already loose enough. Hooked with 0 arguments.</p>
 A block below WordPress's (it never takes effect) is moved, too. Only on
 admin page loads - not on admin-ajax (heartbeat), REST or cron requests
 (ruling R18), and only for a user who can manage_options (not for an
-anonymous request to admin-post.php). Known limit: a constant that loosens between two requests
-leaves the block stricter until the next admin page load.</p>
+anonymous request to admin-post.php). Known limit: a constant that
+loosens between two requests leaves the block stricter until the next
+admin page load. No write while another request is between its loosen
+and its tighten (T9-d): this request may still read the values before
+that save, and the save's own tighten writes the current state anyway.</p>
+<p>Cheapest first, since this runs on every admin page (1.7.1): the site
+checks before the managed flag (not autoloaded, so a query - T9-b),
+the file read once, and on an equal hash nothing is rendered (T9-a).
+The hash still runs the size guard once
+(jpkcom_postfilter_server_patterns_dropped(), R161-4); rendering the
+block would run it twice more. Returning on an equal hash is safe
+because a <code class="prettyprint"># rule</code> line is only written with a non-empty block, and
+the same hash means the same rule - as long as a renderer change bumps
+jpkcom_postfilter_server_renderer_version().</p>
 </section>
 
     
@@ -1598,6 +2714,12 @@ leaves the block stricter until the next admin page load.</p>
                                             <span class="phpdocumentor-tag-link">1.6.0</span>
                                                                                                         
                                     </dd>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                            <section class="phpdocumentor-description"><p>Site checks before the option read; returns on an equal hash before rendering.</p>
+</section>
+
+                                    </dd>
                         </dl>
 
     
@@ -1611,7 +2733,7 @@ leaves the block stricter until the next admin page load.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">837</span>
+    <span class="phpdocumentor-element-found-in__line">1535</span>
 
     </aside>
 
@@ -1628,6 +2750,24 @@ was deleted without being deactivated and installed again, say: remove
 it, it must never stay with outdated limits. Removing only ever loosens,
 so it does not wait for jpkcom_postfilter_htaccess_available(); a manual
 block is never touched. Nothing is set up.</p>
+<p>Managed, but SERVER_SOFTWARE is empty (WP-CLI, a system cron) or names
+an unknown server that may read .htaccess (R161-3): the block is
+rewritten only when the new one is provably looser
+(jpkcom_postfilter_htaccess_provably_looser(): it drops whole reject
+rules and adds none). A 1.6.0 block with a rule the size guard now
+drops makes Apache answer 500 for the whole site, so PHP only ever runs
+under WP-CLI there - and on a server the plugin cannot see, it never
+tightens. Everything else stays as it was until the next admin page
+load on Apache.</p>
+<p>Under WP-CLI SERVER_SOFTWARE is empty, so available() answers
+<code class="prettyprint">not-apache</code> before it looks at multisite, DISALLOW_FILE_MODS,
+LiteSpeed or a manual block: the repair runs on such a site as well
+(M-2). It is loosen-only, like a loosening save under
+DISALLOW_FILE_MODS (F-4). Next to a manual block it can only remove the
+managed block (the new one is '', no reject part any more); deleting a
+rule there is not provable. On a web request those reasons stop the
+version change here - no sync, no repair - and so does a server that
+positively ignores .htaccess.</p>
 </section>
 
     
@@ -1658,7 +2798,7 @@ block is never touched. Nothing is set up.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/htaccess-sync.php"><a href="files/includes-htaccess-sync.html"><abbr title="includes/htaccess-sync.php">htaccess-sync.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">865</span>
+    <span class="phpdocumentor-element-found-in__line">1571</span>
 
     </aside>
 
@@ -1672,8 +2812,9 @@ block is never touched. Nothing is set up.</p>
         <section class="phpdocumentor-description"><p>Reactivating sets nothing up again (spec 12, decision 7). Removing only
 loosens, so it runs whenever the file is writable, whatever
 jpkcom_postfilter_htaccess_available() says. When the block cannot be
-removed (read-only file, damaged markers) the option stays, so the block
-is still guarded after a reactivation.</p>
+removed (read-only file, damaged markers) - or the file cannot even be
+read, so nobody knows whether a block is there (T9-e) - the option
+stays, so the block is still guarded after a reactivation.</p>
 </section>
 
     
@@ -1717,12 +2858,19 @@ is still guarded after a reactivation.</p>
                             <li class="phpdocumentor-on-this-page-section__title">Functions</li>
                 <li>
                     <ul class="phpdocumentor-list -clean">
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_after_delete">jpkcom_postfilter_htaccess_after_delete()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_after_save">jpkcom_postfilter_htaccess_after_save()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_after_settings_saved">jpkcom_postfilter_htaccess_after_settings_saved()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_apply">jpkcom_postfilter_htaccess_apply()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_as_strict_as">jpkcom_postfilter_htaccess_as_strict_as()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_before_delete">jpkcom_postfilter_htaccess_before_delete()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_before_save">jpkcom_postfilter_htaccess_before_save()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_cache_pending">jpkcom_postfilter_htaccess_cache_pending()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_deactivate">jpkcom_postfilter_htaccess_deactivate()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_guarded">jpkcom_postfilter_htaccess_guarded()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_hash_rejects_as">jpkcom_postfilter_htaccess_hash_rejects_as()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_import_begin">jpkcom_postfilter_htaccess_import_begin()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_import_end">jpkcom_postfilter_htaccess_import_end()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_is_managed">jpkcom_postfilter_htaccess_is_managed()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_lifecycle">jpkcom_postfilter_htaccess_lifecycle()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_loosen">jpkcom_postfilter_htaccess_loosen()</a></li>
@@ -1730,10 +2878,18 @@ is still guarded after a reactivation.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_prepare_save">jpkcom_postfilter_htaccess_prepare_save()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_refusal_message">jpkcom_postfilter_htaccess_refusal_message()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_refused">jpkcom_postfilter_htaccess_refused()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_request_id">jpkcom_postfilter_htaccess_request_id()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_restore_cache">jpkcom_postfilter_htaccess_restore_cache()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock">jpkcom_postfilter_htaccess_save_lock()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_held">jpkcom_postfilter_htaccess_save_lock_held()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_row">jpkcom_postfilter_htaccess_save_lock_row()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_lock_taken">jpkcom_postfilter_htaccess_save_lock_taken()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_locked_elsewhere">jpkcom_postfilter_htaccess_save_locked_elsewhere()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_save_unlock">jpkcom_postfilter_htaccess_save_unlock()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_server_reads">jpkcom_postfilter_htaccess_server_reads()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_settle_refusal">jpkcom_postfilter_htaccess_settle_refusal()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_sync">jpkcom_postfilter_htaccess_sync()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_unchanged_save">jpkcom_postfilter_htaccess_unchanged_save()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_htaccess_without_refusal">jpkcom_postfilter_htaccess_without_refusal()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_inputs_from_raw">jpkcom_postfilter_server_inputs_from_raw()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_server_policy_from_raw">jpkcom_postfilter_server_policy_from_raw()</a></li>

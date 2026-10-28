@@ -250,6 +250,13 @@ is the maze.</p>
 <dd>Whether the current filter page is one only bots make</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_canonical_filtered">jpkcom_postfilter_canonical_filtered()</a>
+    <span>
+                                &nbsp;: array{kind: string, url: string}    </span>
+</dt>
+<dd>Pass a canonical target through `jpkcom_postfilter_canonical`</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_canonical_decision">jpkcom_postfilter_canonical_decision()</a>
     <span>
                                 &nbsp;: array{kind: string, url: string}|null    </span>
@@ -808,6 +815,84 @@ bootstrap and nothing else.</p>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_canonical_filtered">
+        jpkcom_postfilter_canonical_filtered()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_canonical_filtered" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">393</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Pass a canonical target through `jpkcom_postfilter_canonical`</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_canonical_filtered</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$kind</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$url</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$filters</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{kind: string, url: string}</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$kind</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>archive|home|self.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$url</span>
+                : <span class="phpdocumentor-argument-list__argument__type">string</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Target URL.</p>
+</section>
+
+            </dd>
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$filters</span>
+                : <span class="phpdocumentor-argument-list__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>Active filters.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_canonical_filtered_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_canonical_filtered_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">array{kind: string, url: string}</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Kind none when the filter empties the URL.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_canonical_decision">
         jpkcom_postfilter_canonical_decision()
         <a href="namespaces/default.html#function_jpkcom_postfilter_canonical_decision" class="headerlink"><i class="fas fa-link"></i></a>
@@ -816,7 +901,7 @@ bootstrap and nothing else.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">404</span>
+    <span class="phpdocumentor-element-found-in__line">458</span>
 
     </aside>
 
@@ -828,10 +913,12 @@ bootstrap and nothing else.</p>
                     <span class="phpdocumentor-signature__name">jpkcom_postfilter_canonical_decision</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{kind: string, url: string}|null</span></code>
 
         <section class="phpdocumentor-description"><p>Reads the canonical settings and the term count, never the robots
-directives - those are derived from this decision. Targets are always
-page 1: page N of a filter page is not page N of its target.</p>
+directives - those are derived from this decision.</p>
 <ul>
 <li>bot page (unknown term, no results): none</li>
+<li>page 2 and later (since 1.7.1): self with the page, as Google asks
+for paginated pages - within <code class="prettyprint">seo_index_max_terms</code>, else none; the
+duplicate of the archive is page 1. <code class="prettyprint">off</code> stays none.</li>
 <li>one term, <code class="prettyprint">canonical_single</code>: archive (the term archive when it is an
 indexable target, else as <code class="prettyprint">filter</code>) / filter / off</li>
 <li>two or more terms, <code class="prettyprint">canonical_multi</code>: home (the archive base when it
@@ -839,6 +926,8 @@ is an indexable target, else as <code class="prettyprint">filter</code>) / filte
 <li><code class="prettyprint">filter</code>: self when the page is within <code class="prettyprint">seo_index_max_terms</code>, else none</li>
 <li><code class="prettyprint">off</code>: none</li>
 </ul>
+<p>The URL then passes <code class="prettyprint">jpkcom_postfilter_canonical</code>; an empty value makes
+the decision none (since 1.7.1), so the term-count noindex stays.</p>
 </section>
 
     
@@ -879,7 +968,7 @@ when not a filter request.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">478</span>
+    <span class="phpdocumentor-element-found-in__line">537</span>
 
     </aside>
 
@@ -941,7 +1030,7 @@ links only leads further into the combinations.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">526</span>
+    <span class="phpdocumentor-element-found-in__line">599</span>
 
     </aside>
 
@@ -988,7 +1077,7 @@ jpkcom_postfilter_robots_directives().</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">544</span>
+    <span class="phpdocumentor-element-found-in__line">617</span>
 
     </aside>
 
@@ -1035,7 +1124,7 @@ at the archive base), so <code class="prettyprint">nofollow</code> is no longer 
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">705</span>
+    <span class="phpdocumentor-element-found-in__line">784</span>
 
     </aside>
 
@@ -1088,7 +1177,7 @@ canonical&quot;, the URL otherwise.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">800</span>
+    <span class="phpdocumentor-element-found-in__line">889</span>
 
     </aside>
 
@@ -1153,7 +1242,7 @@ active the base is added once per active language.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">879</span>
+    <span class="phpdocumentor-element-found-in__line">968</span>
 
     </aside>
 
@@ -1219,7 +1308,7 @@ fragment and query-var lines are emitted.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">983</span>
+    <span class="phpdocumentor-element-found-in__line">1072</span>
 
     </aside>
 
@@ -1327,7 +1416,7 @@ narrow nothing further).</li>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1049</span>
+    <span class="phpdocumentor-element-found-in__line">1138</span>
 
     </aside>
 
@@ -1392,7 +1481,7 @@ narrow nothing further).</li>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1090</span>
+    <span class="phpdocumentor-element-found-in__line">1179</span>
 
     </aside>
 
@@ -1516,6 +1605,7 @@ only the data attributes and aria-pressed).</p>
                     <ul class="phpdocumentor-list -clean">
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_archive_base_urls_all_languages">jpkcom_postfilter_archive_base_urls_all_languages()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_canonical_decision">jpkcom_postfilter_canonical_decision()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_canonical_filtered">jpkcom_postfilter_canonical_filtered()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_canonical_url">jpkcom_postfilter_canonical_url()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_filter_query_string">jpkcom_postfilter_filter_query_string()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_guard_request">jpkcom_postfilter_guard_request()</a></li>

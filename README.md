@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.7.0  
+**Version:** 1.7.1  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 7.0  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.7.0  
+**Stable tag:** 1.7.1  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -80,8 +80,8 @@ Filter any post type by taxonomy terms — SEO-friendly URLs, AJAX, and shortcod
 |--------|---------|-------------|
 | Filter Links for Crawlers | Single terms only | What a term button links to for clients without JavaScript: its own single-term page (`single`), the combination within the limits (`combo`), or nothing (`none`). Visitors with JavaScript can always combine terms. Constant `JPKCOM_POSTFILTER_LINK_MODE` |
 | Indexable Filter Pages | 1 | Filter pages with up to this many terms are `index, follow`; more terms → `noindex, nofollow` without canonical, unless the canonical points to another page (below), which replaces the noindex; unknown terms or no results → always `noindex, nofollow`, no canonical. Constant `JPKCOM_POSTFILTER_INDEX_MAX_TERMS` |
-| Canonical: Single Term | Term archive | Canonical of a filter page with one term (since 1.7.0): `archive` = the term's category, tag or taxonomy archive - if that archive is public, lists the post type, is not noindex in Rank Math or Yoast and has no manual canonical pointing elsewhere there, else the filter URL; `filter` = the filter page itself; `off` = no canonical at all, also none from Rank Math or Yoast. Always page 1. Constant `JPKCOM_POSTFILTER_CANONICAL_SINGLE` |
-| Canonical: Multiple Terms | Archive base | Canonical of a filter page with two or more terms (since 1.7.0): `home` = the unfiltered blog page or post type archive - if it is not noindex in Rank Math or Yoast and has no manual canonical pointing elsewhere (a static front page without a posts page is no such archive); such pages are then `index, nofollow` instead of `noindex, nofollow`; otherwise, and with `filter`, *Indexable Filter Pages* decides as before; `off` = no canonical at all. Always page 1. Constant `JPKCOM_POSTFILTER_CANONICAL_MULTI` |
+| Canonical: Single Term | Term archive | Canonical of a filter page with one term (since 1.7.0): `archive` = the term's category, tag or taxonomy archive - if that archive is public, lists the post type, is not noindex in Rank Math or Yoast and has no manual canonical pointing elsewhere there, else the filter URL; `filter` = the filter page itself; `off` = no canonical at all, also none from Rank Math or Yoast. From page 2 on, as long as one-term filter pages may be indexed (*Indexable Filter Pages* at least 1), the canonical is the paginated filter page itself; with `off` there is none (since 1.7.1). Constant `JPKCOM_POSTFILTER_CANONICAL_SINGLE` |
+| Canonical: Multiple Terms | Archive base | Canonical of a filter page with two or more terms (since 1.7.0): `home` = the unfiltered blog page or post type archive - if it is not noindex in Rank Math or Yoast and has no manual canonical pointing elsewhere (a static front page without a posts page is no such archive); such pages are then `index, nofollow` instead of `noindex, nofollow`; otherwise, and with `filter`, *Indexable Filter Pages* decides as before; `off` = no canonical at all. From page 2 on these pages follow *Indexable Filter Pages* with a canonical to themselves (since 1.7.1). Constant `JPKCOM_POSTFILTER_CANONICAL_MULTI` |
 | Max. Terms in Total | 0 (off) | Cap across all groups, enforced by the filter bar and the server. Constant `JPKCOM_POSTFILTER_MAX_TERMS_TOTAL` |
 | Strict Filter URLs | on | 301 every other spelling of a selection to its canonical URL; reject impossible paths before the database is queried. Constant `JPKCOM_POSTFILTER_STRICT_URLS` |
 | Invalid Combinations | 410 | Status for paths beyond the limits (410 or 404). Constant `JPKCOM_POSTFILTER_REJECT_STATUS` |
@@ -189,7 +189,9 @@ Each tab contains, as far as the server allows:
 
 **The rules never reject a URL the plugin serves with the current settings.** Rules pasted into a server configuration do not change by themselves, so follow the order on the page: when *tightening* the settings, change the plugin first, purge the page cache, then update the server; when *loosening*, update the server first, then the plugin. After every save that loosens the filter URL settings the plugin reminds you to update deployed server rules.
 
-**Managed `.htaccess` (Apache only).** On Apache, single site, with a writable `.htaccess` and without `DISALLOW_FILE_MODS`, *Set up* lets the plugin write its block itself - directly before WordPress's own block, between `# BEGIN JPKCom Post Filter` and `# END JPKCom Post Filter` - and keep it in step with the settings from then on - every save in wp-admin and the import. A loosening `wp option update` under WP-CLI loosens the block before the change is stored; tightening through WP-CLI, `wp-config.php` constants or code filters follows on the next admin page load (until then the block is only looser than the plugin, never stricter). A save that would loosen the settings is refused while the block cannot be updated, so the block is never stricter than the plugin. *Remove*, or deactivating the plugin, deletes the block. The plugin never writes the file without that click and never touches a block you pasted yourself (those carry `(manual)` markers). Not available on LiteSpeed/OpenLiteSpeed or multisite.
+**Managed `.htaccess` (Apache only).** On Apache, single site, with a writable `.htaccess` and without `DISALLOW_FILE_MODS`, *Set up* lets the plugin write its block itself - directly before WordPress's own block, between `# BEGIN JPKCom Post Filter` and `# END JPKCom Post Filter` - and keep it in step with the settings from then on - every save in wp-admin and the import. A loosening `wp option update` under WP-CLI loosens the block before the change is stored; tightening through WP-CLI, `wp-config.php` constants or code filters follows on the next admin page load (until then the block is only looser than the plugin, never stricter). A save that would loosen the settings is refused while the block cannot be updated - the error names the reason and what to do -, so the block is never stricter than the plugin; a second save while another one is still updating the block is refused the same way. Deleting the *General* or *Filter Groups* option (`wp option delete`, or a plugin calling `delete_option()`) loosens the block first and is refused, with an error, when it cannot; deleting the row directly in the database bypasses this. *Remove*, or deactivating the plugin, deletes the block. The plugin never writes the file without that click and never touches a block you pasted yourself (those carry `(manual)` markers). Not available on LiteSpeed/OpenLiteSpeed or multisite.
+
+**`DISALLOW_FILE_MODS` and multisite stop setting up and tightening, not loosening.** If the block was set up before `DISALLOW_FILE_MODS` was set (or before the site became part of a network) and the file is still writable, the plugin keeps writing it in five cases: a save that loosens the settings writes the looser block first, so does deleting the *General* or *Filter Groups* option, *Remove* deletes the block, so does deactivation, and after a version change under WP-CLI (when `wp` is the first to load the new version) the block is rewritten without reject rules the new version no longer writes - only when the new block provably drops whole rules and adds none. Each of them only lets more filter URLs through to PHP. Skipping them would leave the server rejecting URLs the plugin now serves, or - since a loosening save is refused while the block cannot follow - block every loosening save for as long as the constant is set. *Set up*, tightening and the update on admin page loads stop. To keep the plugin out of the file entirely, click *Remove*; it works with the constant set.
 
 **Check now** sends a few requests to your own site without cookies and shows whether robots.txt reaches WordPress, whether the server rule is deployed and current, and - as a red alarm - whether it is stricter than the plugin. The rate limit is not tested, because that would use up the budget all cookie-less visitors share. If the site cannot reach itself (HTTP authentication, firewall, maintenance mode) the result says "could not be checked", never "missing".
 
@@ -402,6 +404,8 @@ The pagination position for auto-inject mode is configurable (Below / Above / Bo
 
 Auto-inject works by hooking into `loop_start` and `loop_end` on archive/blog pages. It does not run on singular posts, search results, or pages.
 
+In block themes (since 1.7.1) the same markup is placed around the post template of the query block that inherits the main query, the theme's query pagination is replaced by the plugin's, and with zero results the bar and the message take the place of the query's no-results block. Templates without such a query block get the zero-results bar in the footer as before. A PHP archive template in a block theme runs its loop in the page body and gets the classic markup. The filter `jpkcom_postfilter_inject_via_blocks` (default: true while `wp_head` has not run, i.e. inside a block template) switches between the two ways.
+
 ---
 
 ## Template Overrides
@@ -535,13 +539,41 @@ See `CLAUDE.md` in the plugin root for the full developer reference including ar
 
 | Constant | Default | Purpose |
 |----------|---------|---------|
-| `JPKCOM_POSTFILTER_VERSION` | `'1.0.0'` | Plugin version |
-| `JPKCOM_POSTFILTER_DEBUG` | `WP_DEBUG` | Enables debug mode and debug templates |
+| `JPKCOM_POSTFILTER_VERSION` | the header `Version:` | Plugin version - do not override |
+| `JPKCOM_POSTFILTER_BASENAME` | `plugin_basename(__FILE__)` | Plugin basename |
+| `JPKCOM_POSTFILTER_PLUGIN_PATH` | `plugin_dir_path(__FILE__)` | Absolute plugin path |
+| `JPKCOM_POSTFILTER_PLUGIN_URL` | `plugin_dir_url(__FILE__)` | Plugin URL |
+| `JPKCOM_POSTFILTER_SETTINGS_DIR` | `WP_CONTENT_DIR . '/.ht.jpkcom-post-filter-settings'` | Settings file cache location (must stay inside `wp-content`) |
 | `JPKCOM_POSTFILTER_CACHE_ENABLED` | `true` | Master cache toggle |
+| `JPKCOM_POSTFILTER_DEBUG` | `WP_DEBUG` | Enables debug mode and debug templates |
 | `JPKCOM_POSTFILTER_URL_ENDPOINT` | `'filter'` | URL path segment |
-| `JPKCOM_POSTFILTER_SETTINGS_DIR` | `WP_CONTENT_DIR . '/.ht.jpkcom-post-filter-settings'` | Settings file cache location |
-| `JPKCOM_POSTFILTER_MAX_FILTER_COMBOS` | `3` | Default max filter group combinations |
 | `JPKCOM_POSTFILTER_ABILITIES` | `true` | Registers the WordPress Abilities API integration. Set to `false` to withdraw both abilities from REST and MCP entirely. |
+
+URL and crawler settings: each of these also exists as a setting under **General**; a defined constant wins and locks the field. Every value also passes the filter `jpkcom_postfilter_{setting key}`.
+
+| Constant | Setting key | Default | Purpose |
+|----------|-------------|---------|---------|
+| `JPKCOM_POSTFILTER_MAX_FILTERS_PER_GROUP` | `max_filters_per_group` | `2` (new installations since 1.6.0; existing ones keep `3`) | Terms per group as they appear in the URL (0 = unlimited) |
+| `JPKCOM_POSTFILTER_MAX_FILTER_COMBOS` | `max_filter_combos` | `3` | Active filter groups (0 = unlimited) |
+| `JPKCOM_POSTFILTER_MAX_TERMS_TOTAL` | `max_terms_total` | `0` | Terms across all groups (0 = off) |
+| `JPKCOM_POSTFILTER_LINK_MODE` | `filter_link_mode` | `'single'` | `single` / `combo` / `none` - what term buttons link to |
+| `JPKCOM_POSTFILTER_INDEX_MAX_TERMS` | `seo_index_max_terms` | `1` | Filter pages with up to N terms are `index, follow` (0 = none) |
+| `JPKCOM_POSTFILTER_STRICT_URLS` | `strict_urls` | `true` | Request guard on/off |
+| `JPKCOM_POSTFILTER_REJECT_STATUS` | `reject_status` | `410` | `404` or `410` for impossible filter URLs |
+| `JPKCOM_POSTFILTER_UNKNOWN_TERMS_ACTION` | `unknown_terms_action` | `'redirect'` | `redirect` / `noindex` / `reject` |
+| `JPKCOM_POSTFILTER_ROBOTS_TXT` | `robots_txt_mode` | `'deep'` | `deep` / `all` / `off` |
+| `JPKCOM_POSTFILTER_STRIP_QUERY` | `strip_query` | `false` | 301 filter URLs with a query string to the bare path |
+| `JPKCOM_POSTFILTER_CANONICAL_SINGLE` | `canonical_single` | `'archive'` | `archive` / `filter` / `off` - canonical of a one-term page |
+| `JPKCOM_POSTFILTER_CANONICAL_MULTI` | `canonical_multi` | `'home'` | `home` / `filter` / `off` - canonical of a page with two or more terms |
+
+Constant only, no setting:
+
+| Constant | Default | Purpose |
+|----------|---------|---------|
+| `JPKCOM_POSTFILTER_ROBOTS_HEADER` | `true` | Sends `X-Robots-Tag` on filter pages that are not `index, follow` |
+| `JPKCOM_POSTFILTER_LINK_MAX_TERMS` | `0` (no extra limit) | Depth limit for links in `combo` mode |
+| `JPKCOM_POSTFILTER_PAGECACHE_MAX_TERMS` | `0` (off) | Above N terms the page sets `DONOTCACHEPAGE` |
+| `JPKCOM_POSTFILTER_QUERY_CACHE_MAX_TERMS` | `1` | Selections with more terms skip the query cache |
 
 ### JavaScript data attributes
 
@@ -597,7 +629,8 @@ jpkcom_postfilter_get_terms_for_group( $group, $active_filters )
 
 - `jpkcom_postfilter_ability_meta( array $meta, string $ability_name )` — adjust the meta of an ability before registration. Set `show_in_rest` to `false` to hide it from the REST API, or `mcp.public` to `false` to hide it from MCP clients.
 - `jpkcom_postfilter_ability_capability( string $capability, string $ability_name )` — the capability required to run an ability. Defaults to `read`, which covers every logged-in user. Raise it to `edit_posts` to restrict bulk machine-readable access to published content.
-- `jpkcom_postfilter_canonical( string $url, string $kind, array $filters )` — the canonical of a filter page; `$kind` is `archive` (term archive), `home` (archive base) or `self`. Not called when the page has no canonical.
+- `jpkcom_postfilter_canonical( string $url, string $kind, array $filters )` — the canonical of a filter page; `$kind` is `archive` (term archive), `home` (archive base) or `self`. Not called when the page has no canonical. Since 1.7.0 it receives term archive and archive base URLs as well, not only the filter page's own URL; since 1.7.1 `self` carries the page from page 2 on, and returning an empty string means no canonical - the page then keeps the noindex of its term count.
+- `jpkcom_postfilter_inject_via_blocks( bool $via_blocks )` — whether auto-injection wraps the inherited query block instead of printing from the loop hooks; default true while `wp_head` has not run (since 1.7.1).
 - `jpkcom_postfilter_canonical_archive_indexable( bool $indexable, WP_Term $term, string $post_type )` — whether a term archive may be the canonical target (since 1.7.0). Use it for SEO plugins other than Rank Math and Yoast, or for a theme that changes what a term archive lists.
 - `jpkcom_postfilter_canonical_base_indexable( bool $indexable, string $post_type )` — the same for the archive base (since 1.7.0).
 
@@ -641,6 +674,37 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.7.1
+
+What changes on a running site after the update - read this first:
+
+* **Changed (behaviour, all sites):** page 2 and later of a filter page now have a canonical to themselves (`…/filter/seo/page/2/`), as Google recommends for paginated pages; page 1 still points to the term archive or the blog page. As a consequence, page 2 and later of a combination are `noindex, nofollow` without a canonical again, as in 1.6.1.
+* **Changed (behaviour, all sites):** a filter page past its last page (`/blog/filter/seo/page/99/`) now answers **404**, like `/blog/page/99/` and `/category/seo/page/99/`. WordPress's canonical redirect sent it with a 301 to the unfiltered blog page. Filter pages that exist keep WordPress's redirects (a missing trailing slash and the like).
+* **Changed (behaviour, sites with Rank Math or Yoast):** filter pages no longer inherit a noindex from the blog page. A single-term filter page stays `index` with its canonical to the term archive even if the blog page itself is set to noindex. Two settings still win: *Discourage search engines* in WordPress, and Rank Math's *noindex paginated pages* / *noindex archive subpages* for page 2 and later (applied exactly where Rank Math applies them). A search on a filter page (`?s=`) stays `noindex`, and a comment reply link (`?replytocom=`) `noindex, nofollow`, as WordPress and both SEO plugins send them.
+* **Changed (Yoast):** Yoast's `rel="prev"`/`rel="next"` links are no longer printed on filter pages - they pointed into the unfiltered blog (Rank Math's were already off).
+* **Changed (Server Rules, only settings the page warns about):** where the Server Rules page says a reject rule is left out because a server could not load it (very many filter groups or terms per group, see 1.6.1), the rule hash now changes with the update. *Check now* then reports rules you pasted by hand as *stale*: paste them again. A managed `.htaccess` block rewrites itself - on the next wp-admin page load, and also under WP-CLI, see below. For every other setting the rule hash and the reject rules are byte-for-byte the same as in 1.7.0, so deployed rules stay *current*.
+* **Changed (managed `.htaccess` block):** only one settings save at a time can update the block. A second save of *General* or *Filter Groups* (or an import) while another one is still between loosening and tightening the block is refused with a message to wait a few seconds and save again - two saves at once could leave the block stricter than the plugin. Nothing is stored in that case, and the refused save no longer writes its own, possibly outdated copy of the settings into the settings cache file (it could undo the other save's change there). An import holds the lock from its first settings group to its last, so it is never applied half; while another save runs it is refused as a whole. *Set up* waits the same way ("try again"), and so do the automatic block updates after a version change or a change of the posts page or permalinks. Sites without a managed block are not affected.
+* **Changed (managed `.htaccess` block):** an `.htaccess` that exists but cannot be read keeps the block guarded. A save that loosens the filter URL settings is refused ("the file is not readable"), and deactivation and *Remove* no longer forget the block - before, the plugin treated the unreadable file as one without a block. The Server Rules page shows the file as "not readable".
+* **Fixed (managed `.htaccess` block, WP-CLI):** on a version change the plugin now also rewrites the block under WP-CLI (or on a server it cannot identify) - but only when the new block provably leaves out whole rules and changes nothing else, never when it would be stricter. That repairs a 1.6.0 block whose rule made Apache answer **500** for the whole site: after `wp plugin update jpkcom-post-filter`, the next `wp` command runs the new version and rewrites the block; removing the lines by hand (1.6.1 notes) is no longer needed. The text of the error page, translated into the language of whoever wrote the block, does not stand in the way.
+* **Fixed (block themes):** with auto-inject in a block theme such as Twenty Twenty-Five the filter bar was printed before `<!DOCTYPE html>`. It now sits around the query block's post list, the theme's own query pagination gives way to the plugin's, and zero results show the bar and the message where the list would be. Classic themes print exactly what 1.7.0 printed.
+* **Fixed:** the screen reader announcement after a filter click counts the posts of a block theme's post template too (it announced no number there), and only the list's own posts - not those of a query block inside a post.
+* **Fixed:** on a permalink structure without a trailing slash the canonical of a combination pointed to `/blog/`, which redirects to `/blog`; it is now the URL the blog page itself declares.
+* **Fixed:** the Rank Math check behind the canonical targets now follows Rank Math exactly in two more cases: an empty category with sub-categories is not noindex, and "custom robots" switched on without a selection means index for taxonomies and pages.
+* **Fixed (developers):** a `jpkcom_postfilter_canonical` callback that returns an empty string now means "no canonical" and keeps the page's noindex, instead of leaving an indexable page without a canonical. Since 1.7.0 this filter also receives term archive and blog URLs, not only the filter page's own URL.
+* **Fixed (managed `.htaccess` block):** if writing the file failed half way and its previous content could not be put back, the message now says the `.htaccess` may be incomplete and has to be checked or restored now - Apache answers every request with an error while it cannot parse the file. Before, it only advised checking permissions and disk space. On a full disk with `display_errors` on, *Set up* and *Remove* no longer end in "headers already sent".
+* **Fixed (Server Rules page):** when the *terms per group* rule is left out only because the *segment count* rule is, the warning now says so instead of repeating the other rule's reason, and it only names the settings that actually bring the dropped rules back, per reason (fewer terms per group, for example, is no longer suggested where it cannot help). Measured: no rule the page generates reaches the compiled size limit of Ferron 3's regular expressions.
+* **Fixed (Server Rules, *Check now*):** a redirect on the "stricter than the plugin" probe that does not come from the plugin itself - to https, to another host name, from a proxy - is now reported as "not checked" instead of "not stricter". Such a redirect happens before the server rules and proves nothing about them.
+* **Fixed (Server Rules check commands):** the printed loops run in a subshell and no longer leave variables (`first`, `h`, `c`, `i`, `u`) behind in your shell. The Ferron 2.8 tab no longer prints the header explanation and the "never stricter" loop: there is no reject rule to check there.
+* **Changed (Server Rules, Apache with ModSecurity):** a request the ModSecurity rate limit answers with 429 no longer writes an audit-log entry (`ctl:auditEngine=Off` on the three limit rules); its one line in the error log stays. Neither does a filter URL the server rejects: a new rule in the ModSecurity snippet (4710014, `pass,nolog`) switches the audit log off for exactly the requests the reject rules answered - it never blocks and never changes a status. Measured with Debian's recommended `modsecurity.conf`, with and without OWASP CRS: 1.7 MB of audit log per 1000 answered 429s and 1 MB per 1000 server rejects before, none after; every other request keeps its audit entry. Paste the ModSecurity snippet again to get this; the reject snippet and the limits are unchanged, and so is the rule hash (apart from the settings above), so *Check now* keeps reporting deployed rules as current.
+* **Fixed (developers):** deleting a settings option (`wp option delete jpkcom_postfilter_general`, say) now also deletes its settings cache file. The plugin reads that file before the database, so until the next save it kept running with the deleted values. With a managed `.htaccess` block the block is first loosened for the defaults the plugin then falls back to, and brought to them afterwards.
+* **Changed (developers, managed `.htaccess` block):** deleting the *General* or *Filter Groups* option is **refused** when the block cannot be loosened first (read-only file, another save updating the block at that moment, a database error): `wp option delete` ends with an error naming the reason and exit code 1, anywhere else the request ends with HTTP 409. Option, settings cache file and `.htaccess` stay as they were - otherwise the server would reject filter pages the plugin serves with its defaults.
+* **Fixed:** reading the settings no longer writes the settings cache file; only saving does. A request that loaded the settings just before an admin saved or deleted them could write its outdated copy into a missing cache file (after *Clear Settings File Cache*, say), and every later request ran with the old values until the next save.
+* **Fixed (Cache page):** the checkboxes *Object Cache*, *Transient Cache* and *Settings File Cache* can be switched off. An unchecked box sent nothing and the plugin read that as the default - on - so the three caches could never be disabled from the form (`wp-config.php` constants still work as before).
+* **Changed (General):** *Debug mode* is now shown read-only. The box never did anything: debug logging and the debug templates follow the constant `JPKCOM_POSTFILTER_DEBUG` in `wp-config.php` alone (default: `WP_DEBUG`), and that is what the box now shows.
+* **Faster wp-admin:** on nginx, Caddy, Ferron, LiteSpeed, multisite and `DISALLOW_FILE_MODS` sites the plugin no longer queries the database for the managed `.htaccess` flag on every admin page, and with a managed block that is current it no longer builds the rules there.
+* **Purge the page cache after updating** - cached filter pages keep the old canonical and robots until they are rendered again.
+* **Translations:** German (de_DE and de_DE_formal) for every new string.
 
 ### 1.7.0
 

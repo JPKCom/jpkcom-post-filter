@@ -194,6 +194,34 @@ AJAX-enhanced filtering. The No-JS fallback works via plain link navigation.</p>
 <dd>Resolve the post type for an auto-injection context</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_inject_via_blocks">jpkcom_postfilter_inject_via_blocks()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether auto-injection goes around the query block instead of the loop hooks</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_auto_inject_open_html">jpkcom_postfilter_auto_inject_open_html()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Opening markup of auto-injection: wrapper, filter bar, results zone</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_auto_inject_close_html">jpkcom_postfilter_auto_inject_close_html()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Closing markup of auto-injection: pagination, end of zone and wrapper</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_block_inherits_query">jpkcom_postfilter_block_inherits_query()</a>
+    <span>
+                                &nbsp;: bool    </span>
+</dt>
+<dd>Whether a rendered block belongs to a query block that inherits the main query</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_render_zero_results_fallback">jpkcom_postfilter_render_zero_results_fallback()</a>
     <span>
                                 &nbsp;: void    </span>
@@ -202,6 +230,13 @@ AJAX-enhanced filtering. The No-JS fallback works via plain link navigation.</p>
 output an empty [data-jpkpf-results] container so the AJAX response always
 contains a swappable results zone — and also render the filter bar so the
 user can change their selection on a zero-results page reload.</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_zero_results_html">jpkcom_postfilter_zero_results_html()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>The zero-results markup, once per request</dd>
 
     </dl>
 
@@ -343,6 +378,232 @@ user can change their selection on a zero-results page reload.</dd>
 
 </article>
                     <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_inject_via_blocks">
+        jpkcom_postfilter_inject_via_blocks()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_inject_via_blocks" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/filter-injection.php"><a href="files/includes-filter-injection.html"><abbr title="includes/filter-injection.php">filter-injection.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">143</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether auto-injection goes around the query block instead of the loop hooks</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_inject_via_blocks</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+        <section class="phpdocumentor-description"><p>A block template renders the main loop inside
+get_the_block_template_html(), before template-canvas.php prints the
+doctype and runs wp_head: everything the loop hooks echo lands in front
+of <code class="prettyprint">&lt;!DOCTYPE html&gt;</code> (measured with Twenty Twenty-Five up to 1.7.0).
+There the markup is collected and wrapped around the inherited
+core/post-template block instead. The signal is &quot;wp_head has not run
+yet&quot;, not wp_is_block_theme(): a PHP archive template served in a block
+theme runs its loop in the body and prints as before, and a classic
+theme rendering a block template is covered as well.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_inject_via_blocks_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_inject_via_blocks_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_auto_inject_open_html">
+        jpkcom_postfilter_auto_inject_open_html()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_auto_inject_open_html" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/filter-injection.php"><a href="files/includes-filter-injection.html"><abbr title="includes/filter-injection.php">filter-injection.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">167</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Opening markup of auto-injection: wrapper, filter bar, results zone</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_auto_inject_open_html</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type"><abbr title="\WP_Query">WP_Query</abbr>&nbsp;</span><span class="phpdocumentor-signature__argument__name">$query</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>What the loop_start callback printed up to 1.7.0, as a string.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$query</span>
+                : <span class="phpdocumentor-argument-list__argument__type"><abbr title="\WP_Query">WP_Query</abbr></span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>The main query.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_auto_inject_open_html_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_auto_inject_open_html_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_auto_inject_close_html">
+        jpkcom_postfilter_auto_inject_close_html()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_auto_inject_close_html" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/filter-injection.php"><a href="files/includes-filter-injection.html"><abbr title="includes/filter-injection.php">filter-injection.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">307</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Closing markup of auto-injection: pagination, end of zone and wrapper</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_auto_inject_close_html</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type"><abbr title="\WP_Query">WP_Query</abbr>&nbsp;</span><span class="phpdocumentor-signature__argument__name">$query</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>What the loop_end callback printed up to 1.7.0, as a string.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$query</span>
+                : <span class="phpdocumentor-argument-list__argument__type"><abbr title="\WP_Query">WP_Query</abbr></span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>The main query.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_auto_inject_close_html_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_auto_inject_close_html_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_block_inherits_query">
+        jpkcom_postfilter_block_inherits_query()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_block_inherits_query" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/filter-injection.php"><a href="files/includes-filter-injection.html"><abbr title="includes/filter-injection.php">filter-injection.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">397</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Whether a rendered block belongs to a query block that inherits the main query</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_block_inherits_query</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">mixed&nbsp;</span><span class="phpdocumentor-signature__argument__name">$instance</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">bool</span></code>
+
+    
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$instance</span>
+                : <span class="phpdocumentor-argument-list__argument__type">mixed</span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>The WP_Block instance render_block passes.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_block_inherits_query_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_block_inherits_query_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">bool</span>
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
     <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_render_zero_results_fallback">
         jpkcom_postfilter_render_zero_results_fallback()
         <a href="namespaces/default.html#function_jpkcom_postfilter_render_zero_results_fallback" class="headerlink"><i class="fas fa-link"></i></a>
@@ -351,7 +612,7 @@ user can change their selection on a zero-results page reload.</dd>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/filter-injection.php"><a href="files/includes-filter-injection.html"><abbr title="includes/filter-injection.php">filter-injection.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">349</span>
+    <span class="phpdocumentor-element-found-in__line">530</span>
 
     </aside>
 
@@ -392,6 +653,58 @@ results zone at all.</p>
 
     
 </article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_zero_results_html">
+        jpkcom_postfilter_zero_results_html()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_zero_results_html" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/filter-injection.php"><a href="files/includes-filter-injection.html"><abbr title="includes/filter-injection.php">filter-injection.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">547</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">The zero-results markup, once per request</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_zero_results_html</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>The guards and markup of jpkcom_postfilter_render_zero_results_fallback()
+up to 1.7.0, as a string, so the block theme path can return it from a
+render_block filter.</p>
+</section>
+
+    
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_zero_results_html_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_zero_results_html_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.1</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>'' when it does not apply or was already rendered.</p>
+</section>
+
+            </section>
+
+</article>
             </section>
 
         
@@ -414,9 +727,14 @@ results zone at all.</p>
                             <li class="phpdocumentor-on-this-page-section__title">Functions</li>
                 <li>
                     <ul class="phpdocumentor-list -clean">
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_auto_inject_close_html">jpkcom_postfilter_auto_inject_close_html()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_auto_inject_open_html">jpkcom_postfilter_auto_inject_open_html()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_block_inherits_query">jpkcom_postfilter_block_inherits_query()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_injected_post_type">jpkcom_postfilter_get_injected_post_type()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_inject_via_blocks">jpkcom_postfilter_inject_via_blocks()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_render_zero_results_fallback">jpkcom_postfilter_render_zero_results_fallback()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_should_auto_inject">jpkcom_postfilter_should_auto_inject()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_zero_results_html">jpkcom_postfilter_zero_results_html()</a></li>
                                             </ul>
                 </li>
                     </ul>
