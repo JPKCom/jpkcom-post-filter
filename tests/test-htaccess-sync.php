@@ -237,7 +237,29 @@ function get_home_path() {
 function current_user_can( $cap ) { return $GLOBALS['__can'] ?? true; }
 final class WP_CLI {
 	public static function warning( $message ) { $GLOBALS['__cli_warnings'][] = (string) $message; }
+	/** WP_CLI::error() ends the command (exit 1): here it unwinds like wp_die(). */
+	public static function error( $message ) {
+		$GLOBALS['__cli_errors'][] = (string) $message;
+		throw new Jpkpf_Request_Ended( 'cli', 1 );
+	}
 }
+/** A request that ended (wp_die(), WP_CLI::error()): thrown so the caller's code after it never runs, like exit. */
+final class Jpkpf_Request_Ended extends Exception {}
+function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES ); }
+function wp_die( $message = '', $title = '', $args = [] ) {
+	$GLOBALS['__died'][] = [ 'message' => (string) $message, 'response' => (int) ( $args['response'] ?? 500 ) ];
+	throw new Jpkpf_Request_Ended( 'die', (int) ( $args['response'] ?? 500 ) );
+}
+/** Run $fn as a request that may end in wp_die()/WP_CLI::error(); returns the exception or null. */
+function ends( callable $fn ): ?Jpkpf_Request_Ended {
+	try {
+		$fn();
+	} catch ( Jpkpf_Request_Ended $e ) {
+		return $e;
+	}
+	return null;
+}
+function maybe_serialize( $data ) { return ( is_array( $data ) || is_object( $data ) ) ? serialize( $data ) : $data; }
 function get_post_types( $args = [] ) { return [ 'post' => 'post', 'page' => 'page', 'jpk_job' => 'jpk_job' ]; }
 function wp_json_encode( $v ) { return json_encode( $v ); }
 function jpkcom_postfilter_cache_flush_group(): void {}
@@ -547,7 +569,7 @@ function group( string $taxonomy, int $order, array $over = [] ): array {
 }
 
 /**
- * A site: stored options, warm settings cache files, and a .htaccess holding the
+ * A site: stored options, the settings cache files a save wrote, and a .htaccess holding the
  * block for the current settings when it is managed (and $block is true).
  * Returns the current rule inputs.
  */
@@ -569,9 +591,13 @@ function site( ?array $general = null, ?array $groups = null, bool $managed = tr
 		$GLOBALS['__options']['jpkcom_postfilter_htaccess_managed'] = '1';
 	}
 	file_put_contents( htaccess(), $extra . $GLOBALS['__wp_block'] );
+	// The cache files a save wrote (reading no longer writes them, H1).
+	foreach ( [ 'general', 'filter_groups' ] as $g ) {
+		if ( isset( $GLOBALS['__options'][ 'jpkcom_postfilter_' . $g ] ) ) {
+			jpkcom_postfilter_settings_write_file( $g, $GLOBALS['__options'][ 'jpkcom_postfilter_' . $g ] );
+		}
+	}
 	jpkcom_postfilter_settings_memo_reset();
-	jpkcom_postfilter_settings_get_group( 'general' );        // warms the cache files
-	jpkcom_postfilter_settings_get_group( 'filter_groups' );
 
 	$inputs = jpkcom_postfilter_server_rule_inputs();
 	if ( $block ) {
@@ -1488,17 +1514,52 @@ if ( $have ) {
 		! str_contains( (string) $GLOBALS['__at_cache_delete'], 'R=410' ) && ! str_contains( bytes( htaccess() ), 'R=410' ) && cache_array( 'filter_groups' ) === null,
 		(string) $GLOBALS['__at_cache_delete'] );
 
-	// The block cannot be loosened: the plugin must not become looser than it,
-	// so the cache file stays and the plugin goes on with the deleted values.
+	// The block cannot be loosened: the delete is refused before the row goes
+	// (user decision after the 1.7.1 re-review) - option, cache file and
+	// .htaccess stay, the request ends with 409, the lock is free.
 	site( general( [ 'max_filters_per_group' => 1 ] ) );
 	$cache_was = cache_array( 'general' );
 	$file_was  = bytes( htaccess() );
 	read_only();
-	delete_option( 'jpkcom_postfilter_general' );
+	$GLOBALS['__died'] = [];
+	$ended = ends( static fn() => delete_option( 'jpkcom_postfilter_general' ) );
 	jpkcom_postfilter_settings_memo_reset();
-	chk( 'I-2 delete General, block not writable: cache file kept (plugin stays on N1 = the block), block unchanged',
-		cache_array( 'general' ) === $cache_was && bytes( htaccess() ) === $file_was && jpkcom_postfilter_server_rule_inputs()['max_per_group'] === 1
-		&& ! array_key_exists( 'jpkcom_postfilter_general', $GLOBALS['__options'] ) && ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+	chk( 'I-2 delete General, block not writable: refused with 409 - row, cache file and block unchanged, lock free',
+		$ended !== null && $ended->getCode() === 409 && str_contains( $GLOBALS['__died'][0]['message'] ?? '', 'not-writable' )
+		&& ( $GLOBALS['__options']['jpkcom_postfilter_general']['max_filters_per_group'] ?? null ) === 1
+		&& cache_array( 'general' ) === $cache_was && bytes( htaccess() ) === $file_was && ! array_key_exists( LOCK, $GLOBALS['__options'] ),
+		json_encode( [ $ended?->getCode(), $GLOBALS['__died'] ] ) );
+
+	// Re-review R1: keeping the cache file instead was no protection - with the
+	// settings file cache off it is never read, and "Clear Settings File Cache"
+	// deletes it. Either way the plugin fell back to N2 while the block stayed N1.
+	site( general( [ 'max_filters_per_group' => 1 ] ) );
+	$GLOBALS['__options']['jpkcom_postfilter_cache'] = [ 'settings_cache_enabled' => false ];
+	read_only();
+	ends( static fn() => delete_option( 'jpkcom_postfilter_general' ) );
+	jpkcom_postfilter_settings_memo_reset();
+	chk( 'R1 delete General, file cache off, block not writable: the plugin stays on N1 = the block',
+		jpkcom_postfilter_server_rule_inputs()['max_per_group'] === 1 && n_of( bytes( htaccess() ) ) === 'N1',
+		'plugin N' . jpkcom_postfilter_server_rule_inputs()['max_per_group'] . ' / block ' . n_of( bytes( htaccess() ) ) );
+
+	site( general( [ 'max_filters_per_group' => 1 ] ) );
+	read_only();
+	ends( static fn() => delete_option( 'jpkcom_postfilter_general' ) );
+	jpkcom_postfilter_settings_delete_cache( '*' );   // "Clear Settings File Cache"
+	jpkcom_postfilter_settings_memo_reset();
+	chk( 'R1 delete General refused, then the settings file cache cleared: the plugin stays on N1 = the block',
+		jpkcom_postfilter_server_rule_inputs()['max_per_group'] === 1 && n_of( bytes( htaccess() ) ) === 'N1',
+		'plugin N' . jpkcom_postfilter_server_rule_inputs()['max_per_group'] . ' / block ' . n_of( bytes( htaccess() ) ) );
+
+	// Another request holds the save lock: refused the same way, its lock stays.
+	site( general( [ 'max_filters_per_group' => 1 ] ) );
+	$GLOBALS['__options'][ LOCK ] = time() . '|otherrequest0000';
+	$GLOBALS['__died'] = [];
+	$ended = ends( static fn() => delete_option( 'jpkcom_postfilter_general' ) );
+	chk( 'R1 delete General while another save holds the lock: refused (busy), row kept, the other lock untouched',
+		$ended !== null && $ended->getCode() === 409 && str_contains( $GLOBALS['__died'][0]['message'] ?? '', 'busy' )
+		&& array_key_exists( 'jpkcom_postfilter_general', $GLOBALS['__options'] ) && ( $GLOBALS['__options'][ LOCK ] ?? '' ) !== '' && str_ends_with( $GLOBALS['__options'][ LOCK ], '|otherrequest0000' ) );
+	unset( $GLOBALS['__options'][ LOCK ] );
 
 	// Not managed: nothing to loosen, the cache file goes as before (T2-b).
 	site( general( [ 'max_filters_per_group' => 1 ] ), null, false, false );
@@ -1737,9 +1798,15 @@ if ( $have ) {
 	save( 'jpkcom_postfilter_general', general() );   // stores the sanitized form
 	save( 'jpkcom_postfilter_general', general() );   // nothing changes: update_option() returns without a hook
 	$held = (string) ( $GLOBALS['__options'][ LOCK ] ?? '' );
-	call( 'jpkcom_postfilter_htaccess_save_unlock' );   // what the shutdown function runs
-	chk( 'unchanged save: lock held by this request until shutdown, then released',
-		str_ends_with( $held, '|A' ) && ! array_key_exists( LOCK, $GLOBALS['__options'] ), $held );
+	// R5 (1.7.1 re-review): released right there, not at shutdown - in a
+	// long-running process (WP-CLI script, queue runner) every other save was
+	// refused `busy` for up to a minute.
+	$GLOBALS['__request_id'] = 'B';
+	$ok_b = save( 'jpkcom_postfilter_general', general( [ 'max_filters_per_group' => '3' ] ) );
+	$GLOBALS['__request_id'] = 'A';
+	chk( 'R5 unchanged save: the lock is released at once - another request saves right after it',
+		$held === '' && $ok_b === true && n_of( bytes( htaccess() ) ) === 'N3' && ! array_key_exists( LOCK, $GLOBALS['__options'] ),
+		json_encode( [ $held, $ok_b, n_of( bytes( htaccess() ) ) ] ) );
 
 	site( general() );
 	jpkcom_postfilter_settings_save( 'general', general() );
@@ -1944,6 +2011,93 @@ if ( $have ) {
 }
 
 // =====================================================================================
+section( '1.7.1 re-review: stale reads, failing lock SELECT (H1, d3)' );
+// =====================================================================================
+
+if ( $have ) {
+	// H1: a request R loaded General (N5) before admin A deleted it. A loosened
+	// the block, deleted the cache file and tightened to the defaults (N2).
+	// R's first read of General then wrote its stale N5 into the cache file,
+	// and every later request ran with N5 while the block allowed only N2.
+	site( general( [ 'max_filters_per_group' => 5 ] ) );
+	$GLOBALS['__snapshots']['R'] = $GLOBALS['__options'];
+	delete_option( 'jpkcom_postfilter_general' );                    // request A
+	$GLOBALS['__request_id'] = 'R';
+	jpkcom_postfilter_settings_memo_reset();
+	jpkcom_postfilter_settings_get_group( 'general' );               // R's first read
+	$GLOBALS['__request_id'] = 'A';
+	unset( $GLOBALS['__snapshots']['R'] );
+	jpkcom_postfilter_settings_memo_reset();
+	$now = jpkcom_postfilter_server_rule_inputs();                   // any later request
+	chk( 'H1 a stale request reading General after its delete writes no cache file; later requests run with N2 = the block',
+		cache_array( 'general' ) === null && $now['max_per_group'] === 2 && n_of( bytes( htaccess() ) ) === 'N2',
+		'file ' . json_encode( cache_array( 'general' )['max_filters_per_group'] ?? null ) . ' / plugin N' . $now['max_per_group'] . ' / block ' . n_of( bytes( htaccess() ) ) );
+
+	// H1, other groups: a read never writes a cache file (layout, cache too).
+	site( general() );
+	$GLOBALS['__options']['jpkcom_postfilter_layout'] = [ 'filter_layout' => 'bar' ];
+	jpkcom_postfilter_settings_delete_cache( '*' );
+	jpkcom_postfilter_settings_memo_reset();
+	foreach ( [ 'general', 'filter_groups', 'layout', 'cache' ] as $g ) {
+		jpkcom_postfilter_settings_get_group( $g );
+	}
+	$written = array_filter( [ 'general', 'filter_groups', 'layout', 'cache' ], static fn( $g ) => cache_array( $g ) !== null );
+	chk( 'H1 reading the four groups without cache files writes none of them', $written === [], implode( ', ', $written ) );
+
+	// d3: a lock SELECT that fails is "held", not "free" - the syncs then write
+	// nothing (never stricter). Read as free, a permalink or posts-page sync
+	// wrote the block from values a running save was about to loosen.
+	site( general() );
+	$GLOBALS['__options'][ LOCK ] = time() . '|otherrequest0000';
+	$GLOBALS['wpdb']->fail = [ 'SELECT' ];
+	$elsewhere = call( 'jpkcom_postfilter_htaccess_save_locked_elsewhere' );
+	$GLOBALS['wpdb']->fail = [];
+	chk( 'd3 save_locked_elsewhere(): a failing SELECT counts as held', $elsewhere === true );
+
+	site( general() );
+	$file_was = bytes( htaccess() );
+	$cap = static fn() => 4;
+	add_filter( 'jpkcom_postfilter_max_filters_per_group', $cap );
+	$GLOBALS['wpdb']->fail = [ 'SELECT' ];
+	call( 'jpkcom_postfilter_htaccess_sync' );
+	$GLOBALS['wpdb']->fail = [];
+	remove_filter( 'jpkcom_postfilter_max_filters_per_group', $cap );
+	chk( 'd3 sync() while the lock SELECT fails: writes nothing', bytes( htaccess() ) === $file_was, n_of( bytes( htaccess() ) ) );
+
+	// d3: unlock whose SELECT fails keeps "taken", so the shutdown function
+	// releases the row once the database answers again.
+	site( general() );
+	call( 'jpkcom_postfilter_htaccess_save_lock' );
+	$GLOBALS['wpdb']->fail = [ 'SELECT' ];
+	call( 'jpkcom_postfilter_htaccess_save_unlock' );
+	$GLOBALS['wpdb']->fail = [];
+	$after_fail = array_key_exists( LOCK, $GLOBALS['__options'] );
+	call( 'jpkcom_postfilter_htaccess_save_unlock', true );          // the shutdown function
+	chk( 'd3 save_unlock() with a failing SELECT: still held, released by the shutdown run',
+		$after_fail && ! array_key_exists( LOCK, $GLOBALS['__options'] ) );
+}
+
+// =====================================================================================
+section( '1.7.1 re-review: checkboxes that can be switched off' );
+// =====================================================================================
+
+// An unchecked box sends nothing, and the sanitizers read a missing key as the
+// default - on for the three caches (and WP_DEBUG for debug mode): the Cache
+// page could never switch a cache off. Each box now has a hidden "0" before it.
+$admin_src = (string) file_get_contents( __DIR__ . '/../includes/admin-pages.php' );
+foreach ( [ 'jpkcom_postfilter_general[debug_mode]', 'jpkcom_postfilter_cache[object_cache_enabled]', 'jpkcom_postfilter_cache[transient_cache_enabled]', 'jpkcom_postfilter_cache[settings_cache_enabled]' ] as $field ) {
+	$q = preg_quote( $field, '/' );
+	chk( "checkbox {$field}: a hidden \"0\" with the same name comes right before it",
+		preg_match( '/<input type="hidden" name="' . $q . '" value="0">\s*<label>\s*<input\s+type="checkbox"[^>]*name="' . $q . '"/', $admin_src ) === 1 );
+}
+$off = jpkcom_postfilter_sanitize_cache_settings( [ 'object_cache_enabled' => '0', 'transient_cache_enabled' => '0', 'settings_cache_enabled' => '0' ] );
+chk( 'Cache page sent with all three boxes unchecked (hidden "0"): all three off',
+	$off['object_cache_enabled'] === false && $off['transient_cache_enabled'] === false && $off['settings_cache_enabled'] === false, json_encode( $off ) );
+$on = jpkcom_postfilter_sanitize_cache_settings( [ 'object_cache_enabled' => '1', 'transient_cache_enabled' => '1', 'settings_cache_enabled' => '1' ] );
+chk( 'checked boxes (the "1" after the hidden "0" wins in PHP): all three on',
+	$on['object_cache_enabled'] && $on['transient_cache_enabled'] && $on['settings_cache_enabled'] );
+
+// =====================================================================================
 section( 'Constants (last: they cannot be undefined)' );
 // =====================================================================================
 
@@ -1971,19 +2125,22 @@ if ( $have ) {
 	$ok = as_cli( static fn() => save( 'jpkcom_postfilter_filter_groups', [ 'groups' => [ group( 'category', 0 ), group( 'post_tag', 1 ), group( 'color', 2 ) ] ] ) );
 	chk( 'WP-CLI refusal: WP_CLI::warning() carries the reason', $ok === false && str_contains( $GLOBALS['__cli_warnings'][0] ?? '', 'not writable' ), json_encode( [ $ok, $GLOBALS['__cli_warnings'], $GLOBALS['__errors'] ] ) );
 
-	// I-2 under WP-CLI (`wp option delete`): a delete cannot be refused, so the
-	// warning says the cache file was kept and why. (N is locked by the
+	// I-2 under WP-CLI (`wp option delete`): refused with WP_CLI::error()
+	// (exit 1), which names the option and the reason. (N is locked by the
 	// constant above: delete the filter groups - without them there is no
 	// reject part, and the block would have to go.)
 	site( general() );
 	$cache_was = cache_array( 'filter_groups' );
 	read_only();
-	$GLOBALS['__cli_warnings'] = [];
-	as_cli( static fn() => delete_option( 'jpkcom_postfilter_filter_groups' ) );
-	$warning = $GLOBALS['__cli_warnings'][0] ?? '';
-	chk( 'I-2 wp option delete, block not writable: WP_CLI::warning() says the cache file was kept, and why',
-		cache_array( 'filter_groups' ) === $cache_was && str_contains( $warning, 'jpkcom_postfilter_filter_groups' ) && str_contains( $warning, 'cache file' ) && str_contains( $warning, 'not-writable' ),
-		$warning );
+	$GLOBALS['__cli_errors'] = [];
+	$GLOBALS['__died']       = [];
+	$ended = ends( static fn() => as_cli( static fn() => delete_option( 'jpkcom_postfilter_filter_groups' ) ) );
+	$error = $GLOBALS['__cli_errors'][0] ?? '';
+	chk( 'I-2 wp option delete, block not writable: WP_CLI::error() (exit 1) names the option and the reason, nothing deleted',
+		$ended !== null && $ended->getCode() === 1 && $GLOBALS['__died'] === []
+		&& array_key_exists( 'jpkcom_postfilter_filter_groups', $GLOBALS['__options'] ) && cache_array( 'filter_groups' ) === $cache_was
+		&& str_contains( $error, 'jpkcom_postfilter_filter_groups' ) && str_contains( $error, 'not deleted' ) && str_contains( $error, 'not-writable' ),
+		$error );
 
 	// M-2 / M-9: DISALLOW_FILE_MODS (last: it cannot be undefined either).
 	define( 'DISALLOW_FILE_MODS', true );
@@ -2018,8 +2175,9 @@ if ( $have ) {
 	$readme = (string) file_get_contents( __DIR__ . '/../README.md' );
 	chk( 'M-2 CLAUDE.md: the R161-3 paragraph no longer says the other available() reasons keep their behaviour',
 		$claude !== '' && ! str_contains( $claude, 'Every other `available()` reason (multisite, `DISALLOW_FILE_MODS`, LiteSpeed, a manual block) and a server that ignores `.htaccess` keep their behaviour' ) );
-	chk( 'M-2 README: four cases under DISALLOW_FILE_MODS, the version-change repair under WP-CLI among them',
-		str_contains( $readme, 'keeps writing it in four cases' ) && ! str_contains( $readme, 'keeps writing it in three cases' ) && str_contains( $readme, 'version change under WP-CLI' ) );
+	chk( 'M-2 README: five cases under DISALLOW_FILE_MODS, the version-change repair under WP-CLI and the delete loosen among them',
+		str_contains( $readme, 'keeps writing it in five cases' ) && ! str_contains( $readme, 'keeps writing it in four cases' ) && str_contains( $readme, 'version change under WP-CLI' )
+		&& str_contains( $readme, 'so does deleting the *General* or *Filter Groups* option' ) );
 	chk( 'M-9 README and CLAUDE.md: DISALLOW_FILE_MODS sites skip the managed-flag query too',
 		(bool) preg_match( '/\*\*Faster wp-admin:\*\*[^\n]*DISALLOW_FILE_MODS/', $readme )
 		&& (bool) preg_match( '/so nginx, Caddy, Ferron, LiteSpeed[^\n]*DISALLOW_FILE_MODS[^\n]*send none/', $claude ) );

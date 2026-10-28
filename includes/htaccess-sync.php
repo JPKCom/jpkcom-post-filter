@@ -906,6 +906,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_unlock' ) ) {
         jpkcom_postfilter_htaccess_save_lock_held( set: false );
 
         $row = jpkcom_postfilter_htaccess_save_lock_row();
+        // The SELECT failed: nothing is known, so the flag stays and the
+        // shutdown function tries again - read as "gone", the row stayed
+        // until it went stale, and every save waited out the minute (d3).
+        if ( (string) ( $wpdb->last_error ?? '' ) !== '' ) {
+            return;
+        }
         // Gone, or taken over by another request once ours went stale: either
         // way this request holds nothing any more (M-6 - the flag stayed set
         // after a takeover, and every later option event sent a query).
@@ -924,12 +930,22 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_save_locked_elsewh
     /**
      * Is another request between its loosen and its tighten right now?
      *
+     * A SELECT that fails counts as "yes" (d3): the callers - the syncs, Set
+     * up, the admin_init resync - then write nothing, which is never stricter.
+     * Read as "no", they wrote the block from values a running save may be
+     * about to loosen.
+     *
      * @since 1.7.1
      *
      * @return bool
      */
     function jpkcom_postfilter_htaccess_save_locked_elsewhere(): bool {
+        global $wpdb;
+
         $row = jpkcom_postfilter_htaccess_save_lock_row();
+        if ( isset( $wpdb ) && is_object( $wpdb ) && (string) ( $wpdb->last_error ?? '' ) !== '' ) {
+            return true;
+        }
 
         return $row !== null && $row[2] !== jpkcom_postfilter_htaccess_request_id() && $row[1] > time() - 60;
     }
@@ -1223,6 +1239,38 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_settle_refusal' ) 
 }
 
 
+if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_unchanged_save' ) ) {
+    /**
+     * pre_update_option_{option}, priority PHP_INT_MAX: an unchanged save lets go (R5)
+     *
+     * update_option() compares the value with the stored one right after this
+     * filter and returns without any update_option_* hook when they are
+     * equal - so after_save() never runs, and the save lock stayed until the
+     * request ended. In a long-running process (a WP-CLI script, a queue or
+     * cron runner) that is every save of the settings refused `busy` for up
+     * to a minute. Same comparison as core; only update_option() runs this
+     * filter, so add_option() (which inserts whatever it is given) keeps its
+     * lock until its add_option_* hook. An import holds the lock until its
+     * end anyway (jpkcom_postfilter_htaccess_save_unlock() leaves it).
+     *
+     * @since 1.7.1
+     *
+     * @param mixed  $value     Value about to be saved.
+     * @param mixed  $old_value Stored value, as update_option() compares it.
+     * @param string $option    Option name.
+     * @return mixed $value, unchanged.
+     */
+    function jpkcom_postfilter_htaccess_unchanged_save( mixed $value, mixed $old_value, string $option = '' ): mixed {
+        if ( $value === $old_value || maybe_serialize( $value ) === maybe_serialize( $old_value ) ) {
+            jpkcom_postfilter_htaccess_cache_pending( $option, false );
+            jpkcom_postfilter_htaccess_save_unlock();
+        }
+
+        return $value;
+    }
+}
+
+
 if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_after_settings_saved' ) ) {
     /**
      * jpkcom_postfilter_settings_saved: settle the import of one option
@@ -1286,12 +1334,19 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_before_delete' ) )
      * block is first brought to union( current, state after the delete ),
      * under the save lock, like a save.
      *
-     * A delete cannot be refused. When the block cannot be loosened (or
-     * another request holds the save lock, or the lock statement fails), the
-     * cache file is kept instead: the plugin goes on with the deleted values
-     * - the block's - until the rules can be updated, and is never looser
-     * than the block. A WP_CLI::warning() says so under WP-CLI, a debug log
-     * line otherwise.
+     * When the block cannot be loosened (or another request holds the save
+     * lock, or the lock statement fails), the delete is refused before core
+     * deletes the row: the lock is released, then WP_CLI::error() ends
+     * `wp option delete` with exit code 1, and anywhere else wp_die() answers
+     * 409 with the reason. Option, cache file and .htaccess stay as they were,
+     * like a refused save (user decision, 1.7.1 re-review). Keeping the cache
+     * file instead (1.7.1-dev) left the stricter values in a store the plugin
+     * treats as disposable: with the settings file cache switched off it is
+     * never read, and "Clear Settings File Cache" deletes it - either way the
+     * plugin fell back to the defaults while the block stayed strict.
+     *
+     * core's delete_option() offers no filter to stop it; this action runs
+     * before its DELETE, so ending the request here is the only way.
      *
      * @since 1.7.1
      *
@@ -1331,20 +1386,22 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_before_delete' ) )
             return;
         }
 
-        // Keeps the cache file (settings.php, delete_option_{$option}).
-        jpkcom_postfilter_htaccess_refused( $option, true );
+        // Refused: nothing may be left held when the request ends here.
+        jpkcom_postfilter_htaccess_save_unlock( force: true );
 
         $message = sprintf(
             /* translators: 1: option name, e.g. jpkcom_postfilter_general; 2: reason code, e.g. not-writable */
-            __( 'The option %1$s was deleted, but the JPKCom Post Filter rules in .htaccess could not be loosened to the values the plugin falls back to (reason: %2$s). So that the server never rejects a filter page the plugin serves, the plugin keeps its settings cache file and goes on with the deleted values until the rules can be updated. Fix the cause, then save the settings page once.', 'jpkcom-post-filter' ),
+            __( 'The option %1$s was not deleted: the JPKCom Post Filter rules in .htaccess could not first be loosened to the values the plugin would fall back to (reason: %2$s). Without that, the server would reject filter pages the plugin serves. Fix the cause, then delete the option again.', 'jpkcom-post-filter' ),
             $option,
             $result['reason']
         );
-        if ( defined( constant_name: 'WP_CLI' ) && WP_CLI && class_exists( class: 'WP_CLI' ) ) {
-            WP_CLI::warning( $message );
-        } elseif ( function_exists( function: 'jpkcom_postfilter_debug_log' ) ) {
+        if ( function_exists( function: 'jpkcom_postfilter_debug_log' ) ) {
             jpkcom_postfilter_debug_log( $message, [ 'option' => $option, 'reason' => $result['reason'] ] );
         }
+        if ( defined( constant_name: 'WP_CLI' ) && WP_CLI && class_exists( class: 'WP_CLI' ) ) {
+            WP_CLI::error( $message );
+        }
+        wp_die( esc_html( $message ), '', [ 'response' => 409, 'back_link' => true ] );
     }
 }
 
@@ -1354,9 +1411,9 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_after_delete' ) ) 
      * delete_option_{option}, priority 20: tighten to the state after the delete
      *
      * After settings.php has deleted the cache file (priority 10), the block
-     * is brought to what the plugin now runs with - unless the delete could
-     * not loosen it (jpkcom_postfilter_htaccess_before_delete()): then the
-     * cache file was kept and nothing changes. The save lock goes either way.
+     * is brought to what the plugin now runs with, and the save lock goes. A
+     * delete that could not loosen the block never gets here
+     * (jpkcom_postfilter_htaccess_before_delete() refuses it).
      *
      * @since 1.7.1
      *
@@ -1364,11 +1421,6 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_after_delete' ) ) 
      * @return void
      */
     function jpkcom_postfilter_htaccess_after_delete( string $option ): void {
-        if ( jpkcom_postfilter_htaccess_refused( $option ) ) {
-            jpkcom_postfilter_htaccess_save_unlock();
-            return;
-        }
-
         jpkcom_postfilter_htaccess_after_save();
     }
 }
@@ -1539,6 +1591,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_htaccess_deactivate' ) ) {
 foreach ( [ 'jpkcom_postfilter_general', 'jpkcom_postfilter_filter_groups' ] as $jpkpf_option ) {
     add_filter( "sanitize_option_{$jpkpf_option}", 'jpkcom_postfilter_htaccess_before_save', 5, 2 );
     add_filter( "sanitize_option_{$jpkpf_option}", 'jpkcom_postfilter_htaccess_settle_refusal', PHP_INT_MAX, 2 );
+    add_filter( "pre_update_option_{$jpkpf_option}", 'jpkcom_postfilter_htaccess_unchanged_save', PHP_INT_MAX, 3 );
     add_action( "update_option_{$jpkpf_option}", 'jpkcom_postfilter_htaccess_after_save', 20, 0 );
     add_action( "add_option_{$jpkpf_option}", 'jpkcom_postfilter_htaccess_after_save', 20, 0 );
     add_action( "delete_option_{$jpkpf_option}", 'jpkcom_postfilter_htaccess_after_delete', 20, 1 );

@@ -110,6 +110,7 @@ function get_option( $k, $d = false ) {
 	}
 	return $d;
 }
+function maybe_serialize( $data ) { return ( is_array( $data ) || is_object( $data ) ) ? serialize( $data ) : $data; }
 function sanitize_option( $option, $value ) {
 	return apply_filters( "sanitize_option_{$option}", $value, $option, $value );
 }
@@ -343,7 +344,7 @@ function group( string $taxonomy, int $order, array $over = [] ): array {
 }
 
 /**
- * A site: stored options, warm settings cache files, a .htaccess (with the
+ * A site: stored options, the settings cache files a save wrote, a .htaccess (with the
  * managed block when $managed). No transients, no last check.
  */
 function site( ?array $general = null, ?array $groups = null, bool $managed = false ): array {
@@ -363,9 +364,13 @@ function site( ?array $general = null, ?array $groups = null, bool $managed = fa
 		$GLOBALS['__options']['jpkcom_postfilter_htaccess_managed'] = '1';
 	}
 	file_put_contents( htaccess(), $GLOBALS['__wp_block'] );
+	// The cache files a save wrote (reading no longer writes them, H1).
+	foreach ( [ 'general', 'filter_groups' ] as $g ) {
+		if ( isset( $GLOBALS['__options'][ 'jpkcom_postfilter_' . $g ] ) ) {
+			jpkcom_postfilter_settings_write_file( $g, $GLOBALS['__options'][ 'jpkcom_postfilter_' . $g ] );
+		}
+	}
 	jpkcom_postfilter_settings_memo_reset();
-	jpkcom_postfilter_settings_get_group( 'general' );
-	jpkcom_postfilter_settings_get_group( 'filter_groups' );
 
 	$inputs = jpkcom_postfilter_server_rule_inputs();
 	if ( $managed && function_exists( 'jpkcom_postfilter_htaccess_write' ) ) {

@@ -147,6 +147,11 @@ switch_to_blog( 2 );
 $seen = jpkcom_postfilter_settings_get( 'general', 'url_endpoint', '?' );
 chk( 'and site 2 still reads its own after switching back (switch_blog resets the memo)', $seen === 'filter', 'got "' . $seen . '"' );
 
+// Site 3's own save writes its cache file (a read no longer does, 1.7.1 H1).
+switch_to_blog( 3 );
+jpkcom_postfilter_settings_write_file( 'general', [ 'url_endpoint' => 'filtern' ] );
+switch_to_blog( 2 );
+
 chk(
 	'the cache files live in one directory per site',
 	is_file( JPKCOM_POSTFILTER_SETTINGS_DIR . '/site-2/general.php' ) && is_file( JPKCOM_POSTFILTER_SETTINGS_DIR . '/site-3/general.php' ),

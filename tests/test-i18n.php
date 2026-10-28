@@ -219,6 +219,11 @@ foreach ( glob( $root . '/languages/*-*.po' ) as $po_path ) {
 
 	// Translated msgids in the .po: an entry whose msgstr is a non-empty literal.
 	$translated = [];
+	// For the placeholder check below: which entries are php-format (xgettext
+	// flags every string with a placeholder), and the further plural forms of
+	// a plural entry - msgstr[1..n] - against their msgid_plural.
+	$php_format = [];
+	$plurals    = [];
 
 	foreach ( preg_split( '/\n\s*\n/', $po ) as $entry ) {
 		if ( strpos( $entry, '#~' ) !== false ) {
@@ -259,6 +264,22 @@ foreach ( glob( $root . '/languages/*-*.po' ) as $po_path ) {
 		if ( $id !== '' && $str !== '' ) {
 			$translated[ $context . $id ] = $str;
 		}
+
+		if ( preg_match( '/^#,.*\bphp-format\b/m', $entry ) ) {
+			$php_format[ $context . $id ] = true;
+		}
+		if ( preg_match( '/^msgid_plural((?:\s+"(?:[^"\\\\]|\\\\.)*")+)/m', $entry, $pl_match ) ) {
+			preg_match_all( '/"((?:[^"\\\\]|\\\\.)*)"/', $pl_match[1], $pl_parts );
+			$plural_id = i18n_unescape_pot( implode( '', $pl_parts[1] ) );
+			preg_match_all( '/^msgstr\[([1-9]\d*)\]((?:\s+"(?:[^"\\\\]|\\\\.)*")+)/m', $entry, $forms, PREG_SET_ORDER );
+			foreach ( $forms as $form ) {
+				preg_match_all( '/"((?:[^"\\\\]|\\\\.)*)"/', $form[2], $form_parts );
+				$form_str = i18n_unescape_pot( implode( '', $form_parts[1] ) );
+				if ( $form_str !== '' ) {
+					$plurals[] = [ 'key' => $context . $id, 'id' => $plural_id, 'str' => $form_str, 'n' => (int) $form[1] ];
+				}
+			}
+		}
 	}
 
 	$only_in_po  = array_diff_key( $translated, $messages );
@@ -290,11 +311,22 @@ foreach ( glob( $root . '/languages/*-*.po' ) as $po_path ) {
 		sort( $out );
 		return $out;
 	};
+	// Only php-format entries (1.7.1 re-review d9): elsewhere a literal "% d"
+	// ("40 % der Zeit") is text, not a placeholder. The further plural forms
+	// are checked against msgid_plural - before, only msgstr[0] was.
 	$mismatch = [];
 	foreach ( $translated as $key => $str ) {
+		if ( ! isset( $php_format[ $key ] ) ) {
+			continue;
+		}
 		$id = (string) substr( (string) $key, (int) strrpos( (string) $key, chr( 4 ) ) + ( str_contains( (string) $key, chr( 4 ) ) ? 1 : 0 ) );
 		if ( $placeholders( $id ) !== $placeholders( $str ) ) {
 			$mismatch[] = substr( $id, 0, 60 );
+		}
+	}
+	foreach ( $plurals as $form ) {
+		if ( isset( $php_format[ $form['key'] ] ) && $placeholders( $form['id'] ) !== $placeholders( $form['str'] ) ) {
+			$mismatch[] = substr( $form['id'], 0, 60 ) . ' [' . $form['n'] . ']';
 		}
 	}
 	i18n_chk(

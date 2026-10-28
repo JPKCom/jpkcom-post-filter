@@ -506,6 +506,8 @@ function jpkcom_postfilter_field_debug_mode(): void {
     $settings = jpkcom_postfilter_settings_get_group( 'general' );
     $value    = $settings['debug_mode'] ?? JPKCOM_POSTFILTER_DEBUG;
     ?>
+    <?php // Unchecked boxes send nothing, and the sanitizer reads a missing key as the default - where that default is on, the box could never be switched off (1.7.1). ?>
+    <input type="hidden" name="jpkcom_postfilter_general[debug_mode]" value="0">
     <label>
         <input
             type="checkbox"
@@ -1554,6 +1556,8 @@ function jpkcom_postfilter_field_object_cache_enabled(): void {
     $settings = jpkcom_postfilter_settings_get_group( 'cache' );
     $value    = $settings['object_cache_enabled'] ?? true;
     ?>
+    <?php // Unchecked boxes send nothing, and the sanitizer reads a missing key as the default - where that default is on, the box could never be switched off (1.7.1). ?>
+    <input type="hidden" name="jpkcom_postfilter_cache[object_cache_enabled]" value="0">
     <label>
         <input
             type="checkbox"
@@ -1575,6 +1579,8 @@ function jpkcom_postfilter_field_transient_cache_enabled(): void {
     $settings = jpkcom_postfilter_settings_get_group( 'cache' );
     $value    = $settings['transient_cache_enabled'] ?? true;
     ?>
+    <?php // Unchecked boxes send nothing, and the sanitizer reads a missing key as the default - where that default is on, the box could never be switched off (1.7.1). ?>
+    <input type="hidden" name="jpkcom_postfilter_cache[transient_cache_enabled]" value="0">
     <label>
         <input
             type="checkbox"
@@ -1596,6 +1602,8 @@ function jpkcom_postfilter_field_settings_cache_enabled(): void {
     $settings = jpkcom_postfilter_settings_get_group( 'cache' );
     $value    = $settings['settings_cache_enabled'] ?? true;
     ?>
+    <?php // Unchecked boxes send nothing, and the sanitizer reads a missing key as the default - where that default is on, the box could never be switched off (1.7.1). ?>
+    <input type="hidden" name="jpkcom_postfilter_cache[settings_cache_enabled]" value="0">
     <label>
         <input
             type="checkbox"
