@@ -2082,14 +2082,19 @@ section( '1.7.1 re-review: checkboxes that can be switched off' );
 // =====================================================================================
 
 // An unchecked box sends nothing, and the sanitizers read a missing key as the
-// default - on for the three caches (and WP_DEBUG for debug mode): the Cache
-// page could never switch a cache off. Each box now has a hidden "0" before it.
+// default - on for the three caches: the Cache page could never switch a cache
+// off. Each box now has a hidden "0" before it.
 $admin_src = (string) file_get_contents( __DIR__ . '/../includes/admin-pages.php' );
-foreach ( [ 'jpkcom_postfilter_general[debug_mode]', 'jpkcom_postfilter_cache[object_cache_enabled]', 'jpkcom_postfilter_cache[transient_cache_enabled]', 'jpkcom_postfilter_cache[settings_cache_enabled]' ] as $field ) {
+foreach ( [ 'jpkcom_postfilter_cache[object_cache_enabled]', 'jpkcom_postfilter_cache[transient_cache_enabled]', 'jpkcom_postfilter_cache[settings_cache_enabled]' ] as $field ) {
 	$q = preg_quote( $field, '/' );
 	chk( "checkbox {$field}: a hidden \"0\" with the same name comes right before it",
 		preg_match( '/<input type="hidden" name="' . $q . '" value="0">\s*<label>\s*<input\s+type="checkbox"[^>]*name="' . $q . '"/', $admin_src ) === 1 );
 }
+// Debug mode: the stored setting was never read (logging and debug templates
+// follow JPKCOM_POSTFILTER_DEBUG alone), so the box is read-only and sends nothing.
+$debug_fn = preg_match( '/function jpkcom_postfilter_field_debug_mode\(\): void \{.*?\n\}/s', $admin_src, $m ) === 1 ? $m[0] : '';
+chk( 'Debug mode box: disabled, no name (sends nothing), shows JPKCOM_POSTFILTER_DEBUG',
+	$debug_fn !== '' && str_contains( $debug_fn, 'disabled' ) && ! str_contains( $debug_fn, 'name=' ) && str_contains( $debug_fn, 'checked( (bool) JPKCOM_POSTFILTER_DEBUG )' ), $debug_fn );
 $off = jpkcom_postfilter_sanitize_cache_settings( [ 'object_cache_enabled' => '0', 'transient_cache_enabled' => '0', 'settings_cache_enabled' => '0' ] );
 chk( 'Cache page sent with all three boxes unchecked (hidden "0"): all three off',
 	$off['object_cache_enabled'] === false && $off['transient_cache_enabled'] === false && $off['settings_cache_enabled'] === false, json_encode( $off ) );

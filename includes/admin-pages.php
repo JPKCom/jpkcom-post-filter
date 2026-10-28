@@ -498,27 +498,40 @@ function jpkcom_postfilter_field_endpoint_empty_action(): void {
 }
 
 /**
- * Render: Debug Mode checkbox
+ * Render: Debug Mode (read-only)
+ *
+ * Shows JPKCOM_POSTFILTER_DEBUG. The stored `debug_mode` setting this box
+ * used to save was never read: logging (jpkcom_postfilter_debug_log()), the
+ * debug templates and the script's debug flag follow the constant alone,
+ * which is decided when the plugin loads (default: WP_DEBUG). So the box
+ * claimed a switch that did nothing - unchecking it changed nothing on the
+ * front end (1.7.1 review). Disabled, it sends nothing.
  *
  * @since 1.0.0
+ * @since 1.7.1 Read-only, shows the constant.
  */
 function jpkcom_postfilter_field_debug_mode(): void {
-    $settings = jpkcom_postfilter_settings_get_group( 'general' );
-    $value    = $settings['debug_mode'] ?? JPKCOM_POSTFILTER_DEBUG;
     ?>
-    <?php // Unchecked boxes send nothing, and the sanitizer reads a missing key as the default - where that default is on, the box could never be switched off (1.7.1). ?>
-    <input type="hidden" name="jpkcom_postfilter_general[debug_mode]" value="0">
     <label>
         <input
             type="checkbox"
             id="jpkcom_postfilter_debug_mode"
-            name="jpkcom_postfilter_general[debug_mode]"
-            value="1"
-            <?php checked( $value ); ?>
+            disabled
+            <?php checked( (bool) JPKCOM_POSTFILTER_DEBUG ); ?>
         >
-        <?php esc_html_e( 'Enable debug logging (independent of WP_DEBUG)', 'jpkcom-post-filter' ); ?>
+        <?php esc_html_e( 'Debug logging and debug templates', 'jpkcom-post-filter' ); ?>
     </label>
     <p class="description"><?php esc_html_e( 'When enabled, detailed logs are written to the PHP error log and debug-templates/ are used instead of templates/.', 'jpkcom-post-filter' ); ?></p>
+    <p class="description">
+        <?php
+        printf(
+            /* translators: 1: the constant JPKCOM_POSTFILTER_DEBUG, 2: the constant WP_DEBUG */
+            esc_html__( 'Set in wp-config.php with the constant %1$s (default: the value of %2$s). This box only shows the current state.', 'jpkcom-post-filter' ),
+            '<code>JPKCOM_POSTFILTER_DEBUG</code>',
+            '<code>WP_DEBUG</code>'
+        );
+        ?>
+    </p>
     <?php
 }
 
