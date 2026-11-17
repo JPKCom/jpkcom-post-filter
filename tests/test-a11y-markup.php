@@ -237,6 +237,40 @@ chk( 'eight partials scanned', $n === 8, (string) $n );
 chk( 'none contains aria-pressed=', $literal === [], implode( ', ', $literal ) );
 chk( 'all echo $term_link[\'aria\']', $missing === [], implode( ', ', $missing ) );
 
+// --- JS term state ------------------------------------------------------------
+section( 'JS term state' );
+$js_src = (string) file_get_contents( __DIR__ . '/../assets/js/post-filter.js' );
+chk( 'aria-pressed is written only inside setTermActive()', substr_count( $js_src, "setAttribute( 'aria-pressed'" ) === 1, (string) substr_count( $js_src, "setAttribute( 'aria-pressed'" ) );
+chk( 'no getAttribute( \'aria-pressed\' ) read', substr_count( $js_src, "getAttribute( 'aria-pressed' )" ) === 0, (string) substr_count( $js_src, "getAttribute( 'aria-pressed' )" ) );
+chk( 'no [aria-pressed selector', substr_count( $js_src, '[aria-pressed' ) === 0, (string) substr_count( $js_src, '[aria-pressed' ) );
+$ts_start = strpos( $js_src, 'function setTermActive(' );
+$ts_end   = $ts_start === false ? false : strpos( $js_src, "\n\t}\n", $ts_start );
+$ts_pos   = strpos( $js_src, "setAttribute( 'aria-pressed'" );
+chk( 'that single write sits inside setTermActive()', $ts_start !== false && $ts_end !== false && $ts_pos > $ts_start && $ts_pos < $ts_end );
+
+$node = trim( (string) shell_exec( 'command -v node 2>/dev/null' ) );
+if ( $node === '' ) {
+	echo "  SKIP  node not available - the JS term state was NOT verified\n";
+} else {
+	$js_raw = (string) shell_exec( escapeshellarg( $node ) . ' ' . escapeshellarg( __DIR__ . '/term-state.mjs' ) . ' 2>&1' );
+	$js     = json_decode( $js_raw, true );
+	if ( ! is_array( $js ) ) {
+		chk( 'term-state.mjs ran', false, trim( $js_raw ) );
+	} else {
+		$want = [
+			'button-on'       => [ 'active' => true,  'pressed' => 'true', 'current' => null ],
+			'button-off'      => [ 'active' => false, 'pressed' => 'false', 'current' => null ],
+			'link-on'         => [ 'active' => true,  'pressed' => null, 'current' => 'true' ],
+			'link-off'        => [ 'active' => false, 'pressed' => null, 'current' => null ],
+			'legacy-link'     => [ 'active' => true,  'pressed' => null, 'current' => 'true' ],
+			'legacy-link-off' => [ 'active' => false, 'pressed' => null, 'current' => null ],
+		];
+		foreach ( $want as $case => $expected ) {
+			chk( 'JS ' . $case, ( $js[ $case ] ?? null ) === $expected, json_encode( $js[ $case ] ?? null ) );
+		}
+	}
+}
+
 // Clean up.
 foreach ( glob( JPKCOM_POSTFILTER_SETTINGS_DIR . '/{,.}*', GLOB_BRACE ) ?: [] as $f ) {
 	if ( is_file( $f ) ) {
