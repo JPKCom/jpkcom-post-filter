@@ -232,7 +232,8 @@ button.jpkpf-filter-btn {
     border-color: var(--jpkpf-filter-active-bg);
 }
 
-.jpkpf-filter-btn[aria-pressed="true"]:hover {
+.jpkpf-filter-btn[aria-pressed="true"]:hover,
+.jpkpf-filter-btn.is-active:hover {
     background-color: var(--jpkpf-primary-hover);
     border-color: var(--jpkpf-primary-hover);
 }

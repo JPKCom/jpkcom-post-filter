@@ -238,6 +238,13 @@
 </dt>
 <dd>Get the base archive URL for the current request</dd>
 
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_results_status">jpkcom_postfilter_results_status()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Status line for a result zone: how many posts the query found</dd>
+
     </dl>
 
 
@@ -864,6 +871,72 @@
             </section>
 
 </article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_results_status">
+        jpkcom_postfilter_results_status()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_results_status" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/helpers.php"><a href="files/includes-helpers.html"><abbr title="includes/helpers.php">helpers.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">311</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Status line for a result zone: how many posts the query found</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_results_status</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type"><abbr title="\WP_Query">WP_Query</abbr>&nbsp;</span><span class="phpdocumentor-signature__argument__name">$query</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>Printed as <code class="prettyprint">data-jpkpf-status</code> on the results zone. The script copies it
+into the live region after an AJAX swap, so a screen reader hears one
+short sentence instead of the whole result list. A query that skips the
+row count (<code class="prettyprint">no_found_rows</code>, as the list shortcode does for <code class="prettyprint">limit=-1</code>)
+leaves <code class="prettyprint">found_posts</code> at 0, so the page count is the number then.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$query</span>
+                : <span class="phpdocumentor-argument-list__argument__type"><abbr title="\WP_Query">WP_Query</abbr></span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>The query the zone renders.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_results_status_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_results_status_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.2</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Plain text, not escaped.</p>
+</section>
+
+            </section>
+
+</article>
             </section>
 
         
@@ -894,6 +967,7 @@
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_get_option">jpkcom_postfilter_get_option()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_is_filter_request">jpkcom_postfilter_is_filter_request()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_locate_file">jpkcom_postfilter_locate_file()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_results_status">jpkcom_postfilter_results_status()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_csv_ids">jpkcom_postfilter_sanitize_csv_ids()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_sanitize_csv_slugs">jpkcom_postfilter_sanitize_csv_slugs()</a></li>
                                             </ul>

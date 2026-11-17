@@ -5,7 +5,7 @@ https://github.com/JPKCom/jpkcom-post-filter<br />
 <strong>Description:</strong> Faceted navigation and filtering of Posts,
 Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly
 URLs, AJAX updates, and full screen reader support.<br />
-<strong>Version:</strong> 1.7.1<br />
+<strong>Version:</strong> 1.7.2<br />
 <strong>Author:</strong> Jean Pierre Kolb <a href="mailto:jpk@jpkc.com"
 class="email">jpk@jpkc.com</a><br />
 <strong>Author URI:</strong> https://www.jpkc.com/<br />
@@ -15,7 +15,7 @@ type, AJAX<br />
 <strong>Requires at least:</strong> 7.0<br />
 <strong>Tested up to:</strong> 7.1<br />
 <strong>Requires PHP:</strong> 8.3<br />
-<strong>Stable tag:</strong> 1.7.1<br />
+<strong>Stable tag:</strong> 1.7.2<br />
 <strong>License:</strong> GPL-2.0-or-later<br />
 <strong>License URI:</strong>
 https://www.gnu.org/licenses/gpl-2.0.html<br />
@@ -72,8 +72,9 @@ APCu, and PHP file cache for settings</li>
 Ferron and OpenLiteSpeed rules that reject impossible filter URLs before
 PHP runs and rate-limit anonymous filter floods; optional managed
 <code>.htaccess</code> block on Apache</li>
-<li><strong>Full accessibility</strong> — <code>aria-live</code>
-regions, <code>aria-pressed</code> toggle buttons, screen-reader-only
+<li><strong>Full accessibility</strong> — a status line that announces
+the number of posts, <code>aria-pressed</code> on toggle buttons and
+<code>aria-current</code> on active links, screen-reader-only
 counts</li>
 <li><strong>Multi-language</strong> — Ships with EN, de_DE, and
 de_DE_formal translations</li>
@@ -103,40 +104,40 @@ Changes</strong> to flush rewrite rules.</li>
 <col style="width: 61%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Option</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Enabled Post Types</td>
 <td>Which post types to activate filtering for</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Auto-Inject Filter</td>
 <td>Automatically add filter UI to archive/blog pages per post type</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>URL Endpoint</td>
 <td>URL path segment for filter URLs (default: <code>filter</code>)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Bare Endpoint Behaviour</td>
 <td>What happens when <code>/filter/</code> is accessed without filter
 terms: 404, redirect to blog homepage, or custom URL</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Max Filter Combinations</td>
 <td>Maximum simultaneous active filter groups (affects URL and JS)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Max. Filters per Group</td>
 <td>Maximum terms selectable within one filter group (0 = unlimited).
 Default 2 for new installations since 1.6.0; installations from before
 1.6.0 keep 3</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Debug Mode</td>
 <td>Use <code>debug-templates/</code> and write detailed logs to PHP
 error log</td>
@@ -154,14 +155,14 @@ without locking any crawler out of content. Each can also be pinned in
 <col style="width: 43%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Option</th>
 <th>Default</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Filter Links for Crawlers</td>
 <td>Single terms only</td>
 <td>What a term button links to for clients without JavaScript: its own
@@ -170,7 +171,7 @@ limits (<code>combo</code>), or nothing (<code>none</code>). Visitors
 with JavaScript can always combine terms. Constant
 <code>JPKCOM_POSTFILTER_LINK_MODE</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Indexable Filter Pages</td>
 <td>1</td>
 <td>Filter pages with up to this many terms are
@@ -180,7 +181,7 @@ which replaces the noindex; unknown terms or no results → always
 <code>noindex, nofollow</code>, no canonical. Constant
 <code>JPKCOM_POSTFILTER_INDEX_MAX_TERMS</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Canonical: Single Term</td>
 <td>Term archive</td>
 <td>Canonical of a filter page with one term (since 1.7.0):
@@ -194,7 +195,7 @@ Yoast. From page 2 on, as long as one-term filter pages may be indexed
 paginated filter page itself; with <code>off</code> there is none (since
 1.7.1). Constant <code>JPKCOM_POSTFILTER_CANONICAL_SINGLE</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Canonical: Multiple Terms</td>
 <td>Archive base</td>
 <td>Canonical of a filter page with two or more terms (since 1.7.0):
@@ -208,40 +209,40 @@ canonical at all. From page 2 on these pages follow <em>Indexable Filter
 Pages</em> with a canonical to themselves (since 1.7.1). Constant
 <code>JPKCOM_POSTFILTER_CANONICAL_MULTI</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Max. Terms in Total</td>
 <td>0 (off)</td>
 <td>Cap across all groups, enforced by the filter bar and the server.
 Constant <code>JPKCOM_POSTFILTER_MAX_TERMS_TOTAL</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Strict Filter URLs</td>
 <td>on</td>
 <td>301 every other spelling of a selection to its canonical URL; reject
 impossible paths before the database is queried. Constant
 <code>JPKCOM_POSTFILTER_STRICT_URLS</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Invalid Combinations</td>
 <td>410</td>
 <td>Status for paths beyond the limits (410 or 404). Constant
 <code>JPKCOM_POSTFILTER_REJECT_STATUS</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Unknown Terms in URLs</td>
 <td>Redirect</td>
 <td><code>redirect</code> to the selection without them,
 <code>noindex</code>, or <code>reject</code>. Constant
 <code>JPKCOM_POSTFILTER_UNKNOWN_TERMS_ACTION</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Query Strings on Filter URLs</td>
 <td>off</td>
 <td>301 <code>/filter/x/?a=b</code> to <code>/filter/x/</code>; keep
 parameters via the <code>jpkcom_postfilter_strip_query_allowlist</code>
 filter. Constant <code>JPKCOM_POSTFILTER_STRIP_QUERY</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>robots.txt Rules</td>
 <td>Disallow combinations</td>
 <td>Rules appended to WordPress’s virtual robots.txt (shown on the
@@ -269,32 +270,32 @@ Each group has:</p>
 <col style="width: 65%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Taxonomy</td>
 <td>Select an existing WP taxonomy, or enable “Register as new taxonomy”
 to create one</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Label</td>
 <td>Displayed in the filter bar (and as admin label for new
 taxonomies)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Post Types</td>
 <td>Which archive pages this group appears on (empty = all enabled post
 types)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Order</td>
 <td>Numeric sort position — determines URL segment order</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Enabled</td>
 <td>Toggle group on/off without deleting it</td>
 </tr>
@@ -304,33 +305,33 @@ types)</td>
 WordPress taxonomy” is checked, additional fields appear:</p>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Taxonomy Slug</td>
 <td>Unique identifier, lowercase letters and hyphens</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Rewrite Slug</td>
 <td>URL prefix for term archive pages</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Hierarchical</td>
 <td>Category-like (parent/child) or tag-like (flat)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Public</td>
 <td>Enable frontend term archive pages</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Admin Column</td>
 <td>Show taxonomy as column in post list table</td>
 </tr>
-<tr class="even">
+<tr>
 <td>REST API</td>
 <td>Expose in REST API (required for Gutenberg)</td>
 </tr>
@@ -359,25 +360,25 @@ typography and link colors.</p>
 Custom variable overrides from the other tabs are applied on top.</p>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Scheme</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Default</td>
 <td>WordPress blue accent, light backgrounds</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Dark</td>
 <td>Dark backgrounds, light text, blue accent</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Contrast</td>
 <td>Red reset button for stronger visual differentiation</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Monochrome</td>
 <td>Black, white, and grey only — no color accent</td>
 </tr>
@@ -392,42 +393,42 @@ pagination position, and custom CSS.</p>
 <col style="width: 41%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Setting</th>
 <th>Options</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Stylesheet Mode</td>
 <td>Full / Variables only / Disabled</td>
 <td>Full loads the complete plugin CSS; Variables only outputs only the
 <code>:root</code> block as inline style; Disabled loads nothing</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Reset Button Visibility</td>
 <td>Always / On selection / Never</td>
 <td>Controls when the “Reset filters” link is shown</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Plus/Minus Mode</td>
 <td>on/off</td>
 <td>Adds +/– icons; clicking the label selects a filter exclusively,
 clicking <code>+</code> adds it to the current selection</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Show More Button</td>
 <td>on/off + threshold</td>
 <td>Hides filters beyond the threshold behind a <code>…</code> toggle
 (not available in Dropdown layout)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Pagination Position</td>
 <td>Below / Above / Both</td>
 <td>Auto-inject only; shortcode pagination is placed manually</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Custom CSS</td>
 <td>textarea</td>
 <td>Additional rules appended after the plugin stylesheet</td>
@@ -443,23 +444,23 @@ clear caches from <strong>Post Filter → Cache</strong>.</p>
 <col style="width: 65%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Layer</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Object Cache</td>
 <td><code>wp_cache_*</code> for query results; invalidated on
 <code>save_post</code> / <code>deleted_post</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Transient Cache</td>
 <td><code>get/set_transient</code> for taxonomy term lists; invalidated
 on term changes</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Settings File Cache</td>
 <td>PHP <code>include</code> cache in
 <code>.ht.jpkcom-post-filter-settings/</code>; fastest for settings
@@ -493,13 +494,13 @@ is detected and its tab preselected.</p>
 <col style="width: 70%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Part</th>
 <th>What it does</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Reject before PHP</td>
 <td>Answers filter URLs with more terms per group, or more segments,
 than the plugin accepts - with the same 410 (or 404) status,
@@ -509,12 +510,12 @@ than the plugin accepts - with the same 410 (or 404) status,
 <code>Cache-Control: no-store</code>. Not available for Ferron 2.8 (no
 tested rule) and without headers on OpenLiteSpeed</td>
 </tr>
-<tr class="even">
+<tr>
 <td>robots.txt</td>
 <td>How <code>/robots.txt</code> reaches WordPress, so the plugin’s
 robots.txt lines are served</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Rate limit</td>
 <td>For filter URLs requested <strong>without any cookie</strong>: a cap
 on concurrent renders, a site-wide rate, a per-IP rate and a separate
@@ -524,11 +525,11 @@ workers (default 8) and the render time of a filter page (default 0.4
 s). Not possible in <code>.htaccess</code> or on OpenLiteSpeed; reduced
 on Ferron</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Check after installing</td>
 <td>curl commands to verify the rule</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Page cache</td>
 <td>When to purge it</td>
 </tr>
@@ -626,35 +627,35 @@ id="jpkcom_postfilter_filter"><code>[jpkcom_postfilter_filter]</code></h3>
 <col style="width: 32%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Attribute</th>
 <th>Values</th>
 <th>Default</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>post_type</code></td>
 <td>any registered post type</td>
 <td><code>post</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>layout</code></td>
 <td><code>bar</code> / <code>columns</code> / <code>sidebar</code> /
 <code>dropdown</code></td>
 <td>backend setting</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>groups</code></td>
 <td>comma-separated group slugs</td>
 <td>all groups</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>reset</code></td>
 <td><code>true</code> / <code>false</code> / <code>always</code></td>
 <td>backend setting</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>class</code></td>
 <td>string</td>
 <td>—</td>
@@ -670,40 +671,40 @@ id="jpkcom_postfilter_list"><code>[jpkcom_postfilter_list]</code></h3>
 <p>Renders the filtered post list.</p>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Attribute</th>
 <th>Values</th>
 <th>Default</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>post_type</code></td>
 <td>any registered post type</td>
 <td><code>post</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>layout</code></td>
 <td><code>cards</code> / <code>rows</code> / <code>minimal</code></td>
 <td>backend setting</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>limit</code></td>
 <td>integer</td>
 <td><code>-1</code> (all)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>orderby</code></td>
 <td><code>date</code> / <code>title</code> /
 <code>menu_order</code></td>
 <td><code>date</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>order</code></td>
 <td><code>ASC</code> / <code>DESC</code></td>
 <td><code>DESC</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>class</code></td>
 <td>string</td>
 <td>—</td>
@@ -717,19 +718,19 @@ id="jpkcom_postfilter_pagination"><code>[jpkcom_postfilter_pagination]</code></h
 is only one page.</p>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Attribute</th>
 <th>Values</th>
 <th>Default</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>post_type</code></td>
 <td>any registered post type</td>
 <td><code>post</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>class</code></td>
 <td>string</td>
 <td>—</td>
@@ -751,29 +752,29 @@ Editor and in the Full Site Editor (FSE).</p>
 <p>Renders the filter/facets UI.</p>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Setting</th>
 <th>Options</th>
 <th>Default</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Post Type</td>
 <td>any registered post type</td>
 <td><code>post</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Layout</td>
 <td>Bar / Sidebar / Dropdown / Columns</td>
 <td>backend setting</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Filter Groups</td>
 <td>comma-separated slugs</td>
 <td>all groups</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Reset Button</td>
 <td>Default / Always / Never</td>
 <td>backend setting</td>
@@ -784,34 +785,34 @@ Editor and in the Full Site Editor (FSE).</p>
 <p>Renders the filtered post listing.</p>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Setting</th>
 <th>Options</th>
 <th>Default</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Post Type</td>
 <td>any registered post type</td>
 <td><code>post</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Layout</td>
 <td>Cards / Rows / Minimal / Theme</td>
 <td>backend setting</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Posts per Page</td>
 <td>-1 to 100</td>
 <td><code>5</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Order By</td>
 <td>Date / Title / Menu Order</td>
 <td><code>date</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Order</td>
 <td>ASC / DESC</td>
 <td><code>DESC</code></td>
@@ -826,14 +827,14 @@ any position. Shows a static preview with example pages in the
 editor.</p>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Setting</th>
 <th>Options</th>
 <th>Default</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Post Type</td>
 <td>any registered post type</td>
 <td><code>post</code></td>
@@ -873,34 +874,34 @@ active.</p>
 <col style="width: 37%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Control</th>
 <th>Type</th>
 <th>Default</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Post Type</td>
 <td>Select</td>
 <td><code>post</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Layout</td>
 <td>Select (Default / Bar / Sidebar / Dropdown / Columns)</td>
 <td>backend setting</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Filter Groups</td>
 <td>Text (comma-separated slugs)</td>
 <td>all groups</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Reset Button</td>
 <td>Select (Default / Always / Never)</td>
 <td>backend setting</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>CSS Class</td>
 <td>Text</td>
 <td>—</td>
@@ -915,39 +916,39 @@ active.</p>
 <col style="width: 37%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Control</th>
 <th>Type</th>
 <th>Default</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Post Type</td>
 <td>Select</td>
 <td><code>post</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Layout</td>
 <td>Select (Default / Cards / Rows / Minimal / Theme)</td>
 <td>backend setting</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Posts per Page</td>
 <td>Number (-1 to 100)</td>
 <td><code>5</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Order By</td>
 <td>Select (Date / Title / Menu Order / Modified / Random)</td>
 <td><code>date</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Order</td>
 <td>Select (DESC / ASC)</td>
 <td><code>DESC</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>CSS Class</td>
 <td>Text</td>
 <td>—</td>
@@ -957,19 +958,19 @@ active.</p>
 <h3 id="post-pagination-1">Post Pagination</h3>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Control</th>
 <th>Type</th>
 <th>Default</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Post Type</td>
 <td>Select</td>
 <td><code>post</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>CSS Class</td>
 <td>Text</td>
 <td>—</td>
@@ -1000,29 +1001,29 @@ They are only loaded when Oxygen Builder is active.</p>
 <col style="width: 37%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Control</th>
 <th>Type</th>
 <th>Default</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Post Type</td>
 <td>Dropdown</td>
 <td><code>post</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Layout</td>
 <td>Dropdown (Default / Bar / Sidebar / Dropdown / Columns)</td>
 <td>backend setting</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Filter Groups</td>
 <td>Text (comma-separated slugs)</td>
 <td>all groups</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Reset Button</td>
 <td>Dropdown (Default / Always / Never)</td>
 <td>backend setting</td>
@@ -1037,34 +1038,34 @@ They are only loaded when Oxygen Builder is active.</p>
 <col style="width: 37%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Control</th>
 <th>Type</th>
 <th>Default</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Post Type</td>
 <td>Dropdown</td>
 <td><code>post</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Layout</td>
 <td>Dropdown (Default / Cards / Rows / Minimal / Theme)</td>
 <td>backend setting</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Posts per Page</td>
 <td>Text (-1 = all)</td>
 <td><code>5</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>Order By</td>
 <td>Dropdown (Date / Title / Menu Order / Modified / Random)</td>
 <td><code>date</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Order</td>
 <td>Dropdown (Descending / Ascending)</td>
 <td><code>DESC</code></td>
@@ -1074,14 +1075,14 @@ They are only loaded when Oxygen Builder is active.</p>
 <h3 id="post-pagination-2">Post Pagination</h3>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Control</th>
 <th>Type</th>
 <th>Default</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Post Type</td>
 <td>Dropdown</td>
 <td><code>post</code></td>
@@ -1165,15 +1166,15 @@ Override them in your theme stylesheet, via the CSS Variables fields in
 <strong>Layout &amp; Design</strong>, or via the Custom CSS field:</p>
 <div class="sourceCode" id="cb6"><pre
 class="sourceCode css"><code class="sourceCode css"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="in">:root</span> {</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-primary</span>:             <span class="cn">#0073aa</span><span class="op">;</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-primary-hover</span>:       <span class="cn">#005d8c</span><span class="op">;</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-filter-bg</span>:           <span class="cn">#f0f0f1</span><span class="op">;</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-filter-active-bg</span>:    <span class="cn">#0073aa</span><span class="op">;</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-filter-active-color</span>: <span class="cn">#ffffff</span><span class="op">;</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-filter-radius</span>:       <span class="dv">3</span><span class="dt">px</span><span class="op">;</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-gap</span>:                 <span class="dv">0.5</span><span class="dt">rem</span><span class="op">;</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-card-radius</span>:         <span class="dv">4</span><span class="dt">px</span><span class="op">;</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-transition</span>:          <span class="dv">0.2</span><span class="dt">s</span> <span class="dv">ease</span><span class="op">;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-primary</span><span class="ch">:</span>             <span class="cn">#0073aa</span><span class="op">;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-primary-hover</span><span class="ch">:</span>       <span class="cn">#005d8c</span><span class="op">;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-filter-bg</span><span class="ch">:</span>           <span class="cn">#f0f0f1</span><span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-filter-active-bg</span><span class="ch">:</span>    <span class="cn">#0073aa</span><span class="op">;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-filter-active-color</span><span class="ch">:</span> <span class="cn">#ffffff</span><span class="op">;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-filter-radius</span><span class="ch">:</span>       <span class="dv">3</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-gap</span><span class="ch">:</span>                 <span class="dv">0.5</span><span class="dt">rem</span><span class="op">;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-card-radius</span><span class="ch">:</span>         <span class="dv">4</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="va">--jpkpf-transition</span><span class="ch">:</span>          <span class="dv">0.2</span><span class="dt">s</span> <span class="dv">ease</span><span class="op">;</span></span>
 <span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <hr />
 <h2 id="abilities-api">Abilities API</h2>
@@ -1188,18 +1189,18 @@ questions about your posts without scraping the front end.</p>
 <col style="width: 60%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Ability</th>
 <th>What it does</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>jpkcom-post-filter/list-filters</code></td>
 <td>Reports which taxonomies and terms a post type can be filtered by,
 with a post count per term</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>jpkcom-post-filter/query-posts</code></td>
 <td>Runs a filtered, paginated query and returns the matching posts plus
 a shareable filter URL</td>
@@ -1284,55 +1285,55 @@ overridable)</h3>
 <col style="width: 32%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Constant</th>
 <th>Default</th>
 <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>JPKCOM_POSTFILTER_VERSION</code></td>
 <td>the header <code>Version:</code></td>
 <td>Plugin version - do not override</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>JPKCOM_POSTFILTER_BASENAME</code></td>
 <td><code>plugin_basename(__FILE__)</code></td>
 <td>Plugin basename</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>JPKCOM_POSTFILTER_PLUGIN_PATH</code></td>
 <td><code>plugin_dir_path(__FILE__)</code></td>
 <td>Absolute plugin path</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>JPKCOM_POSTFILTER_PLUGIN_URL</code></td>
 <td><code>plugin_dir_url(__FILE__)</code></td>
 <td>Plugin URL</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>JPKCOM_POSTFILTER_SETTINGS_DIR</code></td>
 <td><code>WP_CONTENT_DIR . '/.ht.jpkcom-post-filter-settings'</code></td>
 <td>Settings file cache location (must stay inside
 <code>wp-content</code>)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>JPKCOM_POSTFILTER_CACHE_ENABLED</code></td>
 <td><code>true</code></td>
 <td>Master cache toggle</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>JPKCOM_POSTFILTER_DEBUG</code></td>
 <td><code>WP_DEBUG</code></td>
 <td>Enables debug mode and debug templates</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>JPKCOM_POSTFILTER_URL_ENDPOINT</code></td>
 <td><code>'filter'</code></td>
 <td>URL path segment</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>JPKCOM_POSTFILTER_ABILITIES</code></td>
 <td><code>true</code></td>
 <td>Registers the WordPress Abilities API integration. Set to
@@ -1353,7 +1354,7 @@ field. Every value also passes the filter
 <col style="width: 21%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Constant</th>
 <th>Setting key</th>
 <th>Default</th>
@@ -1361,78 +1362,78 @@ field. Every value also passes the filter
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>JPKCOM_POSTFILTER_MAX_FILTERS_PER_GROUP</code></td>
 <td><code>max_filters_per_group</code></td>
 <td><code>2</code> (new installations since 1.6.0; existing ones keep
 <code>3</code>)</td>
 <td>Terms per group as they appear in the URL (0 = unlimited)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>JPKCOM_POSTFILTER_MAX_FILTER_COMBOS</code></td>
 <td><code>max_filter_combos</code></td>
 <td><code>3</code></td>
 <td>Active filter groups (0 = unlimited)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>JPKCOM_POSTFILTER_MAX_TERMS_TOTAL</code></td>
 <td><code>max_terms_total</code></td>
 <td><code>0</code></td>
 <td>Terms across all groups (0 = off)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>JPKCOM_POSTFILTER_LINK_MODE</code></td>
 <td><code>filter_link_mode</code></td>
 <td><code>'single'</code></td>
 <td><code>single</code> / <code>combo</code> / <code>none</code> - what
 term buttons link to</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>JPKCOM_POSTFILTER_INDEX_MAX_TERMS</code></td>
 <td><code>seo_index_max_terms</code></td>
 <td><code>1</code></td>
 <td>Filter pages with up to N terms are <code>index, follow</code> (0 =
 none)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>JPKCOM_POSTFILTER_STRICT_URLS</code></td>
 <td><code>strict_urls</code></td>
 <td><code>true</code></td>
 <td>Request guard on/off</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>JPKCOM_POSTFILTER_REJECT_STATUS</code></td>
 <td><code>reject_status</code></td>
 <td><code>410</code></td>
 <td><code>404</code> or <code>410</code> for impossible filter URLs</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>JPKCOM_POSTFILTER_UNKNOWN_TERMS_ACTION</code></td>
 <td><code>unknown_terms_action</code></td>
 <td><code>'redirect'</code></td>
 <td><code>redirect</code> / <code>noindex</code> /
 <code>reject</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>JPKCOM_POSTFILTER_ROBOTS_TXT</code></td>
 <td><code>robots_txt_mode</code></td>
 <td><code>'deep'</code></td>
 <td><code>deep</code> / <code>all</code> / <code>off</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>JPKCOM_POSTFILTER_STRIP_QUERY</code></td>
 <td><code>strip_query</code></td>
 <td><code>false</code></td>
 <td>301 filter URLs with a query string to the bare path</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>JPKCOM_POSTFILTER_CANONICAL_SINGLE</code></td>
 <td><code>canonical_single</code></td>
 <td><code>'archive'</code></td>
 <td><code>archive</code> / <code>filter</code> / <code>off</code> -
 canonical of a one-term page</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>JPKCOM_POSTFILTER_CANONICAL_MULTI</code></td>
 <td><code>canonical_multi</code></td>
 <td><code>'home'</code></td>
@@ -1449,30 +1450,30 @@ canonical of a page with two or more terms</td>
 <col style="width: 32%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Constant</th>
 <th>Default</th>
 <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>JPKCOM_POSTFILTER_ROBOTS_HEADER</code></td>
 <td><code>true</code></td>
 <td>Sends <code>X-Robots-Tag</code> on filter pages that are not
 <code>index, follow</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>JPKCOM_POSTFILTER_LINK_MAX_TERMS</code></td>
 <td><code>0</code> (no extra limit)</td>
 <td>Depth limit for links in <code>combo</code> mode</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>JPKCOM_POSTFILTER_PAGECACHE_MAX_TERMS</code></td>
 <td><code>0</code> (off)</td>
 <td>Above N terms the page sets <code>DONOTCACHEPAGE</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>JPKCOM_POSTFILTER_QUERY_CACHE_MAX_TERMS</code></td>
 <td><code>1</code></td>
 <td>Selections with more terms skip the query cache</td>
@@ -1482,15 +1483,15 @@ canonical of a page with two or more terms</td>
 <h3 id="javascript-data-attributes">JavaScript data attributes</h3>
 <div class="sourceCode" id="cb11"><pre
 class="sourceCode html"><code class="sourceCode html"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- Auto-inject mode: plugin adds data-jpkpf-wrapper automatically --&gt;</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span> <span class="er">data-jpkpf-wrapper</span> <span class="er">data-jpkpf-base-url</span><span class="ot">=</span><span class="st">&quot;/blog/&quot;</span><span class="dt">&gt;</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">nav</span> <span class="er">data-jpkpf-filter-bar</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;post&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">div</span> <span class="er">data-jpkpf-results</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;post&quot;</span> <span class="er">aria-live</span><span class="ot">=</span><span class="st">&quot;polite&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span><span class="ot"> data-jpkpf-wrapper data-jpkpf-base-url</span><span class="op">=</span><span class="st">&quot;/blog/&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">nav</span><span class="ot"> data-jpkpf-filter-bar data-jpkpf-post-type</span><span class="op">=</span><span class="st">&quot;post&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">div</span><span class="ot"> data-jpkpf-results data-jpkpf-post-type</span><span class="op">=</span><span class="st">&quot;post&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- Shortcode / Block / Elementor / Oxygen mode: paired by data-jpkpf-post-type --&gt;</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">nav</span> <span class="er">data-jpkpf-filter-bar</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;portfolio&quot;</span> <span class="er">data-jpkpf-base-url</span><span class="ot">=</span><span class="st">&quot;/portfolio/&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span> <span class="er">data-jpkpf-results</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;portfolio&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">nav</span> <span class="er">data-jpkpf-pagination</span> <span class="er">data-jpkpf-post-type</span><span class="ot">=</span><span class="st">&quot;portfolio&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span></code></pre></div>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">nav</span><span class="ot"> data-jpkpf-filter-bar data-jpkpf-post-type</span><span class="op">=</span><span class="st">&quot;portfolio&quot;</span><span class="ot"> data-jpkpf-base-url</span><span class="op">=</span><span class="st">&quot;/portfolio/&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span><span class="ot"> data-jpkpf-results data-jpkpf-post-type</span><span class="op">=</span><span class="st">&quot;portfolio&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">nav</span><span class="ot"> data-jpkpf-pagination data-jpkpf-post-type</span><span class="op">=</span><span class="st">&quot;portfolio&quot;</span><span class="dt">&gt;</span>…<span class="dt">&lt;/</span><span class="kw">nav</span><span class="dt">&gt;</span></span></code></pre></div>
 <p>The <code>data-jpkpf-pagination</code> attribute on standalone
 pagination elements (blocks/shortcodes/Elementor) enables the JS to swap
 pagination content during AJAX filter requests, keeping pagination links
@@ -1613,7 +1614,60 @@ Layout &amp; Design → Advanced</strong>. You are then fully responsible
 for all styling.</p>
 <hr />
 <h2 id="changelog">Changelog</h2>
-<h3 id="section">1.7.1</h3>
+<h3 id="section">1.7.2</h3>
+<p>Accessibility patch. What changes on a running site after the update
+- read this first:</p>
+<ul>
+<li><strong>Changed (screen readers):</strong> after a filter click or a
+page change, screen readers announce the result (“7 posts found”, “No
+posts found.”) instead of re-reading the whole post list. The result
+area (<code>[data-jpkpf-results]</code>) is no longer a live region
+(<code>aria-live</code> and <code>aria-atomic</code> are gone); the
+plugin’s own status region announces a short line instead. The list
+templates carry the text in a new <code>data-jpkpf-status</code>
+attribute. Where a theme overrides a list template and has no such
+attribute, the announcement is “No posts found.” when the list shows the
+no-results message, otherwise “Filter active” (no count).</li>
+<li><strong>Changed (filter links):</strong> a filter term that is a
+link (<code>&lt;a href&gt;</code>) no longer claims to be a toggle
+button: <code>aria-pressed</code> is gone from links. The active link
+carries <code>aria-current="true"</code>, an inactive link carries no
+state attribute. Terms rendered as <code>&lt;button&gt;</code> keep
+<code>aria-pressed="true|false"</code>, which is correct there. Custom
+CSS or scripts that styled the active term with
+<code>.jpkpf-filter-btn[aria-pressed="true"]</code> must use
+<code>.is-active</code> instead (set on both links and buttons);
+<code>[aria-pressed="true"]</code> now matches buttons only.</li>
+<li><strong>Changed (theme overrides):</strong> theme overrides of the
+filter or list partials that still print the 1.7.0/1.7.1 markup keep
+working - the script reads and writes the state from the
+<code>is-active</code> class and corrects an old
+<code>aria-pressed</code> on a link when it starts. It also removes a
+leftover <code>aria-live</code>/<code>aria-atomic</code> from the result
+area, so an old list-partial override no longer makes screen readers
+re-read the whole list. Updating the overrides is recommended: copy the
+new partials from <code>templates/partials/</code> (filter partials
+print the new <code>aria</code> attribute, list partials the
+<code>data-jpkpf-status</code> attribute).</li>
+<li><strong>Changed (developers):</strong>
+<code>jpkcom_postfilter_term_link_attributes()</code> returns a new
+third key <code>aria</code> (already escaped) next to <code>tag</code>
+and <code>attrs</code>: <code>aria-pressed="true|false"</code> for a
+button, <code>aria-current="true"</code> for an active link, an empty
+string for an inactive link. Existing keys, hooks, settings and class
+names are unchanged. New helper
+<code>jpkcom_postfilter_results_status()</code> returns the status text
+of a result list.</li>
+<li><strong>Changed (announcement count):</strong> the number announced
+is now the total match count of the filter (<code>found_posts</code>),
+not the number of posts on the current page - on a paginated archive
+with 42 matches, 1.7.1 announced “10 Filter active”, 1.7.2 announces “42
+posts found”.</li>
+<li><strong>Translations:</strong> one new string, “%s post found” / “%s
+posts found” (de_DE, de_DE_formal: “%s Beitrag gefunden” / “%s Beiträge
+gefunden”).</li>
+</ul>
+<h3 id="section-1">1.7.1</h3>
 <p>What changes on a running site after the update - read this
 first:</p>
 <ul>
@@ -1796,7 +1850,7 @@ again.</li>
 <li><strong>Translations:</strong> German (de_DE and de_DE_formal) for
 every new string.</li>
 </ul>
-<h3 id="section-1">1.7.0</h3>
+<h3 id="section-2">1.7.0</h3>
 <p>What changes on a running site after the update - read this
 first:</p>
 <ul>
@@ -1851,7 +1905,7 @@ target and the filters). The server rules and the managed
 <li><strong>Translations:</strong> German (de_DE and de_DE_formal) for
 every new string.</li>
 </ul>
-<h3 id="section-2">1.6.1</h3>
+<h3 id="section-3">1.6.1</h3>
 <p>What changes on a running site after the update - read this
 first:</p>
 <ul>
@@ -1904,7 +1958,7 @@ Still plain <code>curl</code> and <code>sh</code>.</li>
 <li><strong>Translations:</strong> German (de_DE and de_DE_formal) for
 the new warning.</li>
 </ul>
-<h3 id="section-3">1.6.0</h3>
+<h3 id="section-4">1.6.0</h3>
 <p>What changes on a running site after the update - read this
 first:</p>
 <ul>
@@ -1962,7 +2016,7 @@ nothing; counting terms as they appear in the URL is what lets one
 simple, tested rule match exactly what the plugin rejects, on every
 server.</li>
 </ul>
-<h3 id="section-4">1.5.0</h3>
+<h3 id="section-5">1.5.0</h3>
 <p>What changes on a running site after the update - read this
 first:</p>
 <ul>
@@ -2090,7 +2144,7 @@ order without limit. The URL space is now finite: at 10 terms in each of
 two groups, 20 single-term pages are crawlable instead of tens of
 millions of combinations.</li>
 </ul>
-<h3 id="section-5">1.4.7</h3>
+<h3 id="section-6">1.4.7</h3>
 <ul>
 <li>Added: updates for inactive JPKCom plugins. WordPress never runs the
 code of a deactivated plugin, so its own updater never ran and it was
@@ -2113,14 +2167,14 @@ the renamed folder. Update information is fetched only for users who can
 update plugins, in WordPress’s update cron and in WP-CLI, never for
 anonymous visitors</li>
 </ul>
-<h3 id="section-6">1.4.6</h3>
+<h3 id="section-7">1.4.6</h3>
 <ul>
 <li>Added: a plugin icon. The update manifest now points WordPress to
 the JPKCom logo, so the Updates screen (Dashboard → Updates) shows it
 next to this plugin instead of the generic pattern wordpress.org
 generates from the slug</li>
 </ul>
-<h3 id="section-7">1.4.5</h3>
+<h3 id="section-8">1.4.5</h3>
 <ul>
 <li>Security: the plugin header now carries
 <code>Update URI: https://github.com/JPKCom/jpkcom-post-filter</code>.
@@ -2139,7 +2193,7 @@ GitHub release and verifies its SHA-256 before running it, instead of
 executing whatever phpdoc.org serves that day. No effect on the shipped
 plugin</li>
 </ul>
-<h3 id="section-8">1.4.4</h3>
+<h3 id="section-9">1.4.4</h3>
 <ul>
 <li><strong>Fixed:</strong> with an HTML-minifying optimisation plugin
 active, every filter click returned an empty response and the list
@@ -2170,7 +2224,7 @@ registration happens while the plugin is loading, because Autoptimize
 decides once per request and has usually decided by
 <code>wp</code>.</li>
 </ul>
-<h3 id="section-9">1.4.3</h3>
+<h3 id="section-10">1.4.3</h3>
 <ul>
 <li><strong>Fixed:</strong> the 1.4.1 release note said the German
 translation had fallen behind “for three releases”. The actual figure is
@@ -2182,7 +2236,7 @@ point of the note. The 1.4.1 entry has been corrected and marked. No
 code is affected — this release exists so the corrected note reaches the
 sites that read the published changelog.</li>
 </ul>
-<h3 id="section-10">1.4.2</h3>
+<h3 id="section-11">1.4.2</h3>
 <ul>
 <li><strong>Added:</strong> 46 German translations that were missing.
 Affected were the three block titles and their descriptions and search
@@ -2203,7 +2257,7 @@ and keywords, sixteen in total — as missing from the compiled catalogue,
 although they were present. It now reads the context the way WordPress
 stores it.</li>
 </ul>
-<h3 id="section-11">1.4.1</h3>
+<h3 id="section-12">1.4.1</h3>
 <ul>
 <li><strong>Fixed:</strong> the German translation had not kept up with
 the plugin for twelve releases. The translation catalogue was last
@@ -2220,7 +2274,7 @@ catalogue falls behind the code. Regenerating it was never an automated
 step and was not on the release checklist, which is how it went
 unnoticed for twelve releases. It is now both.</li>
 </ul>
-<h3 id="section-12">1.4.0</h3>
+<h3 id="section-13">1.4.0</h3>
 <ul>
 <li><strong>Changed:</strong> WordPress 7.0 is now the minimum. Up to
 6.9 an unexpected error inside an ability callback ended the whole
@@ -2240,7 +2294,7 @@ abilities is now written directly as an empty object instead of being
 produced by a helper. What clients receive is unchanged, and it stays an
 object rather than an empty list.</li>
 </ul>
-<h3 id="section-13">1.3.1</h3>
+<h3 id="section-14">1.3.1</h3>
 <ul>
 <li><strong>Fixed:</strong> the query ability is declared read-only, but
 reading a post’s excerpt made WordPress’ embed handler run — and with no
@@ -2281,7 +2335,7 @@ restriction lives in the query the plugin builds, and another plugin can
 change that query before it runs. The behaviour is unchanged; the
 description of it now matches.</li>
 </ul>
-<h3 id="section-14">1.3.0</h3>
+<h3 id="section-15">1.3.0</h3>
 <ul>
 <li><strong>Added:</strong> the plugin now registers two read-only
 WordPress Abilities, <code>jpkcom-post-filter/list-filters</code> and
@@ -2366,7 +2420,7 @@ to be accepted on the strength of the configuration alone and then
 answered with the complete unfiltered corpus; it now returns the
 unknown-taxonomy error naming the taxonomies that really exist.</li>
 </ul>
-<h3 id="section-15">1.2.3</h3>
+<h3 id="section-16">1.2.3</h3>
 <ul>
 <li>CI: the lint and guard workflow now also runs on pushes to
 <code>main</code>. It only covered pull requests, so a direct push with
@@ -2376,7 +2430,7 @@ repository are now English throughout, and the developer notes in
 <code>CLAUDE.md</code> were translated and trimmed. No effect on the
 shipped plugin</li>
 </ul>
-<h3 id="section-16">1.2.2</h3>
+<h3 id="section-17">1.2.2</h3>
 <ul>
 <li>Changed: <code>Tested up to</code> raised to WordPress 7.1</li>
 <li>Changed: the bundled updater’s runtime floor now matches the
@@ -2388,7 +2442,7 @@ and <code>tested</code> now say 6.9 and 7.1. They only apply when the
 README metadata cannot be read, but a stale fallback would have
 published a minimum the plugin no longer supports</li>
 </ul>
-<h3 id="section-17">1.2.1</h3>
+<h3 id="section-18">1.2.1</h3>
 <ul>
 <li>Added: plugin banners (<code>assets/banner-1544x500.avif</code>,
 <code>assets/banner-772x250.avif</code>) — a plain <code>#3c4955</code>
@@ -2396,7 +2450,7 @@ surface with no lettering. The update manifest already advertised these
 two URLs, but nothing was published under them, so the plugin card in
 wp-admin had a broken banner</li>
 </ul>
-<h3 id="section-18">1.2.0</h3>
+<h3 id="section-19">1.2.0</h3>
 <ul>
 <li>Added: filter requests are answered with just the swappable zones
 instead of a complete page. The theme header, nav menus, sidebar widgets
@@ -2433,7 +2487,7 @@ rules would otherwise never reach the database</li>
 <li>Added: <code>tests/browser-check.mjs</code> drives a real filter
 click in headless Chromium</li>
 </ul>
-<h3 id="section-19">1.1.7</h3>
+<h3 id="section-20">1.1.7</h3>
 <ul>
 <li><strong>Fixed:</strong> the settings-directory containment check was
 a tautology — it compared <code>realpath( WP_CONTENT_DIR )</code> with
@@ -2462,7 +2516,7 @@ never by the requested slugs</li>
 regression tests for all of the above, each written to fail against the
 previous implementation. Run in CI on every pull request</li>
 </ul>
-<h3 id="section-20">1.1.6</h3>
+<h3 id="section-21">1.1.6</h3>
 <ul>
 <li>Security: update packages are now verified <em>before</em>
 installation — the verified file is handed to WordPress instead of being
@@ -2489,13 +2543,13 @@ check, YAML validation, action-pinning guard)</li>
 <li>Housekeeping: removed stray editor backups and an unused
 <code>messages.mo</code> from the release package</li>
 </ul>
-<h3 id="section-21">1.1.5</h3>
+<h3 id="section-22">1.1.5</h3>
 <ul>
 <li>Raised “Tested up to” to WordPress 7.0</li>
 <li>Normalized license fallback defaults (updater and release workflow)
 to <code>GPL-2.0-or-later</code> with the HTTPS license URI</li>
 </ul>
-<h3 id="section-22">1.1.4</h3>
+<h3 id="section-23">1.1.4</h3>
 <ul>
 <li>Security: updater prefers an exact match against the manifest
 <code>download_url</code> over the slug heuristic, so a tampered
@@ -2512,7 +2566,7 @@ completing the <code>no_update</code> transient entry
 (<code>new_version</code>, <code>package</code>, <code>tested</code>,
 <code>requires_php</code>)</li>
 </ul>
-<h3 id="section-23">1.1.3</h3>
+<h3 id="section-24">1.1.3</h3>
 <ul>
 <li><strong>Plus/Minus Icon styling</strong> — New CSS variables
 (<code>--jpkpf-pm-color</code>, <code>--jpkpf-pm-font-size</code>,
@@ -2527,7 +2581,7 @@ icons, fixing themes that force underlines on links</li>
 <li><strong>Translations</strong> — Updated de_DE and de_DE_formal
 translations for all new strings</li>
 </ul>
-<h3 id="section-24">1.1.2</h3>
+<h3 id="section-25">1.1.2</h3>
 <ul>
 <li><strong>Plugin Updater</strong> — Fixed manual ZIP upload failing
 with “invalid URL” error by adding <code>wp_http_validate_url()</code>
@@ -2536,12 +2590,12 @@ check in <code>verify_download_checksum()</code></li>
 top-level directory; WordPress now correctly recognises the update by
 using a staging directory with the plugin slug</li>
 </ul>
-<h3 id="section-25">1.1.1</h3>
+<h3 id="section-26">1.1.1</h3>
 <ul>
 <li><strong>.github/workflows/release.yml</strong> — “Build Gutenberg
 blocks” npm ci bugfix</li>
 </ul>
-<h3 id="section-26">1.1.0</h3>
+<h3 id="section-27">1.1.0</h3>
 <ul>
 <li><strong>Gutenberg Blocks</strong> — Three native blocks (Post
 Filter, Post List, Post Pagination) with live server-side preview,
@@ -2567,7 +2621,7 @@ to multiple pages</li>
 <li><strong>Auto-inject guard</strong> — Prevents duplicate pagination
 insertion in auto-inject mode during AJAX swaps</li>
 </ul>
-<h3 id="section-27">1.0.0</h3>
+<h3 id="section-28">1.0.0</h3>
 <ul>
 <li>Initial release</li>
 <li>Faceted filtering for any post type and taxonomy</li>

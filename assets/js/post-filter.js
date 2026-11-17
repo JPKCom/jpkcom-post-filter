@@ -6,7 +6,7 @@
  * - URL updates via history.pushState (no full page reload)
  * - No-JS fallback: terms that carry an href work as normal anchor navigation
  *   (which terms do is decided server-side, see jpkcom_postfilter_term_href())
- * - Accessibility: aria-live region, aria-pressed, focus management
+ * - Accessibility: aria-live region, aria-pressed (buttons) / aria-current (links), focus management
  * - prefers-reduced-motion: disables animations
  *
  * Two integration modes:
@@ -110,12 +110,18 @@
 	 * @param {string}           baseUrl
 	 */
 	function initFilterUI( filterBar, resultZone, liveRegion, baseUrl ) {
-		// Enhance filter buttons with aria-pressed and click handlers
+		// 1.7.1 list-partial overrides still print aria-live/aria-atomic on the
+		// result zone (the script swaps innerHTML only): drop them so screen readers
+		// hear the status line instead of the whole list. Never the live region.
+		resultZone.removeAttribute( 'aria-live' );
+		resultZone.removeAttribute( 'aria-atomic' );
+
+		// Enhance filter terms with their state attribute and click handlers
 		const filterBtns = filterBar.querySelectorAll( '.jpkpf-filter-btn[data-filter-term]' );
 		filterBtns.forEach( function ( btn ) {
-			// Sync aria-pressed with visual active state
-			const isActive = btn.classList.contains( 'is-active' );
-			btn.setAttribute( 'aria-pressed', isActive ? 'true' : 'false' );
+			// Normalise the state attribute to the element type (also markup
+			// from theme overrides: a link with aria-pressed becomes aria-current)
+			setTermActive( btn, isTermActive( btn ) );
 
 			btn.addEventListener( 'click', function ( e ) {
 				e.preventDefault();
@@ -235,10 +241,9 @@
 	function toggleFilter( btn, filterBar, resultZone, liveRegion, baseUrl ) {
 		if ( btn.getAttribute( 'aria-disabled' ) === 'true' ) { return; }
 
-		const isActive = btn.getAttribute( 'aria-pressed' ) === 'true';
+		const isActive = isTermActive( btn );
 
-		btn.setAttribute( 'aria-pressed', isActive ? 'false' : 'true' );
-		btn.classList.toggle( 'is-active', ! isActive );
+		setTermActive( btn, ! isActive );
 
 		enforceLimits( filterBar );
 		updateResetButton( filterBar );
@@ -285,13 +290,46 @@
 			const term = btn.getAttribute( 'data-filter-term' );
 			const on   = !! ( active[ tax ] && active[ tax ].indexOf( term ) !== -1 );
 
-			btn.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
-			btn.classList.toggle( 'is-active', on );
+			setTermActive( btn, on );
 		} );
 
 		enforceLimits( filterBar );
 		updateResetButton( filterBar );
 		updateDropdownTriggers( filterBar );
+	}
+
+	/**
+	 * Whether a filter term (button or link) is selected. The class is the one
+	 * source of truth; the state attribute is derived from it.
+	 *
+	 * @param {HTMLElement} el
+	 * @return {boolean}
+	 */
+	function isTermActive( el ) {
+		return el.classList.contains( 'is-active' );
+	}
+
+	/**
+	 * Set a filter term's state. Mirrors jpkcom_postfilter_term_link_attributes():
+	 * a button carries aria-pressed, a link aria-current="true" while active
+	 * (aria-pressed is not valid on a link).
+	 *
+	 * @param {HTMLElement} el
+	 * @param {boolean}     active
+	 */
+	function setTermActive( el, active ) {
+		el.classList.toggle( 'is-active', !! active );
+		if ( el.tagName === 'BUTTON' ) {
+			el.setAttribute( 'aria-pressed', active ? 'true' : 'false' );
+			el.removeAttribute( 'aria-current' );
+		} else {
+			el.removeAttribute( 'aria-pressed' );
+			if ( active ) {
+				el.setAttribute( 'aria-current', 'true' );
+			} else {
+				el.removeAttribute( 'aria-current' );
+			}
+		}
 	}
 
 	/**
@@ -304,8 +342,7 @@
 	 */
 	function resetFilters( filterBar, resultZone, liveRegion, baseUrl ) {
 		filterBar.querySelectorAll( '.jpkpf-filter-btn[data-filter-term]' ).forEach( function ( btn ) {
-			btn.setAttribute( 'aria-pressed', 'false' );
-			btn.classList.remove( 'is-active' );
+			setTermActive( btn, false );
 		} );
 
 		enforceLimits( filterBar );
@@ -330,7 +367,7 @@
 				return;
 			}
 
-			var activeCount = group.querySelectorAll( '.jpkpf-filter-btn[aria-pressed="true"]' ).length;
+			var activeCount = group.querySelectorAll( '.jpkpf-filter-btn.is-active[data-filter-term]' ).length;
 			trigger.classList.toggle( 'is-active', activeCount > 0 );
 
 			var badge = trigger.querySelector( '.jpkpf-filter-count' );
@@ -366,7 +403,7 @@
 		if ( resetBtn.getAttribute( 'data-jpkpf-reset-mode' ) === 'always' ) {
 			return;
 		}
-		const hasActive = !! filterBar.querySelector( '.jpkpf-filter-btn[aria-pressed="true"]' );
+		const hasActive = !! filterBar.querySelector( '.jpkpf-filter-btn.is-active[data-filter-term]' );
 		resetBtn.hidden = ! hasActive;
 	}
 
@@ -380,7 +417,7 @@
 	function buildFilterUrl( filterBar, baseUrl ) {
 		// Collect active filters grouped by taxonomy
 		const active = {};
-		filterBar.querySelectorAll( '.jpkpf-filter-btn[aria-pressed="true"]' ).forEach( function ( btn ) {
+		filterBar.querySelectorAll( '.jpkpf-filter-btn.is-active[data-filter-term]' ).forEach( function ( btn ) {
 			const taxonomy = btn.getAttribute( 'data-filter-taxonomy' );
 			const term     = btn.getAttribute( 'data-filter-term' );
 			if ( taxonomy && term ) {
@@ -475,6 +512,24 @@
 		}
 
 		return base + endpoint + '/' + trimmed.join( '/' ) + '/';
+	}
+
+	/**
+	 * Text for the live region after a swap.
+	 *
+	 * @param {HTMLElement} newZone    Results zone of the response.
+	 * @param {HTMLElement} resultZone Results zone in the page.
+	 * @return {string}
+	 */
+	function resultsAnnouncement( newZone, resultZone ) {
+		const status = newZone.getAttribute( 'data-jpkpf-status' );
+		if ( status ) {
+			return status;
+		}
+		if ( resultZone.querySelector( '.jpkpf-no-results' ) ) {
+			return cfg.i18n.noResults || 'No posts found.';
+		}
+		return cfg.i18n.filterActive || 'Filter active';
 	}
 
 	/**
@@ -581,23 +636,23 @@
 					history.pushState( { jpkpf: true, url }, document.title, url );
 				}
 
-				// Announce to screen readers. "No posts found" only when the
-				// zone says so: the theme's own loop (auto-inject) renders
-				// articles without data-jpkpf-post, and until 1.5.0 every
-				// successful click there was announced as "No posts found".
-				// A block theme's post template renders li.wp-block-post
-				// without any article (Twenty Twenty-Five, 1.7.1); a query
-				// block inside a post adds its own, which are not results.
+				// Announce to screen readers: the zone's own status line (1.7.2).
+				// Without one (a theme override of a list partial) the message
+				// is "No posts found." only when the zone says so, otherwise
+				// "Filter active" - a count taken from the DOM was wrong for
+				// the theme's own loop and for block themes (1.5.0, 1.7.1).
+				//
+				// The zone that stays in the page carries the status line too,
+				// and loses a stale one when the response has none.
+				const status = newZone.getAttribute( 'data-jpkpf-status' );
+				if ( status ) {
+					resultZone.setAttribute( 'data-jpkpf-status', status );
+				} else {
+					resultZone.removeAttribute( 'data-jpkpf-status' );
+				}
+
 				if ( liveRegion ) {
-					const empty = !! resultZone.querySelector( '.jpkpf-no-results' );
-					const count = resultZone.querySelectorAll( '[data-jpkpf-post]' ).length
-						|| resultZone.querySelectorAll( '.wp-block-post:not(.wp-block-post .wp-block-post)' ).length
-						|| resultZone.querySelectorAll( 'article' ).length;
-					liveRegion.textContent = empty
-						? ( cfg.i18n.noResults || 'No posts found.' )
-						: ( count > 0
-							? count + ' ' + ( cfg.i18n.filterActive || 'results' )
-							: ( cfg.i18n.filterActive || 'Filter active' ) );
+					liveRegion.textContent = resultsAnnouncement( newZone, resultZone );
 				}
 
 				// Move focus to results for screen reader users
@@ -774,13 +829,13 @@
 			const icon = document.createElement( 'span' );
 			icon.className = 'jpkpf-pm-icon';
 			icon.setAttribute( 'aria-hidden', 'true' );
-			icon.textContent = btn.getAttribute( 'aria-pressed' ) === 'true' ? '\u2212' : '+';
+			icon.textContent = isTermActive( btn ) ? '\u2212' : '+';
 			btn.appendChild( icon );
 		} );
 	}
 
 	/**
-	 * Refresh +/– icons to match current aria-pressed states.
+	 * Refresh +/– icons to match current term states.
 	 *
 	 * @param {HTMLElement} filterBar
 	 */
@@ -788,7 +843,7 @@
 		filterBar.querySelectorAll( '.jpkpf-filter-btn[data-filter-term]' ).forEach( function ( btn ) {
 			const icon = btn.querySelector( '.jpkpf-pm-icon' );
 			if ( icon ) {
-				icon.textContent = btn.getAttribute( 'aria-pressed' ) === 'true' ? '\u2212' : '+';
+				icon.textContent = isTermActive( btn ) ? '\u2212' : '+';
 			}
 		} );
 	}
@@ -810,7 +865,7 @@
 	 * @param {string}           baseUrl
 	 */
 	function handlePlusMinusClick( e, btn, filterBar, resultZone, liveRegion, baseUrl ) {
-		const isActive = btn.getAttribute( 'aria-pressed' ) === 'true';
+		const isActive = isTermActive( btn );
 		const onIcon   = !! e.target.closest( '.jpkpf-pm-icon' );
 
 		// Group limit guard: disabled buttons may not be activated
@@ -818,24 +873,20 @@
 
 		if ( isActive ) {
 			// Deactivate (label click or − icon click)
-			btn.setAttribute( 'aria-pressed', 'false' );
-			btn.classList.remove( 'is-active' );
+			setTermActive( btn, false );
 		} else if ( onIcon ) {
 			// + icon → additive
-			btn.setAttribute( 'aria-pressed', 'true' );
-			btn.classList.add( 'is-active' );
+			setTermActive( btn, true );
 		} else {
 			// Label click on inactive button
-			const hasActive = !! filterBar.querySelector( '.jpkpf-filter-btn[aria-pressed="true"]' );
+			const hasActive = !! filterBar.querySelector( '.jpkpf-filter-btn.is-active[data-filter-term]' );
 			if ( hasActive ) {
 				// Exclusive: clear all others first
 				filterBar.querySelectorAll( '.jpkpf-filter-btn[data-filter-term]' ).forEach( function ( b ) {
-					b.setAttribute( 'aria-pressed', 'false' );
-					b.classList.remove( 'is-active' );
+					setTermActive( b, false );
 				} );
 			}
-			btn.setAttribute( 'aria-pressed', 'true' );
-			btn.classList.add( 'is-active' );
+			setTermActive( btn, true );
 		}
 
 		enforceLimits( filterBar );
@@ -882,12 +933,12 @@
 		if ( ! max || max <= 0 ) { return; }
 
 		const btns   = filterBar.querySelectorAll( '.jpkpf-filter-btn[data-filter-term]' );
-		const active = filterBar.querySelectorAll( '.jpkpf-filter-btn[data-filter-term][aria-pressed="true"]' ).length;
+		const active = filterBar.querySelectorAll( '.jpkpf-filter-btn.is-active[data-filter-term]' ).length;
 
 		if ( active < max ) { return; }
 
 		btns.forEach( function ( btn ) {
-			if ( btn.getAttribute( 'aria-pressed' ) !== 'true' ) {
+			if ( ! isTermActive( btn ) ) {
 				btn.setAttribute( 'aria-disabled', 'true' );
 			}
 		} );
@@ -920,12 +971,12 @@
 		Object.keys( byTaxonomy ).forEach( function ( tax ) {
 			var btns         = byTaxonomy[ tax ];
 			var activeCount  = btns.filter( function ( b ) {
-				return b.getAttribute( 'aria-pressed' ) === 'true';
+				return isTermActive( b );
 			} ).length;
 			var limitReached = activeCount >= max;
 
 			btns.forEach( function ( btn ) {
-				var isActive      = btn.getAttribute( 'aria-pressed' ) === 'true';
+				var isActive      = isTermActive( btn );
 				var shouldDisable = limitReached && ! isActive;
 				if ( shouldDisable ) {
 					btn.setAttribute( 'aria-disabled', 'true' );
@@ -967,7 +1018,7 @@
 		// Count taxonomy groups that already have at least one active selection
 		var activeGroupCount = Object.keys( byTaxonomy ).filter( function ( tax ) {
 			return byTaxonomy[ tax ].some( function ( btn ) {
-				return btn.getAttribute( 'aria-pressed' ) === 'true';
+				return isTermActive( btn );
 			} );
 		} ).length;
 
@@ -976,7 +1027,7 @@
 		Object.keys( byTaxonomy ).forEach( function ( tax ) {
 			var btns      = byTaxonomy[ tax ];
 			var hasActive = btns.some( function ( btn ) {
-				return btn.getAttribute( 'aria-pressed' ) === 'true';
+				return isTermActive( btn );
 			} );
 
 			// Only act on groups with no active selection

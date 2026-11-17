@@ -276,7 +276,7 @@
             <dt class="phpdocumentor-table-of-contents__entry -constant -public">
     <a class="" href="namespaces/default.html#constant_JPKCOM_POSTFILTER_VERSION">JPKCOM_POSTFILTER_VERSION</a>
     <span>
-        &nbsp;: mixed&nbsp;= &#039;1.7.1&#039;                            </span>
+        &nbsp;: mixed&nbsp;= &#039;1.7.2&#039;                            </span>
 </dt>
 
             <dt class="phpdocumentor-table-of-contents__entry -constant -public">
@@ -1133,7 +1133,7 @@
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_term_link_attributes">jpkcom_postfilter_term_link_attributes()</a>
     <span>
-                                &nbsp;: array{tag: string, attrs: string}    </span>
+                                &nbsp;: array{tag: string, attrs: string, aria: string}    </span>
 </dt>
 <dd>Element and attributes for a term button</dd>
 
@@ -1342,6 +1342,13 @@ user can change their selection on a zero-results page reload.</dd>
                                 &nbsp;: string    </span>
 </dt>
 <dd>Get the base archive URL for the current request</dd>
+
+            <dt class="phpdocumentor-table-of-contents__entry -function -">
+    <a class="" href="namespaces/default.html#function_jpkcom_postfilter_results_status">jpkcom_postfilter_results_status()</a>
+    <span>
+                                &nbsp;: string    </span>
+</dt>
+<dd>Status line for a result zone: how many posts the query found</dd>
 
             <dt class="phpdocumentor-table-of-contents__entry -function -">
     <a class="" href="namespaces/default.html#function_jpkcom_postfilter_htaccess_markers">jpkcom_postfilter_htaccess_markers()</a>
@@ -3452,7 +3459,7 @@ so instead of being empty, because an empty 200 is indistinguishable from
     <span class="phpdocumentor-signature__visibility">public</span>
         <span class="phpdocumentor-signature__type">mixed</span>
     <span class="phpdocumentor-signature__name">JPKCOM_POSTFILTER_VERSION</span>
-    = <span class="phpdocumentor-signature__default-value">&#039;1.7.1&#039;</span>
+    = <span class="phpdocumentor-signature__default-value">&#039;1.7.2&#039;</span>
 </code>
 
 
@@ -10488,7 +10495,7 @@ narrow nothing further).</li>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/crawl-guard.php"><a href="files/includes-crawl-guard.html"><abbr title="includes/crawl-guard.php">crawl-guard.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">1179</span>
+    <span class="phpdocumentor-element-found-in__line">1182</span>
 
     </aside>
 
@@ -10497,12 +10504,12 @@ narrow nothing further).</li>
     
     <code class="phpdocumentor-code phpdocumentor-signature ">
     <span class="phpdocumentor-signature__visibility"></span>
-                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_term_link_attributes</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$base_url</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$active_filters</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$taxonomy</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$slug</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">bool&nbsp;</span><span class="phpdocumentor-signature__argument__name">$is_active</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{tag: string, attrs: string}</span></code>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_term_link_attributes</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$base_url</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">array&lt;string, array&lt;string|int, string&gt;&gt;&nbsp;</span><span class="phpdocumentor-signature__argument__name">$active_filters</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$taxonomy</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">string&nbsp;</span><span class="phpdocumentor-signature__argument__name">$slug</span></span><span class="phpdocumentor-signature__argument"><span>, </span><span class="phpdocumentor-signature__argument__type">bool&nbsp;</span><span class="phpdocumentor-signature__argument__name">$is_active</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array{tag: string, attrs: string, aria: string}</span></code>
 
         <section class="phpdocumentor-description"><p>A term with a link target is an <code class="prettyprint">&lt;a href&gt;</code>; one without is a
 <code class="prettyprint">&lt;button type=&quot;button&quot;&gt;</code>, which keyboards and screen readers handle
 natively and which the script drives exactly like the link (it reads
-only the data attributes and aria-pressed).</p>
+only the data attributes and the <code class="prettyprint">is-active</code> class).</p>
 <p>A link to a page that is not indexable carries rel=&quot;nofollow&quot;.</p>
 </section>
 
@@ -10573,9 +10580,12 @@ only the data attributes and aria-pressed).</p>
 
             <section>
         <h5 class="phpdocumentor-return-value__heading">Return values</h5>
-        <span class="phpdocumentor-signature__response_type">array{tag: string, attrs: string}</span>
+        <span class="phpdocumentor-signature__response_type">array{tag: string, attrs: string, aria: string}</span>
                     &mdash;
-                <section class="phpdocumentor-description"><p><code class="prettyprint">attrs</code> is already escaped.</p>
+                <section class="phpdocumentor-description"><p><code class="prettyprint">attrs</code> and <code class="prettyprint">aria</code> are already escaped.
+<code class="prettyprint">aria</code> (since 1.7.2) is the state attribute:
+aria-pressed=&quot;true|false&quot; for a button,
+aria-current=&quot;true&quot; for an active link, '' for an inactive one.</p>
 </section>
 
             </section>
@@ -10830,7 +10840,7 @@ theme rendering a block template is covered as well.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/filter-injection.php"><a href="files/includes-filter-injection.html"><abbr title="includes/filter-injection.php">filter-injection.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">307</span>
+    <span class="phpdocumentor-element-found-in__line">312</span>
 
     </aside>
 
@@ -10888,7 +10898,7 @@ theme rendering a block template is covered as well.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/filter-injection.php"><a href="files/includes-filter-injection.html"><abbr title="includes/filter-injection.php">filter-injection.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">397</span>
+    <span class="phpdocumentor-element-found-in__line">402</span>
 
     </aside>
 
@@ -10944,7 +10954,7 @@ theme rendering a block template is covered as well.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/filter-injection.php"><a href="files/includes-filter-injection.html"><abbr title="includes/filter-injection.php">filter-injection.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">530</span>
+    <span class="phpdocumentor-element-found-in__line">535</span>
 
     </aside>
 
@@ -10994,7 +11004,7 @@ results zone at all.</p>
     <aside class="phpdocumentor-element-found-in">
     <abbr class="phpdocumentor-element-found-in__file" title="includes/filter-injection.php"><a href="files/includes-filter-injection.html"><abbr title="includes/filter-injection.php">filter-injection.php</abbr></a></abbr>
     :
-    <span class="phpdocumentor-element-found-in__line">547</span>
+    <span class="phpdocumentor-element-found-in__line">552</span>
 
     </aside>
 
@@ -12279,6 +12289,72 @@ this is not the place to overrule it.</p>
         <span class="phpdocumentor-signature__response_type">string</span>
                     &mdash;
                 <section class="phpdocumentor-description"><p>Base archive URL without filter segments.</p>
+</section>
+
+            </section>
+
+</article>
+                    <article class="phpdocumentor-element -function - ">
+    <h4 class="phpdocumentor-element__name" id="function_jpkcom_postfilter_results_status">
+        jpkcom_postfilter_results_status()
+        <a href="namespaces/default.html#function_jpkcom_postfilter_results_status" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h4>
+    <aside class="phpdocumentor-element-found-in">
+    <abbr class="phpdocumentor-element-found-in__file" title="includes/helpers.php"><a href="files/includes-helpers.html"><abbr title="includes/helpers.php">helpers.php</abbr></a></abbr>
+    :
+    <span class="phpdocumentor-element-found-in__line">311</span>
+
+    </aside>
+
+        <p class="phpdocumentor-summary">Status line for a result zone: how many posts the query found</p>
+
+    
+    <code class="phpdocumentor-code phpdocumentor-signature ">
+    <span class="phpdocumentor-signature__visibility"></span>
+                    <span class="phpdocumentor-signature__name">jpkcom_postfilter_results_status</span><span>(</span><span class="phpdocumentor-signature__argument"><span class="phpdocumentor-signature__argument__type"><abbr title="\WP_Query">WP_Query</abbr>&nbsp;</span><span class="phpdocumentor-signature__argument__name">$query</span></span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">string</span></code>
+
+        <section class="phpdocumentor-description"><p>Printed as <code class="prettyprint">data-jpkpf-status</code> on the results zone. The script copies it
+into the live region after an AJAX swap, so a screen reader hears one
+short sentence instead of the whole result list. A query that skips the
+row count (<code class="prettyprint">no_found_rows</code>, as the list shortcode does for <code class="prettyprint">limit=-1</code>)
+leaves <code class="prettyprint">found_posts</code> at 0, so the page count is the number then.</p>
+</section>
+
+        <h5 class="phpdocumentor-argument-list__heading">Parameters</h5>
+    <dl class="phpdocumentor-argument-list">
+                    <dt class="phpdocumentor-argument-list__entry">
+                <span class="phpdocumentor-argument-list__argument__name">$query</span>
+                : <span class="phpdocumentor-argument-list__argument__type"><abbr title="\WP_Query">WP_Query</abbr></span>
+                            </dt>
+            <dd class="phpdocumentor-argument-list__definition">
+                    <section class="phpdocumentor-description"><p>The query the zone renders.</p>
+</section>
+
+            </dd>
+            </dl>
+
+    
+    <h5 class="phpdocumentor-tag-list__heading" id="function_jpkcom_postfilter_results_status_tags">
+        Tags
+        <a href="namespaces/default.html#function_jpkcom_postfilter_results_status_tags" class="headerlink"><i class="fas fa-link"></i></a>
+
+    </h5>
+    <dl class="phpdocumentor-tag-list">
+                    <dt class="phpdocumentor-tag-list__entry">
+                <span class="phpdocumentor-tag__name">since</span>
+            </dt>
+                            <dd class="phpdocumentor-tag-list__definition">
+                                            <span class="phpdocumentor-tag-link">1.7.2</span>
+                                                                                                        
+                                    </dd>
+                        </dl>
+
+            <section>
+        <h5 class="phpdocumentor-return-value__heading">Return values</h5>
+        <span class="phpdocumentor-signature__response_type">string</span>
+                    &mdash;
+                <section class="phpdocumentor-description"><p>Plain text, not escaped.</p>
 </section>
 
             </section>
@@ -26022,6 +26098,7 @@ settings by hand.</p>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_request_looks_like_fragment">jpkcom_postfilter_request_looks_like_fragment()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_request_verdict">jpkcom_postfilter_request_verdict()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_restrict_internal_query_vars">jpkcom_postfilter_restrict_internal_query_vars()</a></li>
+                                                    <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_results_status">jpkcom_postfilter_results_status()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_robots_directives">jpkcom_postfilter_robots_directives()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_robots_txt_rules">jpkcom_postfilter_robots_txt_rules()</a></li>
                                                     <li class=""><a href="namespaces/default.html#function_jpkcom_postfilter_routable_post_types">jpkcom_postfilter_routable_post_types()</a></li>

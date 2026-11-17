@@ -1196,6 +1196,11 @@ Search.appendIndex(
             "summary": "Get\u0020the\u0020base\u0020archive\u0020URL\u0020for\u0020the\u0020current\u0020request",
             "url": "namespaces/default.html#function_jpkcom_postfilter_get_current_archive_url"
         },                {
+            "fqsen": "\\jpkcom_postfilter_results_status\u0028\u0029",
+            "name": "jpkcom_postfilter_results_status",
+            "summary": "Status\u0020line\u0020for\u0020a\u0020result\u0020zone\u003A\u0020how\u0020many\u0020posts\u0020the\u0020query\u0020found",
+            "url": "namespaces/default.html#function_jpkcom_postfilter_results_status"
+        },                {
             "fqsen": "\\jpkcom_postfilter_htaccess_markers\u0028\u0029",
             "name": "jpkcom_postfilter_htaccess_markers",
             "summary": "The\u0020marker\u0020lines\u0020this\u0020file\u0020knows",
