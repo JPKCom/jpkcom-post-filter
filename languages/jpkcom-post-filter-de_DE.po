@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: JPKCom Post Filter 1.7.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/jpkcom-post-"
 "filter\n"
-"POT-Creation-Date: 2026-10-28T11:30:36+01:00\n"
+"POT-Creation-Date: 2026-11-17T09:05:02+00:00\n"
 "PO-Revision-Date: 2026-10-27 21:22+0100\n"
 "Last-Translator: jpk@jpkc.com\n"
 "Language-Team: Deutsch\n"
@@ -527,7 +527,9 @@ msgstr ""
 msgid ""
 "Set in wp-config.php with the constant %1$s (default: the value of %2$s). "
 "This box only shows the current state."
-msgstr "Wird in der wp-config.php mit der Konstante %1$s gesetzt (Standard: der Wert von %2$s). Dieses Feld zeigt nur den aktuellen Zustand."
+msgstr ""
+"Wird in der wp-config.php mit der Konstante %1$s gesetzt (Standard: der Wert "
+"von %2$s). Dieses Feld zeigt nur den aktuellen Zustand."
 
 #. translators: %s: PHP constant name
 #: includes/admin-pages.php:579
@@ -1908,11 +1910,16 @@ msgstr "Eine aus diesem Plugin exportierte .json-Datei auswählen."
 msgid "Loading…"
 msgstr "Wird geladen …"
 
-#: includes/assets-enqueue.php:118 includes/filter-injection.php:636
-#: templates/partials/list/list-cards.php:59
-#: templates/partials/list/list-minimal.php:43
-#: templates/partials/list/list-rows.php:62
-#: templates/partials/list/list-theme.php:99
+#: includes/assets-enqueue.php:118 includes/filter-injection.php:642
+#: includes/filter-injection.php:644 includes/helpers.php:315
+#: templates/partials/list/list-cards.php:23
+#: templates/partials/list/list-cards.php:58
+#: templates/partials/list/list-minimal.php:23
+#: templates/partials/list/list-minimal.php:42
+#: templates/partials/list/list-rows.php:23
+#: templates/partials/list/list-rows.php:61
+#: templates/partials/list/list-theme.php:38
+#: templates/partials/list/list-theme.php:98
 msgid "No posts found."
 msgstr "Keine Beiträge gefunden."
 
@@ -2088,6 +2095,14 @@ msgstr "Einstellungen für die Seitennummerierung"
 msgid "Must match the Post List widget on the same page."
 msgstr ""
 "Muss mit dem Widget „Beitragsliste“ auf derselben Seite übereinstimmen."
+
+#. translators: %s: number of posts
+#: includes/helpers.php:320
+#, php-format
+msgid "%s post found"
+msgid_plural "%s posts found"
+msgstr[0] "%s Beitrag gefunden"
+msgstr[1] "%s Beiträge gefunden"
 
 #: includes/htaccess-sync.php:661
 msgid ""

@@ -3,7 +3,7 @@
 **Plugin Name:** JPKCom Post Filter  
 **Plugin URI:** https://github.com/JPKCom/jpkcom-post-filter  
 **Description:** Faceted navigation and filtering of Posts, Pages, and Custom Post Types via WordPress taxonomies — SEO-friendly URLs, AJAX updates, and full screen reader support.  
-**Version:** 1.7.1  
+**Version:** 1.7.2  
 **Author:** Jean Pierre Kolb <jpk@jpkc.com>  
 **Author URI:** https://www.jpkc.com/  
 **Contributors:** JPKCom  
@@ -11,7 +11,7 @@
 **Requires at least:** 7.0  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.7.1  
+**Stable tag:** 1.7.2  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 **Text Domain:** jpkcom-post-filter  
@@ -44,7 +44,7 @@ Filter any post type by taxonomy terms — SEO-friendly URLs, AJAX, and shortcod
 - **Three stylesheet modes** — Full plugin CSS, CSS variables only, or fully disabled
 - **Four-layer caching** — Object cache, transients, APCu, and PHP file cache for settings
 - **Server rules** — Generated nginx, Apache, Caddy, Ferron and OpenLiteSpeed rules that reject impossible filter URLs before PHP runs and rate-limit anonymous filter floods; optional managed `.htaccess` block on Apache
-- **Full accessibility** — `aria-live` regions, `aria-pressed` toggle buttons, screen-reader-only counts
+- **Full accessibility** — a status line that announces the number of posts, `aria-pressed` on toggle buttons and `aria-current` on active links, screen-reader-only counts
 - **Multi-language** — Ships with EN, de\_DE, and de\_DE\_formal translations
 - **No dependencies** — No ACF, no Bootstrap, no jQuery required
 
@@ -581,7 +581,7 @@ Constant only, no setting:
 <!-- Auto-inject mode: plugin adds data-jpkpf-wrapper automatically -->
 <div data-jpkpf-wrapper data-jpkpf-base-url="/blog/">
     <nav data-jpkpf-filter-bar data-jpkpf-post-type="post">…</nav>
-    <div data-jpkpf-results data-jpkpf-post-type="post" aria-live="polite">…</div>
+    <div data-jpkpf-results data-jpkpf-post-type="post">…</div>
 </div>
 
 <!-- Shortcode / Block / Elementor / Oxygen mode: paired by data-jpkpf-post-type -->
@@ -674,6 +674,17 @@ Set **Stylesheet Mode** to "Disabled" in **Post Filter → Layout & Design → A
 ---
 
 ## Changelog
+
+### 1.7.2
+
+Accessibility patch. What changes on a running site after the update - read this first:
+
+* **Changed (screen readers):** after a filter click or a page change, screen readers announce the result ("7 posts found", "No posts found.") instead of re-reading the whole post list. The result area (`[data-jpkpf-results]`) is no longer a live region (`aria-live` and `aria-atomic` are gone); the plugin's own status region announces a short line instead. The list templates carry the text in a new `data-jpkpf-status` attribute. Where a theme overrides a list template and has no such attribute, the announcement is "No posts found." when the list shows the no-results message, otherwise "Filter active" (no count).
+* **Changed (filter links):** a filter term that is a link (`<a href>`) no longer claims to be a toggle button: `aria-pressed` is gone from links. The active link carries `aria-current="true"`, an inactive link carries no state attribute. Terms rendered as `<button>` keep `aria-pressed="true|false"`, which is correct there.
+* **Changed (theme overrides):** theme overrides of the filter or list partials that still print the 1.7.0/1.7.1 markup keep working - the script reads and writes the state from the `is-active` class and corrects an old `aria-pressed` on a link when it starts. Updating the overrides is recommended: copy the new partials from `templates/partials/` (filter partials print the new `aria` attribute, list partials the `data-jpkpf-status` attribute).
+* **Changed (developers):** `jpkcom_postfilter_term_link_attributes()` returns a new third key `aria` (already escaped) next to `tag` and `attrs`: `aria-pressed="true|false"` for a button, `aria-current="true"` for an active link, an empty string for an inactive link. Existing keys, hooks, settings and class names are unchanged. New helper `jpkcom_postfilter_results_status()` returns the status text of a result list.
+* **Fixed:** the post count in the announcement is correct for a list shortcode with `limit="-1"` (no pagination query): it counts the posts shown instead of reporting "No posts found.".
+* **Translations:** one new string, "%s post found" / "%s posts found" (de_DE, de_DE_formal: "%s Beitrag gefunden" / "%s Beiträge gefunden").
 
 ### 1.7.1
 
