@@ -1163,7 +1163,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_term_link_attributes' ) ) {
      * A term with a link target is an `<a href>`; one without is a
      * `<button type="button">`, which keyboards and screen readers handle
      * natively and which the script drives exactly like the link (it reads
-     * only the data attributes and aria-pressed).
+     * only the data attributes and the `is-active` class).
      *
      * A link to a page that is not indexable carries rel="nofollow".
      *
@@ -1174,13 +1174,20 @@ if ( ! function_exists( function: 'jpkcom_postfilter_term_link_attributes' ) ) {
      * @param string                  $taxonomy       Term taxonomy.
      * @param string                  $slug           Term slug.
      * @param bool                    $is_active      Whether the term is selected.
-     * @return array{tag: string, attrs: string} `attrs` is already escaped.
+     * @return array{tag: string, attrs: string, aria: string} `attrs` and `aria` are already escaped.
+     *                                                         `aria` (since 1.7.2) is the state attribute:
+     *                                                         aria-pressed="true|false" for a button,
+     *                                                         aria-current="true" for an active link, '' for an inactive one.
      */
     function jpkcom_postfilter_term_link_attributes( string $base_url, array $active_filters, string $taxonomy, string $slug, bool $is_active ): array {
         $href = jpkcom_postfilter_term_href( $base_url, $active_filters, $taxonomy, $slug, $is_active );
 
         if ( $href === null ) {
-            return [ 'tag' => 'button', 'attrs' => 'type="button"' ];
+            return [
+                'tag'   => 'button',
+                'attrs' => 'type="button"',
+                'aria'  => 'aria-pressed="' . ( $is_active ? 'true' : 'false' ) . '"',
+            ];
         }
 
         $rel = jpkcom_postfilter_url_term_count( $href, $base_url ) > (int) jpkcom_postfilter_policy( 'seo_index_max_terms' )
@@ -1200,6 +1207,7 @@ if ( ! function_exists( function: 'jpkcom_postfilter_term_link_attributes' ) ) {
         return [
             'tag'   => 'a',
             'attrs' => 'href="' . esc_url( $href ) . '"' . ( $rel !== '' ? ' rel="' . esc_attr( $rel ) . '"' : '' ),
+            'aria'  => $is_active ? 'aria-current="true"' : '',
         ];
     }
 }

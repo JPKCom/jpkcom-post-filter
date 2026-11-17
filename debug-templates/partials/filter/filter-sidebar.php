@@ -45,7 +45,7 @@ if ( ! defined( constant_name: 'ABSPATH' ) ) {
                     ?>
                     <<?php echo $term_link['tag']; ?> <?php echo $term_link['attrs']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                        class="jpkpf-filter-btn<?php echo $is_active ? ' is-active' : ''; ?>"
-                       aria-pressed="<?php echo $is_active ? 'true' : 'false'; ?>"
+                       <?php echo $term_link['aria']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built escaped in jpkcom_postfilter_term_link_attributes() ?>
                        data-filter-term="<?php echo esc_attr( $term->slug ); ?>"
                        data-filter-taxonomy="<?php echo esc_attr( $group['taxonomy'] ); ?>">
                         <?php echo esc_html( $term->name ); ?>
