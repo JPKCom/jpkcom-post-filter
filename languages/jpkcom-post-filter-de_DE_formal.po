@@ -4,7 +4,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: JPKCom Post Filter 1.7.1\n"
+"Project-Id-Version: JPKCom Post Filter 1.7.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/jpkcom-post-"
 "filter\n"
 "POT-Creation-Date: 2026-11-17T09:05:02+00:00\n"

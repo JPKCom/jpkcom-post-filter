@@ -364,6 +364,15 @@ $js_src2 = (string) file_get_contents( __DIR__ . '/../assets/js/post-filter.js' 
 chk( 'JS: no count + word announcement left', ! str_contains( $js_src2, "count + ' '" ) );
 chk( 'JS: announcement goes through resultsAnnouncement()', str_contains( $js_src2, 'resultsAnnouncement( newZone, resultZone )' ) );
 
+// 1.7.1 list-partial overrides keep aria-live/aria-atomic on the result zone:
+// initFilterUI() must strip them, and only from resultZone (never the live region).
+$ui_start = strpos( $js_src2, 'function initFilterUI(' );
+$ui_end   = $ui_start === false ? false : strpos( $js_src2, "\n\t}\n", $ui_start );
+$ui_body  = ( $ui_start !== false && $ui_end !== false ) ? substr( $js_src2, $ui_start, $ui_end - $ui_start ) : '';
+chk( 'JS: initFilterUI() removes aria-live from resultZone', str_contains( $ui_body, "resultZone.removeAttribute( 'aria-live' )" ) );
+chk( 'JS: initFilterUI() removes aria-atomic from resultZone', str_contains( $ui_body, "resultZone.removeAttribute( 'aria-atomic' )" ) );
+chk( 'JS: liveRegion never loses aria-live/aria-atomic', ! preg_match( '/liveRegion\.removeAttribute/', $js_src2 ) );
+
 $node = trim( (string) shell_exec( 'command -v node 2>/dev/null' ) );
 if ( $node === '' ) {
 	echo "  SKIP  node not available - the announcement was NOT verified\n";

@@ -110,6 +110,12 @@
 	 * @param {string}           baseUrl
 	 */
 	function initFilterUI( filterBar, resultZone, liveRegion, baseUrl ) {
+		// 1.7.1 list-partial overrides still print aria-live/aria-atomic on the
+		// result zone (the script swaps innerHTML only): drop them so screen readers
+		// hear the status line instead of the whole list. Never the live region.
+		resultZone.removeAttribute( 'aria-live' );
+		resultZone.removeAttribute( 'aria-atomic' );
+
 		// Enhance filter terms with their state attribute and click handlers
 		const filterBtns = filterBar.querySelectorAll( '.jpkpf-filter-btn[data-filter-term]' );
 		filterBtns.forEach( function ( btn ) {
