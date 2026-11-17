@@ -509,6 +509,24 @@
 	}
 
 	/**
+	 * Text for the live region after a swap.
+	 *
+	 * @param {HTMLElement} newZone    Results zone of the response.
+	 * @param {HTMLElement} resultZone Results zone in the page.
+	 * @return {string}
+	 */
+	function resultsAnnouncement( newZone, resultZone ) {
+		const status = newZone.getAttribute( 'data-jpkpf-status' );
+		if ( status ) {
+			return status;
+		}
+		if ( resultZone.querySelector( '.jpkpf-no-results' ) ) {
+			return cfg.i18n.noResults || 'No posts found.';
+		}
+		return cfg.i18n.filterActive || 'Filter active';
+	}
+
+	/**
 	 * Fetch filtered results via AJAX and update the DOM.
 	 *
 	 * @param {string}           url
@@ -612,23 +630,23 @@
 					history.pushState( { jpkpf: true, url }, document.title, url );
 				}
 
-				// Announce to screen readers. "No posts found" only when the
-				// zone says so: the theme's own loop (auto-inject) renders
-				// articles without data-jpkpf-post, and until 1.5.0 every
-				// successful click there was announced as "No posts found".
-				// A block theme's post template renders li.wp-block-post
-				// without any article (Twenty Twenty-Five, 1.7.1); a query
-				// block inside a post adds its own, which are not results.
+				// Announce to screen readers: the zone's own status line (1.7.2).
+				// Without one (a theme override of a list partial) the message
+				// is "No posts found." only when the zone says so, otherwise
+				// "Filter active" - a count taken from the DOM was wrong for
+				// the theme's own loop and for block themes (1.5.0, 1.7.1).
+				//
+				// The zone that stays in the page carries the status line too,
+				// and loses a stale one when the response has none.
+				const status = newZone.getAttribute( 'data-jpkpf-status' );
+				if ( status ) {
+					resultZone.setAttribute( 'data-jpkpf-status', status );
+				} else {
+					resultZone.removeAttribute( 'data-jpkpf-status' );
+				}
+
 				if ( liveRegion ) {
-					const empty = !! resultZone.querySelector( '.jpkpf-no-results' );
-					const count = resultZone.querySelectorAll( '[data-jpkpf-post]' ).length
-						|| resultZone.querySelectorAll( '.wp-block-post:not(.wp-block-post .wp-block-post)' ).length
-						|| resultZone.querySelectorAll( 'article' ).length;
-					liveRegion.textContent = empty
-						? ( cfg.i18n.noResults || 'No posts found.' )
-						: ( count > 0
-							? count + ' ' + ( cfg.i18n.filterActive || 'results' )
-							: ( cfg.i18n.filterActive || 'Filter active' ) );
+					liveRegion.textContent = resultsAnnouncement( newZone, resultZone );
 				}
 
 				// Move focus to results for screen reader users

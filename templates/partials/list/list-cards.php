@@ -20,8 +20,7 @@ if ( ! defined( constant_name: 'ABSPATH' ) ) {
 <div class="jpkpf-list-cards<?php echo ! empty( $extra_class ) ? ' ' . esc_attr( $extra_class ) : ''; ?>"
      data-jpkpf-results
      data-jpkpf-post-type="<?php echo esc_attr( $post_type ?? 'post' ); ?>"
-     aria-live="polite"
-     aria-atomic="true">
+     data-jpkpf-status="<?php echo esc_attr( isset( $query ) ? jpkcom_postfilter_results_status( $query ) : __( 'No posts found.', 'jpkcom-post-filter' ) ); ?>">
 
     <?php if ( isset( $query ) && $query->have_posts() ) : ?>
 

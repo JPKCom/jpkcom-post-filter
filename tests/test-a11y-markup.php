@@ -39,10 +39,15 @@ function wp_parse_url( $url, $component = -1 ) { return parse_url( (string) $url
 function esc_url( $u ) { return htmlspecialchars( (string) $u, ENT_QUOTES ); }
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES ); }
 function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES ); }
+function esc_attr__( $s, $d = '' ) { return esc_attr( $s ); }
+function esc_html__( $s, $d = '' ) { return esc_html( $s ); }
 function esc_attr_e( $s, $d = '' ) { echo esc_attr( $s ); }
 function esc_html_e( $s, $d = '' ) { echo esc_html( $s ); }
 function _n( $single, $plural, $n, $d = '' ) { return (int) $n === 1 ? $single : $plural; }
 function sanitize_html_class( $c ) { return preg_replace( '/[^A-Za-z0-9_-]/', '', (string) $c ); }
+function __( $s, $d = '' ) { return $s; }
+function number_format_i18n( $n, $dec = 0 ) { return number_format( (float) $n, $dec, '.', ',' ); }
+function wp_reset_postdata() {}
 function do_action( ...$args ) {}
 function update_option( $k, $v, $a = null ) { $GLOBALS['__options'][ $k ] = $v; return true; }
 function jpkcom_postfilter_cache_flush_group(): void {}
@@ -55,8 +60,30 @@ $GLOBALS['__groups'] = [
 
 function jpkcom_postfilter_get_filter_groups_enabled(): array { return $GLOBALS['__groups']; }
 
+/** Query stand-in: what the status line and the list partials read. */
+class WP_Query {
+	public int $found_posts = 0;
+	public int $post_count  = 0;
+	public array $posts     = [];
+	public array $args      = [];
+	public function get( $k ) { return $this->args[ $k ] ?? ''; }
+	public function have_posts() { return false; }
+	public function is_post_type_archive() { return false; }
+}
+
+// Stand-ins for filter-injection.php (same idea as tests/test-block-injection.php).
+function get_queried_object() { return null; }
+function jpkcom_postfilter_should_auto_inject( \WP_Query $query ): bool { return true; }
+function jpkcom_postfilter_get_injected_post_type( \WP_Query $query ): string { return 'post'; }
+function jpkcom_postfilter_get_archive_base_url( string $pt ): string { return 'https://example.test/blog/'; }
+function jpkcom_postfilter_get_terms_for_group( array $group, array $active ): array { return []; }
+function jpkcom_postfilter_get_template_part( string $slug, string $name = '', array $args = [] ): void {}
+function jpkcom_postfilter_zone_open(): void {}
+function jpkcom_postfilter_zone_close(): void {}
+
 require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/settings.php';
+require_once __DIR__ . '/../includes/filter-injection.php';
 
 foreach ( [ 'url-policy.php', 'url-routing.php', 'canonical-target.php', 'crawl-guard.php', 'blocks.php' ] as $file ) {
 	if ( is_file( __DIR__ . '/../includes/' . $file ) ) {
@@ -267,6 +294,95 @@ if ( $node === '' ) {
 		];
 		foreach ( $want as $case => $expected ) {
 			chk( 'JS ' . $case, ( $js[ $case ] ?? null ) === $expected, json_encode( $js[ $case ] ?? null ) );
+		}
+	}
+}
+
+// --- result zone --------------------------------------------------------------
+section( 'Result zone: status line instead of a live region' );
+
+function status_query( int $found, int $count, bool $no_found_rows ): WP_Query {
+	$q              = new WP_Query();
+	$q->found_posts = $found;
+	$q->post_count  = $count;
+	$q->args        = $no_found_rows ? [ 'no_found_rows' => true ] : [];
+	return $q;
+}
+
+chk( 'status: 12 posts', jpkcom_postfilter_results_status( status_query( 12, 10, false ) ) === '12 posts found' );
+chk( 'status: 1 post', jpkcom_postfilter_results_status( status_query( 1, 1, false ) ) === '1 post found' );
+chk( 'status: 0 posts', jpkcom_postfilter_results_status( status_query( 0, 0, false ) ) === 'No posts found.' );
+chk( 'status uses post_count when no_found_rows', jpkcom_postfilter_results_status( status_query( 0, 7, true ) ) === '7 posts found', jpkcom_postfilter_results_status( status_query( 0, 7, true ) ) );
+
+/** Zones of a markup string: the DOM check shared by all result zones. */
+function check_zones( string $label, string $html, int $expected_zones, ?string $status = null ): void {
+	$doc = new DOMDocument();
+	@$doc->loadHTML( '<?xml encoding="UTF-8">' . $html );
+	$x     = new DOMXPath( $doc );
+	$zones = nodes( $x, '//*[@data-jpkpf-results]' );
+	chk( "{$label}: {$expected_zones} result zone", count( $zones ) === $expected_zones, (string) count( $zones ) );
+	chk( "{$label}: no aria-live/aria-atomic on the zone", count( nodes( $x, '//*[@data-jpkpf-results][@aria-live or @aria-atomic]' ) ) === 0 );
+	$bad = [];
+	foreach ( $zones as $z ) {
+		$v = $z->getAttribute( 'data-jpkpf-status' );
+		if ( $v === '' || ( $status !== null && $v !== $status ) ) {
+			$bad[] = '"' . $v . '"';
+		}
+	}
+	chk( "{$label}: data-jpkpf-status" . ( $status !== null ? " = {$status}" : ' non-empty' ), $bad === [], implode( ', ', $bad ) );
+}
+
+foreach ( [ 'templates', 'debug-templates' ] as $dir ) {
+	foreach ( [ 'cards', 'rows', 'minimal', 'theme' ] as $layout ) {
+		$query       = status_query( 12, 0, false );
+		$post_type   = 'post';
+		$extra_class = '';
+		ob_start();
+		include __DIR__ . '/../' . $dir . '/partials/list/list-' . $layout . '.php';
+		check_zones( "{$dir}/list-{$layout}", (string) ob_get_clean(), 1, '12 posts found' );
+	}
+}
+
+$GLOBALS['wp_query'] = status_query( 12, 2, false );
+$GLOBALS['wp_query']->posts = [ 1, 2 ];
+check_zones( 'auto-inject zone', jpkcom_postfilter_auto_inject_open_html( $GLOBALS['wp_query'] ), 1, '12 posts found' );
+
+$GLOBALS['wp_query'] = status_query( 0, 0, false );
+check_zones( 'zero-results zone', jpkcom_postfilter_zero_results_html(), 1, 'No posts found.' );
+
+$fi_src = (string) file_get_contents( __DIR__ . '/../includes/filter-injection.php' );
+chk( 'filter-injection.php prints no aria-live', ! str_contains( $fi_src, 'aria-live' ) );
+foreach ( [ 'templates', 'debug-templates' ] as $dir ) {
+	foreach ( [ 'cards', 'rows', 'minimal', 'theme' ] as $layout ) {
+		$f = $dir . '/partials/list/list-' . $layout . '.php';
+		chk( "{$f}: no aria-live", ! str_contains( (string) file_get_contents( __DIR__ . '/../' . $f ), 'aria-live' ) );
+		chk( "{$f}: identical to its pair", $dir !== 'debug-templates' || file_get_contents( __DIR__ . '/../' . $f ) === file_get_contents( __DIR__ . '/../templates/partials/list/list-' . $layout . '.php' ) );
+	}
+}
+
+$js_src2 = (string) file_get_contents( __DIR__ . '/../assets/js/post-filter.js' );
+chk( 'JS: no count + word announcement left', ! str_contains( $js_src2, "count + ' '" ) );
+chk( 'JS: announcement goes through resultsAnnouncement()', str_contains( $js_src2, 'resultsAnnouncement( newZone, resultZone )' ) );
+
+$node = trim( (string) shell_exec( 'command -v node 2>/dev/null' ) );
+if ( $node === '' ) {
+	echo "  SKIP  node not available - the announcement was NOT verified\n";
+} else {
+	$raw = (string) shell_exec( escapeshellarg( $node ) . ' ' . escapeshellarg( __DIR__ . '/announce.mjs' ) . ' 2>&1' );
+	$ann = json_decode( $raw, true );
+	if ( ! is_array( $ann ) ) {
+		chk( 'announce.mjs ran', false, trim( $raw ) );
+	} else {
+		$want = [
+			'with-status'       => '12 posts found',
+			'empty-status-zero' => 'No posts found.',
+			'no-status-empty'   => 'No posts found.',
+			'no-status-posts'   => 'Filter active',
+			'i18n-no-results'   => 'Keine Treffer',
+			'i18n-filter'       => 'Filter aktiv',
+		];
+		foreach ( $want as $case => $expected ) {
+			chk( 'JS announcement ' . $case, ( $ann[ $case ] ?? null ) === $expected, json_encode( $ann[ $case ] ?? null ) );
 		}
 	}
 }
