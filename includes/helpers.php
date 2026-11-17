@@ -291,3 +291,34 @@ if ( ! function_exists( function: 'jpkcom_postfilter_get_current_archive_url' ) 
         return home_url( add_query_arg( [], $_SERVER['REQUEST_URI'] ?? '/' ) );
     }
 }
+
+
+if ( ! function_exists( function: 'jpkcom_postfilter_results_status' ) ) {
+    /**
+     * Status line for a result zone: how many posts the query found
+     *
+     * Printed as `data-jpkpf-status` on the results zone. The script copies it
+     * into the live region after an AJAX swap, so a screen reader hears one
+     * short sentence instead of the whole result list. A query that skips the
+     * row count (`no_found_rows`, as the list shortcode does for `limit=-1`)
+     * leaves `found_posts` at 0, so the page count is the number then.
+     *
+     * @since 1.7.2
+     *
+     * @param \WP_Query $query The query the zone renders.
+     * @return string Plain text, not escaped.
+     */
+    function jpkcom_postfilter_results_status( \WP_Query $query ): string {
+        $count = $query->get( 'no_found_rows' ) ? (int) $query->post_count : (int) $query->found_posts;
+
+        if ( $count < 1 ) {
+            return __( 'No posts found.', 'jpkcom-post-filter' );
+        }
+
+        return sprintf(
+            /* translators: %s: number of posts */
+            _n( '%s post found', '%s posts found', $count, 'jpkcom-post-filter' ),
+            number_format_i18n( $count )
+        );
+    }
+}

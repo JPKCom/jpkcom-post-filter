@@ -10,7 +10,7 @@
  *
  *   <div data-jpkpf-wrapper data-jpkpf-base-url="..." data-jpkpf-post-type="...">
  *     <div data-jpkpf-filter-bar>…filter bar template…</div>
- *     <div data-jpkpf-results aria-live="polite">
+ *     <div data-jpkpf-results data-jpkpf-status="12 posts found">
  *       [theme loop output goes here]
  *     </div>
  *   </div>
@@ -235,7 +235,12 @@ if ( ! function_exists( function: 'jpkcom_postfilter_auto_inject_open_html' ) ) 
         // fragment — the script looks the element up by selector in the response.
         jpkcom_postfilter_zone_open();
 
-        echo '<div data-jpkpf-results aria-live="polite" aria-atomic="false">';
+        // The zone is no live region since 1.7.2: a live result list is read out in full after
+        // every swap. The status line in data-jpkpf-status goes to the live region.
+        printf(
+            '<div data-jpkpf-results data-jpkpf-status="%s">',
+            esc_attr( jpkcom_postfilter_results_status( $query ) )
+        );
 
         // Render above-pagination inside the results div so it gets refreshed on AJAX
         if ( in_array( $pagination_pos, [ 'above', 'both' ], true ) ) {
@@ -632,7 +637,10 @@ function jpkcom_postfilter_zero_results_html(): string {
     // holds the filter bar, which the script must not swap.
     jpkcom_postfilter_zone_open();
 
-    echo '<div data-jpkpf-results aria-live="polite" aria-atomic="false">';
+    printf(
+        '<div data-jpkpf-results data-jpkpf-status="%s">',
+        esc_attr__( 'No posts found.', 'jpkcom-post-filter' )
+    );
     echo '<p class="jpkpf-no-results">' . esc_html__( 'No posts found.', 'jpkcom-post-filter' ) . '</p>';
     echo '</div>';
 

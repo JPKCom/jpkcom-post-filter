@@ -487,8 +487,8 @@ if ( ! function_exists( 'jpkcom_postfilter_block_apply_plus_minus' ) ) {
                 if ( ! ( $btn instanceof \DOMElement ) ) {
                     continue;
                 }
-                $is_active = strpos( $btn->getAttribute( 'aria-pressed' ) ?? '', 'true' ) !== false
-                    || strpos( $btn->getAttribute( 'class' ) ?? '', 'is-active' ) !== false;
+                $is_active = strpos( $btn->getAttribute( 'class' ) ?? '', 'is-active' ) !== false
+                    || strpos( $btn->getAttribute( 'aria-pressed' ) ?? '', 'true' ) !== false;
 
                 $icon_span = $doc->createElement( 'span', $is_active ? "\u{2212}" : '+' );
                 $icon_span->setAttribute( 'class', 'jpkpf-pm-icon' );

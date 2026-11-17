@@ -6,8 +6,8 @@
  * before template-canvas.php prints the doctype. Up to 1.7.0 the loop_start
  * callback echoed the filter bar there - it landed before <!DOCTYPE html>.
  * In a block theme the markup now goes around the inherited core/post-template
- * block (render_block), and classic themes stay byte-identical to 1.7.0
- * (tests/fixtures/classic-inject-1.7.0.txt).
+ * block (render_block), and classic themes stay byte-identical to 1.7.0 apart from the 1.7.2 status line
+ * (tests/fixtures/classic-inject-1.7.2.txt).
  *
  * Run with:
  *
@@ -31,6 +31,10 @@ function esc_url( $u ) { return htmlspecialchars( (string) $u, ENT_QUOTES ); }
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES ); }
 function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES ); }
 function esc_html__( $s, $d = '' ) { return esc_html( $s ); }
+function esc_attr__( $s, $d = '' ) { return esc_attr( $s ); }
+function __( $s, $d = '' ) { return $s; }
+function _n( $single, $plural, $n, $d = '' ) { return (int) $n === 1 ? $single : $plural; }
+function number_format_i18n( $n, $dec = 0 ) { return number_format( (float) $n, $dec, '.', ',' ); }
 function wp_is_block_theme() { return (bool) ( $GLOBALS['__block_theme'] ?? false ); }
 // Classic themes run the loop after wp_head; block templates render before it.
 function did_action( $hook ) { return (int) ( $GLOBALS['__did'][ $hook ] ?? 0 ); }
@@ -59,6 +63,7 @@ function jpkcom_postfilter_zone_close(): void { echo '<zone]'; }
 class WP_Query {
 	public array $posts        = [ 1, 2 ];
 	public int $post_count     = 2;
+	public int $found_posts    = 12;
 	public int $max_num_pages  = 3;
 	public function get( $k ) { return ''; }
 	public function is_post_type_archive() { return false; }
@@ -76,6 +81,7 @@ foreach ( $argv as $arg ) {
 		$file = substr( $arg, 7 );
 	}
 }
+require_once __DIR__ . '/../includes/helpers.php';
 require_once $file;
 
 /** Run the callbacks of an action and return what they print. */
@@ -128,15 +134,15 @@ if ( $file !== __DIR__ . '/../includes/filter-injection.php' ) {
 	exit( 0 );
 }
 
-$fixture = __DIR__ . '/fixtures/classic-inject-1.7.0.txt';
+$fixture = __DIR__ . '/fixtures/classic-inject-1.7.2.txt';
 
 // ---------------------------------------------------------------------------
-section( 'Classic themes: byte-identical to 1.7.0' );
+section( 'Classic themes: byte-identical to 1.7.2' );
 
 $GLOBALS['__block_theme'] = false;
 $GLOBALS['__did']         = [ 'wp_head' => 1 ];
 $now = classic_dump();
-chk( 'loop_start/loop_end and the zero-results fallback print exactly what 1.7.0 printed', is_file( $fixture ) && $now === file_get_contents( $fixture ), is_file( $fixture ) ? 'diff against ' . $fixture : 'fixture missing' );
+chk( 'loop_start/loop_end and the zero-results fallback print exactly what 1.7.2 printed', is_file( $fixture ) && $now === file_get_contents( $fixture ), is_file( $fixture ) ? 'diff against ' . $fixture : 'fixture missing' );
 
 // ---------------------------------------------------------------------------
 section( 'Block themes' );

@@ -24,7 +24,7 @@ Segment order = filter group order configured in backend.
 1. Server-side render on initial load
 2. AJAX + `history.pushState` when JS is available
 3. Full page reload fallback when JS is disabled
-4. `aria-live` region for screen reader announcements
+4. `aria-live` status region (`[data-jpkpf-live-region]`) for screen reader announcements; the result zone itself is not live
 
 ### Page Builder Support
 - **Gutenberg Blocks** — Three native blocks with live editor preview and InspectorControls; pre-scan of block tree for pagination-before-list support
@@ -288,10 +288,9 @@ File: `assets/js/post-filter.js`
     <nav data-jpkpf-filter-bar>
         <a class="jpkpf-filter-btn"
            data-filter-taxonomy="category"
-           data-filter-term="web-design"
-           aria-pressed="false">Web Design</a>
+           data-filter-term="web-design">Web Design</a>
     </nav>
-    <div data-jpkpf-results aria-live="polite">...</div>
+    <div data-jpkpf-results data-jpkpf-status="7 posts found">...</div>
     <div data-jpkpf-live-region aria-live="polite"></div>
 </div>
 
@@ -308,7 +307,7 @@ File: `assets/js/post-filter.js`
 - Auto-inject mode (`[data-jpkpf-wrapper]`) skips standalone pagination insertion to prevent duplicates
 - One request per results zone: a new click aborts the previous fetch (`AbortController`)
 - popstate onto the URL the zone already shows aborts a request still pending from an earlier back/forward step (tracked in the `popstateRequests` WeakSet), clears the live region and re-syncs the buttons - otherwise a fast double back landed the in-between entry's results under the current address (browser-check "Fast double back"). A pending **click** is never aborted there: following an in-page `#anchor` (a theme's "back to top") fires popstate for the same page while the click loads.
-- Live region: "No posts found" only when the zone contains `.jpkpf-no-results`; otherwise the count of `[data-jpkpf-post]`, else of the outermost `.wp-block-post` (a block theme's post template, 1.7.1), else of `article` for the theme's own loop (auto-inject), which carries no plugin markers - until 1.5.0 every successful click there was announced as "No posts found". Outermost only (`.wp-block-post:not(.wp-block-post .wp-block-post)`, 1.7.1): a query block inside a post renders `.wp-block-post` items of its own, which are not results. The wording "N" + `filterActive` ("Filter aktiv") is older and imprecise (it counts posts on the page); not changed in 1.5.0.
+- Live region (1.7.2): the status text comes from `data-jpkpf-status` on the results zone (`jpkcom_postfilter_results_status()`, total `found_posts`); without that attribute (theme override of a 1.7.1 list partial) "No posts found." when the zone contains `.jpkpf-no-results`, else "Filter active" (`filterActive`), no count. `initFilterUI()` removes leftover `aria-live`/`aria-atomic` from the results zone, never from `[data-jpkpf-live-region]`.
 - `shownUrls` (WeakMap zone → URL whose results it shows): popstate that only changes the `#hash` of the page the zone already shows does nothing - before 1.5.0 such a step re-fetched, and when the fetch failed, the fallback `location.href = url` was another hash navigation and another popstate: an endless loop (~60 requests/s, pre-existing since 1.2). Every fallback load goes through `loadUrl()`, which reloads instead of assigning a same-document URL.
 - Errors (1.5.0): after a **click**, a 404/410 carrying `X-Jpkpf-Reject` (the request guard's answer) and a 429/5xx both keep the current results, re-sync the buttons to the address bar (`syncButtonsToUrl()` - they were switched before the request and would otherwise claim a selection the list does not show) and show `.jpkpf-fetch-error` - unless the click superseded a back/forward request whose swap never happened (the zone does not show the address bar's URL), which loads the address bar's URL. After **back/forward** (`pushState === false`) the address bar has already moved, so any failure loads the popped URL instead - keeping the old list would contradict address bar and buttons. A network error, an unmarked 404 or a response without results zone always reloads. Before 1.5.0 every non-2xx reloaded - onto the error page, and as a second, heavier request against an overloaded server
 - `buildFilterUrlFromMap()` sorts and de-duplicates slugs exactly like PHP; `tests/test-url-policy.php` runs it through node over `tests/filter-url-cases.json` and compares with `jpkcom_postfilter_get_filter_url()`
@@ -924,7 +923,7 @@ Archive and base targets are page 1. The target then passes `jpkcom_postfilter_c
 
 ### Term links
 
-`jpkcom_postfilter_term_link_attributes()` → `<a href>` or `<button type="button">` (all four layouts and the debug copies). Mode `single` (default): an inactive term links to its single-term page; an active term to the selection without it while at most one term remains; otherwise a button. Crawlable graph: archive + one page per term. Mode `combo`: the old toggle links, but never beyond the caps / `JPKCOM_POSTFILTER_LINK_MAX_TERMS`, and on a zero-result page not into a group without selection. Links to non-indexable targets get `rel="nofollow"`. The reset link lost its `rel="nofollow"` - it is the one way *out* of the combinations. **JS users are unaffected in every mode** - the script handles clicks from data attributes and `aria-pressed`. Theme overrides of the filter partials keep the old links until they adopt the helper.
+`jpkcom_postfilter_term_link_attributes()` → `<a href>` or `<button type="button">` (all four layouts and the debug copies). Mode `single` (default): an inactive term links to its single-term page; an active term to the selection without it while at most one term remains; otherwise a button. Crawlable graph: archive + one page per term. Mode `combo`: the old toggle links, but never beyond the caps / `JPKCOM_POSTFILTER_LINK_MAX_TERMS`, and on a zero-result page not into a group without selection. Links to non-indexable targets get `rel="nofollow"`. The reset link lost its `rel="nofollow"` - it is the one way *out* of the combinations. **JS users are unaffected in every mode** - the script handles clicks from data attributes and the `is-active` class (1.7.2; earlier it also read `aria-pressed`). The state attribute comes from the `aria` key of the helper: `aria-pressed` on `<button>` terms, `aria-current="true"` on an active `<a>`, nothing on an inactive `<a>`. Theme overrides of the filter partials keep the old links until they adopt the helper.
 
 Pagination: page 1 links to the page itself (`base` with `%_%`, `format` `page/%#%/`); before 1.5.0 it linked `…/page/1/` from every paginated list. Page links on non-indexable pages are `nofollow`.
 
@@ -1165,7 +1164,7 @@ Validation reuses the transient-cached per-taxonomy term list, keyed by **taxono
 
 ## Release Workflow
 
-The version appears in six places and must be kept in sync: header `Version:` and `Stable tag:` plus `JPKCOM_POSTFILTER_VERSION` in `jpkcom-post-filter.php` (three), `<version number="…">` in `phpdoc.xml` (four), and `**Version:**` / `**Stable tag:**` in `README.md` (five and six) — where a new `### x.y.z` changelog block is also needed. Counted with a search for the version string over the repo (1.7.1): nothing else carries it - `package.json` and the three `blocks/*/block.json` have their own `1.0.0` and are not part of the release number; the `Project-Id-Version` in `languages/` is written by `make-pot` (below).
+The version appears in six places and must be kept in sync: header `Version:` and `Stable tag:` plus `JPKCOM_POSTFILTER_VERSION` in `jpkcom-post-filter.php` (three), `<version number="…">` in `phpdoc.xml` (four), and `**Version:**` / `**Stable tag:**` in `README.md` (five and six) — where a new `### x.y.z` changelog block is also needed. Counted with a search for the version string over the repo (1.7.2): nothing else carries it - `package.json` and the three `blocks/*/block.json` have their own `1.0.0` and are not part of the release number; the `Project-Id-Version` in `languages/` is written by `make-pot` (below).
 
 **Seventh place, and it is not a version number: the translation catalogue.** Any release that adds or
 edits a translatable string regenerates `languages/`. This was missing from the checklist and the

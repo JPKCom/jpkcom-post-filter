@@ -443,16 +443,10 @@ check(
 $js = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/post-filter.js' );
 
 check(
-	'the live region counts block theme posts (li.wp-block-post) too (1.7.1)',
-	(bool) preg_match( "/querySelectorAll\\( '\\[data-jpkpf-post\\]' \\)\\.length\\s*\\|\\|\\s*resultZone\\.querySelectorAll\\( '\\.wp-block-post[^']*' \\)\\.length\\s*\\|\\|\\s*resultZone\\.querySelectorAll\\( 'article' \\)\\.length/", $js ),
-	'Twenty Twenty-Five renders the inherited query as <li class="wp-block-post">, no <article>: '
-	. 'every successful click was announced without a count.'
-);
-
-check(
-	'the live region does not count block posts nested inside block posts (1.7.1)',
-	str_contains( $js, "querySelectorAll( '.wp-block-post:not(.wp-block-post .wp-block-post)' )" ),
-	'An inherited query block inside a post adds its own li.wp-block-post items; counting them overstated the result.'
+	'the live region is fed by the status line, not by counting posts in the DOM (1.7.2)',
+	str_contains( $js, "getAttribute( 'data-jpkpf-status' )" ) && ! str_contains( $js, 'querySelectorAll( \'.wp-block-post' ) && ! str_contains( $js, "querySelectorAll( 'article' )" ),
+	'Counting li.wp-block-post (1.7.1) or articles in the DOM overstated or missed the result '
+	. 'on block themes and nested query blocks; the server prints the count once, as data-jpkpf-status.'
 );
 
 check(

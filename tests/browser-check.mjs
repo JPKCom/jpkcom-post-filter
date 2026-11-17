@@ -107,7 +107,7 @@ try {
 		url:       location.pathname,
 		hasMarker: document.body.innerHTML.includes( 'data-jpkpf-zone' ),
 		barExists: !! document.querySelector( '[data-jpkpf-filter-bar]' ),
-		pressed:   document.querySelectorAll( '.jpkpf-filter-btn[aria-pressed="true"]' ).length,
+		pressed:   document.querySelectorAll( '.jpkpf-filter-btn.is-active' ).length,
 	} ) );
 
 	chk( after.url !== before.url, `URL updated via pushState: ${ after.url }` );
@@ -123,7 +123,7 @@ try {
 	const back = await page.evaluate( () => ( {
 		articles: ( document.querySelectorAll( '[data-jpkpf-results] .wp-block-post:not(.wp-block-post .wp-block-post)' ).length ? document.querySelectorAll( '[data-jpkpf-results] .wp-block-post:not(.wp-block-post .wp-block-post)' ) : document.querySelectorAll( '[data-jpkpf-results] article' ) ).length,
 		url:      location.pathname,
-		pressed:  document.querySelectorAll( '.jpkpf-filter-btn[aria-pressed="true"]' ).length,
+		pressed:  document.querySelectorAll( '.jpkpf-filter-btn.is-active' ).length,
 	} ) );
 
 	chk( back.url === before.url, `back on ${ back.url }` );
@@ -203,10 +203,10 @@ try {
 			await page.keyboard.press( 'Enter' );
 			await wait( 2000 );
 			const st = await page.evaluate( ( t ) => ( {
-				pressed: document.querySelector( `.jpkpf-filter-btn[data-filter-term="${ t }"]` ).getAttribute( 'aria-pressed' ),
+				pressed: document.querySelector( `.jpkpf-filter-btn[data-filter-term="${ t }"]` ).classList.contains( 'is-active' ),
 				url: location.pathname,
 			} ), a );
-			chk( st.pressed === 'false', `Enter on the <button> deselects it (${ st.url })` );
+			chk( st.pressed === false, `Enter on the <button> deselects it (${ st.url })` );
 			chk( requests.some( ( r ) => r.url.includes( '/jpkpf-fragment/' ) ) && ! requests.some( ( r ) => r.type === 'document' ), 'via a fragment request, no reload' );
 		}
 
@@ -230,7 +230,7 @@ try {
 		page.off( 'response', onResp );
 		const rejectedState = await page.evaluate( () => {
 			const path    = location.pathname;
-			const pressed = Array.from( document.querySelectorAll( '.jpkpf-filter-btn[aria-pressed="true"]' ) )
+			const pressed = Array.from( document.querySelectorAll( '.jpkpf-filter-btn.is-active' ) )
 				.map( ( b ) => b.getAttribute( 'data-filter-term' ) ).sort();
 			return {
 				notice: document.querySelector( '.jpkpf-fetch-error' )?.textContent ?? '',
@@ -273,7 +273,7 @@ try {
 		await page.setRequestInterception( false );
 		chk( busy.notice !== '', `a visible notice: "${ busy.notice }"` );
 		chk( busy.articles === articlesBefore, `the previous results stay (${ busy.articles })` );
-		const busyPressed = await page.evaluate( () => document.querySelectorAll( '.jpkpf-filter-btn[aria-pressed="true"]' ).length );
+		const busyPressed = await page.evaluate( () => document.querySelectorAll( '.jpkpf-filter-btn.is-active' ).length );
 		chk( busyPressed === 0, `the clicked button is released again, matching the unchanged address bar (${ busyPressed } pressed)` );
 		chk( ! requests.some( ( r ) => r.type === 'document' ), 'no reload against the overloaded server' );
 
@@ -294,7 +294,7 @@ try {
 		await page.setRequestInterception( false );
 		const popped = await page.evaluate( () => ( {
 			url:      location.pathname,
-			pressed:  document.querySelectorAll( '.jpkpf-filter-btn[aria-pressed="true"]' ).length,
+			pressed:  document.querySelectorAll( '.jpkpf-filter-btn.is-active' ).length,
 			articles: ( document.querySelectorAll( '[data-jpkpf-results] .wp-block-post:not(.wp-block-post .wp-block-post)' ).length ? document.querySelectorAll( '[data-jpkpf-results] .wp-block-post:not(.wp-block-post .wp-block-post)' ) : document.querySelectorAll( '[data-jpkpf-results] article' ) ).length,
 		} ) );
 		chk( popped.url === new URL( SITE ).pathname && popped.pressed === 0 && popped.articles === articlesBefore, `address bar, buttons and list agree after the failed back (${ popped.url }, ${ popped.pressed } pressed, ${ popped.articles } articles)` );
@@ -317,7 +317,7 @@ try {
 		await wait( 3000 );
 		const dbl = await page.evaluate( () => ( {
 			url:     location.pathname,
-			pressed: Array.from( document.querySelectorAll( '.jpkpf-filter-btn[aria-pressed="true"]' ) ).map( ( x ) => x.getAttribute( 'data-filter-term' ) ).join( ',' ),
+			pressed: Array.from( document.querySelectorAll( '.jpkpf-filter-btn.is-active' ) ).map( ( x ) => x.getAttribute( 'data-filter-term' ) ).join( ',' ),
 		} ) );
 		const expected = await page.evaluate( async ( u ) => {
 			const r   = await fetch( u, { headers: { 'X-Requested-With': 'XMLHttpRequest' } } );
@@ -347,7 +347,7 @@ try {
 		await page.setRequestInterception( false );
 		const anchored = await page.evaluate( () => ( {
 			url:     location.pathname,
-			pressed: Array.from( document.querySelectorAll( '.jpkpf-filter-btn[aria-pressed="true"]' ) ).map( ( x ) => x.getAttribute( 'data-filter-term' ) ).join( ',' ),
+			pressed: Array.from( document.querySelectorAll( '.jpkpf-filter-btn.is-active' ) ).map( ( x ) => x.getAttribute( 'data-filter-term' ) ).join( ',' ),
 			live:    document.querySelector( '[data-jpkpf-live-region]' )?.textContent ?? '',
 		} ) );
 		chk( anchored.url.endsWith( `/${ a }/` ) && anchored.pressed === a, `the click landed (${ anchored.url }, ${ anchored.pressed })` );
